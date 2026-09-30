@@ -625,7 +625,10 @@ const MAX_LINES_PER_CHAPTER = 5000;
 
 // ---------- Storage ----------
 
-// Small settings live in localStorage.
+// localStorage (names start "cot."): the Lichess token, settings, selection, favorites, hidden
+// studies and your history. IndexedDB (database "chess-opening-trainer"): the studies fetched from
+// Lichess (store "library") and what Lichess says about each board position (store "positions",
+// keyed by EPD). Both can be large.
 const store = {
   get(key, fallback) {
     try {
@@ -641,87 +644,120 @@ const store = {
   },
 };
 
-// Cached study data lives in IndexedDB (it can be large).
-const cache = {
-  db: null,
-  async open() {
-    if (this.db) return this.db;
-    this.db = await new Promise((resolve, reject) => {
-      const req = indexedDB.open('chess-opening-trainer', 1);
-      req.onupgradeneeded = () => req.result.createObjectStore('kv');
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    return this.db;
-  },
-  async get(key) {
-    const db = await this.open();
-    return new Promise((resolve, reject) => {
-      const req = db.transaction('kv').objectStore('kv').get(key);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  },
-  async put(key, value) {
-    const db = await this.open();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('kv', 'readwrite');
-      tx.objectStore('kv').put(value, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  },
-};
+let database = null;
 
-// Saves to IndexedDB; a failure (e.g. storage full) is only logged.
-async function saveCache(key, value) {
-  try { await cache.put(key, value); } catch (e) { console.warn('IndexedDB write failed', e); }
+function openDatabase() {
+  return database ||= new Promise((resolve, reject) => {
+    const req = indexedDB.open('chess-opening-trainer', 2);
+    req.onupgradeneeded = () => {
+      for (const name of ['library', 'positions']) {
+        if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// Runs work(objectStore) in one transaction; resolves when it's complete.
+async function inDatabase(storeName, mode, work) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, mode);
+    const result = work(tx.objectStore(storeName));
+    tx.oncomplete = () => resolve(result);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadLibrary() {
+  const req = await inDatabase('library', 'readonly', s => s.get('library'));
+  return req.result || null;
+}
+
+async function saveLibrary() {
+  try { await inDatabase('library', 'readwrite', s => s.put(library, 'library')); }
+  catch (e) { console.warn('IndexedDB write failed', e); }
+}
+
+async function loadPositions() {
+  const [keys, values] = await inDatabase('positions', 'readonly', s => [s.getAllKeys(), s.getAll()]);
+  return Object.fromEntries(keys.result.map((epd, k) => [epd, values.result[k]]));
+}
+
+// Saves these positions (all of them if none are given). A failure (e.g. storage full) is only logged.
+async function savePositions(epds = Object.keys(positions)) {
+  try { await inDatabase('positions', 'readwrite', s => { for (const epd of epds) if (positions[epd]) s.put(positions[epd], epd); }); }
+  catch (e) { console.warn('IndexedDB write failed', e); }
 }
 
 // ---------- State ----------
 
 let token = store.get('token', null);
-let selection = new Set(store.get('selection', []));   // chapter keys "studyId/chapterId"
-let stats = store.get('stats', {});                       // position key -> last 10 results (see Move results and grading)
-let data = null;                                          // { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
-const expanded = new Set();
-const expandedChapters = new Set(); // chapters whose move tree is shown on the Studies page
+let library = null; // the studies fetched from Lichess: { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
+let selection = new Set(store.get('selection', [])); // the ticked chapters' keys, "studyId/chapterId"
+let favorites = store.get('favorites', null);          // chapter keys saved with "Save favorites"
 let hiddenStudies = new Set(store.get('hiddenStudies', [])); // studies hidden from the list and from practice
-let showHiddenStudies = false;      // "Show hidden" on the Studies page (not remembered)
+const saveSelection = () => store.set('selection', [...selection]);
 const saveHidden = () => store.set('hiddenStudies', [...hiddenStudies]);
 const isHiddenChapter = key => hiddenStudies.has(key.slice(0, key.indexOf('/')));
 const visibleChapters = () => allChapters().filter(c => !isHiddenChapter(c.key));
-const openBranches = new Set();     // tree branch points whose variations are open ("chapter key|moves before")
-const allVariations = new Set();    // chapters whose all-variations triangle is down (changed only by that triangle)
-const saveSelection = () => store.set('selection', [...selection]);
-const saveStats = () => store.set('stats', stats);
-// line key -> when the line was played all the way through (move 1 to the end), the last 10 times (the time its last move
-// was attempted, in ms; oldest first); for spaced repetition later.
-let plays = store.get('plays', {});
-const savePlays = () => store.set('plays', plays);
-// position key (as in stats) -> when that move was last attempted (ms), in any mode.
-let lastTried = store.get('lastTried', {});
-const saveLastTried = () => store.set('lastTried', lastTried);
 
+// Your history (see Move results and grading):
+//   moves: move key (a move of yours in a chapter) -> { attempts: the last 10, oldest first, each
+//          { tried: what you did, in order (moves as SAN, "hint", "show"), points: 0–10 }, lastTried: time }
+//   lines: line key -> { played: the last 10 times it was played from move 1 to the end, oldest first }
+const emptyHistory = () => ({ moves: {}, lines: {} });
+const validHistory = h => !!h && typeof h === 'object' && !!h.moves && typeof h.moves === 'object' && !!h.lines && typeof h.lines === 'object';
+let history = validHistory(store.get('history')) ? store.get('history') : emptyHistory();
+const saveHistory = () => store.set('history', history);
 
+// What Lichess says about each board position, by EPD: { lichess: its rated Lichess games,
+// masters: its master games, eval: its cloud evaluation } (see the Lichess downloads).
+let positions = {};
 
-let favorites = store.get('favorites', null);              // chapter keys saved with "Save favorites"
-let soundsOn = store.get('soundsOn', false);
+// Settings (chosen on the Studies, Practice, Weaknesses and Options pages).
+// Mistake penalties are in points: 1 point = 10% of an attempt's score.
 const START_MODES = ['start', 'partway', 'single'];
-let startMode = START_MODES.includes(store.get('startMode', 'start')) ? store.get('startMode', 'start') : 'start';
-const OPP_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
-// Mistake penalties in points (1 point = 10% of an attempt's score), and how many top master moves
-// can count as masters moves; set on the Options page.
-const DEFAULT_PENALTIES = { alternative: 2, masters: 2, error: 5, hint: 10 };
-const validPenalties = v => !!v && typeof v === 'object'
-  && Object.keys(DEFAULT_PENALTIES).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
-let penalties = validPenalties(store.get('penalties')) ? store.get('penalties') : { ...DEFAULT_PENALTIES };
+const OPPONENT_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
 const MASTERS_TOPS = [1, 2, 3, 4, 5];
-let mastersTop = MASTERS_TOPS.includes(store.get('mastersTop')) ? store.get('mastersTop') : 5;
-const WEAK_COUNTS = [25, 50, 75, 100], WEAK_MAXES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
-let weakCount = WEAK_COUNTS.includes(store.get('weakCount')) ? store.get('weakCount') : 25; // Weaknesses page: how many rows
-let weakMax = WEAK_MAXES.includes(store.get('weakMax')) ? store.get('weakMax') : 70;       // … and the highest accuracy shown
-let opponentMode = OPP_MODES.includes(store.get('opponentMode')) ? store.get('opponentMode') : 'misses';
+const WEAKNESS_COUNTS = [25, 50, 75, 100], WEAKNESS_ACCURACIES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
+const DEFAULT_SETTINGS = {
+  startMode: 'start',          // "Where lines start"
+  opponentMode: 'misses',      // "Opponent's moves"
+  sounds: false,
+  penalties: { alternative: 2, masters: 2, error: 5, hint: 10 },
+  mastersTop: 5,               // a masters move is within this many top master moves
+  weaknessCount: 25,           // the Weaknesses page: how many positions
+  weaknessMaxAccuracy: 70,     // … with accuracy at or below this
+};
+const validPenalties = v => !!v && typeof v === 'object'
+  && Object.keys(DEFAULT_SETTINGS.penalties).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
+
+// Saved settings, with anything missing or invalid replaced by its default.
+function checkedSettings(saved) {
+  const v = saved && typeof saved === 'object' ? saved : {};
+  const d = DEFAULT_SETTINGS;
+  return {
+    startMode: START_MODES.includes(v.startMode) ? v.startMode : d.startMode,
+    opponentMode: OPPONENT_MODES.includes(v.opponentMode) ? v.opponentMode : d.opponentMode,
+    sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
+    penalties: validPenalties(v.penalties) ? { ...v.penalties } : { ...d.penalties },
+    mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
+    weaknessCount: WEAKNESS_COUNTS.includes(v.weaknessCount) ? v.weaknessCount : d.weaknessCount,
+    weaknessMaxAccuracy: WEAKNESS_ACCURACIES.includes(v.weaknessMaxAccuracy) ? v.weaknessMaxAccuracy : d.weaknessMaxAccuracy,
+  };
+}
+
+let settings = checkedSettings(store.get('settings'));
+const saveSettings = () => store.set('settings', settings);
+
+// The Studies page's open/closed state (not remembered).
+const openStudies = new Set();       // studies whose chapters are listed
+const openChapters = new Set();      // chapters whose move tree is shown
+const openBranches = new Set();      // tree branch points whose variations are open ("chapter key|moves before")
+const allVariationsOpen = new Set(); // chapters whose all-variations triangle is down
+let showHiddenStudies = false;       // the top eye: hidden studies are listed (in grey)
 
 // ---------- Page helpers ----------
 
@@ -882,16 +918,17 @@ async function fetchStudies() {
   try {
     const account = await lichess('/api/account', token);
     const text = await lichess(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
-    data = buildData(text, account.username);
-    await saveCache('studies', data);
+    library = buildData(text, account.username);
+    await saveLibrary();
     resetParsed();
     pruneAfterRefresh();
     // Lichess's cloud grows over time, so positions it didn't have are asked about again.
-    evals = Object.fromEntries(Object.entries(evals).filter(([, v]) => !v.none));
-    await saveCache('evals', evals);
+    const unevaluated = Object.keys(positions).filter(epd => positions[epd].eval?.none);
+    for (const epd of unevaluated) delete positions[epd].eval;
+    await savePositions(unevaluated);
     startDownloads(); // missing Lichess data, quietly in the background
-    const n = data.studies.reduce((s, st) => s + st.chapters.length, 0);
-    const ns = data.studies.length;
+    const n = library.studies.reduce((s, st) => s + st.chapters.length, 0);
+    const ns = library.studies.length;
     showBanner(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
     if (screen === 'options') renderOptions(); else showStudies();
   } catch (e) {
@@ -901,20 +938,19 @@ async function fetchStudies() {
   }
 }
 
-// Drop selection entries and stats that no longer match anything.
+// Drop selection entries and history that no longer match anything.
 function pruneAfterRefresh() {
   const chapters = allChapters();
   const chapterKeys = new Set(chapters.map(c => c.key));
   const posKeys = new Set();
   for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) posKeys.add(posKey(line, i));
   selection = new Set([...selection].filter(k => chapterKeys.has(k)));
-  hiddenStudies = new Set([...hiddenStudies].filter(id => data.studies.some(s => s.id === id)));
+  hiddenStudies = new Set([...hiddenStudies].filter(id => library.studies.some(s => s.id === id)));
   saveHidden();
-  stats = Object.fromEntries(Object.entries(stats).filter(([k]) => posKeys.has(k)));
   const lineKeys = new Set(chapters.flatMap(ch => chapterLines(ch).map(l => l.key)));
-  plays = Object.fromEntries(Object.entries(plays).filter(([k]) => lineKeys.has(k)));
-  lastTried = Object.fromEntries(Object.entries(lastTried).filter(([k]) => posKeys.has(k)));
-  saveSelection(); saveStats(); savePlays(); saveLastTried();
+  history.moves = Object.fromEntries(Object.entries(history.moves).filter(([k]) => posKeys.has(k)));
+  history.lines = Object.fromEntries(Object.entries(history.lines).filter(([k]) => lineKeys.has(k)));
+  saveSelection(); saveHistory();
 }
 
 async function acceptToken(value, errorEl) {
@@ -937,9 +973,9 @@ async function acceptToken(value, errorEl) {
 
 // ---------- Chapters and lines ----------
 
-const allChapters = () => data ? data.studies.flatMap(s => s.chapters) : [];
+const allChapters = () => library ? library.studies.flatMap(s => s.chapters) : [];
 const chapterByKey = key => allChapters().find(c => c.key === key);
-const studyOf = ch => data.studies.find(s => s.chapters.includes(ch));
+const studyOf = ch => library.studies.find(s => s.chapters.includes(ch));
 const parsed = new Map();   // chapter key -> { game, start, color } or { error }
 const lineCache = new Map(); // chapter key -> lines
 function resetParsed() { parsed.clear(); lineCache.clear(); altCountCache.clear(); }
@@ -1078,9 +1114,9 @@ const GLYPHS = {
 // Comment text without Lichess's embedded arrows, circles and evals.
 const commentText = comments => (comments || []).map(c => pgn.parseComment(c).text.trim()).filter(Boolean);
 
-function moveNotes(data) {
-  const text = commentText(data.comments);
-  const nags = (data.nags || []).filter(n => GLYPHS[n]);
+function moveNotes(node) {
+  const text = commentText(node.comments);
+  const nags = (node.nags || []).filter(n => GLYPHS[n]);
   return text.length || nags.length ? { text, nags } : undefined;
 }
 
@@ -1138,16 +1174,14 @@ function posKey(line, i) {
   return keys[i] ||= line.chapterKey + '|' + line.moves.slice(0, i + 1).map(m => m.san).join(' ');
 }
 
-const triesOf = (line, i) => stats[posKey(line, i)] || [];
+const attemptsAt = (line, i) => history.moves[posKey(line, i)]?.attempts || [];
 
 // A move's score: the weighted average points of its last 10 attempts, as a fraction of 10 (0–1).
 // The most recent attempt counts 100%, the one before 90%, then 80% … down to 10% for the 10th.
-const pointsOf = a => a && typeof a === 'object' && !Array.isArray(a) ? a.p : a === 1 ? 10 : 0;
-
-function scoreOf(tries) {
-  if (!tries.length) return null;
+function scoreOf(attempts) {
+  if (!attempts.length) return null;
   let sum = 0, weights = 0;
-  tries.forEach((a, k) => { const w = 1 - (tries.length - 1 - k) / 10; sum += w * pointsOf(a); weights += w; }); // oldest first
+  attempts.forEach((a, k) => { const w = 1 - (attempts.length - 1 - k) / 10; sum += w * a.points; weights += w; }); // oldest first
   return sum / weights / 10;
 }
 
@@ -1162,51 +1196,47 @@ const MASTERS_SHARE = 0.1;
 // A masters move: within the top N master moves in the position (N set on the Options page; moves
 // played equally often share a rank) and played in 10% or more of master games there.
 function isMasterMove(epd, s) {
-  const st = masters[epd], n = st && totalOf(st);
-  if (!n || gamesOf(st, s) / n < MASTERS_SHARE) return false;
-  return rankOf(st, s) <= mastersTop;
+  const st = positions[epd]?.masters, n = st && totalGames(st);
+  if (!n || gamesWith(st, s) / n < MASTERS_SHARE) return false;
+  return rankOf(st, s) <= settings.mastersTop;
 }
 
 function scoreAttempt(seq, entry) {
   let p = 10;
   for (const x of seq) {
-    if (x === 'hint' || x === 'show') { p -= penalties.hint; continue; }
+    if (x === 'hint' || x === 'show') { p -= settings.penalties.hint; continue; }
     if (bareSan(x) === bareSan(entry.san)) break; // the correct move ends the attempt
     const alt = entry.alts?.[x];
-    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= penalties.error; // the study's marking wins
-    else if (alt) p -= penalties.alternative;
-    else if (isMasterMove(entry.epd, x)) p -= penalties.masters;
-    else p -= penalties.error;
+    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= settings.penalties.error; // the study's marking wins
+    else if (alt) p -= settings.penalties.alternative;
+    else if (isMasterMove(entry.epd, x)) p -= settings.penalties.masters;
+    else p -= settings.penalties.error;
   }
   return Math.max(0, p);
 }
 
-// When the app opens (and after a restore), every saved attempt is scored again from what was
-// done, with the current rules and data (e.g. masters statistics downloaded since), and saved.
-// Older saves are turned into attempts here: right = the correct move alone; wrong = the wrong
-// moves played (a hint or Show correct move alone was saved as an empty list: now "hint").
-function rescoreAll() {
-  if (!data) return;
-  const entries = new Map();
-  for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) entries.set(posKey(line, i), line.moves[i]);
-  for (const [key, attempts] of Object.entries(stats)) {
-    const entry = entries.get(key);
-    const correct = key.slice(key.indexOf('|') + 1).split(' ').pop();
-    stats[key] = attempts.map(a => {
-      const seq = pointsOf(a) === 10 && !(a && a.s) ? [correct] : a && a.s ? a.s : (a.length ? a : ['hint']);
-      return { s: seq, p: entry ? scoreAttempt(seq, entry) : pointsOf(a) };
-    });
+// When the app opens (and after a restore or a change of penalties), every saved attempt is scored
+// again from what was done, with the current rules and data (e.g. masters statistics downloaded
+// since), and saved.
+function rescoreHistory() {
+  if (!library) return;
+  const moves = new Map();
+  for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) moves.set(posKey(line, i), line.moves[i]);
+  for (const [key, record] of Object.entries(history.moves)) {
+    const move = moves.get(key);
+    if (move) for (const a of record.attempts) a.points = scoreAttempt(a.tried, move);
   }
-  saveStats();
+  saveHistory();
 }
 
+// Saves this line's attempts into your history.
 function recordResults() {
   for (const r of q.results) {
-    const key = posKey(q.line, r.idx);
-    stats[key] = [...(stats[key] || []), { s: r.seq, p: r.points }].slice(-KEEP_TRIES);
-    lastTried[key] = r.at;
+    const record = history.moves[posKey(q.line, r.idx)] ||= { attempts: [] };
+    record.attempts = [...record.attempts, { tried: r.seq, points: r.points }].slice(-KEEP_TRIES);
+    record.lastTried = r.at;
   }
-  saveStats(); saveLastTried();
+  saveHistory();
 }
 
 // The moves other than the correct one in a list of attempts, with how often each was played:
@@ -1214,8 +1244,7 @@ function recordResults() {
 function countWrongs(attempts, correct) {
   const counts = new Map();
   for (const a of attempts) {
-    const seq = a && a.s ? a.s : Array.isArray(a) ? a : [];
-    for (const s of seq) if (s !== 'hint' && s !== 'show' && bareSan(s) !== bareSan(correct)) counts.set(s, (counts.get(s) || 0) + 1);
+    for (const s of a.tried) if (s !== 'hint' && s !== 'show' && bareSan(s) !== bareSan(correct)) counts.set(s, (counts.get(s) || 0) + 1);
   }
   return [...counts];
 }
@@ -1238,7 +1267,7 @@ function aggregate(chapters) {
       const k = posKey(line, i);
       if (seen.has(k)) continue;
       seen.add(k);
-      const s = scoreOf(stats[k] || []);
+      const s = scoreOf(history.moves[k]?.attempts || []);
       if (s != null) { tried++; sum += s; }
     }
   }
@@ -1270,16 +1299,16 @@ function renderStudies() {
   hidePreview(); hideQuickTip(); // their element may be about to disappear
   const container = $('studies');
   container.replaceChildren();
-  if (!data.studies.length) {
-    container.append(h('div', { class: 'row muted' }, `No studies found for ${data.username}.`));
+  if (!library.studies.length) {
+    container.append(h('div', { class: 'row muted' }, `No studies found for ${library.username}.`));
   }
-  for (const study of data.studies) {
+  for (const study of library.studies) {
     // Hidden studies are left out, or shown dimmed (and can't be ticked) with "Show hidden" on.
     const isHidden = hiddenStudies.has(study.id);
     if (isHidden && !showHiddenStudies) continue;
     const keys = study.chapters.map(c => c.key);
     const nSel = keys.filter(k => selection.has(k)).length;
-    const open = expanded.has(study.id);
+    const open = openStudies.has(study.id);
     const box = h('input', {
       type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
       checked: nSel === keys.length && keys.length > 0,
@@ -1291,8 +1320,8 @@ function renderStudies() {
     });
     const studyEl = h('div', { class: 'study' + (isHidden ? ' hidden-study' : '') },
       h('div', { class: 'row study-row' },
-        h('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-expanded': String(open),
-          onclick: () => { open ? expanded.delete(study.id) : expanded.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
+        h('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-openStudies': String(open),
+          onclick: () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
         box,
         h('span', { class: 'name' }, h('label', { for: 'st-' + study.id }, study.name),
           showHiddenStudies ? hideStudyBtn(study, isHidden) : null,
@@ -1305,21 +1334,21 @@ function renderStudies() {
         const p = parseChapter(ch);
         const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
         const chLines = chapterLines(ch);
-        const chOpen = expandedChapters.has(ch.key) && chLines.length > 0;
+        const chOpen = openChapters.has(ch.key) && chLines.length > 0;
         // Two triangles: the chapter's moves (main line), then all its variations at once.
         const keys = chLines.length ? branchKeys(ch) : [];
-        const allOpen = allVariations.has(ch.key);
+        const allOpen = allVariationsOpen.has(ch.key);
         list.append(h('div', { class: 'row chapter-row' },
           chLines.length
-            ? h('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(chOpen),
-                onclick: () => { chOpen ? expandedChapters.delete(ch.key) : expandedChapters.add(ch.key); renderStudies(); } }, chOpen ? '▾' : '▸')
+            ? h('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-openStudies': String(chOpen),
+                onclick: () => { chOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); } }, chOpen ? '▾' : '▸')
             : h('span', { class: 'toggle-space' }),
           keys.length
-            ? h('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen),
+            ? h('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-openStudies': String(allOpen),
                 onclick: () => {
                   for (const k of keys) allOpen ? openBranches.delete(k) : openBranches.add(k);
-                  if (allOpen) allVariations.delete(ch.key);
-                  else { allVariations.add(ch.key); expandedChapters.add(ch.key); } // showing the variations shows the moves too
+                  if (allOpen) allVariationsOpen.delete(ch.key);
+                  else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
                   renderStudies();
                 } }, allOpen ? '▾' : '▸')
             : h('span', { class: 'toggle-space' }),
@@ -1337,7 +1366,7 @@ function renderStudies() {
     }
     container.append(studyEl);
   }
-  if (data.studies.length && !container.children.length) {
+  if (library.studies.length && !container.children.length) {
     container.append(h('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
   }
   updateToolbar();
@@ -1371,7 +1400,7 @@ function chapterTreeEl(ch) {
     const moves = [...path, entry];
     const line = { chapterKey: ch.key, color: p.color, moves };
     const i = moves.length - 1;
-    const cls = entry.user ? scoreClass(scoreOf(triesOf(line, i))) : practiced ? 'opp' : 'mv-side';
+    const cls = entry.user ? scoreClass(scoreOf(attemptsAt(line, i))) : practiced ? 'opp' : 'mv-side';
     const el = h('span', { class: 'smv ' + cls + glyphClass(entry), tabindex: '0' }, fig(entry.san));
     const show = () => showPreview(el, line, i);
     el.addEventListener('mouseenter', show); el.addEventListener('focus', show); el.addEventListener('click', show);
@@ -1398,7 +1427,7 @@ function chapterTreeEl(ch) {
       if (alts.length) {
         const key = ch.key + '|' + path.map(e => e.san).join(' ');
         const open = openBranches.has(key);
-        flow.append(h('button', { class: 'tree-toggle', 'aria-expanded': String(open),
+        flow.append(h('button', { class: 'tree-toggle', 'aria-openStudies': String(open),
           title: open ? 'Hide variations' : `Show ${plural(alts.length, 'variation')}`,
           onclick: () => { open ? openBranches.delete(key) : openBranches.add(key); renderStudies(); } }, open ? '−' : '+'), ' ');
         if (open) {
@@ -1414,7 +1443,7 @@ function chapterTreeEl(ch) {
       node = main; pos = res.pos; path = res.moves; lastRow = moveRow;
     }
     // The end of a practiced line: its saved Lichess evaluation.
-    const e = practiced && path.some(m => m.user) && !node.children.length ? evals[epdOf(fenOf(pos))] : null;
+    const e = practiced && path.some(m => m.user) && !node.children.length ? positions[epdOf(fenOf(pos))]?.eval : null;
     if (e && !e.none) lastRow.append(h('span', { class: 'eval', title: `Lichess cloud evaluation of the final position, depth ${e.depth}` }, formatEval(e)));
     if (!flow.childNodes.length) flow.remove();
   };
@@ -1484,10 +1513,10 @@ function updateToolbar() {
   const lines = selected.flatMap(practiceLines);
   const nLines = lines.length;
   $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · `
-    + (opponentMode === 'main'
+    + (settings.opponentMode === 'main'
         ? `${plural(nLines, 'main line')} of ${all_lines.length}`
         : plural(nLines, 'line'));
-  for (const r of document.querySelectorAll('input[name=opp-mode]')) r.checked = r.value === opponentMode;
+  for (const r of document.querySelectorAll('input[name=opp-mode]')) r.checked = r.value === settings.opponentMode;
   $('fav-set-btn').disabled = selection.size === 0;
   $('fav-recall-btn').disabled = !favorites || !favorites.length;
   // The top eye: a line through it while hidden studies are out of sight.
@@ -1495,7 +1524,7 @@ function updateToolbar() {
   sh.classList.toggle('off', !showHiddenStudies);
   sh.setAttribute('aria-pressed', String(showHiddenStudies));
   sh.title = showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies';
-  for (const r of document.querySelectorAll('input[name=start-mode]')) r.checked = r.value === startMode;
+  for (const r of document.querySelectorAll('input[name=start-mode]')) r.checked = r.value === settings.startMode;
   $('start-btn').disabled = nLines === 0;
 }
 
@@ -1527,8 +1556,8 @@ $('fav-recall-btn').addEventListener('click', () => {
 
 for (const r of document.querySelectorAll('input[name=opp-mode]')) {
   r.addEventListener('change', () => {
-    opponentMode = r.value;
-    store.set('opponentMode', opponentMode);
+    settings.opponentMode = r.value;
+    saveSettings();
     updateToolbar();
   });
 }
@@ -1536,9 +1565,9 @@ for (const r of document.querySelectorAll('input[name=opp-mode]')) {
 // Radio buttons: one is always chosen.
 for (const r of document.querySelectorAll('input[name=start-mode]')) {
   r.addEventListener('change', () => {
-    startMode = r.value;
-    store.set('startMode', startMode);
-    for (const other of document.querySelectorAll('input[name=start-mode]')) other.checked = other.value === startMode;
+    settings.startMode = r.value;
+    saveSettings();
+    for (const other of document.querySelectorAll('input[name=start-mode]')) other.checked = other.value === settings.startMode;
     updateToolbar(); // Test single positions leaves out lines with nothing from move 5 on
   });
 }
@@ -1549,7 +1578,7 @@ for (const r of document.querySelectorAll('input[name=start-mode]')) {
 const moveWeight = tries => { const s = scoreOf(tries); return s == null ? 3 : 1 + 4 * (1 - s); };
 
 // A line's weight is its weakest move's weight.
-const lineWeight = line => Math.max(...userIndexes(line).map(i => moveWeight(triesOf(line, i))));
+const lineWeight = line => Math.max(...userIndexes(line).map(i => moveWeight(attemptsAt(line, i))));
 
 function weightedPick(items, weight) {
   const total = items.reduce((s, x) => s + weight(x), 0);
@@ -1574,14 +1603,14 @@ const notLast = lines => {
 // isn't practiced there.
 const SINGLE_FROM_MOVE = 5;
 
-const practiceLines = ch => chapterLines(ch).filter(l => (opponentMode !== 'main' || l.main)
-  && (startMode !== 'single' || l.moves.some(m => m.user && m.moveNo >= SINGLE_FROM_MOVE)));
+const practiceLines = ch => chapterLines(ch).filter(l => (settings.opponentMode !== 'main' || l.main)
+  && (settings.startMode !== 'single' || l.moves.some(m => m.user && m.moveNo >= SINGLE_FROM_MOVE)));
 
 function replyPreference(san, nags, epd) {
-  if (opponentMode === 'equal') return 1;
-  if (opponentMode === 'mistakes') return nags.some(n => MISTAKE_NAGS.includes(n)) ? 4 : 1;
-  const stat = lichessStats[epd]; // common: games played (+1 so unknown moves still get a chance)
-  return gamesOf(stat, san) + 1;
+  if (settings.opponentMode === 'equal') return 1;
+  if (settings.opponentMode === 'mistakes') return nags.some(n => MISTAKE_NAGS.includes(n)) ? 4 : 1;
+  const stat = positions[epd]?.lichess; // common: games played (+1 so unknown moves still get a chance)
+  return gamesWith(stat, san) + 1;
 }
 
 function preferenceWeight(line) {
@@ -1595,7 +1624,7 @@ function preferenceWeight(line) {
   return w;
 }
 
-const usesMoveResults = () => !['common', 'mistakes', 'equal'].includes(opponentMode);
+const usesMoveResults = () => !['common', 'mistakes', 'equal'].includes(settings.opponentMode);
 
 function pickWeighted(lines) {
   return weightedPick(notLast(lines), usesMoveResults() ? lineWeight : preferenceWeight);
@@ -1695,7 +1724,7 @@ function choosePromotion(color) {
 
 // What decides which lines are practiced. If any of it changes, a line in progress is dropped.
 const practiceSignature = () => JSON.stringify({
-  selection: [...selection].sort(), opponentMode, startMode, fetchedAt: data?.fetchedAt,
+  selection: [...selection].sort(), opponentMode: settings.opponentMode, startMode: settings.startMode, fetchedAt: library?.fetchedAt,
 });
 
 function showPracticeIdle() {
@@ -1718,7 +1747,7 @@ function showPracticeIdle() {
   $('q-opening').textContent = '';
   $('q-chapter').classList.add('muted'); // the idle page's selection count
   $('q-chapter').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`;
-  $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${opponentMode}]`).closest('label').textContent.trim();
+  $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${settings.opponentMode}]`).closest('label').textContent.trim();
   $('q-moves').replaceChildren(h('span', { class: 'none' }, 'No moves yet.'));
   for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
   // Keep the idle page clean: no status text unless there's nothing to practice.
@@ -1752,7 +1781,7 @@ function startPractice() {
 function startLine(line) {
   const ch = chapterByKey(line.chapterKey);
   const p = parseChapter(ch);
-  q = { line, pos: p.start.clone(), idx: 0, tries: 0, missed: false, results: [], busy: false, lastMove: undefined, token: {}, shapes: [], view: null, startedAt: null, single: startMode === 'single' };
+  q = { line, pos: p.start.clone(), idx: 0, tries: 0, missed: false, results: [], busy: false, lastMove: undefined, token: {}, shapes: [], view: null, startedAt: null, single: settings.startMode === 'single' };
   q.sig = practiceSignature();
   // The board's orientation already shows the user's side.
   $('q-side').textContent = '';
@@ -1760,7 +1789,7 @@ function startLine(line) {
   $('next-btn').classList.add('hidden');
   $('practice-start-btn').classList.add('hidden');
   $('hint-btn').classList.remove('hidden');
-  $('end-btn').classList.toggle('hidden', startMode === 'single');
+  $('end-btn').classList.toggle('hidden', settings.startMode === 'single');
   hideNotePop();
   updateNames();
   setShapes([]);
@@ -1795,9 +1824,9 @@ function startLine(line) {
 // or 0 for the beginning. A partway start is one of the user's moves, never the first,
 // leaving at least two of the user's moves to play.
 function partwayStart(line) {
-  if (startMode === 'start') return 0;
+  if (settings.startMode === 'start') return 0;
   const userMoves = line.moves.map((m, i) => m.user ? i : -1).filter(i => i >= 0);
-  if (startMode === 'single') return singlePosition(line, userMoves.filter(i => line.moves[i].moveNo >= SINGLE_FROM_MOVE));
+  if (settings.startMode === 'single') return singlePosition(line, userMoves.filter(i => line.moves[i].moveNo >= SINGLE_FROM_MOVE));
   const candidates = userMoves.slice(1, -1);
   return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : 0;
 }
@@ -1814,7 +1843,7 @@ function singlePosition(line, userMoves) {
   const others = userMoves.filter(i => fens.get(i) !== lastPositionFen);
   const choices = others.length ? others : userMoves;
   const k = usesMoveResults()
-    ? weightedPick(choices, i => moveWeight(triesOf(line, i)))
+    ? weightedPick(choices, i => moveWeight(attemptsAt(line, i)))
     : choices[Math.floor(Math.random() * choices.length)];
   lastPositionFen = fens.get(k);
   return k;
@@ -1906,8 +1935,8 @@ async function onUserMove(orig, dest) {
 // "♕d3 is the #3 masters move but not your move"; otherwise, if Lichess games play it, "♕d3 is the
 // #4 Lichess move but not your move"; else "♕d3 is not your move". Only the masters move isn't red.
 function wrongMoveStatus(expected, played) {
-  if (isMasterMove(expected.epd, played)) return [`${fig(played)} is the #${rankOf(masters[expected.epd], played)} masters move but not your move`];
-  const stat = lichessStats[expected.epd];
+  if (isMasterMove(expected.epd, played)) return [`${fig(played)} is the #${rankOf(positions[expected.epd]?.masters, played)} masters move but not your move`];
+  const stat = positions[expected.epd]?.lichess;
   const r = stat && rankOf(stat, played);
   return [r ? `${fig(played)} is the #${r} Lichess move but not your move` : `${fig(played)} is not your move`, 'bad'];
 }
@@ -2001,8 +2030,9 @@ function endLine() {
   if (!q.endedAt && !q.startedAt) { // played all the way through, from move 1 to the end
     // The line's time is when its last move was attempted.
     const at = q.results[q.results.length - 1]?.at ?? Date.now();
-    plays[line.key] = [...(plays[line.key] || []), at].slice(-KEEP_TRIES);
-    savePlays();
+    const record = history.lines[line.key] ||= { played: [] };
+    record.played = [...record.played, at].slice(-KEEP_TRIES);
+    saveHistory();
   }
   q.done = true; // the move list gets hover boards
 
@@ -2176,7 +2206,7 @@ const SOUND_BASE = 'https://cdn.jsdelivr.net/gh/lichess-org/lila@b3f190be9d532d5
 const sounds = {};
 
 function playSound(name) {
-  if (!soundsOn) return;
+  if (!settings.sounds) return;
   const audio = sounds[name] ||= new Audio(SOUND_BASE + name + '.mp3');
   audio.currentTime = 0;
   audio.play().catch(() => {}); // e.g. blocked before any user interaction
@@ -2200,16 +2230,16 @@ function playLineMove(m) {
 }
 
 function setSounds(on) {
-  soundsOn = on;
-  store.set('soundsOn', soundsOn);
+  settings.sounds = on;
+  saveSettings();
   updateSoundControls();
-  if (soundsOn) playSound('Move'); // a quick sample
+  if (settings.sounds) playSound('Move'); // a quick sample
 }
 
 // The bell under the board shows whether sounds are on.
-const updateSoundControls = () => setToggle('sound-toggle', soundsOn, soundsOn ? 'Turn sounds off' : 'Turn sounds on');
+const updateSoundControls = () => setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
 
-$('sound-toggle').addEventListener('click', () => setSounds(!soundsOn));
+$('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 
 // ---------- Move preview (small board on hover) ----------
 // Your moves: the position before the move, a green arrow for the correct move and red arrows
@@ -2243,7 +2273,7 @@ function showPreview(el, line, i, thisTime = null) {
   // "Position reached 23k times": games reaching the position after the move, any move order.
   const after = pos.clone();
   after.play(parseUci(m.uci));
-  const countLine = h('div', { class: 'muted' }, reachedText(lichessStats[epdOf(fenOf(after))]));
+  const countLine = h('div', { class: 'muted' }, reachedText(positions[epdOf(fenOf(after))]?.lichess));
   // The practice move list: the move alone, its rank and share among all Lichess games and among
   // master games (each left out until downloaded), the position count, then how this attempt went.
   // The Studies page's move tree keeps the share on the top line, e.g. "2… Nc6 (Lichess games 62%)".
@@ -2255,14 +2285,14 @@ function showPreview(el, line, i, thisTime = null) {
   if (m.user && thisTime) {
     const r = thisTime.attempt;
     // Blue arrows for alternatives and masters moves (by default the cheaper mistakes).
-    shapes = answerArrows(pos, m, r ? countWrongs([{ s: r.seq }], m.san) : [],
+    shapes = answerArrows(pos, m, r ? countWrongs([{ tried: r.seq }], m.san) : [],
       x => ['alternative', 'masters'].includes(errorKind(m, x)) ? 'blue' : 'red');
     // Just the accuracy: the arrows already show the wrong moves played.
     const result = !r ? 'Not tested this time' : `${r.points * 10}% accuracy this time`;
     const errors = r ? r.seq.filter(x => x === 'hint' || x === 'show' || bareSan(x) !== bareSan(m.san)).map(x => errorLabel(m, x)) : [];
     text = [topLine, ...shareLines, countLine, h('div', {}, result), errors.length ? h('div', {}, 'Errors: ' + errors.join(', ')) : null];
   } else if (m.user) {
-    const tries = triesOf(line, i);
+    const tries = attemptsAt(line, i);
     const wrong = countWrongs(tries, m.san);
     shapes = answerArrows(pos, m, wrong);
     const avg = tries.length ? scoreOf(tries) * 10 : 0;
@@ -2333,7 +2363,7 @@ window.addEventListener('scroll', hidePreview, { passive: true });
 let downloadsRunning = false;
 
 async function startDownloads() {
-  if (downloadsRunning || !data) return;
+  if (downloadsRunning || !library) return;
   downloadsRunning = true;
   try {
     if (token) { await downloadExplorer('lichess'); await downloadExplorer('masters'); }
@@ -2374,7 +2404,7 @@ function studyPositions() {
   return out;
 }
 
-// After a download completes: suggest saving a backup (the data took a while).
+// After a download completes: suggest saving a backup (the library took a while).
 function suggestBackup(what) {
   const b = $('banner');
   b.className = 'banner';
@@ -2387,62 +2417,55 @@ function suggestBackup(what) {
 // For every position in the studies' lines, how often each move is played in all rated Lichess
 // games and in master games. Downloaded in the background, new positions only, and saved.
 
-// position (EPD) -> the Opening Explorer's answer exactly as Lichess sends it ({ white, draws,
-//   black, moves: [{ uci, san, averageRating, white, draws, black, … }], topGames, recentGames,
-//   opening }), except that moves beyond the 10 most played are dropped unless the studies play them
-//   there; plus v: 3 (format) and at (when downloaded). A position no game reaches (inferred without
-//   asking) is saved as { white: 0, draws: 0, black: 0, moves: [], opening: null, skipped: true, … }.
-// Older saves ({ total, moves: { san: games } }) are fetched again (treated as missing) but read until then.
-let lichessStats = {}; // saved (and backed up) under its older name, "popularity"
+// positions[epd].lichess and .masters: the Opening Explorer's answer exactly as Lichess sends it
+// ({ white, draws, black, moves: [{ uci, san, averageRating, white, draws, black, … }], opening, … }),
+// plus at (when it was downloaded). For Lichess games, moves beyond the 10 most played are dropped
+// unless the studies play them there; for Masters the full move list is kept (topGames isn't
+// requested). A position no game reaches (worked out without asking) is saved as
+// { white: 0, draws: 0, black: 0, moves: [], opening: null, skipped: true, at }.
+const totalGames = stats => stats.white + stats.draws + stats.black;
 
-const isCurrentStat = stat => stat?.v === 3;
-const totalOf = stat => stat.total ?? (stat.white + stat.draws + stat.black);
-
-// Games that played a move in a saved position (any format; + and # ignored when matching).
-function gamesOf(stat, s) {
-  if (!stat) return 0;
-  const want = bareSan(s);
-  if (Array.isArray(stat.moves)) { const m = stat.moves.find(x => bareSan(x.san) === want); return m ? m.white + m.draws + m.black : 0; }
-  const m = stat.moves[want];
-  return !m ? 0 : typeof m === 'number' ? m : m.white + m.draws + m.black;
+// Games that played a move in a position (+ and # ignored when matching).
+function gamesWith(stats, s) {
+  const m = stats?.moves.find(x => bareSan(x.san) === bareSan(s));
+  return m ? totalGames(m) : 0;
 }
 
-// The two Opening Explorer databases that are downloaded for every position in the studies: all
-// rated Lichess games (lichessStats) and Masters (over-the-board games, players 2200+ FIDE). Each
-// answer is saved as Lichess sends it; for Lichess games only the 10 most played moves plus the
-// studies' own moves are kept, for Masters the full move list (topGames isn't requested).
-let masters = {}; // position (EPD) -> the Masters answer, plus v: 1 and at
-
-const EXPLORER_DBS = {
+// The two Opening Explorer databases downloaded for every position in the studies: all rated
+// Lichess games and Masters (over-the-board games, players 2200+ FIDE).
+const EXPLORER_DATABASES = {
   lichess: {
     label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
-    get: () => lichessStats, key: 'popularity', status: 'lichess-status', info: 'opt-stats-info',
-    current: isCurrentStat,
-    keep: (j, e) => ({ ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() }),
-    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() }),
+    status: 'lichess-status', info: 'opt-stats-info',
+    keep: (answer, position) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(bareSan(m.san))), at: Date.now() }),
+    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, at: Date.now() }),
   },
   masters: {
     label: 'masters statistics', Label: 'Masters statistics', none: 'no master game reaches them',
     url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
-    get: () => masters, key: 'masters', status: 'masters-status', info: 'opt-masters-info',
-    current: s => s?.v === 1,
-    keep: j => ({ ...j, v: 1, at: Date.now() }),
-    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, v: 1, at: Date.now() }),
+    status: 'masters-status', info: 'opt-masters-info',
+    keep: answer => ({ ...answer, at: Date.now() }),
+    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, at: Date.now() }),
   },
 };
 
+// Saves one part of what Lichess says about a position ('lichess', 'masters' or 'eval').
+function setPositionData(epd, part, value) {
+  (positions[epd] ||= {})[part] = value;
+  savePositions([epd]);
+}
+
 const explorerRuns = { lichess: null, masters: null };
-const saveExplorer = kind => saveCache(EXPLORER_DBS[kind].key, EXPLORER_DBS[kind].get());
 
 function setExplorerStatus(kind, text) {
-  const el = $(EXPLORER_DBS[kind].status);
+  const el = $(EXPLORER_DATABASES[kind].status);
   el.textContent = text;
   el.classList.toggle('hidden', !text);
 }
 
 async function downloadExplorer(kind) {
-  if (!token || !data) return;
+  if (!token || !library) return;
   const run = explorerRuns[kind] = {};
   try { await downloadExplorerPositions(kind, run); }
   finally {
@@ -2452,13 +2475,14 @@ async function downloadExplorer(kind) {
 }
 
 async function downloadExplorerPositions(kind, run) {
-  const db = EXPLORER_DBS[kind], store = db.get();
+  const db = EXPLORER_DATABASES[kind];
+  const saved = epd => positions[epd]?.[kind];
   const status = text => setExplorerStatus(kind, text);
   // The same order whatever is ticked: branch points (the opponent has several replies), then the
   // rest of the chapters' main lines, then everything else; by move number within each group, so a
   // position's parents are usually known before it's reached.
   const tier = e => e.branch ? 0 : e.main ? 1 : 2;
-  const todo = [...studyPositions()].filter(([epd]) => !db.current(store[epd])) // older saves are fetched again
+  const todo = [...studyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   const total = todo.length;
   if (!total) return; // nothing missing: nothing to say
@@ -2469,8 +2493,8 @@ async function downloadExplorerPositions(kind, run) {
     const [epd, e] = todo[i];
     // Skip positions nobody reaches: every known way here is a move no game in this database played.
     // (A different move order could still reach it, so this is a close approximation.)
-    if (e.parents.length && e.parents.every(pp => db.current(store[pp.epd]) && !(gamesOf(store[pp.epd], pp.san) > 0))) {
-      store[epd] = db.empty();
+    if (e.parents.length && e.parents.every(pp => saved(pp.epd) && !(gamesWith(saved(pp.epd), pp.san) > 0))) {
+      setPositionData(epd, kind, db.empty());
       skipped++;
       i++;
       continue;
@@ -2479,31 +2503,26 @@ async function downloadExplorerPositions(kind, run) {
     try {
       res = await fetch(db.url(e.fen), { headers: { Authorization: 'Bearer ' + token } });
     } catch {
-      await saveExplorer(kind);
       status(`Couldn't reach the Lichess explorer. ${db.Label} stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
       return;
     }
     if (res.status === 429) {
       // Lichess asks clients to wait a minute after a rate-limit response.
-      await saveExplorer(kind);
       status(`Downloading ${db.label}: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
       await sleep(61000);
       continue;
     }
     if (res.status === 401) {
-      await saveExplorer(kind);
       status(`Lichess rejected the token for ${db.label}. Replace it on the Options page; the download then continues.`);
       return;
     }
     if (res.ok) {
-      store[epd] = db.keep(await res.json(), e);
-      if (i % 20 === 19) await saveExplorer(kind);
+      setPositionData(epd, kind, db.keep(await res.json(), e));
     }
     i++;
     status(`Downloading ${db.label}: ${i} of ${total} positions`);
     if (screen === 'options') updateStatsInfo();
   }
-  await saveExplorer(kind);
   if (explorerRuns[kind] !== run) return;
   status(`${db.Label} downloaded for ${plural(total, 'position')}` + (skipped ? ` (${skipped} skipped because ${db.none}).` : '.'));
   setTimeout(() => { if (!explorerRuns[kind]) status(''); }, 5000); // unless a newer download is running
@@ -2512,21 +2531,21 @@ async function downloadExplorerPositions(kind, run) {
 
 // The Options page's "Move statistics: N of M positions downloaded" and "Masters statistics: …" lines.
 function updateStatsInfo() {
-  const positions = data ? [...studyPositions().keys()] : [];
+  const studied = library ? [...studyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
-    const db = EXPLORER_DBS[kind], el = $(db.info);
-    if (!data) { el.textContent = ''; continue; }
-    const done = positions.filter(epd => db.current(db.get()[epd])).length;
-    el.textContent = `${db.Label}: ${done} of ${plural(positions.length, 'position')} downloaded`
-      + (explorerRuns[kind] && done < positions.length ? ' (downloading now…)' : '')
-      + (!explorerRuns[kind] && done < positions.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
+    const db = EXPLORER_DATABASES[kind], el = $(db.info);
+    if (!library) { el.textContent = ''; continue; }
+    const done = studied.filter(epd => positions[epd]?.[kind]).length;
+    el.textContent = `${db.Label}: ${done} of ${plural(studied.length, 'position')} downloaded`
+      + (explorerRuns[kind] && done < studied.length ? ' (downloading now…)' : '')
+      + (!explorerRuns[kind] && done < studied.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
   }
 }
 
 // "Position reached 23k times" / "<1k" / "1.2M" / "…" (not downloaded yet) / "Position never reached".
 function reachedText(stat) {
   if (!stat) return 'Position reached … times';
-  const n = totalOf(stat);
+  const n = totalGames(stat);
   if (!n) return 'Position never reached';
   if (n < 1000) return 'Position reached <1k times';
   const k = Math.round(n / 1000);
@@ -2536,10 +2555,10 @@ function reachedText(stat) {
 // A move's share of the Lichess games in a position: "45%", "<1%", "0%", "no games", or "–" when
 // that position's statistics haven't been downloaded yet.
 function moveShare(pos, moveSan) {
-  const stat = lichessStats[epdOf(fenOf(pos))];
+  const stat = positions[epdOf(fenOf(pos))]?.lichess;
   if (!stat) return '–';
-  if (!totalOf(stat)) return 'no games';
-  const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
+  if (!totalGames(stat)) return 'no games';
+  const share = gamesWith(stat, moveSan) / totalGames(stat) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
 
@@ -2547,18 +2566,17 @@ function moveShare(pos, moveSan) {
 // statistics haven't been downloaded yet, '' when no game reaches the position.
 function shareOf(stat, moveSan) {
   if (!stat) return null;
-  if (!totalOf(stat)) return '';
-  const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
+  if (!totalGames(stat)) return '';
+  const share = gamesWith(stat, moveSan) / totalGames(stat) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
 // A move's popularity rank in a position: 1 for the most played; moves played equally often share a
 // rank. null when no game played it. (Lichess games keep the 10 most played moves plus the studies'
 // own, so the ranks are exact.)
 function rankOf(stat, moveSan) {
-  const n = gamesOf(stat, moveSan);
+  const n = gamesWith(stat, moveSan);
   if (!n) return null;
-  const counts = Array.isArray(stat.moves) ? stat.moves.map(m => m.white + m.draws + m.black)
-    : Object.values(stat.moves).map(m => typeof m === 'number' ? m : m.white + m.draws + m.black);
+  const counts = stat.moves.map(totalGames);
   return 1 + counts.filter(c => c > n).length;
 }
 // The practice pop-up board's share lines, e.g. "#2 overall move (27%)" and "#1 masters move (90%)";
@@ -2570,11 +2588,11 @@ function shareText(stat, moveSan, who, none) {
   return r ? `#${r} ${who} move (${s})` : none;
 }
 function lichessShareText(pos, moveSan) {
-  return shareText(lichessStats[epdOf(fenOf(pos))], moveSan, 'overall', 'Not played overall');
+  return shareText(positions[epdOf(fenOf(pos))]?.lichess, moveSan, 'overall', 'Not played overall');
 }
 function mastersShareText(pos, moveSan) {
-  const stat = masters[epdOf(fenOf(pos))];
-  return stat && !totalOf(stat) ? 'Not in master games' : shareText(stat, moveSan, 'masters', 'Not played by masters');
+  const stat = positions[epdOf(fenOf(pos))]?.masters;
+  return stat && !totalGames(stat) ? 'Not in master games' : shareText(stat, moveSan, 'masters', 'Not played by masters');
 }
 
 // ---------- Position evaluation (Lichess cloud) ----------
@@ -2585,7 +2603,7 @@ function mastersShareText(pos, moveSan) {
 // so requests are cheap; they're still spaced out, and slowed down if Lichess asks.
 
 const EVAL_INTERVAL = 3000; // one request every 3 seconds
-let evals = {};              // position (EPD) -> { cp } or { mate }, with depth; or { none: true }
+// positions[epd].eval: { cp } or { mate }, with depth; or { none: true } when Lichess's cloud has none.
 let evalRun = null;          // the download in progress, if any
 
 // The final position of a line, as a FEN (cached on the line).
@@ -2612,14 +2630,12 @@ async function fetchEval(fen) {
   try { res = await fetch(`${LICHESS}/api/cloud-eval?fen=${encodeURIComponent(fen)}`); }
   catch { return null; } // no connection
   if (res.status === 429) return 61000; // Lichess asks clients to wait a minute
-  if (res.status === 404) evals[epd] = { none: true };
+  if (res.status === 404) setPositionData(epd, 'eval', { none: true });
   else if (res.ok) {
     const j = await res.json();
     const pv = j.pvs && j.pvs[0];
-    if (pv) evals[epd] = pv.mate != null ? { mate: pv.mate, depth: j.depth } : { cp: pv.cp, depth: j.depth };
-    else evals[epd] = { none: true };
+    setPositionData(epd, 'eval', !pv ? { none: true } : pv.mate != null ? { mate: pv.mate, depth: j.depth } : { cp: pv.cp, depth: j.depth });
   } else return 60000;
-  await saveCache('evals', evals);
   if (screen === 'options') updateEvalInfo();
   return EVAL_INTERVAL;
 }
@@ -2632,7 +2648,7 @@ function missingEvals() {
   for (const ch of [...chapters.filter(c => selection.has(c.key)), ...chapters.filter(c => !selection.has(c.key))]) {
     for (const line of chapterLines(ch)) {
       const f = finalFen(line), epd = epdOf(f);
-      if (!evals[epd] && !seen.has(epd)) { seen.add(epd); out.push(f); }
+      if (!positions[epd]?.eval && !seen.has(epd)) { seen.add(epd); out.push(f); }
     }
   }
   return out;
@@ -2645,7 +2661,7 @@ function setEvalStatus(text) {
 
 // Every line end without a saved evaluation, one at a time (in the background; see startDownloads).
 async function downloadEvals() {
-  if (evalRun || !data) return;
+  if (evalRun || !library) return;
   const run = evalRun = {};
   const todo = missingEvals();
   let done = 0, none = 0;
@@ -2661,7 +2677,7 @@ async function downloadEvals() {
         await sleep(wait);
         continue;
       }
-      if (evals[epdOf(todo[i])]?.none) none++; else done++;
+      if (positions[epdOf(todo[i])]?.eval?.none) none++; else done++;
       i++;
       if (i < todo.length) await sleep(EVAL_INTERVAL);
     }
@@ -2679,16 +2695,16 @@ const minutes = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return plu
 // line's final position, fetched straight away if it isn't saved yet ("…" meanwhile). Nothing is
 // shown if Lichess has no evaluation or can't be reached.
 function evalStatus(fen) {
-  if (evals[epdOf(fen)]?.none) return null;
+  if (positions[epdOf(fen)]?.eval?.none) return null;
   const num = h('b', { class: 'eval-num' });
   const el = h('span', {}, ' Evaluation ', num);
   const fill = () => {
-    const e = evals[epdOf(fen)];
+    const e = positions[epdOf(fen)]?.eval;
     if (!e || e.none) { el.remove(); return; }
     num.textContent = formatEval(e);
     el.title = `Lichess cloud evaluation of the final position, depth ${e.depth}`;
   };
-  if (evals[epdOf(fen)]) fill();
+  if (positions[epdOf(fen)]?.eval) fill();
   else {
     num.textContent = '…';
     el.title = 'Getting the Lichess evaluation…';
@@ -2699,10 +2715,10 @@ function evalStatus(fen) {
 
 // The Options page's "Evaluations saved: …" line.
 function updateEvalInfo() {
-  if (!data) { $('opt-eval-info').textContent = ''; return; }
+  if (!library) { $('opt-eval-info').textContent = ''; return; }
   const epds = new Set(allChapters().flatMap(ch => chapterLines(ch).map(l => epdOf(finalFen(l)))));
   let saved = 0, none = 0;
-  for (const epd of epds) { if (evals[epd]?.none) none++; else if (evals[epd]) saved++; }
+  for (const epd of epds) { if (positions[epd]?.eval?.none) none++; else if (positions[epd]?.eval) saved++; }
   const left = epds.size - saved - none;
   $('opt-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
     + (none ? `, ${none} not in Lichess's cloud` : '')
@@ -2721,8 +2737,8 @@ const shortCount = n => n < 1000 ? String(n) : n < 1e6 ? Math.round(n / 1000) + 
 
 function showWeaknesses() {
   showScreen('weaknesses');
-  $('weak-count').value = String(weakCount);
-  $('weak-max').value = String(weakMax);
+  $('weak-count').value = String(settings.weaknessCount);
+  $('weak-max').value = String(settings.weaknessMaxAccuracy);
   renderWeaknesses();
 }
 
@@ -2732,15 +2748,15 @@ function renderWeaknesses() {
   for (const ch of visibleChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) {
     const key = posKey(line, i);
     if (found.has(key)) continue;
-    const tries = triesOf(line, i);
+    const tries = attemptsAt(line, i);
     if (!tries.length) continue;
     const score = scoreOf(tries);
-    if (pct(score) > weakMax) continue;
-    const stat = lichessStats[line.moves[i].epd];
+    if (pct(score) > settings.weaknessMaxAccuracy) continue;
+    const stat = positions[line.moves[i].epd]?.lichess;
     if (!stat) { waiting++; continue; }
-    found.set(key, { line, i, score, games: totalOf(stat) });
+    found.set(key, { line, i, score, games: totalGames(stat) });
   }
-  const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, weakCount);
+  const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.weaknessCount);
   $('weak-rows').replaceChildren(...rows.map(({ line, i, score, games }) => {
     const ch = chapterByKey(line.chapterKey);
     const tr = h('tr', {},
@@ -2755,7 +2771,7 @@ function renderWeaknesses() {
   $('weak-note').textContent = rows.length
     ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
     : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : `No positions you've tried have accuracy ${weakMax}% or lower.`;
+    : `No positions you've tried have accuracy ${settings.weaknessMaxAccuracy}% or lower.`;
 }
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
@@ -2769,10 +2785,10 @@ function renderWeaknesses() {
 const NAME_TAIL_PLIES = 6;
 function positionName(line, i) {
   const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
-  let name = lichessStats[epdOf(fenOf(pos))]?.opening?.name, since = 0; // since: the first move after it
+  let name = positions[epdOf(fenOf(pos))]?.lichess?.opening?.name, since = 0; // since: the first move after it
   line.moves.slice(0, i).forEach((m, k) => {
     pos.play(parseUci(m.uci));
-    const n = lichessStats[epdOf(fenOf(pos))]?.opening?.name;
+    const n = positions[epdOf(fenOf(pos))]?.lichess?.opening?.name;
     if (n) { name = n; since = k + 1; }
   });
   since = Math.min(since, Math.max(0, i - 1)); // always list at least the last move played
@@ -2782,8 +2798,8 @@ function positionName(line, i) {
   return [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ') || 'Starting position';
 }
 
-$('weak-count').addEventListener('change', e => { weakCount = +e.target.value; store.set('weakCount', weakCount); renderWeaknesses(); });
-$('weak-max').addEventListener('change', e => { weakMax = +e.target.value; store.set('weakMax', weakMax); renderWeaknesses(); });
+$('weak-count').addEventListener('change', e => { settings.weaknessCount = +e.target.value; saveSettings(); renderWeaknesses(); });
+$('weak-max').addEventListener('change', e => { settings.weaknessMaxAccuracy = +e.target.value; saveSettings(); renderWeaknesses(); });
 
 // ---------- Options page and token ----------
 
@@ -2804,26 +2820,26 @@ function formatWithZone(ts) {
 for (const sel of document.querySelectorAll('.pen-select')) {
   for (let pts = 0; pts <= 10; pts++) sel.append(h('option', { value: String(pts) }, `${pts * 10}%`));
   sel.addEventListener('change', () => {
-    penalties = { ...penalties, [sel.id.slice(4)]: +sel.value };
-    store.set('penalties', penalties);
-    rescoreAll(); // past attempts are scored again with the new penalties
+    settings.penalties = { ...settings.penalties, [sel.id.slice(4)]: +sel.value };
+    saveSettings();
+    rescoreHistory(); // past attempts are scored again with the new penalties
   });
 }
 $('masters-top').addEventListener('change', e => {
-  mastersTop = +e.target.value;
-  store.set('mastersTop', mastersTop);
-  rescoreAll();
+  settings.mastersTop = +e.target.value;
+  saveSettings();
+  rescoreHistory();
 });
 function renderPenalties() {
-  for (const k of Object.keys(DEFAULT_PENALTIES)) $('pen-' + k).value = String(penalties[k]);
-  $('masters-top').value = String(mastersTop);
+  for (const k of Object.keys(DEFAULT_SETTINGS.penalties)) $('pen-' + k).value = String(settings.penalties[k]);
+  $('masters-top').value = String(settings.mastersTop);
 }
 
 function renderOptions() {
   renderPenalties();
   const nChapters = allChapters().length;
-  $('opt-fetch-info').textContent = data
-    ? `${data.username} · ${plural(data.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(data.fetchedAt)}`
+  $('opt-fetch-info').textContent = library
+    ? `${library.username} · ${plural(library.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(library.fetchedAt)}`
     : 'No studies fetched yet.';
   updateSoundControls();
   updateStatsInfo();
@@ -2848,7 +2864,7 @@ $('opt-token-form').addEventListener('submit', async e => {
   if (await acceptToken($('opt-token-input').value, $('opt-token-error'))) {
     $('opt-token-input').value = '';
     renderOptions();
-    if (!data) fetchStudies();
+    if (!library) fetchStudies();
     else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
   }
 });
@@ -2863,16 +2879,15 @@ $('token-clear-btn').addEventListener('click', () => {
 // ---------- Backup ----------
 
 const BACKUP_APP = 'chess-opening-trainer';
+const BACKUP_VERSION = 4; // backups from earlier versions can't be restored
 
 $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
-    app: BACKUP_APP, version: 3, exportedAt: new Date().toISOString(),
-    stats, plays, lastTried, selection: [...selection], hiddenStudies: [...hiddenStudies],
-    // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
-    lichess: { popularity: lichessStats, evals, masters },
-    favorites,
-    settings: { startMode, soundsOn, opponentMode, weakCount, weakMax, penalties, mastersTop },
+    app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
+    settings, selection: [...selection], favorites, hiddenStudies: [...hiddenStudies],
+    history,
+    positions, // what Lichess says about each position: it takes a long time to download, so it's included
   };
   const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2901,99 +2916,46 @@ $('backup-btn').addEventListener('click', async () => {
 
 $('restore-btn').addEventListener('click', () => $('restore-file').click());
 
-// Restoring a backup from an older version: stats kept per line ({ line key: { move index: results } },
-// including lines shortened by the old "to move" depth limits) become per position: each line's
-// record for a move joins that position's record, keeping the most recent 10. Per-line stats
-// with only plays and misses can't be converted and are dropped.
-// A saved attempt: { s: what the user did, in order (moves as SAN, "hint", "show"), p: points 0–10 };
-// older saves hold 1 (right) or the list of wrong moves.
-const validResults = a => Array.isArray(a) && a.every(r => r === 1
-  || (Array.isArray(r) && r.every(s => typeof s === 'string'))
-  || (r && typeof r === 'object' && Array.isArray(r.s) && r.s.every(s => typeof s === 'string') && Number.isFinite(r.p)));
-
-const isOldStats = v => !!v && typeof v === 'object' && 'plays' in v;
-
-function convertStats(obj) {
-  const out = {};
-  const add = (key, results) => { out[key] = [...(out[key] || []), ...results].slice(-KEEP_TRIES); };
-  for (const [k, v] of Object.entries(obj || {})) {
-    if (Array.isArray(v)) { if (validResults(v)) add(k, v); continue; }
-    if (!v || typeof v !== 'object' || isOldStats(v)) continue;
-    const bar = k.indexOf('|');
-    if (bar < 0) continue;
-    const sans = k.slice(bar + 1).split(' ');
-    for (const [i, results] of Object.entries(v)) {
-      if (/^\d+$/.test(i) && validResults(results)) add(k.slice(0, bar + 1) + sans.slice(0, +i + 1).join(' '), results);
-    }
-  }
-  return out;
-}
-
 $('restore-file').addEventListener('change', async e => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
   let b;
   try { b = JSON.parse(await file.text()); } catch { b = null; }
-  if (!b || b.app !== BACKUP_APP || typeof b.stats !== 'object') {
+  if (!b || b.app !== BACKUP_APP) {
     showBanner("That file isn't an Opening Trainer backup.", true);
     return;
   }
-  // Older backups' per-line move results are converted to positions; stats with only plays and
-  // misses per line can't be used.
-  const restored = convertStats(b.stats);
-  const oldFormat = Object.values(b.stats).some(isOldStats);
-  const n = Object.keys(restored).length;
+  if (b.version !== BACKUP_VERSION || !validHistory(b.history)) {
+    showBanner('That backup was made by an earlier version of the app and can\'t be restored. Save a new backup from this version instead.', true);
+    return;
+  }
+  const n = Object.keys(b.history.moves).length;
   const when = b.exportedAt ? ` from ${new Date(b.exportedAt).toLocaleString()}` : '';
-  if (!confirm(`Are you sure? This replaces your current stats and settings with the backup${when} (${plural(n, 'position')} with results). It can't be undone.`)) return;
+  if (!confirm(`Are you sure? This replaces your current history and settings with the backup${when} (${plural(n, 'move')} with results). It can't be undone.`)) return;
 
-  stats = restored;
-  if (b.lastTried && typeof b.lastTried === 'object') {
-    lastTried = Object.fromEntries(Object.entries(b.lastTried).filter(([, v]) => Number.isFinite(v)));
-    saveLastTried();
+  history = b.history;
+  settings = checkedSettings(b.settings);
+  const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
+  selection = new Set(strings(b.selection));
+  favorites = Array.isArray(b.favorites) ? strings(b.favorites) : null;
+  hiddenStudies = new Set(strings(b.hiddenStudies));
+  // What Lichess says about each position is merged, not replaced: each part keeps whichever copy
+  // is newer, so downloads made since the backup aren't lost.
+  for (const [epd, saved] of Object.entries(b.positions && typeof b.positions === 'object' ? b.positions : {})) {
+    if (!saved || typeof saved !== 'object') continue;
+    const current = positions[epd] ||= {};
+    for (const part of ['lichess', 'masters']) {
+      if (saved[part] && (!current[part] || (saved[part].at || 0) > (current[part].at || 0))) current[part] = saved[part];
+    }
+    if (saved.eval && !current.eval) current.eval = saved.eval;
   }
-  if (b.plays && typeof b.plays === 'object') {
-    plays = Object.fromEntries(Object.entries(b.plays).filter(([, v]) => Array.isArray(v) && v.every(Number.isFinite)));
-    savePlays();
-  }
-  selection = new Set(Array.isArray(b.selection) ? b.selection.filter(k => typeof k === 'string') : []);
-  // Lichess data is merged, not replaced: a position keeps whichever copy is newer (a newer-format
-  // move statistic wins over an older one), so downloads made since the backup aren't lost.
-  const lich = b.lichess && typeof b.lichess === 'object' ? b.lichess : {};
-  for (const [epd, s] of Object.entries(lich.popularity || {})) {
-    if (!s || typeof s !== 'object' || typeof s.moves !== 'object') continue;
-    const cur = lichessStats[epd];
-    const newer = !cur || (isCurrentStat(s) && !isCurrentStat(cur)) || (isCurrentStat(s) === isCurrentStat(cur) && (s.at || 0) > (cur.at || 0));
-    if (newer) lichessStats[epd] = s;
-  }
-  for (const [epd, ev] of Object.entries(lich.evals || {})) if (ev && typeof ev === 'object' && !evals[epd]) evals[epd] = ev;
-  for (const [epd, s] of Object.entries(lich.masters || {})) {
-    if (!s || typeof s !== 'object' || !Array.isArray(s.moves)) continue;
-    if (!masters[epd] || (s.at || 0) > (masters[epd].at || 0)) masters[epd] = s;
-  }
-  if (lich.popularity || lich.evals || lich.masters) {
-    await saveCache('popularity', lichessStats); await saveCache('evals', evals); await saveCache('masters', masters);
-  }
-  if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
-  const st = b.settings || {};
-  if (typeof st.soundsOn === 'boolean') soundsOn = st.soundsOn;
-  if (validPenalties(st.penalties)) { penalties = { ...st.penalties }; store.set('penalties', penalties); }
-  if (MASTERS_TOPS.includes(st.mastersTop)) { mastersTop = st.mastersTop; store.set('mastersTop', mastersTop); }
-  if (WEAK_COUNTS.includes(st.weakCount)) { weakCount = st.weakCount; store.set('weakCount', weakCount); }
-  if (WEAK_MAXES.includes(st.weakMax)) { weakMax = st.weakMax; store.set('weakMax', weakMax); }
-  if (st.startMode) startMode = START_MODES.includes(st.startMode) ? st.startMode : 'start';
-  if (OPP_MODES.includes(st.opponentMode)) opponentMode = st.opponentMode;
-  else if (typeof st.mainOnly === 'boolean') opponentMode = st.mainOnly ? 'main' : 'misses'; // older backups
-  if (Array.isArray(b.favorites)) { favorites = b.favorites.filter(k => typeof k === 'string'); store.set('favorites', favorites); }
-  saveStats(); saveSelection();
-  rescoreAll(); // restored attempts scored with the current rules and data
+  await savePositions();
+  saveHistory(); saveSettings(); saveSelection(); saveHidden(); store.set('favorites', favorites);
+  rescoreHistory(); // restored attempts scored with the current rules and data
   updateSoundControls();
-  store.set('soundsOn', soundsOn); store.set('startMode', startMode);
-  store.set('opponentMode', opponentMode);
-  lineCache.clear();
   renderOptions();
-  showBanner(`Restored stats for ${plural(n, 'position')} and your settings from the backup.`
-    + (oldFormat ? ' Its older per-line stats (which don\'t say which move was missed) were left out.' : ''));
+  showBanner(`Restored your history for ${plural(n, 'move')} and your settings from the backup.`);
 });
 
 // ---------- Navigation ----------
@@ -3002,7 +2964,7 @@ $('restore-file').addEventListener('change', async e => {
 // nothing is tested until that's pressed.
 $('nav-practice').addEventListener('click', () => {
   if (screen === 'practice') return; // already on the practice page
-  if (!data) { $('nav-studies').click(); return; }
+  if (!library) { $('nav-studies').click(); return; }
   hideBanner();
   if (q && q.sig === practiceSignature()) { // back to the line in progress (or its summary), exactly as it was
     showScreen('practice');
@@ -3017,7 +2979,7 @@ $('nav-practice').addEventListener('click', () => {
 // A line in progress is kept; Practice returns to it if nothing that affects it changed.
 $('nav-studies').addEventListener('click', () => {
   hideBanner();
-  if (data) showStudies();
+  if (library) showStudies();
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); }
   else showScreen('token');
 });
@@ -3026,7 +2988,7 @@ $('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); 
 
 // Weaknesses: needs studies (else the Studies page, as Practice does). A line in progress is kept.
 $('nav-weaknesses').addEventListener('click', () => {
-  if (!data) { $('nav-studies').click(); return; }
+  if (!library) { $('nav-studies').click(); return; }
   hideBanner();
   showWeaknesses();
 });
@@ -3040,19 +3002,66 @@ $('nav-help').addEventListener('click', () => {
 // ---------- Start ----------
 
 async function init() {
-  updateSoundControls(); // the bell shows the saved setting
   try {
-    data = (await cache.get('studies')) || null;
-    lichessStats = (await cache.get('popularity')) || {};
-    masters = (await cache.get('masters')) || {};
-    evals = (await cache.get('evals')) || {};
+    await convertOldStorage();
+    library = await loadLibrary();
+    positions = await loadPositions();
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
-  rescoreAll(); // attempts scored again with the current rules and data
+  updateSoundControls(); // the bell shows the saved setting
+  rescoreHistory(); // attempts scored again with the current rules and data
   // Open on the Practice page, waiting for "Start practice", and resume any missing Lichess downloads.
-  if (data) { showPracticeIdle(); startDownloads(); }
+  if (library) { showPracticeIdle(); startDownloads(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
+}
+
+// TEMPORARY: converts what an earlier version of the app stored (before 30 September 2026) to the
+// current format, once. To be removed after it has run in the user's browser.
+async function convertOldStorage() {
+  // IndexedDB: the old "kv" store held the studies and three collections keyed by position:
+  // "popularity" (Lichess games), "masters" and "evals".
+  const db = await openDatabase();
+  if (db.objectStoreNames.contains('kv')) {
+    const requests = await inDatabase('kv', 'readonly', s => ['studies', 'popularity', 'masters', 'evals'].map(k => s.get(k)));
+    const [studies, lichessGames, masterGames, evaluations] = requests.map(r => r.result);
+    if (studies || lichessGames || masterGames || evaluations) {
+      if (studies) { library = studies; await saveLibrary(); }
+      positions = await loadPositions();
+      const at = epd => positions[epd] ||= {};
+      const withoutVersion = ({ v, ...rest }) => rest;
+      for (const [epd, x] of Object.entries(lichessGames || {})) if (x?.v === 3) at(epd).lichess = withoutVersion(x);
+      for (const [epd, x] of Object.entries(masterGames || {})) if (x?.v === 1) at(epd).masters = withoutVersion(x);
+      for (const [epd, x] of Object.entries(evaluations || {})) if (x && typeof x === 'object') at(epd).eval = x;
+      await savePositions();
+      await inDatabase('kv', 'readwrite', s => s.clear());
+    }
+  }
+  // localStorage: "stats" (attempts, as { s, p }), "lastTried" and "plays" become the history.
+  const oldStats = store.get('stats');
+  if (oldStats && typeof oldStats === 'object') {
+    const lastTried = store.get('lastTried', {}), plays = store.get('plays', {});
+    history = emptyHistory();
+    for (const [key, attempts] of Object.entries(oldStats)) {
+      if (!Array.isArray(attempts)) continue;
+      const correct = key.slice(key.indexOf('|') + 1).split(' ').pop();
+      history.moves[key] = { attempts: attempts.map(a => a && Array.isArray(a.s) ? { tried: a.s, points: a.p }
+        : a === 1 ? { tried: [correct], points: 10 } : { tried: [...(Array.isArray(a) && a.length ? a : ['hint']), correct], points: 0 }) };
+      if (Number.isFinite(lastTried[key])) history.moves[key].lastTried = lastTried[key];
+    }
+    for (const [key, times] of Object.entries(plays || {})) if (Array.isArray(times)) history.lines[key] = { played: times };
+    saveHistory();
+    // The settings were stored one by one.
+    settings = checkedSettings({
+      startMode: store.get('startMode'), opponentMode: store.get('opponentMode'), sounds: store.get('soundsOn'),
+      penalties: store.get('penalties'), mastersTop: store.get('mastersTop'),
+      weaknessCount: store.get('weakCount'), weaknessMaxAccuracy: store.get('weakMax'),
+    });
+    saveSettings();
+  }
+  // Everything else the earlier versions stored is removed.
+  const current = new Set(['token', 'settings', 'selection', 'favorites', 'hiddenStudies', 'history']);
+  try { for (const k of Object.keys(localStorage)) if (k.startsWith('cot.') && !current.has(k.slice(4))) localStorage.removeItem(k); } catch {}
 }
 
 init();
