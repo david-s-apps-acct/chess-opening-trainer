@@ -106,6 +106,17 @@
   .cards .card { max-width: 640px; }
   .cards p { margin: 4px 0; }
 
+  /* Weaknesses page */
+  .cards .weak-card { max-width: 760px; }
+  .weak-card h2 select { flex: none; width: auto; padding: 2px 6px; font-size: 16px; font-weight: 600; margin: 0 2px; }
+  .weak-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+  .weak-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  .weak-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .weak-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .weak-table tbody tr { cursor: default; }
+  .weak-table tbody tr:hover { background: var(--surface-2); }
+  .weak-chapter { font-size: 12px; margin-left: 6px; }
+
   /* Studies page */
   .toolbar {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -260,6 +271,7 @@
   <nav>
     <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
+    <button id="nav-weaknesses">Weaknesses</button>
     <button id="nav-system">System</button>
     <button id="nav-help">Help</button>
   </nav>
@@ -367,6 +379,25 @@
   </section>
 
   <!-- Help -->
+  <section id="weaknesses-screen" class="hidden">
+    <div class="cards">
+      <div class="card weak-card">
+        <h2>Common <select id="weak-count" aria-label="How many positions">
+            <option>25</option><option>50</option><option>75</option><option>100</option>
+          </select> positions with accuracy <select id="weak-max" aria-label="Highest accuracy">
+            <option value="90">90%</option><option value="80">80%</option><option value="70">70%</option>
+            <option value="60">60%</option><option value="50">50%</option><option value="40">40%</option>
+            <option value="30">30%</option><option value="20">20%</option><option value="10">10%</option>
+          </select> or lower</h2>
+        <table class="weak-table">
+          <thead><tr><th>Position</th><th class="num">Lichess games</th><th class="num">Accuracy</th></tr></thead>
+          <tbody id="weak-rows"></tbody>
+        </table>
+        <p id="weak-note" class="muted"></p>
+      </div>
+    </div>
+  </section>
+
   <section id="help-screen" class="hidden">
     <div class="cards help">
       <div class="card">
@@ -466,6 +497,16 @@
             <li>Statistics live only in this browser. Use a backup (System page) to keep them safe or move them.</li>
           </ul>
         </details>
+      </div>
+
+      <div class="card">
+        <h2>Weaknesses</h2>
+        <ul>
+          <li>The <b>Weaknesses</b> page lists your most common weak positions: "Common 25 positions with accuracy 70% or lower". Choose how many (25, 50, 75 or 100) and the accuracy (90% down to 10%) in the title.</li>
+          <li>Each row is one of your moves: the position's opening name and the move you have to find (e.g. "Italian Game: Giuoco Piano, your move 4", with the chapter in grey), how many rated Lichess games reach that position, and your accuracy there (its score over the last 10 tries). The most common positions come first.</li>
+          <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
+          <li>Hover over a row to see the small board, with the correct move and the wrong moves you've played.</li>
+        </ul>
       </div>
 
       <div class="card">
@@ -637,6 +678,9 @@ let soundsOn = store.get('soundsOn', false);
 const START_MODES = ['start', 'partway', 'single'];
 let startMode = START_MODES.includes(store.get('startMode', 'start')) ? store.get('startMode', 'start') : 'start';
 const OPP_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
+const WEAK_COUNTS = [25, 50, 75, 100], WEAK_MAXES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
+let weakCount = WEAK_COUNTS.includes(store.get('weakCount')) ? store.get('weakCount') : 25; // Weaknesses page: how many rows
+let weakMax = WEAK_MAXES.includes(store.get('weakMax')) ? store.get('weakMax') : 70;       // … and the highest accuracy shown
 let opponentMode = OPP_MODES.includes(store.get('opponentMode')) ? store.get('opponentMode') : 'misses';
 
 // ---------- Page helpers ----------
@@ -673,10 +717,10 @@ let screen = null;
 function showScreen(name) {
   screen = name;
   hidePreview(); hideNotePop(); hideQuickTip(); // no pop-up carries over to another page
-  for (const s of ['token', 'studies', 'practice', 'system', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
+  for (const s of ['token', 'studies', 'practice', 'weaknesses', 'system', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
   const current = name === 'token' ? 'studies' : name;
-  for (const b of ['practice', 'studies', 'system', 'help']) {
+  for (const b of ['practice', 'studies', 'weaknesses', 'system', 'help']) {
     $('nav-' + b).classList.toggle('current', b === current);
     if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
   }
@@ -2621,6 +2665,70 @@ function updateEvalInfo() {
     + '.';
 }
 
+// ---------- Weaknesses page ----------
+// "Common [x] positions with accuracy [y]% or lower": the user's positions (where it's their move)
+// that they've tried, with a score of [y]% or lower, the [x] most common first. How common: the
+// rated Lichess games reaching the position (before the move); positions whose statistics haven't
+// downloaded are left out. History is per chapter, so a position weak in two chapters has two rows.
+
+// Games as a short number: 950, 23k, 1.2M.
+const shortCount = n => n < 1000 ? String(n) : n < 1e6 ? Math.round(n / 1000) + 'k' : (n / 1e6).toFixed(1) + 'M';
+
+function showWeaknesses() {
+  showScreen('weaknesses');
+  $('weak-count').value = String(weakCount);
+  $('weak-max').value = String(weakMax);
+  renderWeaknesses();
+}
+
+function renderWeaknesses() {
+  const found = new Map(); // position key -> { line, i, score, games }
+  let waiting = 0;
+  for (const ch of visibleChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) {
+    const key = posKey(line, i);
+    if (found.has(key)) continue;
+    const tries = triesOf(line, i);
+    if (!tries.length) continue;
+    const score = scoreOf(tries);
+    if (pct(score) > weakMax) continue;
+    const stat = lichessStats[line.moves[i].epd];
+    if (!stat) { waiting++; continue; }
+    found.set(key, { line, i, score, games: totalOf(stat) });
+  }
+  const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, weakCount);
+  $('weak-rows').replaceChildren(...rows.map(({ line, i, score, games }) => {
+    const ch = chapterByKey(line.chapterKey);
+    const tr = h('tr', {},
+      h('td', {}, positionName(line, i), h('span', { class: 'muted weak-chapter' }, ch.name)),
+      h('td', { class: 'num' }, shortCount(games)),
+      h('td', { class: 'num' }, h('span', { class: scoreClass(score) }, `${pct(score)}%`)));
+    tr.addEventListener('mouseenter', () => showPreview(tr.firstChild, line, i));
+    tr.addEventListener('mouseleave', hidePreview);
+    return tr;
+  }));
+  const its = waiting === 1 ? 'its' : 'their';
+  $('weak-note').textContent = rows.length
+    ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
+    : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
+    : `No positions you've tried have accuracy ${weakMax}% or lower.`;
+}
+
+// A position's name: Lichess's opening name for it (or for the last named position before it),
+// then the move to find, e.g. "Italian Game: Giuoco Piano, your move 4"; just "Your move 1" when no
+// position up to it has a Lichess name (e.g. the starting position).
+function positionName(line, i) {
+  const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
+  let name = lichessStats[epdOf(fenOf(pos))]?.opening?.name;
+  for (const m of line.moves.slice(0, i)) {
+    pos.play(parseUci(m.uci));
+    name = lichessStats[epdOf(fenOf(pos))]?.opening?.name || name;
+  }
+  return name ? `${name}, your move ${line.moves[i].moveNo}` : `Your move ${line.moves[i].moveNo}`;
+}
+
+$('weak-count').addEventListener('change', e => { weakCount = +e.target.value; store.set('weakCount', weakCount); renderWeaknesses(); });
+$('weak-max').addEventListener('change', e => { weakMax = +e.target.value; store.set('weakMax', weakMax); renderWeaknesses(); });
+
 // ---------- System page and token ----------
 
 function showSystem() {
@@ -2688,7 +2796,7 @@ $('backup-btn').addEventListener('click', async () => {
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
     lichess: { popularity: lichessStats, evals, masters },
     favorites,
-    settings: { startMode, soundsOn, opponentMode },
+    settings: { startMode, soundsOn, opponentMode, weakCount, weakMax },
   };
   const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2793,6 +2901,8 @@ $('restore-file').addEventListener('change', async e => {
   if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
   const st = b.settings || {};
   if (typeof st.soundsOn === 'boolean') soundsOn = st.soundsOn;
+  if (WEAK_COUNTS.includes(st.weakCount)) { weakCount = st.weakCount; store.set('weakCount', weakCount); }
+  if (WEAK_MAXES.includes(st.weakMax)) { weakMax = st.weakMax; store.set('weakMax', weakMax); }
   if (st.startMode) startMode = START_MODES.includes(st.startMode) ? st.startMode : 'start';
   if (OPP_MODES.includes(st.opponentMode)) opponentMode = st.opponentMode;
   else if (typeof st.mainOnly === 'boolean') opponentMode = st.mainOnly ? 'main' : 'misses'; // older backups
@@ -2835,6 +2945,13 @@ $('nav-studies').addEventListener('click', () => {
 });
 
 $('nav-system').addEventListener('click', () => { hideBanner(); showSystem(); });
+
+// Weaknesses: needs studies (else the Studies page, as Practice does). A line in progress is kept.
+$('nav-weaknesses').addEventListener('click', () => {
+  if (!data) { $('nav-studies').click(); return; }
+  hideBanner();
+  showWeaknesses();
+});
 
 $('nav-help').addEventListener('click', () => {
   hideBanner();

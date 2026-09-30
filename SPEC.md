@@ -299,7 +299,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Header
 
-- Every page, including the first-visit token screen, shows the same four buttons at the top, always in this order: **Practice**, **Studies**, **System**, **Help**. (There was a **Statistics** button between Studies and System until the Statistics page was removed.) On phones they shrink to fit on one row.
+- Every page, including the first-visit token screen, shows the same five buttons at the top, always in this order: **Practice**, **Studies**, **Weaknesses**, **System**, **Help**. (Weaknesses was added between Studies and System.) (There was a **Statistics** button between Studies and System until the Statistics page was removed.) On phones they shrink to fit on one row.
 - History: the header first had "Back to practice" and "Stats"; they became "Practice" and "Statistics", then that "Practice" button was renamed "Studies", and a new **Practice** button was added to its left. (The System page's "Practice" section was later renamed "Sounds", once only the sound setting was left in it.) The Help page uses the current names.
 - The button for the current page is highlighted: **Practice** while a line is on the board, **Studies** on the selection screen (and the first-visit token screen).
 - **Practice** opens the practice page without starting a test: the board shows the starting position and can't be moved; the panel shows the selection count as "3 chapters · 13 lines selected" (counting the lines that will actually be practiced, so with "Main line only" it's one per chapter), under it the current "Opponent's moves" choice in words (e.g. "Main line only" or "Prefer most common moves"), and a **Start practice** button that begins the first line. There's no "Practice" heading, since the header button already shows it. To keep the page clean there's no status text (the empty status box is hidden). Clicking Practice while already on the practice page does nothing. If nothing can be practiced (no chapters ticked, or the filters leave no lines), the panel says "Select chapters on the Studies page" and Start practice is disabled. (It used to say "Nothing to practice yet. Tick some chapters (and check the filters) on the Studies page.") Before any studies are fetched, Practice acts like Studies. (The "Start practice" button on the Studies page still begins practice straight away.)
@@ -322,12 +322,32 @@ Lines are shown with the user's moves highlighted by score (see Progress trackin
 
 - "Clear stored token" and "Clear stored key" on the System page don't ask for confirmation, since the token or key can simply be pasted back in; Restore backup does.
 
+## Weaknesses page
+
+A page, **Weaknesses**, listing the user's most common weak positions (built at the user's request; to iterate on).
+
+- **Title with two drop-downs:** "Common [x] positions with accuracy [y]% or lower". [x] is 25, 50, 75 or 100; [y] is 90%, 80%, 70% … 10%. Changing either updates the table straight away.
+- **Rows:** the [x] most common of the user's positions (where it's the user's move) whose accuracy is [y]% or lower, **most common first**.
+- **Columns:**
+  - **Position:** Lichess's opening name for the position (or for the last named position before it) plus the move to find, e.g. "Italian Game: Giuoco Piano, your move 4"; just "Your move 1" when nothing up to it has a Lichess name (e.g. the starting position). The chapter name follows in small grey text.
+  - **Lichess games:** how common the position is: the rated Lichess games reaching the position where it's the user's move (the position before the move), from the move statistics, shortened like "23k" or "1.4M".
+  - **Accuracy:** the move's score (the weighted average of its last 10 attempts), highlighted in violet like the Studies page percentages.
+- Hovering over a row shows the small hover board for that move, the same as in a chapter's move tree (the position, a green arrow for the correct move, red arrows for wrong moves, the average and the "Wrong: …" list).
+- *Details Claude chose, for the user to accept or reject:*
+  - Only positions with at least one attempt are listed, since untried ones have no accuracy.
+  - History is kept per chapter, so the same board position weak in two chapters appears twice, once per chapter.
+  - A position whose Lichess statistics haven't downloaded yet is left out; a note under the table says how many.
+  - Hidden studies are left out.
+  - The drop-downs start at **25** and **70%**, are remembered between visits, and are included in backups.
+  - The header button sits between Studies and System. Without fetched studies it goes to the Studies page (like Practice). A line in progress is kept.
+  - If nothing matches, the table is empty and a note says "No positions you've tried have accuracy 70% or lower."
+
 ## Help page
 
 A Help page, opened from the "Help" button in the header. It opens only when clicked, never automatically. Opening it during a line keeps the line; Practice returns to it.
 
 - Short and skimmable (about two screens): one section per topic, with a few sentences or bullets each.
-- Sections: Getting started; Choosing what to practice; Practicing; Your statistics; How lines are chosen; System and backups.
+- Sections: Getting started; Choosing what to practice; Practicing; Your statistics; Weaknesses; How lines are chosen; System and backups.
 - **Choosing what to practice** explains the chapter rows' counts: what a line is (one quizzed path: the user's main move at each turn, every opponent reply in the study) and what an alternative move is (another move for the user at one of their turns, e.g. 3. Bb5 where the main move is 3. Bc4), that alternative moves aren't practiced, what happens if the user plays one (error if marked ?, ?? or ?!, otherwise "is one of your alternative moves"), and that the move tree shows them in italics.
 - **Your statistics** (added at the user's request to describe the statistics carefully) says that each of the user's moves is scored separately, then gives short bullets for right, wrong (including marked alternative moves, hints and Show correct move, with the wrong moves remembered), what isn't counted (unmarked alternative moves, unfinished lines), the last 10 tries and the score, and the colors (shown in their own colors). Collapsed sections cover: what counts as a try (from the start, partway, single positions, leaving early); which lines share a score (all lines through the same point in a chapter; not other chapters or move orders); where statistics are shown (Studies page average, end-of-line summary, a chapter's move tree, and the small hover board with its green and red arrows); and when they're dropped (lines that no longer exist after Update studies; backups). (It used to mention depth limits too; that was removed with them.) The Practicing section explains End line here.
 - **Masters move** is defined in the Help (Your statistics, at the −2 bullet) as a move masters play more than 10% of the time in that position (in Lichess's Masters database), and a move they play 10% of the time or less counts as an ordinary wrong move (the user asked for the definition to be in the Help). The blue-arrow note under Practicing repeats it briefly.
@@ -365,19 +385,6 @@ A separate System page, opened from the "System" button in the header. (It was c
 
 Ideas agreed or mentioned along the way that haven't been built yet:
 
-- **Weaknesses page** (agreed; to build, then iterate): a new page, "Weaknesses", with a table titled "Common [x] positions with accuracy [y]% or lower".
-  - **[x]** is a drop-down: 25, 50, 75 or 100. **[y]** is a drop-down: 90%, 80%, 70% … down to 10%.
-  - **Rows:** the [x] most common of the user's positions (a position where it's the user's move) whose accuracy is [y]% or lower, **most common first**.
-  - **Columns:**
-    - **Name:** the opening name plus the move to find, e.g. "Italian Game: Giuoco Piano, your move 4", using Lichess's opening name for the position or the last named position before it.
-    - **How common:** the number of rated Lichess games that reach the position where it's the user's move (the position before the move), from the move statistics.
-    - **Accuracy:** the user's average move accuracy there, i.e. the move's score, the weighted average of its last 10 attempts.
-  - Hovering over a row shows the small hover board of the position.
-  - *Details Claude assumed, for the user to accept or reject:*
-    - Only positions with at least one attempt are listed, since untried ones have no accuracy.
-    - Because history is kept per chapter, the same board position weak in two chapters appears twice, once per chapter, with the chapter name in smaller grey text after the name.
-    - Without its Lichess statistics a position has no count yet and is left out until they download.
-    - The drop-downs' starting values (e.g. 25 and 70%) are to be decided, and remembered between visits.
 - Selecting individual lines (not just whole chapters) from a natural-language request such as "lines longer than 10 moves"; this needs a line-level filter. Only relevant if natural-language selection is ever brought back (it was removed; see Describe what to practice).
 - **Offline copy:** a separate `trainer-offline.html` that runs without an internet connection, for practicing with saved studies, stats, move frequencies and evaluations (anything that talks to Lichess or Anthropic would still need a connection: Update studies, the two download buttons, fetching an evaluation at the end of a line, checking a token, natural-language selection).
   - Everything the page now loads from jsDelivr would be embedded in the one file: chessops and chessground bundled into the script (a one-time bundling step, e.g. esbuild, since jsDelivr's versions import further files), and the board and piece images, fonts (only the subsets used) and sounds embedded as data. A folder of files beside the page wouldn't work, because browsers block scripts loaded from neighbouring files on `file://`.
