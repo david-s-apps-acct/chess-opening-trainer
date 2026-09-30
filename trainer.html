@@ -516,7 +516,7 @@
         <h2>Weaknesses</h2>
         <ul>
           <li>The <b>Weaknesses</b> page lists your most common weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Accuracy</b>, choose the highest accuracy to include (≤ 90% down to ≤ 10%).</li>
-          <li>Each row is one of your moves: the position's opening name and the move you have to find (e.g. "Italian Game: Giuoco Piano, your move 4", with the chapter in grey), how many rated Lichess games reach that position, and your accuracy there (its score over the last 10 tries). The most common positions come first.</li>
+          <li>Each row is one of your moves, named the way chess books do: the deepest opening name that applies, the moves played since that named position, and the move you have to find (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4 — your move 6", with the chapter in grey; at most the last 3 moves are shown, after "…"). Then how many rated Lichess games reach that position, and your accuracy there (its score over the last 10 tries). The most common positions come first.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the wrong moves you've played.</li>
         </ul>
@@ -2758,17 +2758,26 @@ function renderWeaknesses() {
     : `No positions you've tried have accuracy ${weakMax}% or lower.`;
 }
 
-// A position's name: Lichess's opening name for it (or for the last named position before it),
-// then the move to find, e.g. "Italian Game: Giuoco Piano, your move 4"; just "Your move 1" when no
-// position up to it has a Lichess name (e.g. the starting position).
+// A position's name, following the usual convention in chess books: the deepest opening name that
+// applies (Lichess's name for the position, or for the last named position before it), then the
+// moves played since that named position, then the move to find, e.g. "Italian Game: Giuoco Piano,
+// 4. c3 ♘f6 5. d4 exd4 — your move 6". At most the last 3 full moves (6 plies) are shown, with "…"
+// before them when there are more. Without any named position, the moves from the start.
+const NAME_TAIL_PLIES = 6;
 function positionName(line, i) {
   const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
-  let name = lichessStats[epdOf(fenOf(pos))]?.opening?.name;
-  for (const m of line.moves.slice(0, i)) {
+  let name = lichessStats[epdOf(fenOf(pos))]?.opening?.name, since = 0; // since: the first move after it
+  line.moves.slice(0, i).forEach((m, k) => {
     pos.play(parseUci(m.uci));
-    name = lichessStats[epdOf(fenOf(pos))]?.opening?.name || name;
-  }
-  return name ? `${name}, your move ${line.moves[i].moveNo}` : `Your move ${line.moves[i].moveNo}`;
+    const n = lichessStats[epdOf(fenOf(pos))]?.opening?.name;
+    if (n) { name = n; since = k + 1; }
+  });
+  const tail = line.moves.slice(Math.max(since, i - NAME_TAIL_PLIES), i);
+  const cut = i - since > NAME_TAIL_PLIES;
+  const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNo}. ${fig(m.san)}` : k === 0 ? `${m.moveNo}… ${fig(m.san)}` : fig(m.san)).join(' ');
+  const you = `your move ${line.moves[i].moveNo}`;
+  const lead = [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ');
+  return lead ? `${lead} — ${you}` : you[0].toUpperCase() + you.slice(1);
 }
 
 $('weak-count').addEventListener('change', e => { weakCount = +e.target.value; store.set('weakCount', weakCount); renderWeaknesses(); });
