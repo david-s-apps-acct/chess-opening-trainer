@@ -438,6 +438,15 @@
           </ul>
         </details>
         <details>
+          <summary>When lines and positions were last practiced</summary>
+          <p>The app also keeps track of when you practice, for spaced repetition (to be added later). Nothing shows these times yet.</p>
+          <ul>
+            <li><b>Lines</b>: a line counts as practiced only when you play it through to its end (from the start, or partway through). Its time is when you attempted its last move, and the last 10 times are kept. A line you stop with <b>End line here</b>, a line you leave unfinished, and <b>Test single positions</b> don't count for the line.</li>
+            <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, in any mode, including Test single positions and the move you're on when you press End line here (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
+            <li>Times are kept only from now on, are included in backups, and are dropped for lines and moves that are no longer in your studies after Update studies.</li>
+          </ul>
+        </details>
+        <details>
           <summary>Which lines share a score</summary>
           <p>Each score belongs to one of your moves at one point in a chapter: the chapter plus the moves leading to it. Every line that passes through that point shares the score, so getting 3. Bc4 right in one line counts for all the lines that continue from it. The same position in a different chapter, or reached by a different move order, keeps its own score.</p>
         </details>
