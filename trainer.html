@@ -92,7 +92,7 @@
 
   /* Help screen */
   .help { max-width: 760px; }
-  .options.help .card { max-width: none; }
+  .cards.help .card { max-width: none; }
   .help h2 { font-size: 18px; margin: 0 0 6px; }
   .help p, .help ul, .help ol { margin: 6px 0; }
   .help ul, .help ol { padding-left: 22px; }
@@ -101,12 +101,12 @@
   .help summary { cursor: pointer; color: var(--accent); }
   .help details[open] summary { margin-bottom: 4px; }
 
-  /* Options screen */
-  .options { display: flex; flex-direction: column; gap: 16px; }
-  .options .card { max-width: 640px; }
-  .options p { margin: 4px 0; }
+  /* System and Help pages: a column of cards */
+  .cards { display: flex; flex-direction: column; gap: 16px; }
+  .cards .card { max-width: 640px; }
+  .cards p { margin: 4px 0; }
 
-  /* Selection screen */
+  /* Studies page */
   .toolbar {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     padding: 10px 12px; margin-bottom: 8px;
@@ -179,7 +179,7 @@
   .mp-board .cg-wrap { width: 100%; height: 100%; }
   input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
 
-  /* Quiz screen */
+  /* Practice page */
   .quiz { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
   .board-col { width: min(560px, calc(100vw - 44px)); flex: none; }
   .icon-btn { background: none; box-shadow: none; padding: 2px 4px; color: var(--muted); line-height: 0; }
@@ -263,7 +263,7 @@
   <nav>
     <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
-    <button id="nav-options">System</button>
+    <button id="nav-system">System</button>
     <button id="nav-help">Help</button>
   </nav>
 </header>
@@ -289,7 +289,7 @@
   </section>
 
   <!-- Choose chapters -->
-  <section id="select-screen" class="hidden">
+  <section id="studies-screen" class="hidden">
     <div class="select-layout">
     <div class="studies">
       <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
@@ -328,7 +328,7 @@
   </section>
 
   <!-- Practice -->
-  <section id="quiz-screen" class="hidden">
+  <section id="practice-screen" class="hidden">
     <div class="quiz">
       <div class="board-col">
         <div class="board-wrap">
@@ -395,7 +395,7 @@
 
   <!-- Help -->
   <section id="help-screen" class="hidden">
-    <div class="options help">
+    <div class="cards help">
       <div class="card">
         <h2>Getting started</h2>
         <ol>
@@ -509,42 +509,42 @@
     </div>
   </section>
 
-  <!-- Options -->
-  <section id="options-screen" class="hidden">
-    <div class="options">
+  <!-- System -->
+  <section id="system-screen" class="hidden">
+    <div class="cards">
       <div class="card">
         <h2>Lichess studies</h2>
-        <p id="opt-fetch-info" class="muted"></p>
+        <p id="sys-fetch-info" class="muted"></p>
         <p class="muted">Update studies downloads all your Lichess studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves that are no longer in your studies.</p>
-        <div class="actions"><button id="refresh-btn" class="primary">Update studies</button></div>
+        <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
       </div>
 
       <div class="card">
         <h2>Move frequency</h2>
         <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move, and in the Masters database (over-the-board games between players rated 2200+ FIDE), saved for later use. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
-        <p id="opt-stats-info" class="muted"></p>
-        <div id="bg-status" class="bg-status hidden" aria-live="polite"></div>
-        <p id="opt-masters-info" class="muted"></p>
+        <p id="sys-stats-info" class="muted"></p>
+        <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
+        <p id="sys-masters-info" class="muted"></p>
         <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div class="card">
         <h2>Position evaluation</h2>
         <p class="muted">Lichess's evaluation of the final position of each line (e.g. +0.4, from White's side), shown after each line and at the end of each line in a chapter's move tree. They come from Lichess's cloud database of positions it has already analyzed, so some positions have none. Missing ones download automatically in the background after Update studies (and resume when you open the app), and are saved.</p>
-        <p id="opt-eval-info" class="muted"></p>
+        <p id="sys-eval-info" class="muted"></p>
         <div id="eval-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div class="card">
         <h2>Lichess token</h2>
-        <p id="opt-token-state" class="muted"></p>
+        <p id="sys-token-state" class="muted"></p>
         <p>Paste a new token to replace the stored one. It needs the <code>study:read</code> scope.
           <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token</a></p>
-        <form id="opt-token-form" class="token-row">
-          <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+        <form id="sys-token-form" class="token-row">
+          <input id="sys-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
           <button class="primary" type="submit">Save token</button>
         </form>
-        <div id="opt-token-error" class="form-error"></div>
+        <div id="sys-token-error" class="form-error"></div>
         <button id="token-clear-btn">Clear stored token</button>
       </div>
 
@@ -642,10 +642,11 @@ const allVariations = new Set();    // chapters whose all-variations triangle is
 
 const saveSelection = () => store.set('selection', [...selection]);
 const saveStats = () => store.set('stats', stats);
-let showComments = store.get('showComments', true);        // annotations during a line (always shown after it)
+// Annotations during a line (always shown after it); stored under its older name.
+let showAnnotations = store.get('showComments', true);
 // Annotations are shown unless the setting is off and a line is being played (not yet over).
 // Outside practice (e.g. the Studies page's move tree) they're always shown.
-const annotationsOn = () => showComments || screen !== 'quiz' || !q || !!q.done;
+const annotationsOn = () => showAnnotations || screen !== 'practice' || !q || !!q.done;
 let favorites = store.get('favorites', null);              // chapter keys saved with "Save favorites"
 let soundsOn = store.get('soundsOn', false);
 let hideNames = store.get('hideNames', false);
@@ -695,10 +696,10 @@ let screen = null;
 function showScreen(name) {
   screen = name;
   hidePreview(); hideNotePop(); hideQuickTip(); // no pop-up carries over to another page
-  for (const s of ['token', 'select', 'quiz', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
+  for (const s of ['token', 'studies', 'practice', 'system', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
-  const current = { token: 'studies', select: 'studies', quiz: 'practice', options: 'options', help: 'help' }[name];
-  for (const b of ['practice', 'studies', 'options', 'help']) {
+  const current = name === 'token' ? 'studies' : name;
+  for (const b of ['practice', 'studies', 'system', 'help']) {
     $('nav-' + b).classList.toggle('current', b === current);
     if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
   }
@@ -746,14 +747,14 @@ function buildData(exportText, username) {
 const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
 function needToken() {
-  showOptions();
+  showSystem();
   showBanner('Enter a Lichess token first.', true);
-  $('opt-token-input').focus();
+  $('sys-token-input').focus();
 }
 
-async function refreshFromLichess() {
+async function fetchStudies() {
   if (!token) return needToken();
-  const btn = $('refresh-btn');
+  const btn = $('update-studies-btn');
   btn.disabled = true;
   showBanner('Fetching your studies from Lichess…');
   try {
@@ -770,7 +771,7 @@ async function refreshFromLichess() {
     const n = data.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = data.studies.length;
     showBanner(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
-    if (screen === 'options') renderOptions(); else showSelection();
+    if (screen === 'system') renderSystem(); else showStudies();
   } catch (e) {
     showBanner(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
   } finally {
@@ -825,7 +826,7 @@ const studyOf = ch => data.studies.find(s => s.chapters.includes(ch));
 
 const parsed = new Map();   // chapter key -> { game, start, color } or { error }
 const lineCache = new Map(); // chapter key -> lines
-function resetParsed() { parsed.clear(); lineCache.clear(); sideCache.clear(); }
+function resetParsed() { parsed.clear(); lineCache.clear(); altCountCache.clear(); }
 
 function parseChapter(ch) {
   if (parsed.has(ch.key)) return parsed.get(ch.key);
@@ -875,7 +876,7 @@ function chapterLines(ch) {
           const m = san.parseSan(pos, c.data.san);
           return m ? { san: san.makeSan(pos, m), nags: c.data.nags || [] } : null;
         }).filter(Boolean);
-        if (userTurn) entry.alts = sideVariations(node, pos);
+        if (userTurn) entry.alts = alternativeMoves(node, pos);
         walk(child, next, [...moves, entry], isMain && (userTurn || i === 0));
       }
     };
@@ -896,9 +897,9 @@ function chapterCounts(nLines, nAlt) {
 // Side variations: alternatives in the study to the user's main move, on the practiced lines.
 // They aren't practiced (only the main move counts at the user's turn); each counts once,
 // whatever follows it.
-const sideCache = new Map();
-function sideVariationCount(ch) {
-  if (sideCache.has(ch.key)) return sideCache.get(ch.key);
+const altCountCache = new Map();
+function alternativeMoveCount(ch) {
+  if (altCountCache.has(ch.key)) return altCountCache.get(ch.key);
   const p = parseChapter(ch);
   let n = 0;
   const walk = (node, pos) => {
@@ -913,7 +914,7 @@ function sideVariationCount(ch) {
     }
   };
   if (!p.error) walk(p.game.moves, p.start.clone());
-  sideCache.set(ch.key, n);
+  altCountCache.set(ch.key, n);
   return n;
 }
 
@@ -1028,7 +1029,7 @@ function aggregate(chapters) {
   return { lines, tried, score: tried ? sum / tried : null };
 }
 
-// ---------- Selection screen ----------
+// ---------- Studies page ----------
 
 function rateEl({ lines, tried, score }) {
   if (!lines) return h('span', { class: 'rate' }, 'no lines to test');
@@ -1037,8 +1038,8 @@ function rateEl({ lines, tried, score }) {
     `How often you play your moves here correctly: the average over the ${plural(tried, 'move')} you've tried, each over its last 10 tries.`);
 }
 
-function showSelection() {
-  showScreen('select');
+function showStudies() {
+  showScreen('studies');
   renderStudies();
 }
 
@@ -1104,7 +1105,7 @@ function renderStudies() {
           // The side you play: a small white or black circle right after the chapter name.
           h('span', { class: 'name' }, quickTip(h('label', { for: id }, ch.name), openingName(p)),
             p.error ? null : h('span', { class: 'side-dot ' + p.color, title: 'You play ' + p.color, 'aria-label': 'you play ' + p.color }),
-            chLines.length ? chapterCounts(chLines.length, sideVariationCount(ch)) : null),
+            chLines.length ? chapterCounts(chLines.length, alternativeMoveCount(ch)) : null),
           p.error ? h('span', { class: 'side' }, p.error) : null,
           rateEl(aggregate([ch]))));
         if (chOpen) list.append(chapterTreeEl(ch));
@@ -1338,7 +1339,7 @@ const MISTAKE_NAGS = [2, 4, 6]; // ? ?? ?!
 function replyPreference(san, nags, epd) {
   if (opponentMode === 'equal') return 1;
   if (opponentMode === 'mistakes') return nags.some(n => MISTAKE_NAGS.includes(n)) ? 4 : 1;
-  const stat = popularity[epd]; // common: games played (+1 so unknown moves still get a chance)
+  const stat = lichessStats[epd]; // common: games played (+1 so unknown moves still get a chance)
   return gamesOf(stat, san) + 1;
 }
 function preferenceWeight(line) {
@@ -1371,7 +1372,7 @@ function chooseLine() {
   return pickWeighted(chapters.flatMap(practiceLines));
 }
 
-// ---------- Quiz ----------
+// ---------- Practice ----------
 
 let cg = null;
 let q = null; // current line state
@@ -1532,7 +1533,7 @@ function startPractice() {
   const line = pickLine();
   if (!line) return false;
   hideBanner();
-  showScreen('quiz');
+  showScreen('practice');
   ensureBoard();
   cg.redrawAll();
   startLine(line);
@@ -1830,7 +1831,7 @@ function arrowSquares(pos, move) {
 // Comments and glyphs on the study's side variations at the user's move, keyed by SAN.
 // The study's other moves at the user's turn (side variations), keyed by SAN: their glyphs,
 // comment, and the opponent's reply in that variation, if there is one.
-function sideVariations(node, pos) {
+function alternativeMoves(node, pos) {
   const alts = {};
   for (const child of node.children.slice(1)) {
     const move = san.parseSan(pos, child.data.san);
@@ -1931,12 +1932,12 @@ function updateEco() {
   const show = !hideNames || !!q.forceNames;
   if (!show) { $('q-eco').textContent = 'ECO'; return; }
   const pos = parseChapter(chapterByKey(q.line.chapterKey)).start.clone();
-  let eco = popularity[epdOf(fenOf(pos))]?.opening?.eco || '';
+  let eco = lichessStats[epdOf(fenOf(pos))]?.opening?.eco || '';
   for (const m of q.line.moves.slice(0, q.idx)) {
     pos.play(parseUci(m.uci));
-    eco = popularity[epdOf(fenOf(pos))]?.opening?.eco || eco;
+    eco = lichessStats[epdOf(fenOf(pos))]?.opening?.eco || eco;
   }
-  $('q-eco').textContent = popularity[epdOf(fenOf(pos))] ? eco : '…';
+  $('q-eco').textContent = lichessStats[epdOf(fenOf(pos))] ? eco : '…';
 }
 
 // The eye shows the setting: whether names are shown during a line. After a line they're always
@@ -1952,7 +1953,7 @@ function setToggle(id, on, title) {
   btn.setAttribute('aria-pressed', String(on));
 }
 
-// ---------- Move popularity (Lichess Opening Explorer) ----------
+// ---------- Move statistics (Lichess Opening Explorer) ----------
 // For every position in the studies' lines, how often each move is played in all
 // rated Lichess games. Downloaded after a refresh, new positions only, and saved.
 
@@ -1962,7 +1963,7 @@ function setToggle(id, on, title) {
 //   there; plus v: 3 (format) and at (when downloaded). A position no game reaches (inferred without
 //   asking) is saved as { white: 0, draws: 0, black: 0, moves: [], opening: null, skipped: true, … }.
 // Older saves ({ total, moves: { san: games } }) are fetched again (treated as missing) but read until then.
-let popularity = {};
+let lichessStats = {}; // saved (and backed up) under its older name, "popularity"
 const isCurrentStat = stat => stat?.v === 3;
 const totalOf = stat => stat.total ?? (stat.white + stat.draws + stat.black);
 // Games that played a move in a saved position (any format; + and # ignored when matching).
@@ -2024,7 +2025,7 @@ async function startDownloads() {
 }
 
 // The two Opening Explorer databases that are downloaded for every position in the studies: all
-// rated Lichess games (popularity) and Masters (over-the-board games, players 2200+ FIDE). Each
+// rated Lichess games (lichessStats) and Masters (over-the-board games, players 2200+ FIDE). Each
 // answer is saved as Lichess sends it; for Lichess games only the 10 most played moves plus the
 // studies' own moves are kept, for Masters the full move list (topGames isn't requested).
 let masters = {}; // position (EPD) -> the Masters answer, plus v: 1 and at
@@ -2032,7 +2033,7 @@ const EXPLORER_DBS = {
   lichess: {
     label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
-    get: () => popularity, key: 'popularity', status: 'bg-status', info: 'opt-stats-info',
+    get: () => lichessStats, key: 'popularity', status: 'lichess-status', info: 'sys-stats-info',
     current: isCurrentStat,
     keep: (j, e) => ({ ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() }),
@@ -2040,7 +2041,7 @@ const EXPLORER_DBS = {
   masters: {
     label: 'masters statistics', Label: 'Masters statistics', none: 'no master game reaches them',
     url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
-    get: () => masters, key: 'masters', status: 'masters-status', info: 'opt-masters-info',
+    get: () => masters, key: 'masters', status: 'masters-status', info: 'sys-masters-info',
     current: s => s?.v === 1,
     keep: j => ({ ...j, v: 1, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, v: 1, at: Date.now() }),
@@ -2060,7 +2061,7 @@ async function downloadExplorer(kind) {
   try { await downloadExplorerPositions(kind, run); }
   finally {
     if (explorerRuns[kind] === run) explorerRuns[kind] = null; // finished or stopped
-    if (screen === 'options') updateStatsInfo();
+    if (screen === 'system') updateStatsInfo();
   }
 }
 
@@ -2114,7 +2115,7 @@ async function downloadExplorerPositions(kind, run) {
     }
     i++;
     status(`Downloading ${db.label}: ${i} of ${total} positions`);
-    if (screen === 'options') updateStatsInfo();
+    if (screen === 'system') updateStatsInfo();
   }
   await saveExplorer(kind);
   if (explorerRuns[kind] !== run) return;
@@ -2158,7 +2159,7 @@ function reachedText(stat) {
 // A move's share of the Lichess games in a position: "45%", "<1%", "0%", "no games", or "–" when
 // that position's statistics haven't been downloaded yet.
 function moveShare(pos, moveSan) {
-  const stat = popularity[epdOf(fenOf(pos))];
+  const stat = lichessStats[epdOf(fenOf(pos))];
   if (!stat) return '–';
   if (!totalOf(stat)) return 'no games';
   const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
@@ -2208,7 +2209,7 @@ async function fetchEval(fen) {
     else evals[epd] = { none: true };
   } else return 60000;
   await saveCache('evals', evals);
-  if (screen === 'options') updateEvalInfo();
+  if (screen === 'system') updateEvalInfo();
   return EVAL_INTERVAL;
 }
 
@@ -2257,7 +2258,7 @@ async function downloadEvals() {
     setTimeout(() => { if (!evalRun) setEvalStatus(''); }, 5000);
   } finally {
     if (evalRun === run) evalRun = null;
-    if (screen === 'options') updateEvalInfo();
+    if (screen === 'system') updateEvalInfo();
   }
 }
 const minutes = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return plural(m, 'minute'); };
@@ -2286,12 +2287,12 @@ function evalStatus(fen) {
 
 // The System page's "Evaluations saved: …" line.
 function updateEvalInfo() {
-  if (!data) { $('opt-eval-info').textContent = ''; return; }
+  if (!data) { $('sys-eval-info').textContent = ''; return; }
   const epds = new Set(allChapters().flatMap(ch => chapterLines(ch).map(l => epdOf(finalFen(l)))));
   let saved = 0, none = 0;
   for (const epd of epds) { if (evals[epd]?.none) none++; else if (evals[epd]) saved++; }
   const left = epds.size - saved - none;
-  $('opt-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
+  $('sys-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
     + (none ? `, ${none} not in Lichess's cloud` : '')
     + (left ? ` · ${left} still to download${evalRun ? ' (downloading now…)' : ' (automatically, after Update studies or when you next open the app)'}` : '')
     + '.';
@@ -2417,23 +2418,23 @@ $('token-form').addEventListener('submit', async e => {
   e.preventDefault();
   if (await acceptToken($('token-input').value, $('token-error'))) {
     $('token-input').value = '';
-    refreshFromLichess(); // first visit: fetch automatically
+    fetchStudies(); // first visit: fetch automatically
   }
 });
 
-$('opt-token-form').addEventListener('submit', async e => {
+$('sys-token-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if (await acceptToken($('opt-token-input').value, $('opt-token-error'))) {
-    $('opt-token-input').value = '';
-    renderOptions();
-    if (!data) refreshFromLichess();
+  if (await acceptToken($('sys-token-input').value, $('sys-token-error'))) {
+    $('sys-token-input').value = '';
+    renderSystem();
+    if (!data) fetchStudies();
     else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
   }
 });
 $('token-clear-btn').addEventListener('click', () => {
   token = null;
   store.remove('token');
-  renderOptions();
+  renderSystem();
   showBanner('Stored token cleared. Your cached studies are still available; refreshing needs a new token.');
 });
 
@@ -2469,7 +2470,7 @@ function showPreview(el, line, i, thisTime = null) {
   // "Position reached 23k times": games reaching the position after the move, any move order.
   const after = pos.clone();
   after.play(parseUci(m.uci));
-  const countLine = h('div', { class: 'muted' }, reachedText(popularity[epdOf(fenOf(after))]));
+  const countLine = h('div', { class: 'muted' }, reachedText(lichessStats[epdOf(fenOf(after))]));
   const topLine = h('div', {}, h('b', {}, moveLabel(m)), h('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
     ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(pos, m.san))));
   if (m.user && thisTime) {
@@ -2527,10 +2528,10 @@ $('nav-help').addEventListener('click', () => {
   window.scrollTo(0, 0);
 });
 
-function showOptions() {
+function showSystem() {
   // A line in progress is kept; the Practice button returns to it.
-  showScreen('options');
-  renderOptions();
+  showScreen('system');
+  renderSystem();
 }
 
 // A date and time with the time zone, e.g. "9/26/2026, 2:13 PM ET".
@@ -2540,15 +2541,15 @@ function formatWithZone(ts) {
   catch { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'short' }); } // older browsers: "EDT"
 }
 
-function renderOptions() {
+function renderSystem() {
   const nChapters = allChapters().length;
-  $('opt-fetch-info').textContent = data
+  $('sys-fetch-info').textContent = data
     ? `${data.username} · ${plural(data.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(data.fetchedAt)}`
     : 'No studies fetched yet.';
   updateSoundControls();
   updateStatsInfo();
-  $('opt-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
-  $('opt-token-error').textContent = '';
+  $('sys-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
+  $('sys-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
   updateEvalInfo();
 }
@@ -2586,8 +2587,8 @@ updateSoundControls();
 
 // The speech-bubble icon next to the names turns annotations (glyphs and comment bubbles) on and
 // off, at any time: the move list and the intro bubble update straight away.
-const updateAnnotationsControl = () => setToggle('annotations-toggle', showComments,
-  showComments ? 'Show annotations during the line' : 'Hide annotations during the line'); // the current state
+const updateAnnotationsControl = () => setToggle('annotations-toggle', showAnnotations,
+  showAnnotations ? 'Show annotations during the line' : 'Hide annotations during the line'); // the current state
 // The violet-rectangle icon: highlight missed moves during the line too (on), or only once it's over (off).
 const updateMissesControl = () => setToggle('misses-toggle', liveMisses,
   liveMisses ? 'Highlight missed moves during the line' : 'Hide missed moves during the line'); // the current state
@@ -2600,19 +2601,19 @@ $('misses-toggle').addEventListener('click', () => {
 updateMissesControl();
 
 $('annotations-toggle').addEventListener('click', () => {
-  showComments = !showComments;
-  store.set('showComments', showComments);
+  showAnnotations = !showAnnotations;
+  store.set('showComments', showAnnotations);
   updateAnnotationsControl();
   hideNotePop();
   if (q) {
     renderMoves();
     updateNames();
-    if (!showComments && q.hintNote) { q.hintNote.remove(); q.hintNote = null; }
+    if (!showAnnotations && q.hintNote) { q.hintNote.remove(); q.hintNote = null; }
   }
 });
 updateAnnotationsControl();
 
-$('refresh-btn').addEventListener('click', refreshFromLichess);
+$('update-studies-btn').addEventListener('click', fetchStudies);
 
 // ---------- Backup ----------
 
@@ -2624,9 +2625,9 @@ $('backup-btn').addEventListener('click', async () => {
     app: BACKUP_APP, version: 3, exportedAt: new Date().toISOString(),
     stats, selection: [...selection], hiddenStudies: [...hiddenStudies],
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
-    lichess: { popularity, evals, masters },
+    lichess: { popularity: lichessStats, evals, masters },
     favorites,
-    settings: { startMode, showComments, soundsOn, hideNames, opponentMode, liveMisses },
+    settings: { startMode, showComments: showAnnotations, soundsOn, hideNames, opponentMode, liveMisses },
   };
   const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2680,9 +2681,9 @@ $('restore-file').addEventListener('change', async e => {
   const lich = b.lichess && typeof b.lichess === 'object' ? b.lichess : {};
   for (const [epd, s] of Object.entries(lich.popularity || {})) {
     if (!s || typeof s !== 'object' || typeof s.moves !== 'object') continue;
-    const cur = popularity[epd];
+    const cur = lichessStats[epd];
     const newer = !cur || (isCurrentStat(s) && !isCurrentStat(cur)) || (isCurrentStat(s) === isCurrentStat(cur) && (s.at || 0) > (cur.at || 0));
-    if (newer) popularity[epd] = s;
+    if (newer) lichessStats[epd] = s;
   }
   for (const [epd, ev] of Object.entries(lich.evals || {})) if (ev && typeof ev === 'object' && !evals[epd]) evals[epd] = ev;
   for (const [epd, s] of Object.entries(lich.masters || {})) {
@@ -2690,11 +2691,11 @@ $('restore-file').addEventListener('change', async e => {
     if (!masters[epd] || (s.at || 0) > (masters[epd].at || 0)) masters[epd] = s;
   }
   if (lich.popularity || lich.evals || lich.masters) {
-    await saveCache('popularity', popularity); await saveCache('evals', evals); await saveCache('masters', masters);
+    await saveCache('popularity', lichessStats); await saveCache('evals', evals); await saveCache('masters', masters);
   }
   if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
   const st = b.settings || {};
-  if (typeof st.showComments === 'boolean') showComments = st.showComments;
+  if (typeof st.showComments === 'boolean') showAnnotations = st.showComments;
   if (typeof st.soundsOn === 'boolean') soundsOn = st.soundsOn;
   if (typeof st.hideNames === 'boolean') { hideNames = st.hideNames; updateNamesControl(); }
   if (st.startMode) startMode = START_MODES.includes(st.startMode) ? st.startMode : 'start';
@@ -2705,32 +2706,32 @@ $('restore-file').addEventListener('change', async e => {
   saveStats(); saveSelection();
   rescoreAll(); // restored attempts scored with the current rules and data
   updateAnnotationsControl(); updateSoundControls();
-  store.set('showComments', showComments); store.set('soundsOn', soundsOn); store.set('hideNames', hideNames); store.set('startMode', startMode);
+  store.set('showComments', showAnnotations); store.set('soundsOn', soundsOn); store.set('hideNames', hideNames); store.set('startMode', startMode);
   store.set('opponentMode', opponentMode);
   lineCache.clear();
-  renderOptions();
+  renderSystem();
   showBanner(`Restored stats for ${plural(n, 'position')} and your settings from the backup.`
     + (oldFormat ? ' Its older per-line stats (which don\'t say which move was missed) were left out.' : ''));
 });
 
-$('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); });
+$('nav-system').addEventListener('click', () => { hideBanner(); showSystem(); });
 // Studies: the selection screen (or the token screen before any studies are fetched).
 // A line in progress is kept; Practice returns to it if nothing that affects it changed.
 $('nav-studies').addEventListener('click', () => {
   hideBanner();
-  if (data) showSelection();
-  else if (token) { showScreen('select'); $('studies').replaceChildren(); }
+  if (data) showStudies();
+  else if (token) { showScreen('studies'); $('studies').replaceChildren(); }
   else showScreen('token');
 });
 
 // Practice: the practice page with the board idle and a "Start practice" button;
 // nothing is tested until that's pressed.
 $('nav-practice').addEventListener('click', () => {
-  if (screen === 'quiz') return; // already on the practice page
+  if (screen === 'practice') return; // already on the practice page
   if (!data) { $('nav-studies').click(); return; }
   hideBanner();
   if (q && q.sig === practiceSignature()) { // back to the line in progress (or its summary), exactly as it was
-    showScreen('quiz');
+    showScreen('practice');
     cg.redrawAll();
     return;
   }
@@ -2745,7 +2746,7 @@ const practiceSignature = () => JSON.stringify({
 
 function showPracticeIdle() {
   q = null;
-  showScreen('quiz');
+  showScreen('practice');
   ensureBoard();
   cg.set({
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -2786,13 +2787,13 @@ function showPracticeIdle() {
 $('practice-start-btn').addEventListener('click', () => { startPractice(); });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && q && screen === 'quiz' && !$('next-btn').classList.contains('hidden')) {
+  if (e.key === 'Enter' && q && screen === 'practice' && !$('next-btn').classList.contains('hidden')) {
     e.preventDefault();
     $('next-btn').click();
     return;
   }
   // Step through the moves played, as on Lichess.
-  if (!q || screen !== 'quiz' || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  if (!q || screen !== 'practice' || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
   const shown = q.view ?? q.idx;
   const target = { ArrowLeft: shown - 1, ArrowRight: shown + 1, Home: 0, End: q.idx }[e.key];
   if (target === undefined) return;
@@ -2805,7 +2806,7 @@ document.addEventListener('keydown', e => {
 async function init() {
   try {
     data = (await cache.get('studies')) || null;
-    popularity = (await cache.get('popularity')) || {};
+    lichessStats = (await cache.get('popularity')) || {};
     masters = (await cache.get('masters')) || {};
     evals = (await cache.get('evals')) || {};
   }
@@ -2813,7 +2814,7 @@ async function init() {
   rescoreAll(); // attempts scored again with the current rules and data
   // Open on the Practice page, waiting for "Start practice", and resume any missing Lichess downloads.
   if (data) { showPracticeIdle(); startDownloads(); }
-  else if (token) { showScreen('select'); $('studies').replaceChildren(); refreshFromLichess(); }
+  else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
 }
 
