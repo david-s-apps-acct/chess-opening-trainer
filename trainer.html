@@ -1,0 +1,2788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opening Trainer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-symbols-2@5.3.0/400.css"><!-- chess piece symbols -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.base.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.brown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.cburnett.css">
+<style>
+  /* The chess piece symbols (♔♕♖♗♘) from Noto Sans Symbols 2, drawn a little larger than the text. */
+  @font-face {
+    font-family: 'Chess Figurines';
+    src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-symbols-2@5.3.0/files/noto-sans-symbols-2-symbols-400-normal.woff2) format('woff2');
+    unicode-range: U+2654-265F;
+    size-adjust: 112%;
+    font-display: swap;
+  }
+  /* Always dark, with Lichess's dark-theme colors. */
+  :root {
+    color-scheme: dark;
+    --bg: #161512;
+    --surface: #262421;
+    --surface-2: #302e2c;
+    --surface-3: #3a3835;
+    --text: #bababa;
+    --text-strong: #dddddd;
+    --muted: #8b8985;
+    --border: #3d3a36;
+    --accent: #3692e7;
+    --accent-text: #ffffff;
+    --good: #629924;
+    --bad: #cc3333;
+    --warn: #d59120;
+    --box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg) linear-gradient(to bottom, #2e2a24, var(--bg) 116px) no-repeat;
+    color: var(--text);
+    font: 15px/1.45 "Chess Figurines", "Noto Sans", "Noto Sans Symbols 2", "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  h1, h2, h3, b { color: var(--text-strong); }
+  button, input, select { font: inherit; color: inherit; }
+  button {
+    border: none;
+    background: var(--surface-3);
+    border-radius: 3px;
+    padding: 7px 14px;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+  button:hover:not(:disabled) { background: #4a4743; color: var(--text-strong); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.primary:hover:not(:disabled) { background: #4ba0ef; color: var(--accent-text); }
+  a { color: var(--accent); }
+  input[type=text], input[type=password], input[type=number], select { background: var(--surface-2) !important; border-color: var(--border) !important; color: var(--text); }
+  .muted { color: var(--muted); }
+  .hidden { display: none !important; }
+
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+  header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
+  header nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  header nav button.current { background: var(--accent); color: var(--accent-text); }
+  main { max-width: 1040px; margin: 0 auto; padding: 16px; }
+
+  .banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); background: var(--surface); }
+  .banner.error { border-color: var(--bad); color: var(--bad); }
+  .bg-status { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .eval-num { font-variant-numeric: tabular-nums; cursor: help; color: var(--text); font-weight: 400; } /* plain standard grey */
+  /* A Lichess evaluation: a small, softly rounded grey chip, like Lichess's own eval box. */
+  .eval { display: inline-block; padding: 0 6px; border-radius: 4px; background: var(--surface-3); color: var(--text-strong);
+    font-variant-numeric: tabular-nums; font-weight: 600; line-height: 1.5; cursor: help; }
+
+  /* Token screen */
+  .card { background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 20px; max-width: 560px; }
+  .card h2 { margin-top: 0; font-size: 18px; }
+  .token-row { display: flex; gap: 8px; margin-top: 12px; }
+  .token-row input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+  .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
+  select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+
+  /* Natural-language selection */
+
+  /* Help screen */
+  .help { max-width: 760px; }
+  .options.help .card { max-width: none; }
+  .help h2 { font-size: 18px; margin: 0 0 6px; }
+  .help p, .help ul, .help ol { margin: 6px 0; }
+  .help ul, .help ol { padding-left: 22px; }
+  .help li { margin: 3px 0; }
+  .help details { margin-top: 8px; background: var(--surface-2); border-radius: 3px; padding: 6px 12px; }
+  .help summary { cursor: pointer; color: var(--accent); }
+  .help details[open] summary { margin-bottom: 4px; }
+
+  /* Stats screen */
+  .stat-line { flex: 1; min-width: 0; }
+  .stat-line b { font-weight: 600; }
+  .stat-nums { display: flex; gap: 16px; font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .stat-nums .rate { min-width: 0; text-align: left; }
+
+  /* Options screen */
+  .options { display: flex; flex-direction: column; gap: 16px; }
+  .options .card { max-width: 640px; }
+  .options h3 { font-size: 14px; margin: 18px 0 4px; }
+  .options h3:first-of-type { margin-top: 4px; }
+  .options p { margin: 4px 0; }
+  .choice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+  .choice input { margin-top: 3px; accent-color: var(--accent); }
+  .choice b { display: block; }
+
+  /* Selection screen */
+  .toolbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 12px; margin-bottom: 8px;
+    background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow);
+  }
+  .toolbar .spacer { margin-left: auto; }
+  .toolbar label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+  .toolbar .weak { font-weight: 400; }
+  .toolbar .start-mode { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .toolbar .start-mode label { white-space: nowrap; }
+  .toolbar .filters { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .toolbar .filters label { display: flex; align-items: center; gap: 6px; }
+  .toolbar .start-mode label { font-weight: 400; }
+  /* Studies page: the list on the left, the selection controls on the right. */
+  .select-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+  .side-panel { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 0; position: sticky; top: 16px; }
+  .side-panel .filters { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .side-panel .start-mode { flex-direction: column; gap: 6px; margin: 0; padding: 6px 12px 10px; border: 1px solid var(--muted); border-radius: 4px; align-self: stretch; }
+  .side-panel .start-mode legend { padding: 0 4px; font-size: 13px; color: var(--muted); }
+  .start-mode input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .all-row { border-bottom: 1px solid var(--border); }
+  .all-row #show-hidden-btn { margin-left: 2px; }
+  .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
+  .hidden-study { opacity: .5; } /* hidden studies, shown in grey while the top eye is open */
+  button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
+  .toggle-space { width: 24px; flex: none; }
+  .side-panel .weak { white-space: nowrap; }
+  .toolbar .weak input[type=number] { width: 56px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
+  .studies { background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); overflow: hidden; }
+  .study + .study { border-top: 1px solid var(--border); }
+  .row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; min-height: 40px; }
+  .study-row { font-weight: 600; }
+  .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .name label { cursor: pointer; }
+  .toggle { border: none; background: none; padding: 0 4px; width: 24px; color: var(--muted); }
+  .toggle:hover:not(:disabled) { background: none; color: var(--text); }
+  .chapters { background: #2a2825; }
+  .chapter-row { padding-left: 12px; border-top: 1px solid var(--border); font-size: 14px; } /* two ▸ (moves, all variations) under the study's ▸ and checkbox, so the checkbox is one tab in */
+  .tree { background: #242220; border-top: 1px solid var(--border); padding: 6px 12px 8px 108px; font-size: 14px; } /* one more tab in */
+  .tree-line { line-height: 1.9; }
+  .tree-vars { margin: 0 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--border); }
+  .tree-toggle { padding: 0 5px; font-size: 12px; line-height: 1.3; margin-left: 2px; box-shadow: none; }
+  .tree .eval { margin-left: 4px; font-size: 13px; }
+  .mv-side { font-style: italic; }
+  @media (max-width: 640px) { .tree { padding-left: 44px; } }
+  .side { font-size: 12px; color: var(--muted); white-space: nowrap; } /* e.g. "variant not supported" */
+  .side-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--muted); margin-left: 6px; vertical-align: 0; }
+  .side-dot.white { background: #fff; }
+  .side-dot.black { background: #222; }
+  .rate { font-size: 13px; color: var(--muted); white-space: nowrap; min-width: 150px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* Move scores: only moves that need work are highlighted, with a violet background (a color
+     chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
+     the tint, the weaker the move. 100%: plain; never tried: grey with a dotted underline. */
+  .s90, .s70, .s0 { border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
+  .s90 { background: rgba(138, 92, 246, .22); }
+  .s70 { background: rgba(138, 92, 246, .42); }
+  .s0 { background: rgba(138, 92, 246, .62); }
+  .smv-num { color: var(--muted); }
+  /* Moves are in the standard text color, like Lichess, except moves with a move-quality glyph,
+     which take the glyph's color (only with annotations on). */
+  .smv, .mv-side { color: var(--text); }
+  .mvq-good { color: #629924 !important; }
+  .mvq-brilliant { color: #21c43a !important; }
+  .mvq-interesting { color: #f075e1 !important; }
+  .mvq-dubious { color: #53b2ea !important; }
+  .mvq-mistake { color: #e69d00 !important; }
+  .mvq-blunder { color: #df5353 !important; }
+  .smv { cursor: pointer; border-radius: 2px; }
+  .smv:hover, .smv:focus { background: var(--surface-3); outline: none; }
+  .move-preview { position: fixed; z-index: 50; width: 216px; padding: 8px; background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 13px; pointer-events: none; }
+  .mp-text { margin-bottom: 6px; }
+  .mp-board { width: 200px; height: 200px; }
+  .mp-board .cg-wrap { width: 100%; height: 100%; }
+  input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  /* Quiz screen */
+  .quiz { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  .board-col { width: min(560px, calc(100vw - 44px)); flex: none; }
+  .icon-btn { background: none; box-shadow: none; padding: 2px 4px; color: var(--muted); line-height: 0; }
+  .icon-btn:hover:not(:disabled) { background: none; color: var(--text-strong); }
+  .icon-btn .sound-off-line { display: none; }
+  .icon-btn.off .sound-off-line { display: inline; }
+  .names-row { display: flex; align-items: flex-start; gap: 8px; }
+  .names { flex: 1; min-width: 0; }
+  .panel-icons { display: flex; gap: 6px; margin-top: 2px; } /* left to right: missed moves, annotations, names, sounds */
+  .placeholder, .panel h2.placeholder { color: var(--muted); font-style: italic; font-weight: 400; }
+  .board-wrap { position: relative; width: 100%; aspect-ratio: 1; }
+  /* Speech bubbles: a study comment on a move (or the chapter's intro), shown on hover. */
+  /* A softer, muted blue than the Lichess accent, so the bubbles are noticeable but quiet. */
+  .bubble { display: inline-flex; vertical-align: -2px; margin-left: 5px; color: #6f90b4; cursor: help; line-height: 0; }
+  .bubble:hover, .bubble:focus { color: #9bb8d6; outline: none; }
+  .bubble.pop { animation: bubble-pop 1.2s ease-out 1; }
+  @keyframes bubble-pop { 0% { transform: scale(1.6); } 30% { transform: scale(1); } 60% { filter: brightness(1.8); } 100% { filter: none; } }
+  .note-pop { position: fixed; z-index: 50; max-width: 320px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 14px; pointer-events: none; }
+  .note-pop p { margin: 0; }
+  .note-pop p + p { margin-top: 6px; }
+  .note-pop .glyph { margin: 0 4px 0 0; }
+  /* A study comment's pop-up: the same soft blue as the comment bubbles, with white text. */
+  .comment-pop { background: #6f90b4; color: #fff; }
+  .comment-pop b { color: #fff; }
+  .comment-pop .muted { color: rgba(255, 255, 255, .85); }
+  .hint-note { margin-top: 6px; color: var(--text); }
+  .glyph { cursor: help; }
+  .note-move { font-weight: 600; }
+  #q-chapter .bubble { vertical-align: -1px; }
+  .glyph { font-weight: 700; margin-left: 4px; }
+  /* Lichess's glyph colors (default dark theme, from lila's _theme.default.scss). */
+  .glyph.good { color: #629924; }
+  .glyph.brilliant { color: #21c43a; }
+  .glyph.interesting { color: #f075e1; }
+  .glyph.dubious { color: #53b2ea; }
+  .glyph.mistake { color: #e69d00; }
+  .glyph.blunder { color: #df5353; }
+  #board { width: 100%; height: 100%; }
+  .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
+  .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
+  .moves .mv { padding: 3px 10px; cursor: pointer; color: var(--text); }
+  .moves .mv:hover { background: #3a5a7a; color: #fff; }
+  .moves .mv.active { background: rgba(54,146,231,.45); color: #fff; font-weight: 600; }
+  /* A move got wrong this time (after the line): violet behind just the move's notation. */
+  .moves .missed-now { display: inline-block; width: 4.8em; background: rgba(138, 92, 246, .62); border-radius: 3px; padding: 0 4px; margin: 0 -4px; white-space: nowrap; }
+  .moves .mv.empty { cursor: default; color: var(--muted); }
+  .moves .mv.empty:hover { background: none; color: var(--muted); }
+  .moves .none { grid-column: 1 / -1; padding: 6px 10px; color: var(--muted); }
+  .move-nav { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
+  .move-nav button { flex: 1; padding: 4px 0; font-size: 13px; }
+  .panel { flex: 1; min-width: 260px; background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 16px; }
+  .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
+  #q-opening, #q-eco { font-size: 13px; }
+  .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
+  .status.bad { color: var(--bad); }
+  .summary ul { margin: 6px 0 0; padding-left: 20px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+  .promo {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45);
+  }
+  .promo div { display: flex; gap: 8px; background: var(--surface); padding: 10px; border-radius: 8px; }
+  .promo button { position: relative; width: 64px; height: 64px; padding: 0; }
+
+
+  @media (max-width: 800px) {
+    .select-layout { grid-template-columns: 1fr; }
+    .side-panel { position: static; order: -1; }
+  }
+  @media (max-width: 640px) {
+    header nav { width: 100%; gap: 4px; flex-wrap: nowrap; }
+    header nav button { flex: 1; padding: 7px 4px; font-size: 14px; }
+    .row { flex-wrap: wrap; }
+    .row .name { flex-basis: calc(100% - 80px); white-space: normal; }
+    .rate { min-width: 0; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Opening Trainer</h1>
+  <nav>
+    <button id="nav-practice">Practice</button>
+    <button id="nav-studies">Studies</button>
+    <button id="nav-options">System</button>
+    <button id="nav-help">Help</button>
+  </nav>
+</header>
+
+<main>
+  <div id="banner" class="banner hidden"></div>
+
+  <!-- First visit: ask for the token -->
+  <section id="token-screen" class="hidden">
+    <div class="card">
+      <h2>Connect to Lichess</h2>
+      <p>This app reads your Lichess studies, including private ones, using a personal API token.</p>
+      <ol>
+        <li><a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token on Lichess</a> with the <b>Read private studies</b> (<code>study:read</code>) scope.</li>
+        <li>Paste it below. Your browser remembers it, so you only do this once.</li>
+      </ol>
+      <form id="token-form" class="token-row">
+        <input id="token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+        <button class="primary" type="submit">Save</button>
+      </form>
+      <div id="token-error" class="form-error"></div>
+    </div>
+  </section>
+
+  <!-- Choose chapters -->
+  <section id="select-screen" class="hidden">
+    <div class="select-layout">
+    <div class="studies">
+      <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
+      <div class="row study-row all-row"><span class="toggle-space"></span>
+        <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
+        <button id="fav-set-btn" class="small" title="Remember the chapters ticked now as your favorites.">Save favorites</button>
+        <button id="fav-recall-btn" class="small" title="Tick exactly your favorite chapters again.">Recall favorites</button>
+        <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
+            <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+            <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button></div>
+      <div id="studies"></div>
+    </div>
+    <aside class="toolbar side-panel" aria-label="Selection and filters">
+      <span id="sel-summary" class="muted"></span>
+      <button id="start-btn" class="primary">Start practice</button>
+      <div class="filters">
+        <fieldset class="weak start-mode">
+          <legend>Opponent's moves</legend>
+          <label title="The opponent always plays the chapter's main move."><input type="radio" name="opp-mode" value="main"> Main line only</label>
+          <label title="Replies played most often in Lichess games come up most (uses the move statistics, which download automatically)."><input type="radio" name="opp-mode" value="common"> Prefer most common moves</label>
+          <label title="Replies marked ?, ?? or ?! in your study come up about 4 times as often."><input type="radio" name="opp-mode" value="mistakes"> Prefer opponent's mistakes</label>
+          <label title="Every reply can come up; lines with moves you often get wrong come up more."><input type="radio" name="opp-mode" value="misses"> Prefer lines I miss</label>
+          <label title="At each point, every reply in your study is equally likely; your move results are ignored."><input type="radio" name="opp-mode" value="equal"> All moves equally</label></fieldset>
+        <fieldset class="weak start-mode">
+          <legend>Where lines start</legend>
+          <label title="Each line starts from its first move and is played to the end."><input type="radio" name="start-mode" value="start"> From the start</label>
+          <label title="Jump to a random point in each line and play from there to the end. The earlier moves are in the move list."><input type="radio" name="start-mode" value="partway"> Partway through</label>
+          <label title="Test one of your moves at a time, then move on to a different position. Moves you often get wrong come up more."><input type="radio" name="start-mode" value="single"> Test single positions</label></fieldset>
+      </div>
+    </aside>
+    </div>
+  </section>
+
+  <!-- Practice -->
+  <section id="quiz-screen" class="hidden">
+    <div class="quiz">
+      <div class="board-col">
+        <div class="board-wrap">
+          <div id="board"></div>
+          <div id="promo" class="promo hidden"><div class="cg-wrap"></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="names-row">
+          <div class="names">
+            <h2 id="q-study"></h2>
+            <div id="q-chapter"></div>
+            <div id="q-opening" class="muted"></div>
+            <div id="q-eco" class="muted"></div>
+          </div>
+          <div class="panel-icons">
+            <button id="misses-toggle" class="icon-btn" aria-label="Highlight missed moves during the line">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <rect x="3" y="7" width="18" height="10" rx="2.5" fill="rgba(138, 92, 246, .85)"/>
+                <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button id="annotations-toggle" class="icon-btn" aria-label="Annotations">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="currentColor"/>
+                <line class="sound-off-line" x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button id="names-toggle" class="icon-btn" aria-label="Study and chapter names">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
+                <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+                <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button id="sound-toggle" class="icon-btn" aria-label="Move sounds">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path d="M12 3a5 5 0 0 0-5 5v3.5L5.5 14v1.5h13V14L17 11.5V8a5 5 0 0 0-5-5z" fill="currentColor"/>
+                <path d="M10 17.5a2 2 0 0 0 4 0z" fill="currentColor"/>
+                <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="q-side" class="muted"></div>
+        <div id="q-moves" class="moves" aria-label="Moves played"></div>
+        <div class="move-nav">
+          <button id="view-first" title="Starting position (Home)" aria-label="Starting position">⏮</button>
+          <button id="view-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
+          <button id="view-next" title="Next move (→)" aria-label="Next move">▶</button>
+          <button id="view-last" title="Current position (End)" aria-label="Current position">⏭</button>
+        </div>
+        <div id="q-status" class="status"></div>
+        <div id="q-summary" class="summary hidden"></div>
+        <div class="actions">
+          <button id="practice-start-btn" class="primary hidden">Start practice</button>
+          <button id="next-btn" class="primary hidden">Next line</button>
+          <button id="hint-btn" class="hidden">Hint</button>
+          <button id="end-btn" class="hidden" title="Stop this line here and see the summary. The moves you've played count; the rest of the line isn't played. Next time the line is played in full.">End line here</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Help -->
+  <section id="help-screen" class="hidden">
+    <div class="options help">
+      <div class="card">
+        <h2>Getting started</h2>
+        <ol>
+          <li>On Lichess, <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">create a personal API token</a> with the <b>Read private studies</b> (<code>study:read</code>) permission.</li>
+          <li>Paste it into the app. It fetches all your studies, private ones included, and remembers the token.</li>
+          <li>When you change your studies on Lichess, use <b>Update studies</b> on the System page.</li>
+          <li>How often each move is played on Lichess, and Lichess's evaluations, download automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the System page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
+        </ol>
+        <details>
+          <summary>What the app stores, and where</summary>
+          <p>Everything stays in this browser: your token, your studies, your stats and your settings. Nothing is sent anywhere except Lichess (to fetch studies, move statistics and evaluations). Stats don't move to another browser or computer by themselves; use a backup for that (see below).</p>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Choosing what to practice</h2>
+        <ul>
+          <li>Tick studies or individual chapters in the list, or <b>All</b>. Click ▸ to show a study's chapters.</li>
+          <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "also in your study". In a chapter's move tree they're shown in italics.</li>
+          <li>Click the first ▸ next to a chapter to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. The end of each line shows its Lichess evaluation. Hover over a move to see the small board.</li>
+          <li><b>Save favorites</b> remembers the chapters ticked now; <b>Recall favorites</b> ticks exactly those chapters again.</li>
+          <li>To hide a study you no longer use, click the eye at the top (next to the favorites buttons): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
+          <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, how often you get its moves right (e.g. "82%" (hover over it for an explanation)), highlighted the same way as your moves (see Your statistics).</li>
+          <li><b>Opponent's moves</b>: <b>Main line only</b> (the opponent always plays the chapter's main move), <b>Prefer most common moves</b> (replies played most often on Lichess come up most; until their statistics have downloaded, replies without them are treated as equally likely, so it works like All moves equally for them), <b>Prefer opponent's mistakes</b> (replies you marked ?, ?? or ?! come up about 4 times as often), <b>Prefer lines I miss</b> (the default: lines with moves you often get wrong come up more), or <b>All moves equally</b> (every reply in your study is equally likely).</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Practicing</h2>
+        <ul>
+          <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you change the chapters, Opponent's moves or Where lines start (or refresh your studies) in the meantime, Practice starts afresh instead.</li>
+          <li>Press <b>Practice</b> at the top of any page, then <b>Start practice</b>, to begin (or press <b>Start practice</b> on the Studies page to begin straight away).</li>
+          <li>Four small icons sit at the top right of the panel, next to the chapter name: the violet box (missed moves highlighted during the line), the speech bubble (annotations during the line), the eye (chapter names during the line) and the bell (sounds). Click one to switch it; a line through an icon means that thing is off. The first three only affect what you see while playing a line: once the line is over, missed moves are highlighted and annotations and names are always shown, and your setting carries on to the next line. Hovering over the first three says what they're set to now, e.g. "Show annotations during the line" or, with the line through it, "Hide annotations during the line"; hovering over the bell says what a click will do ("Turn sounds on / off").</li>
+          <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
+          <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
+          <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
+          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and counts as a wrong try; an unmarked one just gets "also in your study, but it isn't the main move" and doesn't count against you.</li>
+          <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Either counts as getting the move wrong.</li>
+          <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already had a wrong try or a hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
+          <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move. Click the speech-bubble icon to hide all this while you play a line, or show it again; a line through it means annotations are hidden during lines. They always appear once the line is over, and on the Studies page.</li>
+          <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
+          <li>When a line ends, the moves you got wrong this time get a violet background in the move list, and the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often it's played in Lichess games and, for your moves, how you did this time ("Correct first try" or "Wrong this time", with red arrows for any wrong moves you played). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li><b>Position evaluation</b>: after each line, the summary shows Lichess's cloud evaluation of the final position in the status, e.g. "Line complete. Evaluation <b>+0.4</b>" (if you end a line early, the summary shows only the moves you played, with no evaluation). As on Lichess, it's from White's side: + means White is better, − means Black is better, and #3 / #-3 means White / Black mates in 3. Hover over it to see how deeply Lichess analyzed it. Lichess only has evaluations for positions in its cloud database (most common opening positions), so some line ends have none. They download automatically in the background; they're saved, and a chapter's move tree on the Studies page shows each at the end of its line. If a line ends without one, the summary fetches it on the spot.</li>
+          <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
+          <li>To make it harder, click the eye icon (<b>Hide chapter names during the line</b>) to hide the study and chapter names (a line through the eye means they're hidden; "Chapter" and "Study" show instead). The chapter's introductory comment is hidden with them. They always appear when the line ends, and the eye stays as you left it for the next line. Click it again to show them.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Your statistics</h2>
+        <p>The app scores each of <b>your</b> moves separately, not whole lines, so you can see exactly which moves you know and which you don't.</p>
+        <ul>
+          <li><b>Right</b>: you played the move on your first try, with no hint.</li>
+          <li><b>Wrong</b>: any wrong try (including a move your study marks ?, ?? or ?!), a hint, or <b>Show correct move</b>. The wrong moves you actually played are remembered too.</li>
+          <li><b>Not counted</b>: a move your study has as an unmarked alternative (you just try again), and any line you leave unfinished.</li>
+          <li>Each move keeps only its <b>last 10 tries</b>. Its score is the percentage right over those tries, e.g. 7 right out of 10 is 70%. With fewer than 10 tries, it's out of however many there are.</li>
+          <li>Highlighting: moves you know (<span class="s100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="s90">90–99%</span> faint, <span class="s70">70–89%</span> medium, <span class="s0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="mvq-good">!</span> green, <span class="mvq-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
+        </ul>
+        <details>
+          <summary>What counts as a try</summary>
+          <ul>
+            <li>Playing a line from the start: one try for each of your moves in it.</li>
+            <li><b>Partway through</b>: one try for each of your moves from the starting point on; the moves before it aren't counted.</li>
+            <li><b>Test single positions</b>: one try of the move tested.</li>
+            <li>Leaving a line before it ends (for example when Practice starts afresh after you change the selection) records nothing.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Which lines share a score</summary>
+          <p>Each score belongs to one of your moves at one point in a chapter: the chapter plus the moves leading to it. Every line that passes through that point shares the score, so getting 3. Bc4 right in one line counts for all the lines that continue from it. The same position in a different chapter, or reached by a different move order, keeps its own score.</p>
+        </details>
+        <details>
+          <summary>Where you see your statistics</summary>
+          <ul>
+            <li><b>Studies page</b>: each study and chapter shows the average score of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
+            <li><b>End of a line</b>: the moves you got wrong this time, in the order you played them, e.g. "5. Bc4 and 5. d3 instead of 5. c3", with "(shown)" or "(hint: piece)" if you used those. Below that, the line's moves colored by their updated scores.</li>
+            <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by score and, once saved, the Lichess evaluation at the end of each line.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="s90">green arrow</span> for the correct move, and a <span class="s0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "7 of last 10 correct" and "Wrong: Bc4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>When statistics are dropped</summary>
+          <ul>
+            <li>After Update studies, scores for lines that no longer exist in your studies are dropped; everything else is kept.</li>
+            <li>Statistics live only in this browser. Use a backup (System page) to keep them safe or move them.</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>How lines are chosen</h2>
+        <ul>
+          <li>With <b>Prefer lines I miss</b> (and <b>Main line only</b>), lines with moves you often get wrong come up more often, and new lines are introduced fairly soon. The other Opponent's moves choices ignore your statistics.</li>
+          <li>The same line is never given twice in a row when there's another to choose.</li>
+        </ul>
+        <details>
+          <summary>How the weighting works</summary>
+          <p>Each of your moves gets a weight of 1 + 4 × how often you get it wrong (over its last 10 tries): a move you always get right has weight 1, one you always get wrong has weight 5, and one you haven't tried yet has weight 3. A line's chance of coming up is its <b>weakest</b> move's weight, not the average, so one bad move is enough to bring a line back. For example, a line where every move is 100% has weight 1, but if one move is at 50% the line has weight 3, so it comes up three times as often. In Test single positions, the move tested within the line is picked by the same weights.</p>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>System and backups</h2>
+        <ul>
+          <li><b>System</b>: refreshing studies and move statistics, downloading position evaluations, your Lichess token, and backups.</li>
+          <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move frequencies and evaluations, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
+        </ul>
+        <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Options -->
+  <section id="options-screen" class="hidden">
+    <div class="options">
+      <div class="card">
+        <h2>Lichess studies</h2>
+        <p id="opt-fetch-info" class="muted"></p>
+        <p class="muted">Update studies downloads all your Lichess studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves that are no longer in your studies.</p>
+        <div class="actions"><button id="refresh-btn" class="primary">Update studies</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Move frequency</h2>
+        <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
+        <p id="opt-stats-info" class="muted"></p>
+        <div id="bg-status" class="bg-status hidden" aria-live="polite"></div>
+      </div>
+
+      <div class="card">
+        <h2>Position evaluation</h2>
+        <p class="muted">Lichess's evaluation of the final position of each line (e.g. +0.4, from White's side), shown after each line and at the end of each line in a chapter's move tree. They come from Lichess's cloud database of positions it has already analyzed, so some positions have none. Missing ones download automatically in the background after Update studies (and resume when you open the app), and are saved.</p>
+        <p id="opt-eval-info" class="muted"></p>
+        <div id="eval-status" class="bg-status hidden" aria-live="polite"></div>
+      </div>
+
+      <div class="card">
+        <h2>Lichess token</h2>
+        <p id="opt-token-state" class="muted"></p>
+        <p>Paste a new token to replace the stored one. It needs the <code>study:read</code> scope.
+          <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token</a></p>
+        <form id="opt-token-form" class="token-row">
+          <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+          <button class="primary" type="submit">Save token</button>
+        </form>
+        <div id="opt-token-error" class="form-error"></div>
+        <button id="token-clear-btn">Clear stored token</button>
+      </div>
+
+      <div class="card">
+        <h2>Backup</h2>
+        <p class="muted">Your stats, settings and downloaded Lichess data are stored only in this browser. Save a backup file to keep them safe or move them to another browser; restoring merges the Lichess data with what's already here. The file never includes your Lichess token.</p>
+        <div class="actions">
+          <button id="backup-btn">Save backup</button>
+          <button id="restore-btn">Restore backup</button>
+          <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { Chessground } from 'https://cdn.jsdelivr.net/npm/chessground@9.2.1/+esm';
+import { parseUci, parseSquare, makeUci, pgn, san, fen, compat, variant } from 'https://cdn.jsdelivr.net/npm/chessops@0.15.1/+esm';
+
+const LICHESS = 'https://lichess.org';
+const EXPLORER = 'https://explorer.lichess.org'; // Lichess Opening Explorer (needs the token)
+const MAX_LINES_PER_CHAPTER = 5000;
+
+// ---------- Storage ----------
+
+// Small settings live in localStorage.
+const store = {
+  get(key, fallback) {
+    try {
+      const v = localStorage.getItem('cot.' + key);
+      return v == null ? fallback : JSON.parse(v);
+    } catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem('cot.' + key, JSON.stringify(value)); } catch (e) { console.warn('localStorage write failed', e); }
+  },
+  remove(key) {
+    try { localStorage.removeItem('cot.' + key); } catch {}
+  },
+};
+
+// Cached study data lives in IndexedDB (it can be large).
+const cache = {
+  db: null,
+  async open() {
+    if (this.db) return this.db;
+    this.db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('chess-opening-trainer', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('kv');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return this.db;
+  },
+  async get(key) {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction('kv').objectStore('kv').get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async put(key, value) {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+};
+
+// ---------- State ----------
+
+let token = store.get('token', null);
+let selection = new Set(store.get('selection', []));   // chapter keys "studyId/chapterId"
+let stats = store.get('stats', {});                       // position key -> last 10 results (see Move results)
+let data = null;                                          // { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
+const expanded = new Set();
+const expandedChapters = new Set(); // chapters whose move tree is shown on the Studies page
+let hiddenStudies = new Set(store.get('hiddenStudies', [])); // studies hidden from the list and from practice
+let showHiddenStudies = false;      // "Show hidden" on the Studies page (not remembered)
+const saveHidden = () => store.set('hiddenStudies', [...hiddenStudies]);
+const isHiddenChapter = key => hiddenStudies.has(key.slice(0, key.indexOf('/')));
+const visibleChapters = () => allChapters().filter(c => !isHiddenChapter(c.key));
+const openBranches = new Set();     // tree branch points whose variations are open ("chapter key|moves before")
+const allVariations = new Set();    // chapters whose all-variations triangle is down (changed only by that triangle)
+
+
+const saveSelection = () => store.set('selection', [...selection]);
+const saveStats = () => store.set('stats', stats);
+// Stats from before move-level results (plays and misses per line) can't say which move was
+// missed, so they're cleared once.
+const isOldStats = v => !!v && typeof v === 'object' && 'plays' in v;
+if (Object.values(stats).some(isOldStats)) { stats = {}; saveStats(); }
+let showComments = store.get('showComments', true);        // annotations during a line (always shown after it)
+// Annotations are shown unless the setting is off and a line is being played (not yet over).
+// Outside practice (e.g. the Studies page's move tree) they're always shown.
+const annotationsOn = () => showComments || screen !== 'quiz' || !q || !!q.done;
+// Natural-language selection was removed (archived in archive/natural-language-selection.md);
+// clear what it stored.
+store.remove('anthropicKey'); store.remove('useNL');
+let favorites = store.get('favorites', null);              // chapter keys saved with "Save favorites"
+let soundsOn = store.get('soundsOn', false);
+let hideNames = store.get('hideNames', false);
+let liveMisses = store.get('liveMisses', false);          // highlight missed moves during the line, not just after
+const START_MODES = ['start', 'partway', 'single'];
+let startMode = START_MODES.includes(store.get('startMode', 'start')) ? store.get('startMode', 'start') : 'start';
+const OPP_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
+let opponentMode = OPP_MODES.includes(store.get('opponentMode')) ? store.get('opponentMode') : (store.get('mainOnly', false) ? 'main' : 'misses');
+
+// ---------- DOM helpers ----------
+
+const $ = id => document.getElementById(id);
+
+function h(tag, attrs = {}, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'class') el.className = v;
+    else if (k in el && typeof v !== 'string') el[k] = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of children.flat(Infinity)) if (c != null && c !== false) el.append(c);
+  return el;
+}
+
+function showBanner(msg, isError = false) {
+  const b = $('banner');
+  b.textContent = msg;
+  b.className = 'banner' + (isError ? ' error' : '');
+}
+const hideBanner = () => $('banner').classList.add('hidden');
+
+let screen = null;
+
+function showScreen(name) {
+  screen = name;
+  hidePreview(); hideNotePop(); hideQuickTip(); // no pop-up carries over to another page
+  for (const s of ['token', 'select', 'quiz', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
+  // The header buttons are always shown; the current page's button is highlighted.
+  const current = { token: 'studies', select: 'studies', quiz: 'practice', options: 'options', help: 'help' }[name];
+  for (const b of ['practice', 'studies', 'options', 'help']) {
+    $('nav-' + b).classList.toggle('current', b === current);
+    if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
+  }
+}
+
+// ---------- Lichess ----------
+
+class LichessError extends Error {
+  constructor(message, status) { super(message); this.status = status; }
+}
+
+async function lichess(path, tok, asText) {
+  let res;
+  try {
+    res = await fetch(LICHESS + path, { headers: { Authorization: 'Bearer ' + tok } });
+  } catch {
+    throw new LichessError("Couldn't reach Lichess. Check your internet connection.");
+  }
+  if (res.status === 401) throw new LichessError('Lichess rejected the token. It may have expired or been revoked. Replace it on the System page.', 401);
+  if (res.status === 429) throw new LichessError('Lichess is rate-limiting requests. Wait a minute and try again.', 429);
+  if (!res.ok) throw new LichessError(`Lichess returned an error (${res.status}).`, res.status);
+  return asText ? res.text() : res.json();
+}
+
+const IDS_RE = /\/study\/([A-Za-z0-9]{8})\/([A-Za-z0-9]{8})/;
+
+// Split a full study export into studies and chapters.
+function buildData(exportText, username) {
+  const studies = new Map();
+  pgn.parsePgn(exportText).forEach((game, i) => {
+    const hd = game.headers;
+    const event = hd.get('Event') || '';
+    const sep = event.indexOf(': ');
+    const studyName = hd.get('StudyName') || (sep >= 0 ? event.slice(0, sep) : event) || 'Untitled study';
+    const chapterName = hd.get('ChapterName') || (sep >= 0 ? event.slice(sep + 2) : '') || `Chapter ${i + 1}`;
+    const m = [hd.get('ChapterURL'), hd.get('Site'), hd.get('Source')].map(v => v && v.match(IDS_RE)).find(Boolean);
+    const studyId = m ? m[1] : 'name:' + studyName;
+    const chapterId = m ? m[2] : 'idx:' + i;
+    if (!studies.has(studyId)) studies.set(studyId, { id: studyId, name: studyName, chapters: [] });
+    studies.get(studyId).chapters.push({ key: `${studyId}/${chapterId}`, id: chapterId, name: chapterName, pgn: pgn.makePgn(game) });
+  });
+  return { fetchedAt: Date.now(), username, comments: true, studies: sortStudies([...studies.values()]) };
+}
+
+const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+function needToken() {
+  showOptions();
+  showBanner('Enter a Lichess token first.', true);
+  $('opt-token-input').focus();
+}
+
+async function saveData() {
+  try { await cache.put('studies', data); }
+  catch (e) { console.warn('IndexedDB write failed', e); }
+}
+
+async function refreshFromLichess() {
+  if (!token) return needToken();
+  const btn = $('refresh-btn');
+  btn.disabled = true;
+  showBanner('Fetching your studies from Lichess…');
+  try {
+    const account = await lichess('/api/account', token);
+    const text = await lichess(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
+    data = buildData(text, account.username);
+    await saveData();
+    resetParsed();
+    pruneAfterRefresh();
+    // Lichess's cloud grows over time, so positions it didn't have are asked about again.
+    evals = Object.fromEntries(Object.entries(evals).filter(([, v]) => !v.none));
+    try { await cache.put('evals', evals); } catch (e) { console.warn('IndexedDB write failed', e); }
+    startDownloads(); // missing Lichess data, quietly in the background
+    const n = data.studies.reduce((s, st) => s + st.chapters.length, 0);
+    const ns = data.studies.length;
+    showBanner(`Fetched ${ns} ${ns === 1 ? 'study' : 'studies'} (${n} ${n === 1 ? 'chapter' : 'chapters'}).`);
+    if (screen === 'options') renderOptions(); else showSelection();
+  } catch (e) {
+    showBanner(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Drop selection entries and stats that no longer match anything.
+function pruneAfterRefresh() {
+  const chapters = allChapters();
+  const chapterKeys = new Set(chapters.map(c => c.key));
+  const posKeys = new Set();
+  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) posKeys.add(posKey(line, i));
+  selection = new Set([...selection].filter(k => chapterKeys.has(k)));
+  hiddenStudies = new Set([...hiddenStudies].filter(id => data.studies.some(s => s.id === id)));
+  saveHidden();
+  stats = Object.fromEntries(Object.entries(stats).filter(([k]) => posKeys.has(k)));
+  saveSelection(); saveStats();
+}
+
+// Converts stats to position keys. Stats kept per line ({ line key: { move index: results } },
+// including lines shortened by the old "to move" depth limits) become per position: each line's
+// record for a move joins that position's record, keeping the most recent 10. Per-line stats
+// with only plays and misses can't be converted and are dropped.
+const validResults = a => Array.isArray(a) && a.every(r => r === 1 || (Array.isArray(r) && r.every(s => typeof s === 'string')));
+function convertStats(obj) {
+  const out = {};
+  const add = (key, results) => { out[key] = [...(out[key] || []), ...results].slice(-KEEP_TRIES); };
+  for (const [k, v] of Object.entries(obj || {})) {
+    if (Array.isArray(v)) { if (validResults(v)) add(k, v); continue; }
+    if (!v || typeof v !== 'object' || isOldStats(v)) continue;
+    const bar = k.indexOf('|');
+    if (bar < 0) continue;
+    const sans = k.slice(bar + 1).split(' ');
+    for (const [i, results] of Object.entries(v)) {
+      if (/^\d+$/.test(i) && validResults(results)) add(k.slice(0, bar + 1) + sans.slice(0, +i + 1).join(' '), results);
+    }
+  }
+  return out;
+}
+
+// ---------- Chapters and lines ----------
+
+const allChapters = () => data ? data.studies.flatMap(s => s.chapters) : [];
+const chapterByKey = key => allChapters().find(c => c.key === key);
+const studyOf = ch => data.studies.find(s => s.chapters.includes(ch));
+
+const parsed = new Map();   // chapter key -> { game, start, color } or { error }
+const lineCache = new Map(); // chapter key -> lines
+function resetParsed() { parsed.clear(); lineCache.clear(); sideCache.clear(); }
+
+function parseChapter(ch) {
+  if (parsed.has(ch.key)) return parsed.get(ch.key);
+  let result;
+  const game = pgn.parsePgn(ch.pgn)[0];
+  const start = game && pgn.startingPosition(game.headers);
+  if (!game) result = { error: 'empty chapter' };
+  else if (start.isErr) result = { error: 'invalid starting position' };
+  else if (start.value.rules !== 'chess') result = { error: 'variant not supported' };
+  else {
+    const o = (game.headers.get('Orientation') || 'white').toLowerCase();
+    result = { game, start: start.value, color: o === 'black' ? 'black' : 'white', intro: commentText(game.comments) };
+  }
+  parsed.set(ch.key, result);
+  return result;
+}
+
+// All lines in a chapter: main line at the user's moves, every variation at the opponent's.
+// Lines are always practiced to their end.
+function chapterLines(ch) {
+  if (lineCache.has(ch.key)) return lineCache.get(ch.key);
+  const p = parseChapter(ch);
+  const lines = [];
+  if (!p.error) {
+    const seen = new Set();
+    const finish = moves => {
+      if (!moves.some(m => m.user)) return;
+      const key = ch.key + '|' + moves.map(m => m.san).join(' ');
+      if (seen.has(key) || lines.length >= MAX_LINES_PER_CHAPTER) return;
+      seen.add(key);
+      lines.push({ key, chapterKey: ch.key, color: p.color, moves, main });
+    };
+    // "main" stays true only while every opponent move taken is the chapter's main move.
+    let main = true;
+    const walk = (node, pos, moves, isMain) => {
+      const userTurn = pos.turn === p.color;
+      const children = userTurn ? node.children.slice(0, 1) : node.children;
+      if (!children.length) { main = isMain; return finish(moves); }
+      for (const [i, child] of children.entries()) {
+        const move = san.parseSan(pos, child.data.san);
+        if (!move) { main = isMain; finish(moves); continue; }
+        const next = pos.clone();
+        const sanText = san.makeSan(pos, move);
+        next.play(move);
+        const entry = { san: sanText, uci: makeUci(move), user: userTurn, moveNo: pos.fullmoves, color: pos.turn, notes: moveNotes(child.data), epd: epdOf(fenOf(pos)) };
+        if (!userTurn && children.length > 1) entry.siblings = children.map(c => {
+          const m = san.parseSan(pos, c.data.san);
+          return m ? { san: san.makeSan(pos, m), nags: c.data.nags || [] } : null;
+        }).filter(Boolean);
+        if (userTurn) entry.alts = sideVariations(node, pos);
+        walk(child, next, [...moves, entry], isMain && (userTurn || i === 0));
+      }
+    };
+    walk(p.game.moves, p.start.clone(), [], true);
+  }
+  lineCache.set(ch.key, lines);
+  return lines;
+}
+
+// ---------- Move results ----------
+// "· 5 lines · 2 alternative moves" after a chapter's name (the alternative moves only when there are any).
+function chapterCounts(nLines, nAlt) {
+  return [h('span', { class: 'muted' }, ` · ${nLines} line${nLines === 1 ? '' : 's'}`),
+    nAlt ? quickTip(h('span', { class: 'muted' }, ` · ${nAlt} alternative move${nAlt === 1 ? '' : 's'}`),
+      "Other moves your study gives you at your turns, besides the main move. They aren't tested; only the main move counts as correct.") : null];
+}
+
+// Side variations: alternatives in the study to the user's main move, on the practiced lines.
+// They aren't practiced (only the main move counts at the user's turn); each counts once,
+// whatever follows it.
+const sideCache = new Map();
+function sideVariationCount(ch) {
+  if (sideCache.has(ch.key)) return sideCache.get(ch.key);
+  const p = parseChapter(ch);
+  let n = 0;
+  const walk = (node, pos) => {
+    const userTurn = pos.turn === p.color;
+    if (userTurn) n += Math.max(0, node.children.length - 1);
+    for (const child of userTurn ? node.children.slice(0, 1) : node.children) {
+      const move = san.parseSan(pos, child.data.san);
+      if (!move) continue;
+      const next = pos.clone();
+      next.play(move);
+      walk(child, next);
+    }
+  };
+  if (!p.error) walk(p.game.moves, p.start.clone());
+  sideCache.set(ch.key, n);
+  return n;
+}
+
+// stats: position key -> the last 10 results of the user's move there, oldest first. A position
+// key is the chapter key plus the moves up to and including the user's move, e.g.
+// "studyId/chapterId|e4 e5 Nf3", so every line through that point shares one record.
+// A result is 1 (right first try, no hint, not shown) or the list of wrong moves played
+// (SAN, in order; empty when the miss was only a hint or Show correct move).
+
+const KEEP_TRIES = 10;
+function posKey(line, i) {
+  const keys = line.posKeys ||= [];
+  return keys[i] ||= line.chapterKey + '|' + line.moves.slice(0, i + 1).map(m => m.san).join(' ');
+}
+const triesOf = (line, i) => stats[posKey(line, i)] || [];
+const scoreOf = tries => tries.length ? tries.filter(t => t === 1).length / tries.length : null;
+const pct = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
+// A move you always get right has weight 1, one you always get wrong 5; never tried counts as 50% wrong.
+const moveWeight = tries => { const s = scoreOf(tries); return s == null ? 3 : 1 + 4 * (1 - s); };
+const userIndexes = line => line.moves.flatMap((m, i) => m.user ? [i] : []);
+
+// Highlight classes: s100 plain, s90 faint / s70 medium / s0 strong violet background, untried grey.
+const scoreClass = s => s == null ? 'untried' : s >= 1 ? 's100' : s >= 0.9 ? 's90' : s >= 0.7 ? 's70' : 's0';
+
+function recordResults() {
+  for (const r of q.results) {
+    const key = posKey(q.line, r.idx);
+    const result = r.tries === 0 && !r.hint && !r.revealed ? 1 : r.wrongs;
+    stats[key] = [...(stats[key] || []), result].slice(-KEEP_TRIES);
+  }
+  saveStats();
+}
+
+// Wrong moves from a list of results, with how often each was played: [['Bc4', 2], ['d3', 1]].
+function countWrongs(results) {
+  const counts = new Map();
+  for (const t of results) if (Array.isArray(t)) for (const s of t) counts.set(s, (counts.get(s) || 0) + 1);
+  return [...counts];
+}
+
+
+// The average score of the tried moves (each position once) in these chapters.
+function aggregate(chapters) {
+  let lines = 0, tried = 0, sum = 0;
+  const seen = new Set();
+  for (const ch of chapters) for (const line of chapterLines(ch)) {
+    lines++;
+    for (const i of userIndexes(line)) {
+      const k = posKey(line, i);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const s = scoreOf(stats[k] || []);
+      if (s != null) { tried++; sum += s; }
+    }
+  }
+  return { lines, tried, score: tried ? sum / tried : null };
+}
+
+// ---------- Selection screen ----------
+
+function rateEl({ lines, tried, score }) {
+  if (!lines) return h('span', { class: 'rate' }, 'no lines to test');
+  if (!tried) return h('span', { class: 'rate' });
+  return quickTip(h('span', { class: 'rate' }, h('span', { class: scoreClass(score) }, `${pct(score)}%`)), // highlight just the text
+    `How often you play your moves here correctly: the average over the ${tried} ${tried === 1 ? 'move' : 'moves'} you've tried, each over its last 10 tries.`);
+}
+
+function showSelection() {
+  showScreen('select');
+  renderStudies();
+}
+
+function renderStudies() {
+  hidePreview(); hideQuickTip(); // their element may be about to disappear
+  const container = $('studies');
+  container.replaceChildren();
+  if (!data.studies.length) {
+    container.append(h('div', { class: 'row muted' }, `No studies found for ${data.username}.`));
+  }
+  for (const study of data.studies) {
+    // Hidden studies are left out, or shown dimmed (and can't be ticked) with "Show hidden" on.
+    const isHidden = hiddenStudies.has(study.id);
+    if (isHidden && !showHiddenStudies) continue;
+    const keys = study.chapters.map(c => c.key);
+    const nSel = keys.filter(k => selection.has(k)).length;
+    const open = expanded.has(study.id);
+    const box = h('input', {
+      type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
+      checked: nSel === keys.length && keys.length > 0,
+      indeterminate: nSel > 0 && nSel < keys.length,
+      onchange: e => {
+        keys.forEach(k => e.target.checked ? selection.add(k) : selection.delete(k));
+        saveSelection(); renderStudies();
+      },
+    });
+    const studyEl = h('div', { class: 'study' + (isHidden ? ' hidden-study' : '') },
+      h('div', { class: 'row study-row' },
+        h('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-expanded': String(open),
+          onclick: () => { open ? expanded.delete(study.id) : expanded.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
+        box,
+        h('span', { class: 'name' }, h('label', { for: 'st-' + study.id }, study.name),
+          showHiddenStudies ? hideStudyBtn(study, isHidden) : null,
+          h('span', { class: 'muted', style: 'font-weight:400' }, ` · ${study.chapters.length} chapter${study.chapters.length === 1 ? '' : 's'}`)),
+        rateEl(aggregate(study.chapters))),
+    );
+    if (open) {
+      const list = h('div', { class: 'chapters' });
+      for (const ch of study.chapters) {
+        const p = parseChapter(ch);
+        const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
+        const chLines = chapterLines(ch);
+        const chOpen = expandedChapters.has(ch.key) && chLines.length > 0;
+        const chHidden = hiddenStudies.has(study.id);
+        // Two triangles: the chapter's moves (main line), then all its variations at once.
+        const keys = chLines.length ? branchKeys(ch) : [];
+        const allOpen = allVariations.has(ch.key);
+        list.append(h('div', { class: 'row chapter-row' },
+          chLines.length
+            ? h('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(chOpen),
+                onclick: () => { chOpen ? expandedChapters.delete(ch.key) : expandedChapters.add(ch.key); renderStudies(); } }, chOpen ? '▾' : '▸')
+            : h('span', { class: 'toggle-space' }),
+          keys.length
+            ? h('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen),
+                onclick: () => {
+                  for (const k of keys) allOpen ? openBranches.delete(k) : openBranches.add(k);
+                  if (allOpen) allVariations.delete(ch.key);
+                  else { allVariations.add(ch.key); expandedChapters.add(ch.key); } // showing the variations shows the moves too
+                  renderStudies();
+                } }, allOpen ? '▾' : '▸')
+            : h('span', { class: 'toggle-space' }),
+          h('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: hiddenStudies.has(study.id),
+            onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
+          // The side you play: a small white or black circle right after the chapter name.
+          h('span', { class: 'name' }, quickTip(h('label', { for: id }, ch.name), openingName(p)),
+            p.error ? null : h('span', { class: 'side-dot ' + p.color, title: 'You play ' + p.color, 'aria-label': 'you play ' + p.color }),
+            chLines.length ? chapterCounts(chLines.length, sideVariationCount(ch)) : null),
+          p.error ? h('span', { class: 'side' }, p.error) : null,
+          rateEl(aggregate([ch]))));
+        if (chOpen) list.append(chapterTreeEl(ch));
+      }
+      studyEl.append(list);
+    }
+    container.append(studyEl);
+  }
+  if (data.studies.length && !container.children.length) {
+    container.append(h('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
+  }
+  updateToolbar();
+}
+
+// A small hover pop-up that appears immediately, instead of the browser's own tooltip, whose delay
+// can't be set. (All the app's pop-ups appear immediately.) Returns the element, for use inline.
+let tipTimer = null;
+function quickTip(el, text) {
+  if (!text) return el;
+  el.addEventListener('mouseenter', () => {
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(() => {
+      let tip = $('quick-tip');
+      if (!tip) { tip = h('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
+      tip.textContent = text;
+      tip.classList.remove('hidden');
+      const r = el.getBoundingClientRect();
+      tip.style.left = Math.max(8, Math.min(r.left, window.innerWidth - tip.offsetWidth - 8)) + 'px';
+      tip.style.top = (r.bottom + 6 + tip.offsetHeight <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - tip.offsetHeight - 6)) + 'px';
+    }, 0);
+  });
+  el.addEventListener('mouseleave', hideQuickTip);
+  return el;
+}
+function hideQuickTip() { clearTimeout(tipTimer); $('quick-tip')?.classList.add('hidden'); }
+window.addEventListener('scroll', hideQuickTip, { passive: true });
+
+// The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
+// null when the tags are missing (used as the chapter name's hover text).
+function openingName(p) {
+  if (p.error) return null;
+  const tag = k => { const v = p.game.headers.get(k); return v && v !== '?' ? v : null; };
+  const opening = tag('Opening'), eco = tag('ECO');
+  return opening ? opening + (eco ? ` (${eco})` : '') : eco;
+}
+
+// A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
+// alternatives, a small + opens those variations underneath (indented), and − closes them.
+// Your weak practiced moves are highlighted by score; side variations at your moves (never
+// practiced) are italics; moves with a move-quality glyph take its color. Each practiced line's last move is followed by
+// its saved Lichess evaluation. Every move has the small hover board.
+function chapterTreeEl(ch) {
+  const p = parseChapter(ch);
+  const box = h('div', { class: 'tree' });
+  // One move: its number (when needed), SAN, glyphs, bubble. Returns the elements, the move entry
+  // and the position after it; practiced says whether the move lies on a practiced line.
+  const moveEls = (child, pos, path, practiced, showNo) => {
+    const move = san.parseSan(pos, child.data.san);
+    if (!move) return null;
+    const userTurn = pos.turn === p.color;
+    const entry = { san: san.makeSan(pos, move), uci: makeUci(move), user: userTurn && practiced, side: !practiced,
+      moveNo: pos.fullmoves, color: pos.turn, notes: moveNotes(child.data) };
+    const moves = [...path, entry];
+    const line = { chapterKey: ch.key, color: p.color, moves };
+    const i = moves.length - 1;
+    const cls = entry.user ? scoreClass(scoreOf(triesOf(line, i))) : practiced ? 'opp' : 'mv-side';
+    const el = h('span', { class: 'smv ' + cls + glyphClass(entry), tabindex: '0' }, fig(entry.san));
+    const show = () => showPreview(el, line, i);
+    el.addEventListener('mouseenter', show); el.addEventListener('focus', show); el.addEventListener('click', show);
+    el.addEventListener('mouseleave', hidePreview); el.addEventListener('blur', hidePreview);
+    const num = entry.color === 'white' ? `${entry.moveNo}.` : showNo ? `${entry.moveNo}…` : null;
+    const next = pos.clone();
+    next.play(move);
+    return { els: [num ? h('span', { class: 'smv-num' }, num, ' ') : null, el, glyphMarks(entry),
+      hasBubble(entry) ? bubbleEl(moveLabel(entry), entry.notes, false) : null, ' '], moves, pos: next };
+  };
+  // A sequence of moves from node, following main moves; variations open below their branch point.
+  const walk = (node, pos, path, practiced, container) => {
+    let flow = h('div', { class: 'tree-line' });
+    container.append(flow);
+    let showNo = true, lastRow = flow;
+    while (node.children.length) {
+      const [main, ...alts] = node.children;
+      const userTurn = pos.turn === p.color;
+      const res = moveEls(main, pos, path, practiced, showNo);
+      if (!res) break;
+      flow.append(...res.els.flat(Infinity).filter(x => x != null));
+      const moveRow = flow;
+      showNo = false;
+      if (alts.length) {
+        const key = ch.key + '|' + path.map(e => e.san).join(' ');
+        const open = openBranches.has(key);
+        flow.append(h('button', { class: 'tree-toggle', 'aria-expanded': String(open),
+          title: open ? 'Hide variations' : `Show ${alts.length} ${alts.length === 1 ? 'variation' : 'variations'}`,
+          onclick: () => { open ? openBranches.delete(key) : openBranches.add(key); renderStudies(); } }, open ? '−' : '+'), ' ');
+        if (open) {
+          const vars = h('div', { class: 'tree-vars' });
+          container.append(vars);
+          // Alternatives at the user's turn are side variations (never practiced).
+          for (const alt of alts) walk({ children: [alt] }, pos, path, practiced && !userTurn, vars);
+          flow = h('div', { class: 'tree-line' });
+          container.append(flow);
+          showNo = true;
+        }
+      }
+      node = main; pos = res.pos; path = res.moves; lastRow = moveRow;
+    }
+    // The end of a practiced line: its saved Lichess evaluation.
+    const e = practiced && path.some(m => m.user) && !node.children.length ? evals[epdOf(fenOf(pos))] : null;
+    if (e && !e.none) lastRow.append(h('span', { class: 'eval', title: `Lichess cloud evaluation of the final position, depth ${e.depth}` }, formatEval(e)));
+    if (!flow.childNodes.length) flow.remove();
+  };
+  if (!p.error) {
+    walk(p.game.moves, p.start.clone(), [], true, box);
+  }
+  return box;
+}
+
+// The keys of every branch point in a chapter's tree (every node with alternatives), as used
+// for openBranches: "chapter key|moves before the branch".
+function branchKeys(ch) {
+  const p = parseChapter(ch);
+  const keys = [];
+  const walk = (node, pos, sans) => {
+    if (node.children.length > 1) keys.push(ch.key + '|' + sans.join(' '));
+    for (const child of node.children) {
+      const move = san.parseSan(pos, child.data.san);
+      if (!move) continue;
+      const next = pos.clone();
+      const s = san.makeSan(pos, move);
+      next.play(move);
+      walk(child, next, [...sans, s]);
+    }
+  };
+  if (!p.error) walk(p.game.moves, p.start.clone(), []);
+  return keys;
+}
+
+// A study's eye, right after its name (only while the top eye shows hidden studies): a plain eye
+// for a visible study (click to hide it), an eye with a line for a hidden one (click to unhide).
+const EYE_PATH = 'M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z';
+function hideStudyBtn(study, isHidden) {
+  const btn = h('button', { class: 'icon-btn hide-btn',
+    title: isHidden ? 'Unhide this study' : "Hide this study (it won't be practiced)",
+    onclick: () => toggleHideStudy(study) });
+  btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="${EYE_PATH}" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>`
+    + (isHidden ? '<line x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' : '') + '</svg>';
+  return btn;
+}
+
+// Hiding a study unticks its chapters; they can't be ticked (or practiced) while it's hidden.
+function toggleHideStudy(study) {
+  if (hiddenStudies.has(study.id)) {
+    hiddenStudies.delete(study.id);
+    showBanner(`"${study.name}" is shown again.`);
+  } else {
+    hiddenStudies.add(study.id);
+    for (const c of study.chapters) selection.delete(c.key);
+    saveSelection();
+    showBanner(`Hid "${study.name}". It won't be practiced.`);
+  }
+  saveHidden();
+  renderStudies();
+}
+
+$('show-hidden-btn').addEventListener('click', () => { showHiddenStudies = !showHiddenStudies; renderStudies(); });
+
+function updateToolbar() {
+  const all = visibleChapters();
+  const selected = all.filter(c => selection.has(c.key));
+  const all_ = $('all-box');
+  all_.checked = all.length > 0 && selected.length === all.length;
+  all_.indeterminate = selected.length > 0 && selected.length < all.length;
+  const all_lines = selected.flatMap(chapterLines);
+  const lines = selected.flatMap(practiceLines);
+  const nLines = lines.length;
+  $('sel-summary').textContent = `${selected.length} chapter${selected.length === 1 ? '' : 's'} selected · `
+    + (opponentMode === 'main'
+        ? `${nLines} main line${nLines === 1 ? '' : 's'} of ${all_lines.length}`
+        : `${nLines} line${nLines === 1 ? '' : 's'}`);
+  for (const r of document.querySelectorAll('input[name=opp-mode]')) r.checked = r.value === opponentMode;
+  $('fav-set-btn').disabled = selection.size === 0;
+  $('fav-recall-btn').disabled = !favorites || !favorites.length;
+  // The top eye: a line through it while hidden studies are out of sight.
+  const sh = $('show-hidden-btn');
+  sh.classList.toggle('off', !showHiddenStudies);
+  sh.setAttribute('aria-pressed', String(showHiddenStudies));
+  sh.title = showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies';
+  for (const r of document.querySelectorAll('input[name=start-mode]')) r.checked = r.value === startMode;
+  $('start-btn').disabled = nLines === 0;
+}
+
+$('all-box').addEventListener('change', e => {
+  for (const c of visibleChapters()) e.target.checked ? selection.add(c.key) : selection.delete(c.key);
+  saveSelection(); renderStudies();
+});
+
+// ---------- Choosing the next line ----------
+
+// A line's weight is its weakest move's weight.
+const lineWeight = line => Math.max(...userIndexes(line).map(i => moveWeight(triesOf(line, i))));
+
+function weightedPick(items, weight) {
+  const total = items.reduce((s, x) => s + weight(x), 0);
+  let r = Math.random() * total;
+  for (const x of items) {
+    r -= weight(x);
+    if (r < 0) return x;
+  }
+  return items[items.length - 1];
+}
+
+let lastLineKey = null;
+
+// Never give the same line twice in a row when there is any other choice.
+const notLast = lines => {
+  const others = lines.filter(l => l.key !== lastLineKey);
+  return others.length ? others : lines;
+};
+
+// The lines practiced from a chapter: only the main line with "Main line only".
+// In Test single positions only the user's moves from move 5 on are tested, so a line with none
+// isn't practiced there.
+const SINGLE_FROM_MOVE = 5;
+const practiceLines = ch => chapterLines(ch).filter(l => (opponentMode !== 'main' || l.main)
+  && (startMode !== 'single' || l.moves.some(m => m.user && m.moveNo >= SINGLE_FROM_MOVE)));
+
+// "Prefer lines I miss" and "Main line only": weighted by the line's weakest move.
+// "Prefer most common moves" / "Prefer opponent's mistakes" / "All moves equally": a line's
+// weight is the chance of the opponent choosing its replies at each branch, by that preference.
+// These replace the move-results weighting.
+const MISTAKE_NAGS = [2, 4, 6]; // ? ?? ?!
+function replyPreference(san, nags, epd) {
+  if (opponentMode === 'equal') return 1;
+  if (opponentMode === 'mistakes') return nags.some(n => MISTAKE_NAGS.includes(n)) ? 4 : 1;
+  const stat = popularity[epd]; // common: games played (+1 so unknown moves still get a chance)
+  return gamesOf(stat, san) + 1;
+}
+function preferenceWeight(line) {
+  let w = 1;
+  for (const m of line.moves) {
+    if (!m.siblings) continue;
+    const total = m.siblings.reduce((sum, x) => sum + replyPreference(x.san, x.nags, m.epd), 0);
+    const chosen = m.siblings.find(x => x.san === m.san);
+    w *= (chosen ? replyPreference(chosen.san, chosen.nags, m.epd) : 1) / total;
+  }
+  return w;
+}
+
+const usesMoveResults = () => !['common', 'mistakes', 'equal'].includes(opponentMode);
+
+function pickWeighted(lines) {
+  return weightedPick(notLast(lines), usesMoveResults() ? lineWeight : preferenceWeight);
+}
+
+function pickLine() {
+  const line = chooseLine();
+  if (line) lastLineKey = line.key;
+  return line;
+}
+
+function chooseLine() {
+  const chapters = visibleChapters().filter(c => selection.has(c.key) && practiceLines(c).length);
+  if (!chapters.length) return null;
+  // Lines come from all selected chapters, weighted by the "Opponent's moves" choice.
+  return pickWeighted(chapters.flatMap(practiceLines));
+}
+
+// ---------- Quiz ----------
+
+let cg = null;
+let q = null; // current line state
+
+const fenOf = pos => fen.makeFen(pos.toSetup());
+// Moves are shown with piece symbols (figurine notation, as on Lichess and Chess.com): Bc4 → ♗c4,
+// e8=Q → e8=♕. Only the display changes; moves are stored and matched in normal notation.
+const FIGURINES = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
+const fig = s => s.replace(/^[KQRBN]/, c => FIGURINES[c]).replace(/=([QRBN])/, (_, c) => '=' + FIGURINES[c]);
+const moveLabel = m => `${m.moveNo}${m.color === 'white' ? '.' : '…'} ${fig(m.san)}`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function ensureBoard() {
+  if (cg) return;
+  cg = Chessground($('board'), {
+    coordinates: true,
+    animation: { enabled: true, duration: 200 },
+    highlight: { lastMove: true, check: true },
+    premovable: { enabled: false },
+    drawable: { enabled: true },
+    movable: { free: false, showDests: true, events: { after: onUserMove } },
+  });
+  window.addEventListener('resize', () => cg.redrawAll());
+}
+
+function setStatus(html, cls = '') {
+  const el = $('q-status');
+  el.className = 'status' + (cls ? ' ' + cls : '');
+  el.replaceChildren(...[].concat(html).filter(c => c != null));
+}
+
+
+function setShapes(shapes) {
+  if (q) q.shapes = shapes;
+  cg.setAutoShapes(shapes);
+}
+
+function syncBoard(lastMove) {
+  q.view = null; // any game update returns to the live position
+  // Back from an earlier position during a line: the status says what it said before.
+  if (q.savedStatus) {
+    const s = q.savedStatus;
+    q.savedStatus = null;
+    $('q-status').className = s.cls;
+    $('q-status').replaceChildren(...s.nodes);
+  }
+  const userTurn = q.idx < q.line.moves.length && q.line.moves[q.idx].user && !q.busy;
+  cg.set({
+    fen: fenOf(q.pos),
+    orientation: q.line.color,
+    turnColor: q.pos.turn,
+    check: q.pos.isCheck() ? q.pos.turn : false,
+    lastMove: lastMove ?? q.lastMove,
+    movable: { color: q.line.color, dests: userTurn ? compat.chessgroundDests(q.pos) : new Map() },
+  });
+  if (lastMove) q.lastMove = lastMove;
+  cg.setAutoShapes(q.shapes || []);
+  // One button: "Hint" circles the piece to move; after that it becomes "Show correct move",
+  // which draws the arrow (the player then plays the move).
+  // After "Show correct move" the arrow stays and the button is disabled until the move is played.
+  const hinted = q.hint > 0;
+  $('hint-btn').textContent = hinted ? 'Show correct move' : 'Hint';
+  $('hint-btn').title = hinted ? 'Shows the correct move with an arrow; you then play it. Counts as a miss.' : 'Circles the piece to move. Counts as a miss.';
+  $('hint-btn').disabled = !userTurn || q.hint >= 2;
+  $('end-btn').disabled = !userTurn;
+  renderMoves();
+  updateEco();
+}
+
+// ---------- Move list ----------
+
+// A move's text color class from its move-quality glyph, as on Lichess (only with annotations on).
+function glyphClass(m) {
+  if (!annotationsOn() || !m.notes) return '';
+  const n = m.notes.nags.find(x => GLYPHS[x]?.[2]);
+  return n ? ' mvq-' + GLYPHS[n][2] : '';
+}
+
+// Glyphs shown after a move in the list, as on Lichess (only with annotations on).
+function glyphMarks(m) {
+  if (!annotationsOn() || !m.notes) return [];
+  return m.notes.nags.filter(n => n <= 7).map(glyphSpan);
+}
+
+function renderMoves() {
+  const box = $('q-moves');
+  const played = q.line.moves.slice(0, q.idx);
+  const shown = q.view ?? q.idx; // number of moves in the position on the board
+  const cells = [];
+  // The newest bubble (the latest move played with a comment) is highlighted.
+  // It pops once when it first appears (the list is redrawn often, so remember which popped).
+  let newest = -1;
+  played.forEach((m, i) => { if (hasBubble(m)) newest = i; });
+  const pop = newest > (q.bubblePopped ?? -1);
+  if (pop) q.bubblePopped = newest;
+  played.forEach((m, i) => {
+    if (m.color === 'white' || i === 0) cells.push(h('span', { class: 'num' }, m.moveNo));
+    if (m.color === 'black' && i === 0) cells.push(h('span', { class: 'mv empty' }, '…'));
+    // Once the line is over, moves you got wrong this time get the violet background.
+    const attempt = q.results.find(r => r.idx === i);
+    const missedNow = (q.done || liveMisses) && attempt && (attempt.tries > 0 || attempt.hint || attempt.revealed);
+    // The move, its glyphs and its comment bubble; a missed move has them all in one fixed-width
+    // violet box, so boxes line up down the column.
+    const content = [fig(m.san), glyphMarks(m), hasBubble(m) ? bubbleEl(moveLabel(m), m.notes, i === newest, i === newest && pop) : null];
+    const cell = h('span', { class: 'mv' + glyphClass(m) + (i === shown - 1 ? ' active' : ''), onclick: () => viewPly(i + 1) },
+      missedNow ? h('span', { class: 'missed-now' }, content) : content);
+    // Every move already played has the small hover board, during the line too, with its Lichess
+    // share and, for your moves, how you did on it this time. (Only played moves are listed, so it
+    // never shows a move still to come.)
+    cell.addEventListener('mouseenter', () => showPreview(cell, q.line, i, { attempt }));
+    cell.addEventListener('mouseleave', hidePreview);
+    cells.push(cell);
+  });
+  box.replaceChildren(...(cells.length ? cells : [h('span', { class: 'none' }, 'No moves yet.')]));
+  box.querySelector('.active')?.scrollIntoView({ block: 'nearest' });
+  $('view-first').disabled = $('view-prev').disabled = shown === 0;
+  $('view-next').disabled = $('view-last').disabled = q.view == null;
+}
+
+// Show the position after the first k moves; k equal to the moves played returns to the live game.
+function viewPly(k) {
+  if (!q || !cg) return;
+  k = Math.max(0, Math.min(k, q.idx));
+  if (k === q.idx) { syncBoard(); return; }
+  const pos = parseChapter(chapterByKey(q.line.chapterKey)).start.clone();
+  let last;
+  for (const m of q.line.moves.slice(0, k)) {
+    const mv = parseUci(m.uci);
+    pos.play(mv);
+    last = compat.chessgroundMove(mv).slice(0, 2);
+  }
+  q.view = k;
+  // During a line, the status says how to get back (and is restored on return). After the line
+  // has ended there's nothing to return to, so the status is left alone.
+  if (!q.done && !q.savedStatus) {
+    q.savedStatus = { cls: $('q-status').className, nodes: [...$('q-status').childNodes] };
+    setStatus('Press ⏭ or End to return.');
+  }
+  cg.set({
+    fen: fenOf(pos),
+    turnColor: pos.turn,
+    check: pos.isCheck() ? pos.turn : false,
+    lastMove: last,
+    movable: { color: q.line.color, dests: new Map() },
+  });
+  cg.setAutoShapes([]);
+  $('hint-btn').disabled = true;
+  $('end-btn').disabled = true;
+  renderMoves();
+}
+
+$('view-first').addEventListener('click', () => viewPly(0));
+$('view-prev').addEventListener('click', () => q && viewPly((q.view ?? q.idx) - 1));
+$('view-next').addEventListener('click', () => q && viewPly((q.view ?? q.idx) + 1));
+$('view-last').addEventListener('click', () => q && viewPly(q.idx));
+
+// Returns false when there's nothing to practice.
+function startPractice() {
+  const line = pickLine();
+  if (!line) return false;
+  hideBanner();
+  showScreen('quiz');
+  ensureBoard();
+  cg.redrawAll();
+  startLine(line);
+  return true;
+}
+
+function startLine(line) {
+  const ch = chapterByKey(line.chapterKey);
+  const p = parseChapter(ch);
+  q = { line, pos: p.start.clone(), idx: 0, tries: 0, missed: false, results: [], busy: false, lastMove: undefined, token: {}, shapes: [], view: null, startedAt: null, single: startMode === 'single' };
+  q.sig = practiceSignature();
+  // The board's orientation already shows the user's side.
+  $('q-side').textContent = '';
+  $('q-summary').classList.add('hidden');
+  $('next-btn').classList.add('hidden');
+  $('practice-start-btn').classList.add('hidden');
+  $('hint-btn').classList.remove('hidden');
+  $('end-btn').classList.toggle('hidden', startMode === 'single');
+  hideNotePop();
+  updateNames();
+  setShapes([]);
+  const start = partwayStart(line);
+  q.startIdx = start;
+  if (q.single) {
+    const label = `Single position, move ${line.moves[start].moveNo}`;
+    $('q-side').textContent = $('q-side').textContent ? `${$('q-side').textContent} · ${label}` : label;
+  }
+  if (start) {
+    // Set up the position before the chosen move instantly (no sounds); the earlier
+    // moves appear in the move list, with bubbles for their comments.
+    let last;
+    for (const m of line.moves.slice(0, start)) {
+      const move = parseUci(m.uci);
+      q.pos.play(move);
+      last = compat.chessgroundMove(move).slice(0, 2);
+    }
+    q.idx = start;
+    q.startedAt = line.moves[start];
+    q.lastMove = last;
+    if (!q.single) {
+      const from = `Started partway, at move ${q.startedAt.moveNo}`;
+      $('q-side').textContent = $('q-side').textContent ? `${$('q-side').textContent} · ${from}` : from;
+    }
+  }
+  syncBoard();
+  advance();
+}
+
+// Where a line starts, per the "Where lines start" setting: an index into line.moves,
+// or 0 for the beginning. A partway start is one of the user's moves, never the first,
+// leaving at least two of the user's moves to play.
+function partwayStart(line) {
+  if (startMode === 'start') return 0;
+  const userMoves = line.moves.map((m, i) => m.user ? i : -1).filter(i => i >= 0);
+  if (startMode === 'single') return singlePosition(line, userMoves.filter(i => line.moves[i].moveNo >= SINGLE_FROM_MOVE));
+  const candidates = userMoves.slice(1, -1);
+  return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : 0;
+}
+
+// "Single positions": any of the user's moves (the first included), avoiding the
+// position just tested when there's another choice. With move-results weighting,
+// moves you get wrong more often come up more.
+let lastPositionFen = null;
+function singlePosition(line, userMoves) {
+  const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
+  const fens = new Map();
+  line.moves.forEach((m, i) => { fens.set(i, fenOf(pos)); pos.play(parseUci(m.uci)); });
+  const others = userMoves.filter(i => fens.get(i) !== lastPositionFen);
+  const choices = others.length ? others : userMoves;
+  const k = usesMoveResults()
+    ? weightedPick(choices, i => moveWeight(triesOf(line, i)))
+    : choices[Math.floor(Math.random() * choices.length)];
+  lastPositionFen = fens.get(k);
+  return k;
+}
+
+// Play opponent moves until it is the user's turn or the line ends.
+async function advance() {
+  if (q.single && q.idx > q.startIdx) return endSingle();
+  const run = q.token;
+  while (q.idx < q.line.moves.length && !q.line.moves[q.idx].user) {
+    q.busy = true;
+    syncBoard();
+    setStatus('Opponent to move…');
+    await sleep(q.idx === 0 ? 600 : 450);
+    if (!q || q.token !== run) return;
+    playLineMove(q.line.moves[q.idx]);
+  }
+  q.busy = false;
+  if (q.idx >= q.line.moves.length) return endLine();
+  q.tries = 0;
+  q.hint = 0;
+  q.wrong = null;
+  q.wrongs = []; // wrong moves played at this move, in order
+  q.hintNote = null; // what the study says about a wrong move, shown with Hint
+  syncBoard();
+  setStatus('Your move.');
+}
+
+// Lichess "SFX" sounds (Enigmahack, AGPLv3+), pinned to a Lichess commit.
+const SOUND_BASE = 'https://cdn.jsdelivr.net/gh/lichess-org/lila@b3f190be9d532d5f9cdf746938e9d480b1464e25/public/sound/sfx/';
+const sounds = {};
+
+function playSound(name) {
+  if (!soundsOn) return;
+  const audio = sounds[name] ||= new Audio(SOUND_BASE + name + '.mp3');
+  audio.currentTime = 0;
+  audio.play().catch(() => {}); // e.g. blocked before any user interaction
+}
+
+// A capture takes an enemy piece, including en passant (a pawn moving diagonally to an empty square).
+function isCapture(pos, move) {
+  const target = pos.board.get(move.to);
+  if (target) return target.color !== pos.turn; // castling lands on the player's own rook
+  const piece = pos.board.get(move.from);
+  return piece?.role === 'pawn' && (move.from % 8) !== (move.to % 8);
+}
+
+function playLineMove(m) {
+  const move = parseUci(m.uci);
+  playSound(isCapture(q.pos, move) ? 'Capture' : 'Move');
+  q.pos.play(move);
+  q.idx++;
+  setShapes([]);
+  syncBoard(compat.chessgroundMove(move).slice(0, 2)); // the move list shows any new bubble
+}
+
+// ---------- Comments and glyphs ----------
+
+// Lichess glyph names, keyed by PGN NAG number.
+const GLYPHS = {
+  1: ['!', 'Good move', 'good'], 2: ['?', 'Mistake', 'mistake'], 3: ['!!', 'Brilliant move', 'brilliant'],
+  4: ['??', 'Blunder', 'blunder'], 5: ['!?', 'Interesting move', 'interesting'], 6: ['?!', 'Dubious move', 'dubious'],
+  7: ['□', 'Only move'], 22: ['⨀', 'Zugzwang'],
+  10: ['=', 'Equal position'], 13: ['∞', 'Unclear position'],
+  14: ['⩲', 'White is slightly better'], 15: ['⩱', 'Black is slightly better'],
+  16: ['±', 'White is better'], 17: ['∓', 'Black is better'],
+  18: ['+−', 'White is winning'], 19: ['−+', 'Black is winning'],
+  146: ['N', 'Novelty'], 32: ['↑↑', 'Development'], 36: ['↑', 'Initiative'], 40: ['→', 'Attack'],
+  132: ['⇆', 'Counterplay'], 138: ['⊕', 'Time trouble'], 140: ['∆', 'With the idea'],
+};
+
+// Comment text without Lichess's embedded arrows, circles and evals.
+const commentText = comments => (comments || []).map(c => pgn.parseComment(c).text.trim()).filter(Boolean);
+
+function moveNotes(data) {
+  const text = commentText(data.comments);
+  const nags = (data.nags || []).filter(n => GLYPHS[n]);
+  return text.length || nags.length ? { text, nags } : undefined;
+}
+
+// A glyph symbol with its Lichess name shown on hover.
+// Hovering over it shows the glyph's name in the same soft blue pop-up as comments.
+function glyphSpan(n) {
+  const el = h('span', { class: 'glyph ' + (GLYPHS[n][2] || ''), 'aria-label': GLYPHS[n][1] }, GLYPHS[n][0]);
+  el.addEventListener('mouseenter', () => { hidePreview(); showNotePop(el, '', { text: [GLYPHS[n][1]], nags: [] }); });
+  el.addEventListener('mouseleave', hideNotePop);
+  return el;
+}
+
+// A move gets a speech bubble when its study comment or a position/observation glyph
+// (± = ∞ …) is there to read. Move-quality glyphs (! ? …) show in the move list itself.
+const hasBubble = m => annotationsOn() && !!m.notes && (m.notes.text.length > 0 || m.notes.nags.some(n => n > 7));
+
+const BUBBLE_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="currentColor"/></svg>';
+
+// A speech bubble; hovering over it (or tapping it) shows the comment.
+function bubbleEl(label, notes, newest, pop) {
+  const el = h('span', { class: 'bubble' + (newest ? ' newest' : '') + (pop ? ' pop' : ''), tabindex: '0', role: 'button', 'aria-label': 'Study comment' });
+  el.innerHTML = BUBBLE_SVG;
+  const show = () => { hidePreview(); showNotePop(el, label, notes); }; // one pop-up at a time
+  el.addEventListener('mouseenter', show);
+  el.addEventListener('focus', show);
+  el.addEventListener('click', e => { e.stopPropagation(); show(); }); // not a click on the move itself
+  el.addEventListener('mouseleave', hideNotePop);
+  el.addEventListener('blur', hideNotePop);
+  return el;
+}
+
+// The pop-up: the move, its position/observation glyphs with their names, then the comment.
+function showNotePop(el, label, { text, nags }) {
+  let pop = $('note-pop');
+  if (!pop) { pop = h('div', { id: 'note-pop', class: 'note-pop comment-pop hidden' }); document.body.append(pop); }
+  const glyphs = nags.filter(n => n > 7);
+  pop.replaceChildren(...[
+    label || glyphs.length ? h('p', {}, label ? h('b', {}, label + ' ') : null,
+      glyphs.map(n => [glyphSpan(n), h('span', { class: 'muted' }, GLYPHS[n][1] + ' ')])) : null,
+    ...text.map(x => h('p', {}, x)),
+  ].filter(Boolean));
+  pop.classList.remove('hidden');
+  const r = el.getBoundingClientRect();
+  const w = pop.offsetWidth, hgt = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+  pop.style.top = (r.bottom + 6 + hgt <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - hgt - 6)) + 'px';
+}
+function hideNotePop() { $('note-pop')?.classList.add('hidden'); }
+window.addEventListener('scroll', hideNotePop, { passive: true });
+
+async function onUserMove(orig, dest) {
+  if (!q || q.busy) return;
+  const expected = q.line.moves[q.idx];
+  const piece = q.pos.board.get(parseSquare(orig));
+  let promotion;
+  if (piece && piece.role === 'pawn' && (dest[1] === '8' || dest[1] === '1')) {
+    const run = q.token;
+    promotion = await choosePromotion(q.pos.turn);
+    if (!q || q.token !== run) return;
+  }
+  const move = variant.normalizeMove(q.pos, parseUci(orig + dest + (promotion ? { queen: 'q', rook: 'r', bishop: 'b', knight: 'n' }[promotion] : '')));
+  const played = san.makeSan(q.pos, move);
+
+  if (played === expected.san) {
+    q.results.push({ move: expected, idx: q.idx, tries: q.tries, hint: q.hint, revealed: q.hint >= 2, wrongs: q.wrongs });
+    playLineMove(expected);
+    setStatus('Correct.'); // status messages are standard grey
+    const run = q.token;
+    await sleep(250);
+    if (!q || q.token !== run) return;
+    return advance();
+  }
+
+  // A move that's in the study as a side variation at this point.
+  const alt = expected.alts?.[played];
+  if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return studyMistake(orig, dest, move, played, alt);
+  if (alt) {
+    // Not marked as an error: a gentle nudge, not counted as a miss.
+    q.busy = true;
+    syncBoard();
+    setStatus(`${fig(played)} is also in your study, but it isn't the main move. Try again.`);
+    const run = q.token;
+    await sleep(350);
+    if (!q || q.token !== run) return;
+    q.busy = false;
+    syncBoard();
+    return;
+  }
+
+  // Wrong try: count it, then put the piece back.
+  q.tries++;
+  q.wrong = { san: played };
+  q.wrongs.push(played);
+  q.missed = true;
+  q.busy = true;
+  syncBoard();
+  // Unlimited tries: the correct move is only shown when the user asks for it.
+  setStatus(`${fig(played)} is not the move. Try again, or press ${q.hint ? 'Show correct move' : 'Hint'}.`, 'bad');
+  const run = q.token;
+  await sleep(350);
+  if (!q || q.token !== run) return;
+  q.busy = false;
+  syncBoard();
+}
+
+// A side variation the study marks ?, ?? or ?!: say so, show the opponent's reply from that
+// variation, then take both moves back. Counts as a wrong try.
+async function studyMistake(orig, dest, move, played, alt) {
+  q.tries++;
+  q.wrong = { san: played };
+  q.wrongs.push(played);
+  q.missed = true;
+  q.busy = true;
+  const run = q.token;
+  const n = alt.nags.find(x => MISTAKE_NAGS.includes(x));
+  const [sym, name] = GLYPHS[n];
+  const pos = q.pos.clone();
+  pos.play(move);
+  const r = alt.reply;
+  const replyLabel = r && `${r.moveNo}${r.color === 'white' ? '.' : '…'} ${fig(r.san)}`;
+  setStatus(`${fig(played)}${sym} is marked as a ${name.toLowerCase()} in your study.` + (r ? ` The opponent replies ${replyLabel}.` : ''), 'bad');
+  // Show the user's move, then the reply, on the board.
+  cg.set({ fen: fenOf(pos), lastMove: [orig, dest], turnColor: pos.turn, movable: { color: q.line.color, dests: new Map() } });
+  if (r) {
+    await sleep(700);
+    if (!q || q.token !== run) return;
+    const rm = parseUci(r.uci);
+    playSound(isCapture(pos, rm) ? 'Capture' : 'Move');
+    pos.play(rm);
+    cg.set({ fen: fenOf(pos), lastMove: compat.chessgroundMove(rm).slice(0, 2), check: pos.isCheck() ? pos.turn : false });
+  }
+  await sleep(2200);
+  if (!q || q.token !== run) return;
+  q.busy = false;
+  syncBoard(); // back to the position before the mistake
+  setStatus(`Try again, or press ${q.hint ? 'Show correct move' : 'Hint'}.`, 'bad');
+}
+
+
+// Squares for drawing a move; castling is shown as the king's two-square move.
+const moveSquares = m => arrowSquares(q.pos, parseUci(m.uci));
+function arrowSquares(pos, move) {
+  let [from, to] = compat.chessgroundMove(move);
+  const piece = pos.board.get(parseSquare(from));
+  if (piece?.role === 'king' && Math.abs(from.charCodeAt(0) - to.charCodeAt(0)) > 1) {
+    to = (to > from ? 'g' : 'c') + to[1];
+  }
+  return [from, to];
+}
+
+// Comments and glyphs on the study's side variations at the user's move, keyed by SAN.
+// The study's other moves at the user's turn (side variations), keyed by SAN: their glyphs,
+// comment, and the opponent's reply in that variation, if there is one.
+function sideVariations(node, pos) {
+  const alts = {};
+  for (const child of node.children.slice(1)) {
+    const move = san.parseSan(pos, child.data.san);
+    if (!move) continue;
+    const alt = { nags: child.data.nags || [], notes: moveNotes(child.data) };
+    const after = pos.clone();
+    after.play(move);
+    const replyNode = child.children[0];
+    const reply = replyNode && san.parseSan(after, replyNode.data.san);
+    if (reply) alt.reply = { san: san.makeSan(after, reply), uci: makeUci(reply), moveNo: after.fullmoves, color: after.turn };
+    alts[san.makeSan(pos, move)] = alt;
+  }
+  return Object.keys(alts).length ? alts : undefined;
+}
+
+
+// "End line here": stop this play-through now (one-off; next time the line is played in full).
+// The moves played so far count; the move you're on counts as wrong only if you already had
+// a wrong try or a hint on it.
+$('end-btn').addEventListener('click', () => {
+  if (!q || q.busy || q.single || q.view != null) return;
+  const expected = q.line.moves[q.idx];
+  if (!expected?.user) return;
+  if (q.tries || q.hint) q.results.push({ move: expected, idx: q.idx, tries: q.tries, hint: q.hint, revealed: q.hint >= 2, wrongs: q.wrongs });
+  q.endedAt = expected;
+  setShapes([]);
+  endLine();
+});
+
+$('hint-btn').addEventListener('click', () => {
+  if (!q || q.busy) return;
+  const expected = q.line.moves[q.idx];
+  if (!expected?.user) return;
+  q.missed = true;
+  const [from, to] = moveSquares(expected);
+  if (q.hint) {
+    // "Show correct move": an arrow shows the move; the player still has to play it.
+    q.hint = 2;
+    setShapes([{ orig: from, dest: to, brush: 'green' }]);
+    setStatus([`The move is ${moveLabel(expected)}. Play it on the board.`, q.hintNote]);
+    syncBoard();
+    return;
+  }
+  q.hint = 1;
+  setShapes([{ orig: from, brush: 'green' }]);
+  // After a wrong move, the status also shows what the study says about it (with annotations on).
+  const w = q.wrong;
+  const notes = annotationsOn() && w && expected.alts?.[w.san]?.notes;
+  if (notes) q.hintNote = h('div', { class: 'hint-note' },
+    h('span', { class: 'note-move' }, `${expected.moveNo}${expected.color === 'white' ? '.' : '…'} ${fig(w.san)} (your move)`),
+    notes.nags.map(n => [glyphSpan(n), h('span', { class: 'muted' }, ' ' + GLYPHS[n][1])]),
+    notes.text.length ? ': ' + notes.text.join(' ') : '');
+  setStatus(['Hint: move the circled piece.', q.hintNote]);
+  syncBoard();
+});
+
+function choosePromotion(color) {
+  return new Promise(resolve => {
+    const box = $('promo');
+    const inner = box.firstElementChild;
+    inner.replaceChildren(...['queen', 'rook', 'bishop', 'knight'].map(role => {
+      // Reuse chessground's piece images.
+      const btn = h('button', { title: role, onclick: () => { box.classList.add('hidden'); resolve(role); } });
+      btn.append(h('piece', { class: `${role} ${color}`, style: 'width:100%;height:100%;transform:none' }));
+      return btn;
+    }));
+    box.classList.remove('hidden');
+  });
+}
+
+// The study and chapter names in the practice panel: shown when the eye is open, or once the
+// line has ended (q.forceNames); otherwise the placeholders "Chapter" and "Study". The chapter's
+// introductory comment (a bubble after the chapter name) is shown and hidden with them.
+function updateNames() {
+  if (!q) return;
+  const show = !hideNames || !!q.forceNames;
+  const ch = chapterByKey(q.line.chapterKey);
+  const intro = parseChapter(ch).intro;
+  // Three lines: the study (the heading), the chapter (with its introductory comment's bubble) and
+  // the opening from the PGN tags (left out if the chapter has none). All hidden with the names.
+  const opening = openingName(parseChapter(ch));
+  $('q-study').textContent = show ? studyOf(ch).name : 'Study';
+  $('q-chapter').replaceChildren(show ? ch.name : 'Chapter',
+    show && annotationsOn() && intro.length ? bubbleEl('', { text: intro, nags: [] }, false) : '');
+  $('q-opening').textContent = opening ? (show ? opening : 'Opening') : '';
+  for (const id of ['q-study', 'q-chapter', 'q-opening', 'q-eco']) $(id).classList.toggle('placeholder', !show);
+  updateEco();
+  $('q-chapter').classList.remove('muted');
+  updateNamesControl();
+}
+
+// The fourth heading line: the ECO code of the position reached (the live position), from the
+// Opening Explorer data. A position without a name of its own keeps the code of the last named
+// position before it; "…" if the position's statistics haven't been downloaded. Hidden with the names.
+function updateEco() {
+  if (!q) return;
+  const show = !hideNames || !!q.forceNames;
+  if (!show) { $('q-eco').textContent = 'ECO'; return; }
+  const pos = parseChapter(chapterByKey(q.line.chapterKey)).start.clone();
+  let eco = popularity[epdOf(fenOf(pos))]?.opening?.eco || '';
+  for (const m of q.line.moves.slice(0, q.idx)) {
+    pos.play(parseUci(m.uci));
+    eco = popularity[epdOf(fenOf(pos))]?.opening?.eco || eco;
+  }
+  $('q-eco').textContent = popularity[epdOf(fenOf(pos))] ? eco : '…';
+}
+
+// The eye shows the setting: whether names are shown during a line. After a line they're always
+// shown, whatever the setting, and the setting carries on to the next line.
+function updateNamesControl() {
+  const eye = $('names-toggle');
+  eye.classList.toggle('off', hideNames);
+  eye.title = hideNames ? 'Hide chapter names during the line' : 'Show chapter names during the line'; // the current state
+  eye.setAttribute('aria-pressed', String(!hideNames));
+}
+
+// ---------- Move popularity (Lichess Opening Explorer) ----------
+// For every position in the studies' lines, how often each move is played in all
+// rated Lichess games. Downloaded after a refresh, new positions only, and saved.
+
+// position (EPD) -> the Opening Explorer's answer exactly as Lichess sends it ({ white, draws,
+//   black, moves: [{ uci, san, averageRating, white, draws, black, … }], topGames, recentGames,
+//   opening }), except that moves beyond the 10 most played are dropped unless the studies play them
+//   there; plus v: 3 (format) and at (when downloaded). A position no game reaches (inferred without
+//   asking) is saved as { white: 0, draws: 0, black: 0, moves: [], opening: null, skipped: true, … }.
+// Older saves ({ total, moves: { san: games } }) are fetched again (treated as missing) but read until then.
+let popularity = {};
+const isCurrentStat = stat => stat?.v === 3;
+const totalOf = stat => stat.total ?? (stat.white + stat.draws + stat.black);
+// Games that played a move in a saved position (any format; + and # ignored when matching).
+function gamesOf(stat, s) {
+  if (!stat) return 0;
+  const want = bareSan(s);
+  if (Array.isArray(stat.moves)) { const m = stat.moves.find(x => bareSan(x.san) === want); return m ? m.white + m.draws + m.black : 0; }
+  const m = stat.moves[want];
+  return !m ? 0 : typeof m === 'number' ? m : m.white + m.draws + m.black;
+}
+let popularityRun = null;
+
+const epdOf = f => f.split(' ').slice(0, 4).join(' ');
+const bareSan = x => x.replace(/[+#]/g, '');
+
+function setBgStatus(text) {
+  $('bg-status').textContent = text;
+  $('bg-status').classList.toggle('hidden', !text);
+}
+
+// Every position reached in the studies: every move and variation, alternative moves' variations
+// and each line's final position included. For each: its FEN, depth (in plies), the positions and
+// moves leading to it, whether it's on a chapter's main line, whether the opponent has several
+// replies there (a branch point), and every move the studies have there.
+function studyPositions() {
+  const out = new Map(); // epd -> { fen, depth, parents: [{ epd, san }], main, branch, studyMoves: Set }
+  for (const ch of allChapters()) {
+    const p = parseChapter(ch);
+    if (p.error) continue;
+    const walk = (node, pos, depth, parent, onMain) => {
+      const f = fenOf(pos);
+      const epd = epdOf(f);
+      let e = out.get(epd);
+      if (!e) out.set(epd, e = { fen: f, depth, parents: [], main: false, branch: false, studyMoves: new Set() });
+      e.depth = Math.min(e.depth, depth);
+      if (parent) e.parents.push(parent);
+      if (onMain) e.main = true;
+      if (pos.turn !== p.color && node.children.length > 1) e.branch = true;
+      node.children.forEach((child, k) => {
+        const move = san.parseSan(pos, child.data.san);
+        if (!move) return;
+        const moveSan = bareSan(san.makeSan(pos, move));
+        e.studyMoves.add(moveSan);
+        const next = pos.clone();
+        next.play(move);
+        walk(child, next, depth + 1, { epd, san: moveSan }, onMain && k === 0);
+      });
+    };
+    walk(p.game.moves, p.start.clone(), 0, null, true);
+  }
+  return out;
+}
+
+// The Lichess downloads run by themselves, in the background, after Update studies and when the
+// app opens (so an interrupted download resumes): missing move statistics (they need the token),
+// then missing position evaluations. Each fetches only what's missing, and says nothing if nothing is.
+let downloadsRunning = false;
+async function startDownloads() {
+  if (downloadsRunning || !data) return;
+  downloadsRunning = true;
+  try {
+    if (token) await downloadPopularity();
+    await downloadEvals();
+  } finally { downloadsRunning = false; }
+}
+
+async function downloadPopularity() {
+  if (!token || !data) return;
+  const run = popularityRun = {};
+  try { await downloadPositions(run); }
+  finally {
+    if (popularityRun === run) popularityRun = null; // finished or stopped
+    if (screen === 'options') updateStatsInfo();
+  }
+}
+
+async function downloadPositions(run) {
+  // The same order whatever is ticked: branch points (the opponent has several replies), then the
+  // rest of the chapters' main lines, then everything else; by move number within each group, so a
+  // position's parents are usually known before it's reached.
+  const tier = e => e.branch ? 0 : e.main ? 1 : 2;
+  const todo = [...studyPositions()].filter(([epd]) => !isCurrentStat(popularity[epd])) // older saves are fetched again
+    .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
+  const total = todo.length;
+  if (!total) return; // nothing missing: nothing to say
+  let skipped = 0;
+  for (let i = 0; i < todo.length; ) {
+    if (popularityRun !== run) return; // a newer refresh took over
+    setBgStatus(`Downloading move statistics: ${i} of ${total} positions`);
+    const [epd, e] = todo[i];
+    // Skip positions nobody reaches: every known way here is a move no Lichess game played.
+    // (A different move order could still reach it, so this is a close approximation.)
+    if (e.parents.length && e.parents.every(pp => isCurrentStat(popularity[pp.epd]) && !(gamesOf(popularity[pp.epd], pp.san) > 0))) {
+      popularity[epd] = { white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() };
+      skipped++;
+      i++;
+      continue;
+    }
+    let res;
+    try {
+      res = await fetch(`${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(e.fen)}&moves=100&topGames=0&recentGames=0`,
+        { headers: { Authorization: 'Bearer ' + token } });
+    } catch {
+      await savePopularity();
+      setBgStatus(`Couldn't reach the Lichess explorer. Move statistics stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
+      return;
+    }
+    if (res.status === 429) {
+      // Lichess asks clients to wait a minute after a rate-limit response.
+      await savePopularity();
+      setBgStatus(`Downloading move statistics: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
+      await sleep(61000);
+      continue;
+    }
+    if (res.status === 401) {
+      await savePopularity();
+      setBgStatus('Lichess rejected the token for move statistics. Replace it on the System page; the download then continues.');
+      return;
+    }
+    if (res.ok) {
+      const j = await res.json();
+      // Saved as Lichess sends it. Lichess lists moves most played first: keep the top 10, plus
+      // any other move the studies have here.
+      popularity[epd] = { ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() };
+      if (i % 20 === 19) await savePopularity();
+    }
+    i++;
+    setBgStatus(`Downloading move statistics: ${i} of ${total} positions`);
+    if (screen === 'options') updateStatsInfo();
+  }
+  await savePopularity();
+  if (popularityRun !== run) return;
+  setBgStatus(`Move statistics downloaded for ${total} ${total === 1 ? 'position' : 'positions'}` + (skipped ? ` (${skipped} skipped because no Lichess game reaches them).` : '.'));
+  setTimeout(() => { if (!popularityRun) setBgStatus(''); }, 5000); // unless a newer download is running
+  suggestBackup(); // every position now has its statistics
+}
+
+// After a move-statistics download completes: suggest saving a backup (the data took a while).
+function suggestBackup() {
+  const b = $('banner');
+  b.className = 'banner';
+  b.replaceChildren('Move statistics are complete. Save a backup so you won\'t need to download them again? ',
+    h('button', { class: 'small', onclick: () => { hideBanner(); $('backup-btn').click(); } }, 'Save backup'), ' ',
+    h('button', { class: 'small', onclick: hideBanner }, 'Not now'));
+}
+
+// The Options page's "Move statistics: N of M positions downloaded" line.
+function updateStatsInfo() {
+  if (!data) { $('opt-stats-info').textContent = ''; return; }
+  const positions = [...studyPositions().keys()];
+  const done = positions.filter(epd => isCurrentStat(popularity[epd])).length;
+  $('opt-stats-info').textContent = `Move statistics: ${done} of ${positions.length} ${positions.length === 1 ? 'position' : 'positions'} downloaded`
+    + (popularityRun && done < positions.length ? ' (downloading now…)' : '')
+    + (!popularityRun && done < positions.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
+}
+
+async function savePopularity() {
+  try { await cache.put('popularity', popularity); } catch (e) { console.warn('IndexedDB write failed', e); }
+}
+
+// "Position reached 23k times" / "<1k" / "1.2M" / "…" (not downloaded yet) / "Position never reached".
+function reachedText(stat) {
+  if (!stat) return 'Position reached … times';
+  const n = totalOf(stat);
+  if (!n) return 'Position never reached';
+  if (n < 1000) return 'Position reached <1k times';
+  const k = Math.round(n / 1000);
+  return `Position reached ${k < 1000 ? k + 'k' : (n / 1e6).toFixed(1) + 'M'} times`;
+}
+
+// A move's share of the Lichess games in a position: "45%", "<1%", "0%", "no games", or "–" when
+// that position's statistics haven't been downloaded yet.
+function moveShare(pos, moveSan) {
+  const stat = popularity[epdOf(fenOf(pos))];
+  if (!stat) return '–';
+  if (!totalOf(stat)) return 'no games';
+  const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
+  return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
+}
+
+
+// ---------- Position evaluation (Lichess cloud) ----------
+// Lichess's stored cloud evaluation of each line's final position, from White's side.
+// Evaluated once and saved (keyed by position, so lines reaching the same position share
+// it). Missing ones download in the background (see startDownloads), and one at a time when a
+// line ends without one. The cloud API only looks up stored results,
+// so requests are cheap; they're still spaced out, and slowed down if Lichess asks.
+
+const EVAL_INTERVAL = 3000; // one request every 3 seconds
+let evals = {};              // position (EPD) -> { cp } or { mate }, with depth; or { none: true }
+let evalRun = null;          // the download in progress, if any
+
+// The final position of a line, as a FEN (cached on the line).
+function finalFen(line) {
+  if (!line.finalFen) {
+    const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
+    for (const m of line.moves) pos.play(parseUci(m.uci));
+    line.finalFen = fenOf(pos);
+  }
+  return line.finalFen;
+}
+const evalOf = line => evals[epdOf(finalFen(line))];
+
+// "+0.4", "-1.2", "0.0", or "#3" / "#-3" for a forced mate, as Lichess shows them.
+function formatEval(e) {
+  if (e.mate != null) return '#' + e.mate;
+  const v = e.cp / 100;
+  return (v > 0 ? '+' : '') + v.toFixed(1);
+}
+
+// Fetch one position's evaluation. Returns how long to wait before the next request.
+async function fetchEval(fen) {
+  const epd = epdOf(fen);
+  let res;
+  try { res = await fetch(`${LICHESS}/api/cloud-eval?fen=${encodeURIComponent(fen)}`); }
+  catch { return null; } // no connection
+  if (res.status === 429) return 61000; // Lichess asks clients to wait a minute
+  if (res.status === 404) evals[epd] = { none: true };
+  else if (res.ok) {
+    const j = await res.json();
+    const pv = j.pvs && j.pvs[0];
+    if (pv) evals[epd] = pv.mate != null ? { mate: pv.mate, depth: j.depth } : { cp: pv.cp, depth: j.depth };
+    else evals[epd] = { none: true };
+  } else return 60000;
+  try { await cache.put('evals', evals); } catch (e) { console.warn('IndexedDB write failed', e); }
+  if (screen === 'options') updateEvalInfo();
+  return EVAL_INTERVAL;
+}
+
+// Final positions without a saved evaluation: the selected chapters' lines first, then the rest.
+function missingEvals() {
+  const seen = new Set();
+  const out = [];
+  const chapters = allChapters();
+  for (const ch of [...chapters.filter(c => selection.has(c.key)), ...chapters.filter(c => !selection.has(c.key))]) {
+    for (const line of chapterLines(ch)) {
+      const f = finalFen(line), epd = epdOf(f);
+      if (!evals[epd] && !seen.has(epd)) { seen.add(epd); out.push(f); }
+    }
+  }
+  return out;
+}
+
+function setEvalStatus(text) {
+  $('eval-status').textContent = text;
+  $('eval-status').classList.toggle('hidden', !text);
+}
+
+// Every line end without a saved evaluation, one at a time (in the background; see startDownloads).
+async function downloadEvals() {
+  if (evalRun || !data) return;
+  const run = evalRun = {};
+  const todo = missingEvals();
+  let done = 0, none = 0;
+  try {
+    if (!todo.length) return; // nothing missing: nothing to say
+    for (let i = 0; i < todo.length; ) {
+      setEvalStatus(`Downloading evaluations: ${i} of ${todo.length} line ends (about ${minutes((todo.length - i) * EVAL_INTERVAL)})`);
+      const wait = await fetchEval(todo[i]);
+      if (evalRun !== run) return;
+      if (wait == null) { setEvalStatus(`Couldn't reach Lichess. Evaluations stopped at ${i} of ${todo.length}; the rest downloads the next time you open the app or press Update studies.`); return; }
+      if (wait > EVAL_INTERVAL) { // too many requests: wait a minute, then retry the same position
+        setEvalStatus(`Downloading evaluations: ${i} of ${todo.length} line ends (Lichess asked to slow down; waiting a minute…)`);
+        await sleep(wait);
+        continue;
+      }
+      if (evals[epdOf(todo[i])]?.none) none++; else done++;
+      i++;
+      if (i < todo.length) await sleep(EVAL_INTERVAL);
+    }
+    setEvalStatus(`Evaluations downloaded for ${done} ${done === 1 ? 'position' : 'positions'}` + (none ? ` (${none} not in Lichess's cloud).` : '.'));
+    setTimeout(() => { if (!evalRun) setEvalStatus(''); }, 5000);
+  } finally {
+    if (evalRun === run) evalRun = null;
+    if (screen === 'options') updateEvalInfo();
+  }
+}
+const minutes = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return `${m} ${m === 1 ? 'minute' : 'minutes'}`; };
+
+// " Evaluation +1.6" after "Line complete." in the status: the Lichess evaluation of the finished
+// line's final position, fetched straight away if it isn't saved yet ("…" meanwhile). Nothing is
+// shown if Lichess has no evaluation or can't be reached.
+function evalStatus(fen) {
+  if (evals[epdOf(fen)]?.none) return null;
+  const num = h('b', { class: 'eval-num' });
+  const el = h('span', {}, ' Evaluation ', num);
+  const fill = () => {
+    const e = evals[epdOf(fen)];
+    if (!e || e.none) { el.remove(); return; }
+    num.textContent = formatEval(e);
+    el.title = `Lichess cloud evaluation of the final position, depth ${e.depth}`;
+  };
+  if (evals[epdOf(fen)]) fill();
+  else {
+    num.textContent = '…';
+    el.title = 'Getting the Lichess evaluation…';
+    fetchEval(fen).then(fill);
+  }
+  return el;
+}
+
+// The System page's "Evaluations saved: …" line.
+function updateEvalInfo() {
+  if (!data) { $('opt-eval-info').textContent = ''; return; }
+  const epds = new Set(allChapters().flatMap(ch => chapterLines(ch).map(l => epdOf(finalFen(l)))));
+  let saved = 0, none = 0;
+  for (const epd of epds) { if (evals[epd]?.none) none++; else if (evals[epd]) saved++; }
+  const left = epds.size - saved - none;
+  $('opt-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
+    + (none ? `, ${none} not in Lichess's cloud` : '')
+    + (left ? ` · ${left} still to download${evalRun ? ' (downloading now…)' : ' (automatically, after Update studies or when you next open the app)'}` : '')
+    + '.';
+}
+
+function endLine() {
+  const { line, missed } = q;
+  recordResults();
+  q.done = true; // the move list gets hover boards
+
+  q.busy = true;
+  syncBoard();
+  if (q.endedAt) setStatus('Line ended early.');
+  else setStatus([missed ? 'Line complete.' : 'Line complete. No mistakes.', evalStatus(finalFen(line))]); // standard grey, not green
+  q.forceNames = true; // the names always show when the line ends
+  updateNames();
+  const summary = $('q-summary');
+  summary.replaceChildren(...[
+    q.startedAt ? h('p', { class: 'muted' }, `Started partway, at ${moveLabel(q.startedAt)}.`) : null,
+  ].filter(Boolean));
+  summary.classList.toggle('hidden', !summary.childElementCount); // nothing to say after a clean line
+  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  $('next-btn').textContent = 'Next line';
+  $('next-btn').classList.remove('hidden');
+  $('next-btn').focus();
+}
+
+$('next-btn').addEventListener('click', nextLine);
+
+function nextLine() {
+  const line = pickLine();
+  if (line) return startLine(line);
+  $('next-btn').classList.add('hidden');
+  setStatus('No lines left to practice.');
+}
+
+// End of a single position: recorded as one try of that move in its line. A right answer
+// moves on after a second; after a reveal, wait for "Next position" so the move can be studied.
+function endSingle() {
+  recordResults();
+  q.done = true; // the move list gets hover boards
+  q.busy = true;
+  syncBoard();
+  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  q.forceNames = true; // the names always show after each answer
+  updateNames();
+  const r = q.results[q.results.length - 1];
+  if (r && !r.revealed) {
+    setStatus('Correct. Next position…');
+    const run = q.token;
+    setTimeout(() => { if (q && q.token === run) nextLine(); }, 1000);
+  } else {
+    $('next-btn').textContent = 'Next position';
+    $('next-btn').classList.remove('hidden');
+    $('next-btn').focus();
+  }
+}
+
+// Favorites: a saved chapter selection that can be recalled later.
+$('fav-set-btn').addEventListener('click', () => {
+  favorites = [...selection];
+  store.set('favorites', favorites);
+  updateToolbar();
+  showBanner(`Saved ${favorites.length} ${favorites.length === 1 ? 'chapter' : 'chapters'} as your favorites.`);
+});
+
+$('fav-recall-btn').addEventListener('click', () => {
+  const existing = new Set(allChapters().map(c => c.key));
+  const found = (favorites || []).filter(k => existing.has(k));
+  const keys = found.filter(k => !isHiddenChapter(k)); // chapters in hidden studies are skipped
+  selection = new Set(keys);
+  saveSelection();
+  renderStudies(); // open and closed studies stay as they were
+  const missing = (favorites || []).length - found.length, skipped = found.length - keys.length;
+  showBanner(`Recalled your favorites: ${keys.length} ${keys.length === 1 ? 'chapter' : 'chapters'} selected.`
+    + (missing ? ` (${missing} no longer ${missing === 1 ? 'exists' : 'exist'} on Lichess.)` : '')
+    + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''));
+});
+
+for (const r of document.querySelectorAll('input[name=opp-mode]')) {
+  r.addEventListener('change', () => {
+    opponentMode = r.value;
+    store.set('opponentMode', opponentMode);
+    updateToolbar();
+  });
+}
+
+
+function leaveQuiz() {
+  q = null; // pending timers check q and stop
+  $('next-btn').classList.add('hidden');
+  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  $('promo').classList.add('hidden');
+}
+
+$('start-btn').addEventListener('click', startPractice);
+
+// ---------- Token ----------
+
+async function acceptToken(value, errorEl) {
+  const tok = value.trim();
+  if (!tok) { errorEl.textContent = 'Paste a token first.'; return false; }
+  errorEl.textContent = 'Checking token…';
+  try {
+    await lichess('/api/account', tok);
+  } catch (e) {
+    errorEl.textContent = e.status === 401
+      ? 'Lichess rejected this token. Check it was copied in full and has the study:read scope.'
+      : e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message;
+    return false;
+  }
+  errorEl.textContent = '';
+  token = tok;
+  store.set('token', token);
+  return true;
+}
+
+$('token-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (await acceptToken($('token-input').value, $('token-error'))) {
+    $('token-input').value = '';
+    refreshFromLichess(); // first visit: fetch automatically
+  }
+});
+
+$('opt-token-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (await acceptToken($('opt-token-input').value, $('opt-token-error'))) {
+    $('opt-token-input').value = '';
+    renderOptions();
+    if (!data) refreshFromLichess();
+    else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
+  }
+});
+$('token-clear-btn').addEventListener('click', () => {
+  token = null;
+  store.remove('token');
+  renderOptions();
+  showBanner('Stored token cleared. Your cached studies are still available; refreshing needs a new token.');
+});
+
+// ---------- Colored moves ----------
+
+
+// ---------- Move preview (small board on hover) ----------
+// Your moves: the position before the move, a green arrow for the correct move and red arrows
+// for your wrong moves over its last 10 tries. The opponent's moves: the position after the
+// move, highlighted as on Lichess, with a white arrow (red if the study marks it ?, ?? or ?!).
+
+let previewCg = null;
+
+// With { attempt }, the board describes this attempt at the move (the practice move list after a
+// line): the wrong moves played this time, not the last 10 tries. attempt is null for a move of
+// yours that wasn't played this time (before a partway start).
+function showPreview(el, line, i, thisTime = null) {
+  let box = $('move-preview');
+  if (!box) {
+    box = h('div', { id: 'move-preview', class: 'move-preview hidden' },
+      h('div', { class: 'mp-text' }), h('div', { class: 'mp-board' }, h('div', { class: 'cg-wrap' })));
+    document.body.append(box);
+  }
+  const m = line.moves[i];
+  const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
+  // Before a user's move, the opponent's previous move is highlighted (no arrow).
+  let lastMove;
+  line.moves.slice(0, i).forEach((x, k) => {
+    const mv = parseUci(x.uci);
+    if (k === i - 1 && !x.user) lastMove = compat.chessgroundMove(mv).slice(0, 2);
+    pos.play(mv);
+  });
+  let shapes = [], text;
+  // How often this move is played in that position in all rated Lichess games (downloaded automatically).
+  // Top line: the move and its share, e.g. "2… Nc6 (Lichess games 62%)".
+  // "Position reached 23k times": games reaching the position after the move, any move order.
+  const after = pos.clone();
+  after.play(parseUci(m.uci));
+  const countLine = h('div', { class: 'muted' }, reachedText(popularity[epdOf(fenOf(after))]));
+  const topLine = h('div', {}, h('b', {}, moveLabel(m)), h('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
+    ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(pos, m.san))));
+  if (m.user && thisTime) {
+    const r = thisTime.attempt;
+    const [from, to] = arrowSquares(pos, parseUci(m.uci));
+    const wrong = r ? countWrongs([r.wrongs]) : [];
+    for (const [s] of wrong) {
+      const mv = san.parseSan(pos, s);
+      if (!mv) continue;
+      const [f, t] = arrowSquares(pos, mv);
+      shapes.push({ orig: f, dest: t, brush: 'red' });
+    }
+    shapes.push({ orig: from, dest: to, brush: 'green' });
+    // Just the outcome: the arrows already show the wrong moves played.
+    const result = !r ? 'Not tested this time'
+      : r.tries || r.hint || r.revealed ? 'Wrong this time' : 'Correct first try';
+    text = [topLine, countLine, h('div', {}, result)];
+  } else if (m.user) {
+    const tries = triesOf(line, i);
+    const wrong = countWrongs(tries);
+    const [from, to] = arrowSquares(pos, parseUci(m.uci));
+    for (const [s] of wrong) {
+      const mv = san.parseSan(pos, s);
+      if (!mv) continue;
+      const [f, t] = arrowSquares(pos, mv);
+      shapes.push({ orig: f, dest: t, brush: 'red' });
+    }
+    shapes.push({ orig: from, dest: to, brush: 'green' });
+    const right = tries.filter(t => t === 1).length;
+    text = [topLine, countLine, h('div', {}, tries.length ? `${right} of last ${tries.length} correct` : 'Not tried yet'),
+      wrong.length ? h('div', {}, 'Wrong: ' + wrong.map(([s, n]) => fig(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null];
+  } else {
+    // The opponent's move itself: the position after it, with the move as a white arrow,
+    // or red if the study marks it ?, ?? or ?!.
+    const mv = parseUci(m.uci);
+    const [f, t] = arrowSquares(pos, mv);
+    const mistake = m.notes?.nags.some(n => MISTAKE_NAGS.includes(n));
+    shapes.push({ orig: f, dest: t, brush: mistake ? 'red' : 'white' });
+    lastMove = compat.chessgroundMove(mv).slice(0, 2);
+    pos.play(mv);
+    text = [topLine, countLine, m.side ? h('div', { class: 'muted' }, 'Alternative move, not tested') : null];
+  }
+  box.firstChild.replaceChildren(...text.filter(Boolean));
+  box.classList.remove('hidden');
+  const config = {
+    fen: fenOf(pos), orientation: line.color, turnColor: pos.turn, lastMove,
+    check: pos.isCheck() ? pos.turn : false,
+    viewOnly: true, coordinates: false, animation: { enabled: false },
+    drawable: { enabled: false, visible: true },
+  };
+  if (!previewCg) previewCg = Chessground(box.querySelector('.cg-wrap'), config);
+  else previewCg.set(config); // lastMove: undefined clears the previous highlight
+  previewCg.setAutoShapes(shapes);
+  // Below the move, or above it if there's no room; kept inside the window.
+  const r = el.getBoundingClientRect();
+  const w = box.offsetWidth, hgt = box.offsetHeight;
+  const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+  const top = r.bottom + 6 + hgt <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - hgt - 6);
+  box.style.left = left + 'px';
+  box.style.top = top + 'px';
+  previewCg.redrawAll();
+}
+
+function hidePreview() { $('move-preview')?.classList.add('hidden'); }
+window.addEventListener('scroll', hidePreview, { passive: true });
+
+
+$('nav-help').addEventListener('click', () => {
+  hideBanner();
+  showScreen('help'); // a line in progress is kept
+  window.scrollTo(0, 0);
+});
+
+function showOptions() {
+  // A line in progress is kept; the Practice button returns to it.
+  showScreen('options');
+  renderOptions();
+}
+
+// A date and time with the time zone, e.g. "9/26/2026, 2:13 PM ET".
+function formatWithZone(ts) {
+  const opts = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+  try { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'shortGeneric' }); }
+  catch { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'short' }); } // older browsers: "EDT"
+}
+
+function renderOptions() {
+  const nChapters = allChapters().length;
+  $('opt-fetch-info').textContent = data
+    ? `${data.username} · ${data.studies.length} ${data.studies.length === 1 ? 'study' : 'studies'}, ${nChapters} ${nChapters === 1 ? 'chapter' : 'chapters'} · fetched ${formatWithZone(data.fetchedAt)}`
+    : 'No studies fetched yet.';
+  updateSoundControls();
+  updateStatsInfo();
+  $('opt-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
+  $('opt-token-error').textContent = '';
+  $('token-clear-btn').disabled = !token;
+  updateEvalInfo();
+
+}
+
+
+
+
+
+// Radio buttons: one is always chosen.
+for (const r of document.querySelectorAll('input[name=start-mode]')) {
+  r.addEventListener('change', () => {
+    startMode = r.value;
+    store.set('startMode', startMode);
+    for (const other of document.querySelectorAll('input[name=start-mode]')) other.checked = other.value === startMode;
+    updateToolbar(); // Test single positions leaves out lines with nothing from move 5 on
+  });
+}
+
+// The eye next to the names on the practice page shows or hides them (remembered).
+$('names-toggle').addEventListener('click', () => {
+  hideNames = !hideNames; // after a line the names stay shown; the setting applies during lines
+  store.set('hideNames', hideNames);
+  if (q) updateNames(); else updateNamesControl();
+});
+updateNamesControl();
+
+function setSounds(on) {
+  soundsOn = on;
+  store.set('soundsOn', soundsOn);
+  updateSoundControls();
+  if (soundsOn) playSound('Move'); // a quick sample
+}
+
+// The bell next to the names shows whether sounds are on.
+function updateSoundControls() {
+  const bell = $('sound-toggle');
+  bell.classList.toggle('off', !soundsOn);
+  bell.title = soundsOn ? 'Turn sounds off' : 'Turn sounds on';
+  bell.setAttribute('aria-pressed', String(soundsOn));
+}
+
+$('sound-toggle').addEventListener('click', () => setSounds(!soundsOn));
+updateSoundControls();
+
+// The speech-bubble icon next to the names turns annotations (glyphs and comment bubbles) on and
+// off, at any time: the move list and the intro bubble update straight away.
+function updateAnnotationsControl() {
+  const btn = $('annotations-toggle');
+  btn.classList.toggle('off', !showComments);
+  btn.title = showComments ? 'Show annotations during the line' : 'Hide annotations during the line'; // the current state
+  btn.setAttribute('aria-pressed', String(showComments));
+}
+// The violet-rectangle icon: highlight missed moves during the line too (on), or only once it's over (off).
+function updateMissesControl() {
+  const btn = $('misses-toggle');
+  btn.classList.toggle('off', !liveMisses);
+  btn.title = liveMisses ? 'Highlight missed moves during the line' : 'Hide missed moves during the line'; // the current state
+  btn.setAttribute('aria-pressed', String(liveMisses));
+}
+$('misses-toggle').addEventListener('click', () => {
+  liveMisses = !liveMisses;
+  store.set('liveMisses', liveMisses);
+  updateMissesControl();
+  if (q) renderMoves();
+});
+updateMissesControl();
+
+$('annotations-toggle').addEventListener('click', () => {
+  showComments = !showComments;
+  store.set('showComments', showComments);
+  updateAnnotationsControl();
+  hideNotePop();
+  if (q) {
+    renderMoves();
+    updateNames();
+    if (!showComments && q.hintNote) { q.hintNote.remove(); q.hintNote = null; }
+  }
+});
+updateAnnotationsControl();
+
+$('refresh-btn').addEventListener('click', refreshFromLichess);
+
+// ---------- Backup ----------
+
+const BACKUP_APP = 'chess-opening-trainer';
+
+
+$('backup-btn').addEventListener('click', async () => {
+  // Never include the Lichess token (or any API key).
+  const backup = {
+    app: BACKUP_APP, version: 3, exportedAt: new Date().toISOString(),
+    stats, selection: [...selection], hiddenStudies: [...hiddenStudies],
+    // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
+    lichess: { popularity, evals },
+    favorites,
+    settings: { startMode, showComments, soundsOn, hideNames, opponentMode, liveMisses },
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
+  const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  // Where the browser supports it (Chrome, Edge), ask where to save the file.
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Opening Trainer backup', accept: { 'application/json': ['.json'] } }] });
+      const w = await handle.createWritable();
+      await w.write(blob);
+      await w.close();
+      showBanner(`Backup saved as ${handle.name}.`);
+    } catch (e) {
+      if (e.name !== 'AbortError') showBanner("Couldn't save the backup: " + e.message, true); // AbortError: the user cancelled
+    }
+    return;
+  }
+  // Other browsers (Safari, Firefox) download it; where it goes depends on the browser's download settings.
+  const url = URL.createObjectURL(blob);
+  const a = h('a', { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showBanner(`Backup saved as ${name} in your download folder. To choose the folder each time in Safari: Safari → Settings → General → File download location → Ask for each download.`);
+});
+
+$('restore-btn').addEventListener('click', () => $('restore-file').click());
+
+$('restore-file').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  let b;
+  try { b = JSON.parse(await file.text()); } catch { b = null; }
+  if (!b || b.app !== BACKUP_APP || typeof b.stats !== 'object') {
+    showBanner("That file isn't an Opening Trainer backup.", true);
+    return;
+  }
+  // Older backups' per-line move results are converted to positions; stats with only plays and
+  // misses per line can't be used.
+  const restored = convertStats(b.stats);
+  const oldFormat = Object.values(b.stats).some(isOldStats);
+  const n = Object.keys(restored).length;
+  const when = b.exportedAt ? ` from ${new Date(b.exportedAt).toLocaleString()}` : '';
+  if (!confirm(`Are you sure? This replaces your current stats and settings with the backup${when} (${n} ${n === 1 ? 'position' : 'positions'} with results). It can't be undone.`)) return;
+
+  stats = restored;
+  selection = new Set(Array.isArray(b.selection) ? b.selection.filter(k => typeof k === 'string') : []);
+  // Lichess data is merged, not replaced: a position keeps whichever copy is newer (a newer-format
+  // move statistic wins over an older one), so downloads made since the backup aren't lost.
+  const lich = b.lichess && typeof b.lichess === 'object' ? b.lichess : {};
+  for (const [epd, s] of Object.entries(lich.popularity || {})) {
+    if (!s || typeof s !== 'object' || typeof s.moves !== 'object') continue;
+    const cur = popularity[epd];
+    const newer = !cur || (isCurrentStat(s) && !isCurrentStat(cur)) || (isCurrentStat(s) === isCurrentStat(cur) && (s.at || 0) > (cur.at || 0));
+    if (newer) popularity[epd] = s;
+  }
+  for (const [epd, ev] of Object.entries(lich.evals || {})) if (ev && typeof ev === 'object' && !evals[epd]) evals[epd] = ev;
+  if (lich.popularity || lich.evals) {
+    try { await cache.put('popularity', popularity); await cache.put('evals', evals); } catch (err) { console.warn('IndexedDB write failed', err); }
+  }
+  if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
+  const st = b.settings || {};
+  if (typeof st.showComments === 'boolean') showComments = st.showComments;
+  if (typeof st.soundsOn === 'boolean') soundsOn = st.soundsOn;
+  if (typeof st.hideNames === 'boolean') { hideNames = st.hideNames; updateNamesControl(); }
+  if (st.startMode) startMode = START_MODES.includes(st.startMode) ? st.startMode : 'start';
+  if (OPP_MODES.includes(st.opponentMode)) opponentMode = st.opponentMode;
+  else if (typeof st.mainOnly === 'boolean') opponentMode = st.mainOnly ? 'main' : 'misses'; // older backups
+  if (typeof st.liveMisses === 'boolean') { liveMisses = st.liveMisses; store.set('liveMisses', liveMisses); updateMissesControl(); }
+  if (Array.isArray(b.favorites)) { favorites = b.favorites.filter(k => typeof k === 'string'); store.set('favorites', favorites); }
+  saveStats(); saveSelection();
+  updateAnnotationsControl(); updateSoundControls();
+  store.set('showComments', showComments); store.set('soundsOn', soundsOn); store.set('hideNames', hideNames); store.set('startMode', startMode);
+  store.set('opponentMode', opponentMode);
+  lineCache.clear();
+  renderOptions();
+  showBanner(`Restored stats for ${n} ${n === 1 ? 'position' : 'positions'} and your settings from the backup.`
+    + (oldFormat ? ' Its older per-line stats (which don\'t say which move was missed) were left out.' : ''));
+});
+
+$('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); });
+// Studies: the selection screen (or the token screen before any studies are fetched).
+// A line in progress is kept; Practice returns to it if nothing that affects it changed.
+$('nav-studies').addEventListener('click', () => {
+  hideBanner();
+  if (data) showSelection();
+  else if (token) { showScreen('select'); $('studies').replaceChildren(); }
+  else showScreen('token');
+});
+
+// Practice: the practice page with the board idle and a "Start practice" button;
+// nothing is tested until that's pressed.
+$('nav-practice').addEventListener('click', () => {
+  if (screen === 'quiz') return; // already on the practice page
+  if (!data) { $('nav-studies').click(); return; }
+  hideBanner();
+  if (q && q.sig === practiceSignature()) { // back to the line in progress (or its summary), exactly as it was
+    showScreen('quiz');
+    cg.redrawAll();
+    return;
+  }
+  if (q) leaveQuiz(); // something that affects the lines changed: start afresh
+  showPracticeIdle();
+});
+
+// What decides which lines are practiced. If any of it changes, a line in progress is dropped.
+const practiceSignature = () => JSON.stringify({
+  selection: [...selection].sort(), opponentMode, startMode, fetchedAt: data?.fetchedAt,
+});
+
+function showPracticeIdle() {
+  q = null;
+  showScreen('quiz');
+  ensureBoard();
+  cg.set({
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    orientation: 'white', turnColor: 'white', lastMove: undefined, check: false,
+    movable: { color: undefined, dests: new Map() },
+  });
+  cg.setAutoShapes([]);
+  cg.redrawAll();
+  updateToolbar(); // refreshes the selection count
+  const ready = !$('start-btn').disabled;
+  // "3 chapters · 13 lines selected", then the Opponent's-moves choice from the Studies page.
+  const chapters = allChapters().filter(c => selection.has(c.key));
+  const nLines = chapters.reduce((sum, c) => sum + practiceLines(c).length, 0);
+  updateNamesControl();
+  for (const id of ['q-study', 'q-chapter', 'q-opening']) $(id).classList.remove('placeholder');
+  $('q-study').textContent = '';
+  $('q-opening').textContent = '';
+  $('q-eco').textContent = '';
+  $('q-eco').classList.remove('placeholder');
+  $('q-chapter').classList.add('muted'); // the idle page's selection count
+  $('q-chapter').textContent = `${chapters.length} ${chapters.length === 1 ? 'chapter' : 'chapters'} · ${nLines} ${nLines === 1 ? 'line' : 'lines'} selected`;
+  $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${opponentMode}]`).closest('label').textContent.trim();
+  $('q-moves').replaceChildren(h('span', { class: 'none' }, 'No moves yet.'));
+  for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
+  // Keep the idle page clean: no status text unless there's nothing to practice.
+  // (setStatus resets the box's classes, so it reappears as soon as a line starts.)
+  setStatus('Select chapters on the Studies page');
+  if (ready) $('q-status').classList.add('hidden');
+  $('q-summary').classList.add('hidden');
+  hideNotePop();
+  $('next-btn').classList.add('hidden');
+  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  $('practice-start-btn').classList.remove('hidden');
+  $('practice-start-btn').disabled = !ready;
+  if (ready) $('practice-start-btn').focus();
+}
+
+$('practice-start-btn').addEventListener('click', () => { startPractice(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && q && screen === 'quiz' && !$('next-btn').classList.contains('hidden')) {
+    e.preventDefault();
+    $('next-btn').click();
+    return;
+  }
+  // Step through the moves played, as on Lichess.
+  if (!q || screen !== 'quiz' || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  const shown = q.view ?? q.idx;
+  const target = { ArrowLeft: shown - 1, ArrowRight: shown + 1, Home: 0, End: q.idx }[e.key];
+  if (target === undefined) return;
+  e.preventDefault();
+  viewPly(target);
+});
+
+// ---------- Start ----------
+
+async function init() {
+  try {
+    data = (await cache.get('studies')) || null;
+    popularity = (await cache.get('popularity')) || {};
+    evals = (await cache.get('evals')) || {};
+  }
+  catch (e) { console.warn('IndexedDB read failed', e); }
+  stats = convertStats(stats); // older per-line stats become per position (a no-op once converted)
+  saveStats();
+  store.remove('depths');      // the old "to move" depth limits
+  store.remove('evalOn'); // evaluations are always shown now
+  if (data) { showPracticeIdle(); startDownloads(); } // resume any missing Lichess downloads // open on the Practice page, waiting for "Start practice"
+  else if (token) { showScreen('select'); $('studies').replaceChildren(); refreshFromLichess(); }
+  else showScreen('token');
+}
+
+init();
+</script>
+</body>
+</html>
