@@ -228,7 +228,7 @@
   .move-nav button { flex: 1; padding: 4px 0; font-size: 13px; }
   .panel { flex: 1; min-width: 260px; background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 16px; }
   .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
-  #q-opening, #q-eco { font-size: 13px; }
+  #q-opening { font-size: 13px; }
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status.bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
@@ -346,7 +346,6 @@
         <h2 id="q-study"></h2>
         <div id="q-chapter"></div>
         <div id="q-opening" class="muted"></div>
-        <div id="q-eco" class="muted"></div>
         <div id="q-side" class="muted"></div>
         <div id="q-moves" class="moves" aria-label="Moves played"></div>
         <div class="move-nav">
@@ -1563,7 +1562,6 @@ function syncBoard(lastMove) {
   $('hint-btn').disabled = !userTurn || q.hint >= 2;
   $('end-btn').disabled = !userTurn;
   renderMoves();
-  updateEco();
 }
 
 // Squares for drawing a move; castling is shown as the king's two-square move.
@@ -1608,7 +1606,6 @@ function showPracticeIdle() {
   const nLines = chapters.reduce((sum, c) => sum + practiceLines(c).length, 0);
   $('q-study').textContent = '';
   $('q-opening').textContent = '';
-  $('q-eco').textContent = '';
   $('q-chapter').classList.add('muted'); // the idle page's selection count
   $('q-chapter').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`;
   $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${opponentMode}]`).closest('label').textContent.trim();
@@ -2030,7 +2027,7 @@ document.addEventListener('keydown', e => {
   viewPly(target);
 });
 
-// ---------- Practice: names, icons and sounds ----------
+// ---------- Practice: names and sounds ----------
 
 // The study and chapter names in the practice panel. Three lines: the study (the heading), the
 // chapter (with its introductory comment's bubble) and the opening from the PGN tags (left out if
@@ -2042,22 +2039,7 @@ function updateNames() {
   $('q-study').textContent = studyOf(ch).name;
   $('q-chapter').replaceChildren(ch.name, intro.length ? bubbleEl('', { text: intro, nags: [] }, false) : '');
   $('q-opening').textContent = openingName(parseChapter(ch)) || '';
-  updateEco();
   $('q-chapter').classList.remove('muted');
-}
-
-// The fourth heading line: the ECO code of the position reached (the live position), from the
-// Opening Explorer data. A position without a name of its own keeps the code of the last named
-// position before it; "…" if the position's statistics haven't been downloaded.
-function updateEco() {
-  if (!q) return;
-  const pos = parseChapter(chapterByKey(q.line.chapterKey)).start.clone();
-  let eco = lichessStats[epdOf(fenOf(pos))]?.opening?.eco || '';
-  for (const m of q.line.moves.slice(0, q.idx)) {
-    pos.play(parseUci(m.uci));
-    eco = lichessStats[epdOf(fenOf(pos))]?.opening?.eco || eco;
-  }
-  $('q-eco').textContent = lichessStats[epdOf(fenOf(pos))] ? eco : '…';
 }
 
 // Lichess "SFX" sounds (Enigmahack, AGPLv3+), pinned to a Lichess commit.
