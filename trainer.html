@@ -163,7 +163,7 @@
   .s0 { background: rgba(138, 92, 246, .62); }
   .smv-num { color: var(--muted); }
   /* Moves are in the standard text color, like Lichess, except moves with a move-quality glyph,
-     which take the glyph's color (only with annotations on). */
+     which take the glyph's color. */
   .smv, .mv-side { color: var(--text); }
   .mvq-good { color: #629924 !important; }
   .mvq-brilliant { color: #21c43a !important; }
@@ -186,10 +186,7 @@
   .icon-btn:hover:not(:disabled) { background: none; color: var(--text-strong); }
   .icon-btn .sound-off-line { display: none; }
   .icon-btn.off .sound-off-line { display: inline; }
-  .names-row { display: flex; align-items: flex-start; gap: 8px; }
-  .names { flex: 1; min-width: 0; }
-  .panel-icons { display: flex; gap: 6px; margin-top: 2px; } /* left to right: missed moves, annotations, names, sounds */
-  .placeholder, .panel h2.placeholder { color: var(--muted); font-style: italic; font-weight: 400; }
+  .below-board { display: flex; justify-content: flex-end; margin-top: 6px; } /* the sounds bell, under the board's right edge */
   .board-wrap { position: relative; width: 100%; aspect-ratio: 1; }
   /* Speech bubbles: a study comment on a move (or the chapter's intro), shown on hover. */
   /* A softer, muted blue than the Lichess accent, so the bubbles are noticeable but quiet. */
@@ -335,44 +332,21 @@
           <div id="board"></div>
           <div id="promo" class="promo hidden"><div class="cg-wrap"></div></div>
         </div>
+        <div class="below-board">
+        <button id="sound-toggle" class="icon-btn" aria-label="Move sounds">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M12 3a5 5 0 0 0-5 5v3.5L5.5 14v1.5h13V14L17 11.5V8a5 5 0 0 0-5-5z" fill="currentColor"/>
+            <path d="M10 17.5a2 2 0 0 0 4 0z" fill="currentColor"/>
+            <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        </div>
       </div>
       <div class="panel">
-        <div class="names-row">
-          <div class="names">
-            <h2 id="q-study"></h2>
-            <div id="q-chapter"></div>
-            <div id="q-opening" class="muted"></div>
-            <div id="q-eco" class="muted"></div>
-          </div>
-          <div class="panel-icons">
-            <button id="misses-toggle" class="icon-btn" aria-label="Highlight missed moves during the line">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <rect x="3" y="7" width="18" height="10" rx="2.5" fill="rgba(138, 92, 246, .85)"/>
-                <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <button id="annotations-toggle" class="icon-btn" aria-label="Annotations">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="currentColor"/>
-                <line class="sound-off-line" x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <button id="names-toggle" class="icon-btn" aria-label="Study and chapter names">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
-                <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
-                <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <button id="sound-toggle" class="icon-btn" aria-label="Move sounds">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <path d="M12 3a5 5 0 0 0-5 5v3.5L5.5 14v1.5h13V14L17 11.5V8a5 5 0 0 0-5-5z" fill="currentColor"/>
-                <path d="M10 17.5a2 2 0 0 0 4 0z" fill="currentColor"/>
-                <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <h2 id="q-study"></h2>
+        <div id="q-chapter"></div>
+        <div id="q-opening" class="muted"></div>
+        <div id="q-eco" class="muted"></div>
         <div id="q-side" class="muted"></div>
         <div id="q-moves" class="moves" aria-label="Moves played"></div>
         <div class="move-nav">
@@ -428,19 +402,18 @@
         <ul>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you change the chapters, Opponent's moves or Where lines start (or refresh your studies) in the meantime, Practice starts afresh instead.</li>
           <li>Press <b>Practice</b> at the top of any page, then <b>Start practice</b>, to begin (or press <b>Start practice</b> on the Studies page to begin straight away).</li>
-          <li>Four small icons sit at the top right of the panel, next to the chapter name: the violet box (missed moves highlighted during the line), the speech bubble (annotations during the line), the eye (chapter names during the line) and the bell (sounds). Click one to switch it; a line through an icon means that thing is off. The first three only affect what you see while playing a line: once the line is over, missed moves are highlighted and annotations and names are always shown, and your setting carries on to the next line. Hovering over the first three says what they're set to now, e.g. "Show annotations during the line" or, with the line through it, "Hide annotations during the line"; hovering over the bell says what a click will do ("Turn sounds on / off").</li>
+          <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
           <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs 10 points; an unmarked one gets "also in your study, but it isn't the main move" and costs 2 points (see Your statistics).</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Either costs 10 points, so the move scores 0 this time.</li>
           <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
-          <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move. Click the speech-bubble icon to hide all this while you play a line, or show it again; a line through it means annotations are hidden during lines. They always appear once the line is over, and on the Studies page.</li>
+          <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>When a line ends, the moves you got wrong this time get a violet background in the move list, and the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often the position is reached, the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% accuracy this attempt", then what you tried before the right move, such as "Tried ♘f3, b4, hint", with red arrows for the wrong moves). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often the position is reached, the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% accuracy this attempt", then what you tried before the right move, such as "Tried ♘f3, b4, hint", with red arrows for the wrong moves). Press <b>Next line</b> (or Enter) to continue.</li>
           <li><b>Position evaluation</b>: after each line, the summary shows Lichess's cloud evaluation of the final position in the status, e.g. "Line complete. Evaluation <b>+0.4</b>" (if you end a line early, it shows none). As on Lichess, it's from White's side: + means White is better, − means Black is better, and #3 / #-3 means White / Black mates in 3. Hover over it to see how deeply Lichess analyzed it. Lichess only has evaluations for positions in its cloud database (most common opening positions), so some line ends have none. They download automatically in the background; they're saved, and a chapter's move tree on the Studies page shows each at the end of its line. If a line ends without one, the summary fetches it on the spot.</li>
           <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
-          <li>To make it harder, click the eye icon (<b>Hide chapter names during the line</b>) to hide the study and chapter names (a line through the eye means they're hidden; "Chapter" and "Study" show instead). The chapter's introductory comment is hidden with them. They always appear when the line ends, and the eye stays as you left it for the next line. Click it again to show them.</li>
         </ul>
       </div>
 
@@ -641,17 +614,10 @@ const allVariations = new Set();    // chapters whose all-variations triangle is
 const saveSelection = () => store.set('selection', [...selection]);
 const saveStats = () => store.set('stats', stats);
 
-// Annotations during a line (always shown after it); stored under its older name.
-let showAnnotations = store.get('showComments', true);
 
-// Annotations are shown unless the setting is off and a line is being played (not yet over).
-// Outside practice (e.g. the Studies page's move tree) they're always shown.
-const annotationsOn = () => showAnnotations || screen !== 'practice' || !q || !!q.done;
 
 let favorites = store.get('favorites', null);              // chapter keys saved with "Save favorites"
 let soundsOn = store.get('soundsOn', false);
-let hideNames = store.get('hideNames', false);
-let liveMisses = store.get('liveMisses', false);          // highlight missed moves during the line, not just after
 const START_MODES = ['start', 'partway', 'single'];
 let startMode = START_MODES.includes(store.get('startMode', 'start')) ? store.get('startMode', 'start') : 'start';
 const OPP_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
@@ -731,7 +697,7 @@ function quickTip(el, text) {
 function hideQuickTip() { clearTimeout(tipTimer); $('quick-tip')?.classList.add('hidden'); }
 window.addEventListener('scroll', hideQuickTip, { passive: true });
 
-// An icon next to the chapter name: a line through it when off; title is its hover text.
+// An icon button: a line through it when off; title is its hover text.
 function setToggle(id, on, title) {
   const btn = $(id);
   btn.classList.toggle('off', !on);
@@ -1026,7 +992,7 @@ function glyphSpan(n) {
 
 // A move gets a speech bubble when its study comment or a position/observation glyph
 // (± = ∞ …) is there to read. Move-quality glyphs (! ? …) show in the move list itself.
-const hasBubble = m => annotationsOn() && !!m.notes && (m.notes.text.length > 0 || m.notes.nags.some(n => n > 7));
+const hasBubble = m => !!m.notes && (m.notes.text.length > 0 || m.notes.nags.some(n => n > 7));
 
 const BUBBLE_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="currentColor"/></svg>';
 
@@ -1640,12 +1606,9 @@ function showPracticeIdle() {
   // "3 chapters · 13 lines selected", then the Opponent's-moves choice from the Studies page.
   const chapters = allChapters().filter(c => selection.has(c.key));
   const nLines = chapters.reduce((sum, c) => sum + practiceLines(c).length, 0);
-  updateNamesControl();
-  for (const id of ['q-study', 'q-chapter', 'q-opening']) $(id).classList.remove('placeholder');
   $('q-study').textContent = '';
   $('q-opening').textContent = '';
   $('q-eco').textContent = '';
-  $('q-eco').classList.remove('placeholder');
   $('q-chapter').classList.add('muted'); // the idle page's selection count
   $('q-chapter').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`;
   $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${opponentMode}]`).closest('label').textContent.trim();
@@ -1879,9 +1842,9 @@ $('hint-btn').addEventListener('click', () => {
   q.hint = 1;
   q.seq.push('hint');
   setShapes([{ orig: from, brush: 'green' }]);
-  // After a wrong move, the status also shows what the study says about it (with annotations on).
+  // After a wrong move, the status also shows what the study says about it.
   const w = q.wrong;
-  const notes = annotationsOn() && w && expected.alts?.[w.san]?.notes;
+  const notes = w && expected.alts?.[w.san]?.notes;
   if (notes) q.hintNote = h('div', { class: 'hint-note' },
     h('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w.san })} (your move)`),
     notes.nags.map(n => [glyphSpan(n), h('span', { class: 'muted' }, ' ' + GLYPHS[n][1])]),
@@ -1922,8 +1885,6 @@ function endLine() {
   syncBoard();
   if (q.endedAt) setStatus('Line ended early.');
   else setStatus([missed ? 'Line complete.' : 'Line complete. No mistakes.', evalStatus(finalFen(line))]); // standard grey, not green
-  q.forceNames = true; // the names always show when the line ends
-  updateNames();
   const summary = $('q-summary');
   summary.replaceChildren(...[
     q.startedAt ? h('p', { class: 'muted' }, `Started partway, at ${moveLabel(q.startedAt)}.`) : null,
@@ -1950,8 +1911,6 @@ function endSingle() {
   q.busy = true;
   syncBoard();
   hideLineButtons();
-  q.forceNames = true; // the names always show after each answer
-  updateNames();
   const r = q.results[q.results.length - 1];
   if (r && !r.seq.includes('show')) { // after Show correct move, wait so the move can be studied
     setStatus('Correct. Next position…');
@@ -1971,16 +1930,16 @@ function leaveQuiz() {
 
 // ---------- Practice: the move list ----------
 
-// A move's text color class from its move-quality glyph, as on Lichess (only with annotations on).
+// A move's text color class from its move-quality glyph, as on Lichess.
 function glyphClass(m) {
-  if (!annotationsOn() || !m.notes) return '';
+  if (!m.notes) return '';
   const n = m.notes.nags.find(x => GLYPHS[x]?.[2]);
   return n ? ' mvq-' + GLYPHS[n][2] : '';
 }
 
-// Glyphs shown after a move in the list, as on Lichess (only with annotations on).
+// Glyphs shown after a move in the list, as on Lichess.
 function glyphMarks(m) {
-  if (!annotationsOn() || !m.notes) return [];
+  if (!m.notes) return [];
   return m.notes.nags.filter(n => n <= 7).map(glyphSpan);
 }
 
@@ -2000,7 +1959,7 @@ function renderMoves() {
     if (m.color === 'black' && i === 0) cells.push(h('span', { class: 'mv empty' }, '…'));
     // Once the line is over, moves you got wrong this time get the violet background.
     const attempt = q.results.find(r => r.idx === i);
-    const missedNow = (q.done || liveMisses) && attempt && attempt.points < 10;
+    const missedNow = attempt && attempt.points < 10;
     // The move, its glyphs and its comment bubble; a missed move has them all in one fixed-width
     // violet box, so boxes line up down the column.
     const content = [fig(m.san), glyphMarks(m), hasBubble(m) ? bubbleEl(moveLabel(m), m.notes, i === newest, i === newest && pop) : null];
@@ -2073,34 +2032,25 @@ document.addEventListener('keydown', e => {
 
 // ---------- Practice: names, icons and sounds ----------
 
-// The study and chapter names in the practice panel: shown when the eye is open, or once the
-// line has ended (q.forceNames); otherwise the placeholders "Chapter" and "Study". The chapter's
-// introductory comment (a bubble after the chapter name) is shown and hidden with them.
+// The study and chapter names in the practice panel. Three lines: the study (the heading), the
+// chapter (with its introductory comment's bubble) and the opening from the PGN tags (left out if
+// the chapter has none).
 function updateNames() {
   if (!q) return;
-  const show = !hideNames || !!q.forceNames;
   const ch = chapterByKey(q.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  // Three lines: the study (the heading), the chapter (with its introductory comment's bubble) and
-  // the opening from the PGN tags (left out if the chapter has none). All hidden with the names.
-  const opening = openingName(parseChapter(ch));
-  $('q-study').textContent = show ? studyOf(ch).name : 'Study';
-  $('q-chapter').replaceChildren(show ? ch.name : 'Chapter',
-    show && annotationsOn() && intro.length ? bubbleEl('', { text: intro, nags: [] }, false) : '');
-  $('q-opening').textContent = opening ? (show ? opening : 'Opening') : '';
-  for (const id of ['q-study', 'q-chapter', 'q-opening', 'q-eco']) $(id).classList.toggle('placeholder', !show);
+  $('q-study').textContent = studyOf(ch).name;
+  $('q-chapter').replaceChildren(ch.name, intro.length ? bubbleEl('', { text: intro, nags: [] }, false) : '');
+  $('q-opening').textContent = openingName(parseChapter(ch)) || '';
   updateEco();
   $('q-chapter').classList.remove('muted');
-  updateNamesControl();
 }
 
 // The fourth heading line: the ECO code of the position reached (the live position), from the
 // Opening Explorer data. A position without a name of its own keeps the code of the last named
-// position before it; "…" if the position's statistics haven't been downloaded. Hidden with the names.
+// position before it; "…" if the position's statistics haven't been downloaded.
 function updateEco() {
   if (!q) return;
-  const show = !hideNames || !!q.forceNames;
-  if (!show) { $('q-eco').textContent = 'ECO'; return; }
   const pos = parseChapter(chapterByKey(q.line.chapterKey)).start.clone();
   let eco = lichessStats[epdOf(fenOf(pos))]?.opening?.eco || '';
   for (const m of q.line.moves.slice(0, q.idx)) {
@@ -2109,46 +2059,6 @@ function updateEco() {
   }
   $('q-eco').textContent = lichessStats[epdOf(fenOf(pos))] ? eco : '…';
 }
-
-// The eye shows the setting: whether names are shown during a line. After a line they're always
-// shown, whatever the setting, and the setting carries on to the next line.
-const updateNamesControl = () => setToggle('names-toggle', !hideNames,
-  hideNames ? 'Hide chapter names during the line' : 'Show chapter names during the line'); // the current state
-
-// The eye next to the names on the practice page shows or hides them (remembered).
-$('names-toggle').addEventListener('click', () => {
-  hideNames = !hideNames; // after a line the names stay shown; the setting applies during lines
-  store.set('hideNames', hideNames);
-  if (q) updateNames(); else updateNamesControl();
-});
-
-// The violet-rectangle icon: highlight missed moves during the line too (on), or only once it's over (off).
-const updateMissesControl = () => setToggle('misses-toggle', liveMisses,
-  liveMisses ? 'Highlight missed moves during the line' : 'Hide missed moves during the line'); // the current state
-
-$('misses-toggle').addEventListener('click', () => {
-  liveMisses = !liveMisses;
-  store.set('liveMisses', liveMisses);
-  updateMissesControl();
-  if (q) renderMoves();
-});
-
-// The speech-bubble icon next to the names turns annotations (glyphs and comment bubbles) on and
-// off, at any time: the move list and the intro bubble update straight away.
-const updateAnnotationsControl = () => setToggle('annotations-toggle', showAnnotations,
-  showAnnotations ? 'Show annotations during the line' : 'Hide annotations during the line'); // the current state
-
-$('annotations-toggle').addEventListener('click', () => {
-  showAnnotations = !showAnnotations;
-  store.set('showComments', showAnnotations);
-  updateAnnotationsControl();
-  hideNotePop();
-  if (q) {
-    renderMoves();
-    updateNames();
-    if (!showAnnotations && q.hintNote) { q.hintNote.remove(); q.hintNote = null; }
-  }
-});
 
 // Lichess "SFX" sounds (Enigmahack, AGPLv3+), pinned to a Lichess commit.
 const SOUND_BASE = 'https://cdn.jsdelivr.net/gh/lichess-org/lila@b3f190be9d532d5f9cdf746938e9d480b1464e25/public/sound/sfx/';
@@ -2186,7 +2096,7 @@ function setSounds(on) {
   if (soundsOn) playSound('Move'); // a quick sample
 }
 
-// The bell next to the names shows whether sounds are on.
+// The bell under the board shows whether sounds are on.
 const updateSoundControls = () => setToggle('sound-toggle', soundsOn, soundsOn ? 'Turn sounds off' : 'Turn sounds on');
 
 $('sound-toggle').addEventListener('click', () => setSounds(!soundsOn));
@@ -2720,7 +2630,7 @@ $('backup-btn').addEventListener('click', async () => {
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
     lichess: { popularity: lichessStats, evals, masters },
     favorites,
-    settings: { startMode, showComments: showAnnotations, soundsOn, hideNames, opponentMode, liveMisses },
+    settings: { startMode, soundsOn, opponentMode },
   };
   const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2816,18 +2726,15 @@ $('restore-file').addEventListener('change', async e => {
   }
   if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
   const st = b.settings || {};
-  if (typeof st.showComments === 'boolean') showAnnotations = st.showComments;
   if (typeof st.soundsOn === 'boolean') soundsOn = st.soundsOn;
-  if (typeof st.hideNames === 'boolean') { hideNames = st.hideNames; updateNamesControl(); }
   if (st.startMode) startMode = START_MODES.includes(st.startMode) ? st.startMode : 'start';
   if (OPP_MODES.includes(st.opponentMode)) opponentMode = st.opponentMode;
   else if (typeof st.mainOnly === 'boolean') opponentMode = st.mainOnly ? 'main' : 'misses'; // older backups
-  if (typeof st.liveMisses === 'boolean') { liveMisses = st.liveMisses; store.set('liveMisses', liveMisses); updateMissesControl(); }
   if (Array.isArray(b.favorites)) { favorites = b.favorites.filter(k => typeof k === 'string'); store.set('favorites', favorites); }
   saveStats(); saveSelection();
   rescoreAll(); // restored attempts scored with the current rules and data
-  updateAnnotationsControl(); updateSoundControls();
-  store.set('showComments', showAnnotations); store.set('soundsOn', soundsOn); store.set('hideNames', hideNames); store.set('startMode', startMode);
+  updateSoundControls();
+  store.set('soundsOn', soundsOn); store.set('startMode', startMode);
   store.set('opponentMode', opponentMode);
   lineCache.clear();
   renderSystem();
@@ -2872,8 +2779,7 @@ $('nav-help').addEventListener('click', () => {
 // ---------- Start ----------
 
 async function init() {
-  // The icons next to the chapter name show their saved settings.
-  updateMissesControl(); updateAnnotationsControl(); updateNamesControl(); updateSoundControls();
+  updateSoundControls(); // the bell shows the saved setting
   try {
     data = (await cache.get('studies')) || null;
     lichessStats = (await cache.get('popularity')) || {};
