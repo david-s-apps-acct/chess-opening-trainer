@@ -101,10 +101,14 @@
   .help summary { cursor: pointer; color: var(--accent); }
   .help details[open] summary { margin-bottom: 4px; }
 
-  /* System and Help pages: a column of cards */
+  /* Options and Help pages: a column of cards */
   .cards { display: flex; flex-direction: column; gap: 16px; }
   .cards .card { max-width: 640px; }
   .cards p { margin: 4px 0; }
+
+  /* Options page: mistake penalties */
+  .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
+  .penalties select { flex: none; width: auto; padding: 3px 6px; }
 
   /* Weaknesses page */
   .cards .weak-card { max-width: 760px; }
@@ -273,7 +277,7 @@
     <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
     <button id="nav-weaknesses">Weaknesses</button>
-    <button id="nav-system">System</button>
+    <button id="nav-options">Options</button>
     <button id="nav-help">Help</button>
   </nav>
 </header>
@@ -413,8 +417,8 @@
         <ol>
           <li>On Lichess, <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">create a personal API token</a> with the <b>Read private studies</b> (<code>study:read</code>) permission.</li>
           <li>Paste it into the app. It fetches all your studies, private ones included, and remembers the token.</li>
-          <li>When you change your studies on Lichess, use <b>Update studies</b> on the System page.</li>
-          <li>How often each move is played on Lichess (and in master games), and Lichess's evaluations, download automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the System page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
+          <li>When you change your studies on Lichess, use <b>Update studies</b> on the Options page.</li>
+          <li>How often each move is played on Lichess (and in master games), and Lichess's evaluations, download automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the Options page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
         </ol>
         <details>
           <summary>What the app stores, and where</summary>
@@ -444,12 +448,12 @@
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs 5 points; an unmarked one gets "♗c4 is one of your alternative moves" and costs 2 points (see Your statistics). Any other wrong move says how popular it is, e.g. "♕d3 is the #3 masters move but not your move" (a move played in more than 10% of master games, 2 points) or "♕d3 is the #4 Lichess move but not your move" (5 points), or just "♕d3 is not your move".</li>
-          <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Either costs 10 points, so the move scores 0 this time.</li>
+          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs an error's penalty; an unmarked one gets "♗c4 is one of your alternative moves" and costs an alternative's penalty (see Your statistics). Any other wrong move says how popular it is, e.g. "♕d3 is the #3 masters move but not your move" (a masters move, see Your statistics) or "♕d3 is the #4 Lichess move but not your move" (an error), or just "♕d3 is not your move".</li>
+          <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move scores 0% this time).</li>
           <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often the position is reached, the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% accuracy this time", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves (moves masters play more than 10% of the time) and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the moves that cost only 2 points). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often the position is reached, the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% accuracy this time", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). Press <b>Next line</b> (or Enter) to continue.</li>
           <li><b>Position evaluation</b>: after each line, the summary shows Lichess's cloud evaluation of the final position in the status, e.g. "Line complete. Evaluation <b>+0.4</b>" (if you end a line early, it shows none). As on Lichess, it's from White's side: + means White is better, − means Black is better, and #3 / #-3 means White / Black mates in 3. Hover over it to see how deeply Lichess analyzed it. Lichess only has evaluations for positions in its cloud database (most common opening positions), so some line ends have none. They download automatically in the background; they're saved, and a chapter's move tree on the Studies page shows each at the end of its line. If a line ends without one, the summary fetches it on the spot.</li>
           <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
         </ul>
@@ -459,10 +463,11 @@
         <h2>Your statistics</h2>
         <p>The app scores each of <b>your</b> moves separately, not whole lines, so you can see exactly which moves you know and which you don't.</p>
         <ul>
-          <li>Each attempt at a move starts with <b>10 points</b>; finding the move on your first try keeps all 10.</li>
-          <li><b>−2</b> each time you play one of your study's unmarked alternative moves, or a <b>masters move</b>. A masters move means masters play it more than 10% of the time in that position (in Lichess's Masters database); a move masters play 10% of the time or less counts as an ordinary wrong move.</li>
-          <li><b>−5</b> each time you play an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
-          <li><b>−10</b> for the <b>Hint</b> (so Show correct move leaves 0). Points never go below 0.</li>
+          <li>Each attempt at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each mistake before the right move costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past attempts are re-scored straight away.</li>
+          <li><b>Alternative move</b>, −20%: one of your study's unmarked alternative moves.</li>
+          <li><b>Masters move</b>, −20%: a move among the <b>top 5</b> master moves in that position that masters play <b>10% of the time or more</b> (in Lichess's Masters database). You can change "top 5" to anything from top 1 to top 5 on the Options page. Other moves masters play count as errors. A move that is both an alternative and a masters move costs the alternative's penalty.</li>
+          <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
+          <li><b>Hint</b>, −100%: the Hint, and Show correct move. A score never goes below 0%.</li>
           <li>Each move keeps its <b>last 10 attempts</b>, including everything you tried. Its score is their average, as a percentage, with recent attempts counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. attempts of 0, 8, 10, 10 (oldest to newest) give about 7.5, so 75%. Scores are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
           <li><b>Not counted</b>: a line you leave unfinished.</li>
           <li>Highlighting: moves you know (<span class="s100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="s90">90–99%</span> faint, <span class="s70">70–89%</span> medium, <span class="s0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="mvq-good">!</span> green, <span class="mvq-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
@@ -502,7 +507,7 @@
           <summary>When statistics are dropped</summary>
           <ul>
             <li>After Update studies, scores for lines that no longer exist in your studies are dropped; everything else is kept.</li>
-            <li>Statistics live only in this browser. Use a backup (System page) to keep them safe or move them.</li>
+            <li>Statistics live only in this browser. Use a backup (Options page) to keep them safe or move them.</li>
           </ul>
         </details>
       </div>
@@ -530,9 +535,9 @@
       </div>
 
       <div class="card">
-        <h2>System and backups</h2>
+        <h2>Options and backups</h2>
         <ul>
-          <li><b>System</b>: updating your studies, the progress of the automatic Lichess downloads (move statistics, masters statistics and evaluations), your Lichess token, and backups.</li>
+          <li><b>Options</b>: mistake penalties and what counts as a masters move, updating your studies, the progress of the automatic Lichess downloads (move statistics, masters statistics and evaluations), your Lichess token, and backups.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move statistics, masters statistics and evaluations, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
@@ -540,12 +545,31 @@
     </div>
   </section>
 
-  <!-- System -->
-  <section id="system-screen" class="hidden">
+  <!-- Options -->
+  <section id="options-screen" class="hidden">
     <div class="cards">
       <div class="card">
+        <h2>Mistake penalties</h2>
+        <p class="muted">How much of a move's score each mistake costs, each time you make it before finding the right move. A move found first time scores 100%; it never goes below 0%. Changing these re-scores all your past attempts straight away.</p>
+        <div class="penalties">
+          <label for="pen-alternative">Alternative move <span class="muted">(an unmarked alternative from your study)</span></label>
+          <select id="pen-alternative" class="pen-select"></select>
+          <label for="pen-masters">Masters move <span class="muted">(one of the top master moves, played 10% of the time or more)</span></label>
+          <select id="pen-masters" class="pen-select"></select>
+          <label for="masters-top">What counts as a masters move</label>
+          <select id="masters-top">
+            <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
+          </select>
+          <label for="pen-error">Error <span class="muted">(any other wrong move, or an alternative your study marks ?, ?? or ?!)</span></label>
+          <select id="pen-error" class="pen-select"></select>
+          <label for="pen-hint">Hint <span class="muted">(and Show correct move)</span></label>
+          <select id="pen-hint" class="pen-select"></select>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Lichess studies</h2>
-        <p id="sys-fetch-info" class="muted"></p>
+        <p id="opt-fetch-info" class="muted"></p>
         <p class="muted">Update studies downloads all your Lichess studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves that are no longer in your studies.</p>
         <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
       </div>
@@ -553,29 +577,29 @@
       <div class="card">
         <h2>Move frequency</h2>
         <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move, and in the Masters database (over-the-board games between players rated 2200+ FIDE), saved for later use. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
-        <p id="sys-stats-info" class="muted"></p>
+        <p id="opt-stats-info" class="muted"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
-        <p id="sys-masters-info" class="muted"></p>
+        <p id="opt-masters-info" class="muted"></p>
         <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div class="card">
         <h2>Position evaluation</h2>
         <p class="muted">Lichess's evaluation of the final position of each line (e.g. +0.4, from White's side), shown after each line and at the end of each line in a chapter's move tree. They come from Lichess's cloud database of positions it has already analyzed, so some positions have none. Missing ones download automatically in the background after Update studies (and resume when you open the app), and are saved.</p>
-        <p id="sys-eval-info" class="muted"></p>
+        <p id="opt-eval-info" class="muted"></p>
         <div id="eval-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div class="card">
         <h2>Lichess token</h2>
-        <p id="sys-token-state" class="muted"></p>
+        <p id="opt-token-state" class="muted"></p>
         <p>Paste a new token to replace the stored one. It needs the <code>study:read</code> scope.
           <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token</a></p>
-        <form id="sys-token-form" class="token-row">
-          <input id="sys-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+        <form id="opt-token-form" class="token-row">
+          <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
           <button class="primary" type="submit">Save token</button>
         </form>
-        <div id="sys-token-error" class="form-error"></div>
+        <div id="opt-token-error" class="form-error"></div>
         <button id="token-clear-btn">Clear stored token</button>
       </div>
 
@@ -686,6 +710,14 @@ let soundsOn = store.get('soundsOn', false);
 const START_MODES = ['start', 'partway', 'single'];
 let startMode = START_MODES.includes(store.get('startMode', 'start')) ? store.get('startMode', 'start') : 'start';
 const OPP_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
+// Mistake penalties in points (1 point = 10% of an attempt's score), and how many top master moves
+// can count as masters moves; set on the Options page.
+const DEFAULT_PENALTIES = { alternative: 2, masters: 2, error: 5, hint: 10 };
+const validPenalties = v => !!v && typeof v === 'object'
+  && Object.keys(DEFAULT_PENALTIES).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
+let penalties = validPenalties(store.get('penalties')) ? store.get('penalties') : { ...DEFAULT_PENALTIES };
+const MASTERS_TOPS = [1, 2, 3, 4, 5];
+let mastersTop = MASTERS_TOPS.includes(store.get('mastersTop')) ? store.get('mastersTop') : 5;
 const WEAK_COUNTS = [25, 50, 75, 100], WEAK_MAXES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
 let weakCount = WEAK_COUNTS.includes(store.get('weakCount')) ? store.get('weakCount') : 25; // Weaknesses page: how many rows
 let weakMax = WEAK_MAXES.includes(store.get('weakMax')) ? store.get('weakMax') : 70;       // … and the highest accuracy shown
@@ -725,10 +757,10 @@ let screen = null;
 function showScreen(name) {
   screen = name;
   hidePreview(); hideNotePop(); hideQuickTip(); // no pop-up carries over to another page
-  for (const s of ['token', 'studies', 'practice', 'weaknesses', 'system', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
+  for (const s of ['token', 'studies', 'practice', 'weaknesses', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
   const current = name === 'token' ? 'studies' : name;
-  for (const b of ['practice', 'studies', 'weaknesses', 'system', 'help']) {
+  for (const b of ['practice', 'studies', 'weaknesses', 'options', 'help']) {
     $('nav-' + b).classList.toggle('current', b === current);
     if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
   }
@@ -808,7 +840,7 @@ async function lichess(path, tok, asText) {
   } catch {
     throw new LichessError("Couldn't reach Lichess. Check your internet connection.");
   }
-  if (res.status === 401) throw new LichessError('Lichess rejected the token. It may have expired or been revoked. Replace it on the System page.', 401);
+  if (res.status === 401) throw new LichessError('Lichess rejected the token. It may have expired or been revoked. Replace it on the Options page.', 401);
   if (res.status === 429) throw new LichessError('Lichess is rate-limiting requests. Wait a minute and try again.', 429);
   if (!res.ok) throw new LichessError(`Lichess returned an error (${res.status}).`, res.status);
   return asText ? res.text() : res.json();
@@ -837,9 +869,9 @@ function buildData(exportText, username) {
 const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
 function needToken() {
-  showSystem();
+  showOptions();
   showBanner('Enter a Lichess token first.', true);
-  $('sys-token-input').focus();
+  $('opt-token-input').focus();
 }
 
 async function fetchStudies() {
@@ -861,7 +893,7 @@ async function fetchStudies() {
     const n = data.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = data.studies.length;
     showBanner(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
-    if (screen === 'system') renderSystem(); else showStudies();
+    if (screen === 'options') renderOptions(); else showStudies();
   } catch (e) {
     showBanner(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
   } finally {
@@ -1119,27 +1151,32 @@ function scoreOf(tries) {
   return sum / weights / 10;
 }
 
-// Each attempt at one of the user's moves starts at 10 points: every unmarked alternative move from
-// the study, or a move played in more than 10% of master games there, costs 2 (once, even if it's
-// both); an alternative marked ?, ?? or ?! and any other wrong move cost 5; the hint and Show
-// correct move cost 10; never below 0. Repeats cost each time. entry is the move in the line (its SAN, the
-// study's alternatives there, and the position before it).
+// Each attempt at one of the user's moves starts at 10 points, and each thing tried before the
+// correct move costs its penalty (set on the Options page, in points: 1 point = 10%): an unmarked
+// alternative move from the study, or a masters move (once, even if it's both: the alternative's
+// penalty); an error (an alternative marked ?, ?? or ?!, or any other wrong move); the hint and Show
+// correct move (each the hint's penalty). Never below 0. Repeats cost each time. entry is the move
+// in the line (its SAN, the study's alternatives there, and the position before it).
 const MASTERS_SHARE = 0.1;
 
+// A masters move: within the top N master moves in the position (N set on the Options page; moves
+// played equally often share a rank) and played in 10% or more of master games there.
 function isMasterMove(epd, s) {
   const st = masters[epd], n = st && totalOf(st);
-  return !!n && gamesOf(st, s) / n > MASTERS_SHARE;
+  if (!n || gamesOf(st, s) / n < MASTERS_SHARE) return false;
+  return rankOf(st, s) <= mastersTop;
 }
 
 function scoreAttempt(seq, entry) {
   let p = 10;
   for (const x of seq) {
-    if (x === 'hint' || x === 'show') { p -= 10; continue; }
+    if (x === 'hint' || x === 'show') { p -= penalties.hint; continue; }
     if (bareSan(x) === bareSan(entry.san)) break; // the correct move ends the attempt
     const alt = entry.alts?.[x];
-    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= 5; // the study's marking wins
-    else if (alt || isMasterMove(entry.epd, x)) p -= 2;
-    else p -= 5;
+    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= penalties.error; // the study's marking wins
+    else if (alt) p -= penalties.alternative;
+    else if (isMasterMove(entry.epd, x)) p -= penalties.masters;
+    else p -= penalties.error;
   }
   return Math.max(0, p);
 }
@@ -1834,7 +1871,7 @@ async function onUserMove(orig, dest) {
   const alt = expected.alts?.[played];
   if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return studyMistake(orig, dest, move, played, alt);
   if (alt) {
-    // Not marked as an error: a gentle nudge (it costs 2 points).
+    // Not marked as an error: a gentle nudge (it costs the alternative's penalty).
     q.missed = true;
     q.busy = true;
     syncBoard();
@@ -1865,7 +1902,7 @@ async function onUserMove(orig, dest) {
 // A side variation the study marks ?, ?? or ?!: say so, show the opponent's reply from that
 // variation, then take both moves back. Counts as a wrong try.
 // The status after a wrong move that isn't in the study, in the same words as the alternatives
-// ("♕d3 is one of your alternative moves"): a masters move (more than 10% of master games, 2 points)
+// ("♕d3 is one of your alternative moves"): a masters move (see isMasterMove)
 // "♕d3 is the #3 masters move but not your move"; otherwise, if Lichess games play it, "♕d3 is the
 // #4 Lichess move but not your move"; else "♕d3 is not your move". Only the masters move isn't red.
 function wrongMoveStatus(expected, played) {
@@ -2217,7 +2254,7 @@ function showPreview(el, line, i, thisTime = null) {
     .map(t => t && h('div', { class: 'muted' }, t)) : [];
   if (m.user && thisTime) {
     const r = thisTime.attempt;
-    // Blue arrows for moves that cost only 2 points (an unmarked alternative or a masters move).
+    // Blue arrows for alternatives and masters moves (by default the cheaper mistakes).
     shapes = answerArrows(pos, m, r ? countWrongs([{ s: r.seq }], m.san) : [],
       x => ['alternative', 'masters'].includes(errorKind(m, x)) ? 'blue' : 'red');
     // Just the accuracy: the arrows already show the wrong moves played.
@@ -2258,7 +2295,7 @@ function showPreview(el, line, i, thisTime = null) {
 }
 
 // One thing tried before the correct move m, for the practice pop-up's "Errors: …" row, labelled by
-// how it was scored: "a3 (alternative)" and "b3 (masters)" cost 2 points; an alternative the study
+// how it was scored: "a3 (alternative)" and "b3 (masters)" (the alternative and masters penalties); an alternative the study
 // marks ?, ?? or ?! shows the mark, "a3 (alternative ?!)"; anything else is unlabelled, and "hint"
 // or "show correct move". A move that is both an unmarked alternative and a masters move is
 // labelled "(alternative)".
@@ -2269,8 +2306,8 @@ function errorLabel(m, x) {
   const label = { alternative: 'alternative', masters: 'masters', marked: `alternative ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
   return fig(x) + (label ? ` (${label})` : '');
 }
-// How a move tried instead of m was scored: 'alternative' or 'masters' (2 points), 'marked' (an
-// alternative the study marks ?, ?? or ?!) or 'wrong' (5 points each).
+// How a move tried instead of m was scored: 'alternative', 'masters', 'marked' (an alternative the
+// study marks ?, ?? or ?!) or 'wrong' (the last two cost the error penalty).
 function errorKind(m, x) {
   const alt = m.alts?.[x];
   if (alt) return alt.nags.some(n => MISTAKE_NAGS.includes(n)) ? 'marked' : 'alternative';
@@ -2380,7 +2417,7 @@ const EXPLORER_DBS = {
   lichess: {
     label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
-    get: () => lichessStats, key: 'popularity', status: 'lichess-status', info: 'sys-stats-info',
+    get: () => lichessStats, key: 'popularity', status: 'lichess-status', info: 'opt-stats-info',
     current: isCurrentStat,
     keep: (j, e) => ({ ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() }),
@@ -2388,7 +2425,7 @@ const EXPLORER_DBS = {
   masters: {
     label: 'masters statistics', Label: 'Masters statistics', none: 'no master game reaches them',
     url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
-    get: () => masters, key: 'masters', status: 'masters-status', info: 'sys-masters-info',
+    get: () => masters, key: 'masters', status: 'masters-status', info: 'opt-masters-info',
     current: s => s?.v === 1,
     keep: j => ({ ...j, v: 1, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, v: 1, at: Date.now() }),
@@ -2410,7 +2447,7 @@ async function downloadExplorer(kind) {
   try { await downloadExplorerPositions(kind, run); }
   finally {
     if (explorerRuns[kind] === run) explorerRuns[kind] = null; // finished or stopped
-    if (screen === 'system') updateStatsInfo();
+    if (screen === 'options') updateStatsInfo();
   }
 }
 
@@ -2455,7 +2492,7 @@ async function downloadExplorerPositions(kind, run) {
     }
     if (res.status === 401) {
       await saveExplorer(kind);
-      status(`Lichess rejected the token for ${db.label}. Replace it on the System page; the download then continues.`);
+      status(`Lichess rejected the token for ${db.label}. Replace it on the Options page; the download then continues.`);
       return;
     }
     if (res.ok) {
@@ -2464,7 +2501,7 @@ async function downloadExplorerPositions(kind, run) {
     }
     i++;
     status(`Downloading ${db.label}: ${i} of ${total} positions`);
-    if (screen === 'system') updateStatsInfo();
+    if (screen === 'options') updateStatsInfo();
   }
   await saveExplorer(kind);
   if (explorerRuns[kind] !== run) return;
@@ -2473,7 +2510,7 @@ async function downloadExplorerPositions(kind, run) {
   suggestBackup(db.Label); // every position now has these statistics
 }
 
-// The System page's "Move statistics: N of M positions downloaded" and "Masters statistics: …" lines.
+// The Options page's "Move statistics: N of M positions downloaded" and "Masters statistics: …" lines.
 function updateStatsInfo() {
   const positions = data ? [...studyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
@@ -2583,7 +2620,7 @@ async function fetchEval(fen) {
     else evals[epd] = { none: true };
   } else return 60000;
   await saveCache('evals', evals);
-  if (screen === 'system') updateEvalInfo();
+  if (screen === 'options') updateEvalInfo();
   return EVAL_INTERVAL;
 }
 
@@ -2632,7 +2669,7 @@ async function downloadEvals() {
     setTimeout(() => { if (!evalRun) setEvalStatus(''); }, 5000);
   } finally {
     if (evalRun === run) evalRun = null;
-    if (screen === 'system') updateEvalInfo();
+    if (screen === 'options') updateEvalInfo();
   }
 }
 
@@ -2660,14 +2697,14 @@ function evalStatus(fen) {
   return el;
 }
 
-// The System page's "Evaluations saved: …" line.
+// The Options page's "Evaluations saved: …" line.
 function updateEvalInfo() {
-  if (!data) { $('sys-eval-info').textContent = ''; return; }
+  if (!data) { $('opt-eval-info').textContent = ''; return; }
   const epds = new Set(allChapters().flatMap(ch => chapterLines(ch).map(l => epdOf(finalFen(l)))));
   let saved = 0, none = 0;
   for (const epd of epds) { if (evals[epd]?.none) none++; else if (evals[epd]) saved++; }
   const left = epds.size - saved - none;
-  $('sys-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
+  $('opt-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
     + (none ? `, ${none} not in Lichess's cloud` : '')
     + (left ? ` · ${left} still to download${evalRun ? ' (downloading now…)' : ' (automatically, after Update studies or when you next open the app)'}` : '')
     + '.';
@@ -2737,12 +2774,12 @@ function positionName(line, i) {
 $('weak-count').addEventListener('change', e => { weakCount = +e.target.value; store.set('weakCount', weakCount); renderWeaknesses(); });
 $('weak-max').addEventListener('change', e => { weakMax = +e.target.value; store.set('weakMax', weakMax); renderWeaknesses(); });
 
-// ---------- System page and token ----------
+// ---------- Options page and token ----------
 
-function showSystem() {
+function showOptions() {
   // A line in progress is kept; the Practice button returns to it.
-  showScreen('system');
-  renderSystem();
+  showScreen('options');
+  renderOptions();
 }
 
 // A date and time with the time zone, e.g. "9/26/2026, 2:13 PM ET".
@@ -2752,15 +2789,35 @@ function formatWithZone(ts) {
   catch { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'short' }); } // older browsers: "EDT"
 }
 
-function renderSystem() {
+// The Mistake penalties card: each drop-down 0%–100% in steps of 10 (1 point each).
+for (const sel of document.querySelectorAll('.pen-select')) {
+  for (let pts = 0; pts <= 10; pts++) sel.append(h('option', { value: String(pts) }, `${pts * 10}%`));
+  sel.addEventListener('change', () => {
+    penalties = { ...penalties, [sel.id.slice(4)]: +sel.value };
+    store.set('penalties', penalties);
+    rescoreAll(); // past attempts are scored again with the new penalties
+  });
+}
+$('masters-top').addEventListener('change', e => {
+  mastersTop = +e.target.value;
+  store.set('mastersTop', mastersTop);
+  rescoreAll();
+});
+function renderPenalties() {
+  for (const k of Object.keys(DEFAULT_PENALTIES)) $('pen-' + k).value = String(penalties[k]);
+  $('masters-top').value = String(mastersTop);
+}
+
+function renderOptions() {
+  renderPenalties();
   const nChapters = allChapters().length;
-  $('sys-fetch-info').textContent = data
+  $('opt-fetch-info').textContent = data
     ? `${data.username} · ${plural(data.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(data.fetchedAt)}`
     : 'No studies fetched yet.';
   updateSoundControls();
   updateStatsInfo();
-  $('sys-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
-  $('sys-token-error').textContent = '';
+  $('opt-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
+  $('opt-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
   updateEvalInfo();
 }
@@ -2775,11 +2832,11 @@ $('token-form').addEventListener('submit', async e => {
   }
 });
 
-$('sys-token-form').addEventListener('submit', async e => {
+$('opt-token-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if (await acceptToken($('sys-token-input').value, $('sys-token-error'))) {
-    $('sys-token-input').value = '';
-    renderSystem();
+  if (await acceptToken($('opt-token-input').value, $('opt-token-error'))) {
+    $('opt-token-input').value = '';
+    renderOptions();
     if (!data) fetchStudies();
     else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
   }
@@ -2788,7 +2845,7 @@ $('sys-token-form').addEventListener('submit', async e => {
 $('token-clear-btn').addEventListener('click', () => {
   token = null;
   store.remove('token');
-  renderSystem();
+  renderOptions();
   showBanner('Stored token cleared. Your cached studies are still available; refreshing needs a new token.');
 });
 
@@ -2804,7 +2861,7 @@ $('backup-btn').addEventListener('click', async () => {
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
     lichess: { popularity: lichessStats, evals, masters },
     favorites,
-    settings: { startMode, soundsOn, opponentMode, weakCount, weakMax },
+    settings: { startMode, soundsOn, opponentMode, weakCount, weakMax, penalties, mastersTop },
   };
   const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2909,6 +2966,8 @@ $('restore-file').addEventListener('change', async e => {
   if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
   const st = b.settings || {};
   if (typeof st.soundsOn === 'boolean') soundsOn = st.soundsOn;
+  if (validPenalties(st.penalties)) { penalties = { ...st.penalties }; store.set('penalties', penalties); }
+  if (MASTERS_TOPS.includes(st.mastersTop)) { mastersTop = st.mastersTop; store.set('mastersTop', mastersTop); }
   if (WEAK_COUNTS.includes(st.weakCount)) { weakCount = st.weakCount; store.set('weakCount', weakCount); }
   if (WEAK_MAXES.includes(st.weakMax)) { weakMax = st.weakMax; store.set('weakMax', weakMax); }
   if (st.startMode) startMode = START_MODES.includes(st.startMode) ? st.startMode : 'start';
@@ -2921,7 +2980,7 @@ $('restore-file').addEventListener('change', async e => {
   store.set('soundsOn', soundsOn); store.set('startMode', startMode);
   store.set('opponentMode', opponentMode);
   lineCache.clear();
-  renderSystem();
+  renderOptions();
   showBanner(`Restored stats for ${plural(n, 'position')} and your settings from the backup.`
     + (oldFormat ? ' Its older per-line stats (which don\'t say which move was missed) were left out.' : ''));
 });
@@ -2952,7 +3011,7 @@ $('nav-studies').addEventListener('click', () => {
   else showScreen('token');
 });
 
-$('nav-system').addEventListener('click', () => { hideBanner(); showSystem(); });
+$('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); });
 
 // Weaknesses: needs studies (else the Studies page, as Practice does). A line in progress is kept.
 $('nav-weaknesses').addEventListener('click', () => {

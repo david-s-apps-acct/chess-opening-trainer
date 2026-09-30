@@ -39,6 +39,6 @@ For testing without a real token: serve the folder over localhost (the Browser p
 ## Where things are
 
 - Natural-language selection ("Describe what to practice") was removed; its spec and code are archived in `archive/natural-language-selection.md` (not loaded by the app) in case it's rebuilt.
-- The script in `trainer.html` is divided into sections marked `// ---------- Name ----------`: Storage, State, helpers, Lichess, chapters and lines, annotations, move results and grading, then one section per page (Studies, Practice, System), the Lichess downloads, backup, navigation and start. Put new code in the section it belongs to.
+- The script in `trainer.html` is divided into sections marked `// ---------- Name ----------`: Storage, State, helpers, Lichess, chapters and lines, annotations, move results and grading, then one section per page (Studies, Practice, Weaknesses, Options), the Lichess downloads, backup, navigation and start. Put new code in the section it belongs to.
 - Some names in storage and backups are older than the code's names: `popularity` (the code's `lichessStats`) and `showComments` (`showAnnotations`). Keep the stored names so existing data and backups still load.
 - The Lichess downloads (move statistics, masters statistics, evaluations) run automatically from `startDownloads()` after Update studies and when the app opens.
