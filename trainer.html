@@ -1181,7 +1181,7 @@ function rateEl({ lines, tried, score }) {
   if (!lines) return h('span', { class: 'rate' }, 'no lines to test');
   if (!tried) return h('span', { class: 'rate' });
   return quickTip(h('span', { class: 'rate' }, h('span', { class: scoreClass(score) }, `${pct(score)}%`)), // highlight just the text
-    `How often you play your moves here correctly: the average over the ${plural(tried, 'move')} you've tried, each over its last 10 tries.`);
+    'Accuracy over the last 10 attempts');
 }
 
 // "· 5 lines · 2 alternative moves" after a chapter's name (the alternative moves only when there are any).
