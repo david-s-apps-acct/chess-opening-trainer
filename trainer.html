@@ -163,7 +163,7 @@
   .tree-vars { margin: 0 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--border); }
   .tree-toggle { padding: 0 5px; font-size: 12px; line-height: 1.3; margin-left: 2px; box-shadow: none; }
   .tree .eval { margin-left: 4px; font-size: 13px; }
-  .mv-side { font-style: italic; }
+  .untested-move { font-style: italic; }
   @media (max-width: 640px) { .tree { padding-left: 44px; } }
   .side { font-size: 12px; color: var(--muted); white-space: nowrap; } /* e.g. "variant not supported" */
   .side-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--muted); margin-left: 6px; vertical-align: 0; }
@@ -173,26 +173,26 @@
   /* Move scores: only moves that need work are highlighted, with a violet background (a color
      chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
      the tint, the weaker the move. 100% and never tried: plain. */
-  .s90, .s70, .s0 { border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
-  .s90 { background: rgba(138, 92, 246, .22); }
-  .s70 { background: rgba(138, 92, 246, .42); }
-  .s0 { background: rgba(138, 92, 246, .62); }
-  .smv-num { color: var(--muted); }
+  .score-90, .score-70, .score-0 { border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
+  .score-90 { background: rgba(138, 92, 246, .22); }
+  .score-70 { background: rgba(138, 92, 246, .42); }
+  .score-0 { background: rgba(138, 92, 246, .62); }
+  .tree-move-number { color: var(--muted); }
   /* Moves are in the standard text color, like Lichess, except moves with a move-quality glyph,
      which take the glyph's color. */
-  .smv, .mv-side { color: var(--text); }
-  .mvq-good { color: #629924 !important; }
-  .mvq-brilliant { color: #21c43a !important; }
-  .mvq-interesting { color: #f075e1 !important; }
-  .mvq-dubious { color: #53b2ea !important; }
-  .mvq-mistake { color: #e69d00 !important; }
-  .mvq-blunder { color: #df5353 !important; }
-  .smv { cursor: pointer; border-radius: 2px; }
-  .smv:hover, .smv:focus { background: var(--surface-3); outline: none; }
+  .tree-move, .untested-move { color: var(--text); }
+  .quality-good { color: #629924 !important; }
+  .quality-brilliant { color: #21c43a !important; }
+  .quality-interesting { color: #f075e1 !important; }
+  .quality-dubious { color: #53b2ea !important; }
+  .quality-mistake { color: #e69d00 !important; }
+  .quality-blunder { color: #df5353 !important; }
+  .tree-move { cursor: pointer; border-radius: 2px; }
+  .tree-move:hover, .tree-move:focus { background: var(--surface-3); outline: none; }
   .move-preview { position: fixed; z-index: 50; width: 216px; padding: 8px; background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 13px; pointer-events: none; }
-  .mp-text { margin-bottom: 6px; }
-  .mp-board { width: 200px; height: 200px; }
-  .mp-board .cg-wrap { width: 100%; height: 100%; }
+  .preview-text { margin-bottom: 6px; }
+  .preview-board { width: 200px; height: 200px; }
+  .preview-board .cg-wrap { width: 100%; height: 100%; }
   input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
 
   /* Practice page */
@@ -220,7 +220,7 @@
   .comment-pop .muted { color: rgba(255, 255, 255, .85); }
   .hint-note { margin-top: 6px; color: var(--text); }
   .note-move { font-weight: 600; }
-  #q-chapter .bubble { vertical-align: -1px; }
+  #practice-chapter .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   /* Lichess's glyph colors (default dark theme, from lila's _theme.default.scss). */
   .glyph.good { color: #629924; }
@@ -244,7 +244,7 @@
   .move-nav button { flex: 1; padding: 4px 0; font-size: 13px; }
   .panel { flex: 1; min-width: 260px; background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 16px; }
   .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
-  #q-opening { font-size: 13px; }
+  #practice-opening { font-size: 13px; }
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status.bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
@@ -360,19 +360,19 @@
         </div>
       </div>
       <div class="panel">
-        <h2 id="q-study"></h2>
-        <div id="q-chapter"></div>
-        <div id="q-opening" class="muted"></div>
-        <div id="q-side" class="muted"></div>
-        <div id="q-moves" class="moves" aria-label="Moves played"></div>
+        <h2 id="practice-study"></h2>
+        <div id="practice-chapter"></div>
+        <div id="practice-opening" class="muted"></div>
+        <div id="practice-side" class="muted"></div>
+        <div id="practice-moves" class="moves" aria-label="Moves played"></div>
         <div class="move-nav">
           <button id="view-first" title="Starting position (Home)" aria-label="Starting position">⏮</button>
           <button id="view-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
           <button id="view-next" title="Next move (→)" aria-label="Next move">▶</button>
           <button id="view-last" title="Current position (End)" aria-label="Current position">⏭</button>
         </div>
-        <div id="q-status" class="status"></div>
-        <div id="q-summary" class="summary hidden"></div>
+        <div id="practice-status" class="status"></div>
+        <div id="practice-summary" class="summary hidden"></div>
         <div class="actions">
           <button id="practice-start-btn" class="primary hidden">Start practice</button>
           <button id="next-btn" class="primary hidden">Next line</button>
@@ -470,7 +470,7 @@
           <li><b>Hint</b>, −100%: the Hint, and Show correct move. A score never goes below 0%.</li>
           <li>Each move keeps its <b>last 10 attempts</b>, including everything you tried. Its score is their average, as a percentage, with recent attempts counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. attempts of 0, 8, 10, 10 (oldest to newest) give about 7.5, so 75%. Scores are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
           <li><b>Not counted</b>: a line you leave unfinished.</li>
-          <li>Highlighting: moves you know (<span class="s100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="s90">90–99%</span> faint, <span class="s70">70–89%</span> medium, <span class="s0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="mvq-good">!</span> green, <span class="mvq-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
+          <li>Highlighting: moves you know (<span class="score-100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="score-90">90–99%</span> faint, <span class="score-70">70–89%</span> medium, <span class="score-0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
         </ul>
         <details>
           <summary>What counts as a try</summary>
@@ -500,7 +500,7 @@
             <li><b>Studies page</b>: each study and chapter shows the average score of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
             <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
             <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by score and, once saved, the Lichess evaluation at the end of each line.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="s90">green arrow</span> for the correct move, and a <span class="s0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "Average 7.5 of 10 (last 10 tries)" and "Wrong: Bc4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="score-90">green arrow</span> for the correct move, and a <span class="score-0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "Average 7.5 of 10 (last 10 tries)" and "Wrong: Bc4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
           </ul>
         </details>
         <details>
@@ -766,7 +766,7 @@ const $ = id => document.getElementById(id);
 // "1 chapter", "3 chapters" (irregular plurals are given).
 const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
-function h(tag, attrs = {}, ...children) {
+function element(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (v == null || v === false) continue;
@@ -788,11 +788,11 @@ function showBanner(msg, isError = false) {
 }
 
 const hideBanner = () => $('banner').classList.add('hidden');
-let screen = null;
+let currentScreen = null;
 
 function showScreen(name) {
-  screen = name;
-  hidePreview(); hideNotePop(); hideQuickTip(); // no pop-up carries over to another page
+  currentScreen = name;
+  hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
   for (const s of ['token', 'studies', 'practice', 'weaknesses', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
   const current = name === 'token' ? 'studies' : name;
@@ -812,15 +812,15 @@ function placePopup(pop, el) {
 
 // A small hover pop-up that appears immediately, instead of the browser's own tooltip, whose delay
 // can't be set. (All the app's pop-ups appear immediately.) Returns the element, for use inline.
-let tipTimer = null;
+let quickTipTimer = null;
 
 function quickTip(el, text) {
   if (!text) return el;
   el.addEventListener('mouseenter', () => {
-    clearTimeout(tipTimer);
-    tipTimer = setTimeout(() => {
+    clearTimeout(quickTipTimer);
+    quickTipTimer = setTimeout(() => {
       let tip = $('quick-tip');
-      if (!tip) { tip = h('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
+      if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
       tip.textContent = text;
       tip.classList.remove('hidden');
       placePopup(tip, el);
@@ -830,7 +830,7 @@ function quickTip(el, text) {
   return el;
 }
 
-function hideQuickTip() { clearTimeout(tipTimer); $('quick-tip')?.classList.add('hidden'); }
+function hideQuickTip() { clearTimeout(quickTipTimer); $('quick-tip')?.classList.add('hidden'); }
 window.addEventListener('scroll', hideQuickTip, { passive: true });
 
 // An icon button: a line through it when off; title is its hover text.
@@ -845,14 +845,14 @@ function setToggle(id, on, title) {
 
 const fenOf = pos => fen.makeFen(pos.toSetup());
 const epdOf = f => f.split(' ').slice(0, 4).join(' ');
-const bareSan = x => x.replace(/[+#]/g, '');
+const withoutCheckMarks = x => x.replace(/[+#]/g, '');
 
 // Moves are shown with piece symbols (figurine notation, as on Lichess and Chess.com): Bc4 → ♗c4,
 // e8=Q → e8=♕. Only the display changes; moves are stored and matched in normal notation.
 const FIGURINES = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
 
-const fig = s => s.replace(/^[KQRBN]/, c => FIGURINES[c]).replace(/=([QRBN])/, (_, c) => '=' + FIGURINES[c]);
-const moveLabel = m => `${m.moveNo}${m.color === 'white' ? '.' : '…'} ${fig(m.san)}`;
+const withFigurines = s => s.replace(/^[KQRBN]/, c => FIGURINES[c]).replace(/=([QRBN])/, (_, c) => '=' + FIGURINES[c]);
+const moveLabel = m => `${m.moveNumber}${m.color === 'white' ? '.' : '…'} ${withFigurines(m.san)}`;
 
 function arrowSquares(pos, move) {
   let [from, to] = compat.chessgroundMove(move);
@@ -869,7 +869,7 @@ class LichessError extends Error {
   constructor(message, status) { super(message); this.status = status; }
 }
 
-async function lichess(path, tok, asText) {
+async function lichessRequest(path, tok, asText) {
   let res;
   try {
     res = await fetch(LICHESS + path, { headers: { Authorization: 'Bearer ' + tok } });
@@ -882,10 +882,10 @@ async function lichess(path, tok, asText) {
   return asText ? res.text() : res.json();
 }
 
-const IDS_RE = /\/study\/([A-Za-z0-9]{8})\/([A-Za-z0-9]{8})/;
+const STUDY_URL_PATTERN = /\/study\/([A-Za-z0-9]{8})\/([A-Za-z0-9]{8})/;
 
 // Split a full study export into studies and chapters.
-function buildData(exportText, username) {
+function parseStudyExport(exportText, username) {
   const studies = new Map();
   pgn.parsePgn(exportText).forEach((game, i) => {
     const hd = game.headers;
@@ -893,7 +893,7 @@ function buildData(exportText, username) {
     const sep = event.indexOf(': ');
     const studyName = hd.get('StudyName') || (sep >= 0 ? event.slice(0, sep) : event) || 'Untitled study';
     const chapterName = hd.get('ChapterName') || (sep >= 0 ? event.slice(sep + 2) : '') || `Chapter ${i + 1}`;
-    const m = [hd.get('ChapterURL'), hd.get('Site'), hd.get('Source')].map(v => v && v.match(IDS_RE)).find(Boolean);
+    const m = [hd.get('ChapterURL'), hd.get('Site'), hd.get('Source')].map(v => v && v.match(STUDY_URL_PATTERN)).find(Boolean);
     const studyId = m ? m[1] : 'name:' + studyName;
     const chapterId = m ? m[2] : 'idx:' + i;
     if (!studies.has(studyId)) studies.set(studyId, { id: studyId, name: studyName, chapters: [] });
@@ -904,23 +904,23 @@ function buildData(exportText, username) {
 
 const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
-function needToken() {
+function askForToken() {
   showOptions();
   showBanner('Enter a Lichess token first.', true);
   $('opt-token-input').focus();
 }
 
 async function fetchStudies() {
-  if (!token) return needToken();
+  if (!token) return askForToken();
   const btn = $('update-studies-btn');
   btn.disabled = true;
   showBanner('Fetching your studies from Lichess…');
   try {
-    const account = await lichess('/api/account', token);
-    const text = await lichess(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
-    library = buildData(text, account.username);
+    const account = await lichessRequest('/api/account', token);
+    const text = await lichessRequest(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
+    library = parseStudyExport(text, account.username);
     await saveLibrary();
-    resetParsed();
+    forgetParsedChapters();
     pruneAfterRefresh();
     // Lichess's cloud grows over time, so positions it didn't have are asked about again.
     const unevaluated = Object.keys(positions).filter(epd => positions[epd].eval?.none);
@@ -930,7 +930,7 @@ async function fetchStudies() {
     const n = library.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = library.studies.length;
     showBanner(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
-    if (screen === 'options') renderOptions(); else showStudies();
+    if (currentScreen === 'options') renderOptions(); else showStudies();
   } catch (e) {
     showBanner(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
   } finally {
@@ -942,23 +942,23 @@ async function fetchStudies() {
 function pruneAfterRefresh() {
   const chapters = allChapters();
   const chapterKeys = new Set(chapters.map(c => c.key));
-  const posKeys = new Set();
-  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) posKeys.add(posKey(line, i));
+  const moveKeys = new Set();
+  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) moveKeys.add(moveKey(line, i));
   selection = new Set([...selection].filter(k => chapterKeys.has(k)));
   hiddenStudies = new Set([...hiddenStudies].filter(id => library.studies.some(s => s.id === id)));
   saveHidden();
   const lineKeys = new Set(chapters.flatMap(ch => chapterLines(ch).map(l => l.key)));
-  history.moves = Object.fromEntries(Object.entries(history.moves).filter(([k]) => posKeys.has(k)));
+  history.moves = Object.fromEntries(Object.entries(history.moves).filter(([k]) => moveKeys.has(k)));
   history.lines = Object.fromEntries(Object.entries(history.lines).filter(([k]) => lineKeys.has(k)));
   saveSelection(); saveHistory();
 }
 
-async function acceptToken(value, errorEl) {
+async function checkAndSaveToken(value, errorEl) {
   const tok = value.trim();
   if (!tok) { errorEl.textContent = 'Paste a token first.'; return false; }
   errorEl.textContent = 'Checking token…';
   try {
-    await lichess('/api/account', tok);
+    await lichessRequest('/api/account', tok);
   } catch (e) {
     errorEl.textContent = e.status === 401
       ? 'Lichess rejected this token. Check it was copied in full and has the study:read scope.'
@@ -975,13 +975,13 @@ async function acceptToken(value, errorEl) {
 
 const allChapters = () => library ? library.studies.flatMap(s => s.chapters) : [];
 const chapterByKey = key => allChapters().find(c => c.key === key);
-const studyOf = ch => library.studies.find(s => s.chapters.includes(ch));
-const parsed = new Map();   // chapter key -> { game, start, color } or { error }
-const lineCache = new Map(); // chapter key -> lines
-function resetParsed() { parsed.clear(); lineCache.clear(); altCountCache.clear(); }
+const studyOfChapter = ch => library.studies.find(s => s.chapters.includes(ch));
+const parsedChapters = new Map();   // chapter key -> { game, start, color } or { error }
+const linesByChapter = new Map(); // chapter key -> lines
+function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear(); alternativeCounts.clear(); }
 
 function parseChapter(ch) {
-  if (parsed.has(ch.key)) return parsed.get(ch.key);
+  if (parsedChapters.has(ch.key)) return parsedChapters.get(ch.key);
   let result;
   const game = pgn.parsePgn(ch.pgn)[0];
   const start = game && pgn.startingPosition(game.headers);
@@ -990,32 +990,32 @@ function parseChapter(ch) {
   else if (start.value.rules !== 'chess') result = { error: 'variant not supported' };
   else {
     const o = (game.headers.get('Orientation') || 'white').toLowerCase();
-    result = { game, start: start.value, color: o === 'black' ? 'black' : 'white', intro: commentText(game.comments) };
+    result = { game, start: start.value, yourColor: o === 'black' ? 'black' : 'white', intro: commentText(game.comments) };
   }
-  parsed.set(ch.key, result);
+  parsedChapters.set(ch.key, result);
   return result;
 }
 
 // All lines in a chapter: main line at the user's moves, every variation at the opponent's.
 // Lines are always practiced to their end.
 function chapterLines(ch) {
-  if (lineCache.has(ch.key)) return lineCache.get(ch.key);
-  const p = parseChapter(ch);
+  if (linesByChapter.has(ch.key)) return linesByChapter.get(ch.key);
+  const parsed = parseChapter(ch);
   const lines = [];
-  if (!p.error) {
+  if (!parsed.error) {
     const seen = new Set();
     const finish = moves => {
-      if (!moves.some(m => m.user)) return;
+      if (!moves.some(m => m.isYours)) return;
       const key = ch.key + '|' + moves.map(m => m.san).join(' ');
       if (seen.has(key) || lines.length >= MAX_LINES_PER_CHAPTER) return;
       seen.add(key);
-      lines.push({ key, chapterKey: ch.key, color: p.color, moves, main });
+      lines.push({ key, chapterKey: ch.key, yourColor: parsed.yourColor, moves, isMainLine: main });
     };
     // "main" stays true only while every opponent move taken is the chapter's main move.
     let main = true;
     const walk = (node, pos, moves, isMain) => {
-      const userTurn = pos.turn === p.color;
-      const children = userTurn ? node.children.slice(0, 1) : node.children;
+      const yourTurn = pos.turn === parsed.yourColor;
+      const children = yourTurn ? node.children.slice(0, 1) : node.children;
       if (!children.length) { main = isMain; return finish(moves); }
       for (const [i, child] of children.entries()) {
         const move = san.parseSan(pos, child.data.san);
@@ -1023,18 +1023,18 @@ function chapterLines(ch) {
         const next = pos.clone();
         const sanText = san.makeSan(pos, move);
         next.play(move);
-        const entry = { san: sanText, uci: makeUci(move), user: userTurn, moveNo: pos.fullmoves, color: pos.turn, notes: moveNotes(child.data), epd: epdOf(fenOf(pos)) };
-        if (!userTurn && children.length > 1) entry.siblings = children.map(c => {
+        const entry = { san: sanText, uci: makeUci(move), isYours: yourTurn, moveNumber: pos.fullmoves, color: pos.turn, notes: moveNotes(child.data), positionBefore: epdOf(fenOf(pos)) };
+        if (!yourTurn && children.length > 1) entry.replies = children.map(c => {
           const m = san.parseSan(pos, c.data.san);
           return m ? { san: san.makeSan(pos, m), nags: c.data.nags || [] } : null;
         }).filter(Boolean);
-        if (userTurn) entry.alts = alternativeMoves(node, pos);
-        walk(child, next, [...moves, entry], isMain && (userTurn || i === 0));
+        if (yourTurn) entry.alternatives = alternativeMoves(node, pos);
+        walk(child, next, [...moves, entry], isMain && (yourTurn || i === 0));
       }
     };
-    walk(p.game.moves, p.start.clone(), [], true);
+    walk(parsed.game.moves, parsed.start.clone(), [], true);
   }
-  lineCache.set(ch.key, lines);
+  linesByChapter.set(ch.key, lines);
   return lines;
 }
 
@@ -1051,7 +1051,7 @@ function alternativeMoves(node, pos) {
     after.play(move);
     const replyNode = child.children[0];
     const reply = replyNode && san.parseSan(after, replyNode.data.san);
-    if (reply) alt.reply = { san: san.makeSan(after, reply), uci: makeUci(reply), moveNo: after.fullmoves, color: after.turn };
+    if (reply) alt.reply = { san: san.makeSan(after, reply), uci: makeUci(reply), moveNumber: after.fullmoves, color: after.turn };
     alts[san.makeSan(pos, move)] = alt;
   }
   return Object.keys(alts).length ? alts : undefined;
@@ -1060,16 +1060,16 @@ function alternativeMoves(node, pos) {
 // Side variations: alternatives in the study to the user's main move, on the practiced lines.
 // They aren't practiced (only the main move counts at the user's turn); each counts once,
 // whatever follows it.
-const altCountCache = new Map();
+const alternativeCounts = new Map();
 
-function alternativeMoveCount(ch) {
-  if (altCountCache.has(ch.key)) return altCountCache.get(ch.key);
-  const p = parseChapter(ch);
+function alternativeCount(ch) {
+  if (alternativeCounts.has(ch.key)) return alternativeCounts.get(ch.key);
+  const parsed = parseChapter(ch);
   let n = 0;
   const walk = (node, pos) => {
-    const userTurn = pos.turn === p.color;
-    if (userTurn) n += Math.max(0, node.children.length - 1);
-    for (const child of userTurn ? node.children.slice(0, 1) : node.children) {
+    const yourTurn = pos.turn === parsed.yourColor;
+    if (yourTurn) n += Math.max(0, node.children.length - 1);
+    for (const child of yourTurn ? node.children.slice(0, 1) : node.children) {
       const move = san.parseSan(pos, child.data.san);
       if (!move) continue;
       const next = pos.clone();
@@ -1077,26 +1077,21 @@ function alternativeMoveCount(ch) {
       walk(child, next);
     }
   };
-  if (!p.error) walk(p.game.moves, p.start.clone());
-  altCountCache.set(ch.key, n);
+  if (!parsed.error) walk(parsed.game.moves, parsed.start.clone());
+  alternativeCounts.set(ch.key, n);
   return n;
 }
 
-// stats: position key -> the last 10 results of the user's move there, oldest first. A position
-// key is the chapter key plus the moves up to and including the user's move, e.g.
-// "studyId/chapterId|e4 e5 Nf3", so every line through that point shares one record.
-// A result is 1 (right first try, no hint, not shown) or the list of wrong moves played
-// (SAN, in order; empty when the miss was only a hint or Show correct move).
+// A move key identifies one of your moves in a chapter: the chapter key plus the moves up to and
+// including yours, e.g. "studyId/chapterId|e4 e5 Nf3", so every line through that point shares its
+// history (see History above).
 
-const userIndexes = line => line.moves.flatMap((m, i) => m.user ? [i] : []);
+const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.isYours ? [i] : []);
 
 // ---------- Annotations (comments and glyphs) ----------
 
-// "Prefer lines I miss" and "Main line only": weighted by the line's weakest move.
-// "Prefer most common moves" / "Prefer opponent's mistakes" / "All moves equally": a line's
-// weight is the chance of the opponent choosing its replies at each branch, by that preference.
-// These replace the move-results weighting.
-const MISTAKE_NAGS = [2, 4, 6]; // ? ?? ?!
+// The glyphs that mark a move as a mistake: ? (mistake), ?? (blunder) and ?! (dubious).
+const MISTAKE_NAGS = [2, 4, 6];
 
 // Lichess glyph names, keyed by PGN NAG number.
 const GLYPHS = {
@@ -1123,58 +1118,58 @@ function moveNotes(node) {
 // A glyph symbol with its Lichess name shown on hover.
 // Hovering over it shows the glyph's name in the same soft blue pop-up as comments.
 function glyphSpan(n) {
-  const el = h('span', { class: 'glyph ' + (GLYPHS[n][2] || ''), 'aria-label': GLYPHS[n][1] }, GLYPHS[n][0]);
-  el.addEventListener('mouseenter', () => { hidePreview(); showNotePop(el, '', { text: [GLYPHS[n][1]], nags: [] }); });
-  el.addEventListener('mouseleave', hideNotePop);
+  const el = element('span', { class: 'glyph ' + (GLYPHS[n][2] || ''), 'aria-label': GLYPHS[n][1] }, GLYPHS[n][0]);
+  el.addEventListener('mouseenter', () => { hideHoverBoard(); showCommentPopup(el, '', { text: [GLYPHS[n][1]], nags: [] }); });
+  el.addEventListener('mouseleave', hideCommentPopup);
   return el;
 }
 
 // A move gets a speech bubble when its study comment or a position/observation glyph
 // (± = ∞ …) is there to read. Move-quality glyphs (! ? …) show in the move list itself.
-const hasBubble = m => !!m.notes && (m.notes.text.length > 0 || m.notes.nags.some(n => n > 7));
+const hasComment = m => !!m.notes && (m.notes.text.length > 0 || m.notes.nags.some(n => n > 7));
 
-const BUBBLE_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="currentColor"/></svg>';
+const COMMENT_ICON_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="currentColor"/></svg>';
 
 // A speech bubble; hovering over it (or tapping it) shows the comment.
-function bubbleEl(label, notes, newest, pop) {
-  const el = h('span', { class: 'bubble' + (newest ? ' newest' : '') + (pop ? ' pop' : ''), tabindex: '0', role: 'button', 'aria-label': 'Study comment' });
-  el.innerHTML = BUBBLE_SVG;
-  const show = () => { hidePreview(); showNotePop(el, label, notes); }; // one pop-up at a time
+function commentBubble(label, notes, newest, pop) {
+  const el = element('span', { class: 'bubble' + (newest ? ' newest' : '') + (pop ? ' pop' : ''), tabindex: '0', role: 'button', 'aria-label': 'Study comment' });
+  el.innerHTML = COMMENT_ICON_SVG;
+  const show = () => { hideHoverBoard(); showCommentPopup(el, label, notes); }; // one pop-up at a time
   el.addEventListener('mouseenter', show);
   el.addEventListener('focus', show);
   el.addEventListener('click', e => { e.stopPropagation(); show(); }); // not a click on the move itself
-  el.addEventListener('mouseleave', hideNotePop);
-  el.addEventListener('blur', hideNotePop);
+  el.addEventListener('mouseleave', hideCommentPopup);
+  el.addEventListener('blur', hideCommentPopup);
   return el;
 }
 
 // The pop-up: the move, its position/observation glyphs with their names, then the comment.
-function showNotePop(el, label, { text, nags }) {
+function showCommentPopup(el, label, { text, nags }) {
   let pop = $('note-pop');
-  if (!pop) { pop = h('div', { id: 'note-pop', class: 'note-pop comment-pop hidden' }); document.body.append(pop); }
+  if (!pop) { pop = element('div', { id: 'note-pop', class: 'note-pop comment-pop hidden' }); document.body.append(pop); }
   const glyphs = nags.filter(n => n > 7);
   pop.replaceChildren(...[
-    label || glyphs.length ? h('p', {}, label ? h('b', {}, label + ' ') : null,
-      glyphs.map(n => [glyphSpan(n), h('span', { class: 'muted' }, GLYPHS[n][1] + ' ')])) : null,
-    ...text.map(x => h('p', {}, x)),
+    label || glyphs.length ? element('p', {}, label ? element('b', {}, label + ' ') : null,
+      glyphs.map(n => [glyphSpan(n), element('span', { class: 'muted' }, GLYPHS[n][1] + ' ')])) : null,
+    ...text.map(x => element('p', {}, x)),
   ].filter(Boolean));
   pop.classList.remove('hidden');
   placePopup(pop, el);
 }
 
-function hideNotePop() { $('note-pop')?.classList.add('hidden'); }
-window.addEventListener('scroll', hideNotePop, { passive: true });
+function hideCommentPopup() { $('note-pop')?.classList.add('hidden'); }
+window.addEventListener('scroll', hideCommentPopup, { passive: true });
 
 // ---------- Move results and grading ----------
 
-const KEEP_TRIES = 10;
+const HISTORY_LENGTH = 10;
 
-function posKey(line, i) {
-  const keys = line.posKeys ||= [];
+function moveKey(line, i) {
+  const keys = line.moveKeys ||= [];
   return keys[i] ||= line.chapterKey + '|' + line.moves.slice(0, i + 1).map(m => m.san).join(' ');
 }
 
-const attemptsAt = (line, i) => history.moves[posKey(line, i)]?.attempts || [];
+const attemptsAt = (line, i) => history.moves[moveKey(line, i)]?.attempts || [];
 
 // A move's score: the weighted average points of its last 10 attempts, as a fraction of 10 (0–1).
 // The most recent attempt counts 100%, the one before 90%, then 80% … down to 10% for the 10th.
@@ -1196,23 +1191,23 @@ const MASTERS_SHARE = 0.1;
 // A masters move: within the top N master moves in the position (N set on the Options page; moves
 // played equally often share a rank) and played in 10% or more of master games there.
 function isMasterMove(epd, s) {
-  const st = positions[epd]?.masters, n = st && totalGames(st);
+  const st = masterGamesAt(epd), n = st && totalGames(st);
   if (!n || gamesWith(st, s) / n < MASTERS_SHARE) return false;
-  return rankOf(st, s) <= settings.mastersTop;
+  return moveRank(st, s) <= settings.mastersTop;
 }
 
-function scoreAttempt(seq, entry) {
-  let p = 10;
-  for (const x of seq) {
-    if (x === 'hint' || x === 'show') { p -= settings.penalties.hint; continue; }
-    if (bareSan(x) === bareSan(entry.san)) break; // the correct move ends the attempt
-    const alt = entry.alts?.[x];
-    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= settings.penalties.error; // the study's marking wins
-    else if (alt) p -= settings.penalties.alternative;
-    else if (isMasterMove(entry.epd, x)) p -= settings.penalties.masters;
-    else p -= settings.penalties.error;
+function pointsFor(tried, yourMove) {
+  let points = 10;
+  for (const step of tried) {
+    if (step === 'hint' || step === 'show') { points -= settings.penalties.hint; continue; }
+    if (withoutCheckMarks(step) === withoutCheckMarks(yourMove.san)) break; // the correct move ends the attempt
+    const alt = yourMove.alternatives?.[step];
+    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) points -= settings.penalties.error; // the study's marking wins
+    else if (alt) points -= settings.penalties.alternative;
+    else if (isMasterMove(yourMove.positionBefore, step)) points -= settings.penalties.masters;
+    else points -= settings.penalties.error;
   }
-  return Math.max(0, p);
+  return Math.max(0, points);
 }
 
 // When the app opens (and after a restore or a change of penalties), every saved attempt is scored
@@ -1221,50 +1216,50 @@ function scoreAttempt(seq, entry) {
 function rescoreHistory() {
   if (!library) return;
   const moves = new Map();
-  for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) moves.set(posKey(line, i), line.moves[i]);
+  for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) moves.set(moveKey(line, i), line.moves[i]);
   for (const [key, record] of Object.entries(history.moves)) {
     const move = moves.get(key);
-    if (move) for (const a of record.attempts) a.points = scoreAttempt(a.tried, move);
+    if (move) for (const a of record.attempts) a.points = pointsFor(a.tried, move);
   }
   saveHistory();
 }
 
 // Saves this line's attempts into your history.
-function recordResults() {
-  for (const r of q.results) {
-    const record = history.moves[posKey(q.line, r.idx)] ||= { attempts: [] };
-    record.attempts = [...record.attempts, { tried: r.seq, points: r.points }].slice(-KEEP_TRIES);
-    record.lastTried = r.at;
+function saveAttempts() {
+  for (const attempt of practice.attempts) {
+    const record = history.moves[moveKey(practice.line, attempt.index)] ||= { attempts: [] };
+    record.attempts = [...record.attempts, { tried: attempt.tried, points: attempt.points }].slice(-HISTORY_LENGTH);
+    record.lastTried = attempt.at;
   }
   saveHistory();
 }
 
 // The moves other than the correct one in a list of attempts, with how often each was played:
 // [['Bc4', 2], ['d3', 1]].
-function countWrongs(attempts, correct) {
+function wrongMoveCounts(attempts, correct) {
   const counts = new Map();
   for (const a of attempts) {
-    for (const s of a.tried) if (s !== 'hint' && s !== 'show' && bareSan(s) !== bareSan(correct)) counts.set(s, (counts.get(s) || 0) + 1);
+    for (const s of a.tried) if (s !== 'hint' && s !== 'show' && withoutCheckMarks(s) !== withoutCheckMarks(correct)) counts.set(s, (counts.get(s) || 0) + 1);
   }
   return [...counts];
 }
 
 // One attempt, as recorded when the move is played (or the line is ended on it).
-const attemptResult = (expected, idx) => ({ move: expected, idx, seq: q.seq, points: scoreAttempt(q.seq, expected), at: Date.now() });
+const newAttempt = (expected, index) => ({ index, tried: practice.tried, points: pointsFor(practice.tried, expected), at: Date.now() });
 
-const pct = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
+const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
 
-// Highlight classes: s100 plain, s90 faint / s70 medium / s0 strong violet background, untried grey.
-const scoreClass = s => s == null ? 'untried' : s >= 1 ? 's100' : s >= 0.9 ? 's90' : s >= 0.7 ? 's70' : 's0';
+// Highlight classes: score-100 plain, score-90 faint / score-70 medium / score-0 strong violet background, untried grey.
+const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : s >= 0.9 ? 'score-90' : s >= 0.7 ? 'score-70' : 'score-0';
 
 // The average score of the tried moves (each position once) in these chapters.
-function aggregate(chapters) {
+function averageScore(chapters) {
   let lines = 0, tried = 0, sum = 0;
   const seen = new Set();
   for (const ch of chapters) for (const line of chapterLines(ch)) {
     lines++;
-    for (const i of userIndexes(line)) {
-      const k = posKey(line, i);
+    for (const i of yourMoveIndexes(line)) {
+      const k = moveKey(line, i);
       if (seen.has(k)) continue;
       seen.add(k);
       const s = scoreOf(history.moves[k]?.attempts || []);
@@ -1281,26 +1276,26 @@ function showStudies() {
   renderStudies();
 }
 
-function rateEl({ lines, tried, score }) {
-  if (!lines) return h('span', { class: 'rate' }, 'no lines to test');
-  if (!tried) return h('span', { class: 'rate' });
-  return quickTip(h('span', { class: 'rate' }, h('span', { class: scoreClass(score) }, `${pct(score)}%`)), // highlight just the text
+function scoreElement({ lines, tried, score }) {
+  if (!lines) return element('span', { class: 'rate' }, 'no lines to test');
+  if (!tried) return element('span', { class: 'rate' });
+  return quickTip(element('span', { class: 'rate' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)), // highlight just the text
     'Accuracy over the last 10 attempts');
 }
 
 // "· 5 lines · 2 alternative moves" after a chapter's name (the alternative moves only when there are any).
 function chapterCounts(nLines, nAlt) {
-  return [h('span', { class: 'muted' }, ` · ${plural(nLines, 'line')}`),
-    nAlt ? quickTip(h('span', { class: 'muted' }, ` · ${plural(nAlt, 'alternative move')}`),
+  return [element('span', { class: 'muted' }, ` · ${plural(nLines, 'line')}`),
+    nAlt ? quickTip(element('span', { class: 'muted' }, ` · ${plural(nAlt, 'alternative move')}`),
       "Other moves your study gives you at your turns, besides the main move. They aren't tested; only the main move counts as correct.") : null];
 }
 
 function renderStudies() {
-  hidePreview(); hideQuickTip(); // their element may be about to disappear
+  hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
   const container = $('studies');
   container.replaceChildren();
   if (!library.studies.length) {
-    container.append(h('div', { class: 'row muted' }, `No studies found for ${library.username}.`));
+    container.append(element('div', { class: 'row muted' }, `No studies found for ${library.username}.`));
   }
   for (const study of library.studies) {
     // Hidden studies are left out, or shown dimmed (and can't be ticked) with "Show hidden" on.
@@ -1309,7 +1304,7 @@ function renderStudies() {
     const keys = study.chapters.map(c => c.key);
     const nSel = keys.filter(k => selection.has(k)).length;
     const open = openStudies.has(study.id);
-    const box = h('input', {
+    const box = element('input', {
       type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
       checked: nSel === keys.length && keys.length > 0,
       indeterminate: nSel > 0 && nSel < keys.length,
@@ -1318,65 +1313,65 @@ function renderStudies() {
         saveSelection(); renderStudies();
       },
     });
-    const studyEl = h('div', { class: 'study' + (isHidden ? ' hidden-study' : '') },
-      h('div', { class: 'row study-row' },
-        h('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-openStudies': String(open),
+    const studyEl = element('div', { class: 'study' + (isHidden ? ' hidden-study' : '') },
+      element('div', { class: 'row study-row' },
+        element('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-openStudies': String(open),
           onclick: () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
         box,
-        h('span', { class: 'name' }, h('label', { for: 'st-' + study.id }, study.name),
-          showHiddenStudies ? hideStudyBtn(study, isHidden) : null,
-          h('span', { class: 'muted', style: 'font-weight:400' }, ` · ${plural(study.chapters.length, 'chapter')}`)),
-        rateEl(aggregate(study.chapters))),
+        element('span', { class: 'name' }, element('label', { for: 'st-' + study.id }, study.name),
+          showHiddenStudies ? hideStudyButton(study, isHidden) : null,
+          element('span', { class: 'muted', style: 'font-weight:400' }, ` · ${plural(study.chapters.length, 'chapter')}`)),
+        scoreElement(averageScore(study.chapters))),
     );
     if (open) {
-      const list = h('div', { class: 'chapters' });
+      const list = element('div', { class: 'chapters' });
       for (const ch of study.chapters) {
-        const p = parseChapter(ch);
+        const parsed = parseChapter(ch);
         const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
         const chLines = chapterLines(ch);
         const chOpen = openChapters.has(ch.key) && chLines.length > 0;
         // Two triangles: the chapter's moves (main line), then all its variations at once.
         const keys = chLines.length ? branchKeys(ch) : [];
         const allOpen = allVariationsOpen.has(ch.key);
-        list.append(h('div', { class: 'row chapter-row' },
+        list.append(element('div', { class: 'row chapter-row' },
           chLines.length
-            ? h('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-openStudies': String(chOpen),
+            ? element('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-openStudies': String(chOpen),
                 onclick: () => { chOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); } }, chOpen ? '▾' : '▸')
-            : h('span', { class: 'toggle-space' }),
+            : element('span', { class: 'toggle-space' }),
           keys.length
-            ? h('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-openStudies': String(allOpen),
+            ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-openStudies': String(allOpen),
                 onclick: () => {
                   for (const k of keys) allOpen ? openBranches.delete(k) : openBranches.add(k);
                   if (allOpen) allVariationsOpen.delete(ch.key);
                   else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
                   renderStudies();
                 } }, allOpen ? '▾' : '▸')
-            : h('span', { class: 'toggle-space' }),
-          h('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: hiddenStudies.has(study.id),
+            : element('span', { class: 'toggle-space' }),
+          element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: hiddenStudies.has(study.id),
             onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
           // The side you play: a small white or black circle right after the chapter name.
-          h('span', { class: 'name' }, quickTip(h('label', { for: id }, ch.name), openingName(p)),
-            p.error ? null : h('span', { class: 'side-dot ' + p.color, title: 'You play ' + p.color, 'aria-label': 'you play ' + p.color }),
-            chLines.length ? chapterCounts(chLines.length, alternativeMoveCount(ch)) : null),
-          p.error ? h('span', { class: 'side' }, p.error) : null,
-          rateEl(aggregate([ch]))));
-        if (chOpen) list.append(chapterTreeEl(ch));
+          element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), openingName(parsed)),
+            parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
+            chLines.length ? chapterCounts(chLines.length, alternativeCount(ch)) : null),
+          parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
+          scoreElement(averageScore([ch]))));
+        if (chOpen) list.append(chapterTree(ch));
       }
       studyEl.append(list);
     }
     container.append(studyEl);
   }
   if (library.studies.length && !container.children.length) {
-    container.append(h('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
+    container.append(element('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
   }
-  updateToolbar();
+  updateSelectionPanel();
 }
 
 // The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
 // null when the tags are missing (used as the chapter name's hover text).
-function openingName(p) {
-  if (p.error) return null;
-  const tag = k => { const v = p.game.headers.get(k); return v && v !== '?' ? v : null; };
+function openingName(parsed) {
+  if (parsed.error) return null;
+  const tag = k => { const v = parsed.game.headers.get(k); return v && v !== '?' ? v : null; };
   const opening = tag('Opening'), eco = tag('ECO');
   return opening ? opening + (eco ? ` (${eco})` : '') : eco;
 }
@@ -1386,39 +1381,39 @@ function openingName(p) {
 // Your weak practiced moves are highlighted by score; side variations at your moves (never
 // practiced) are italics; moves with a move-quality glyph take its color. Each practiced line's last move is followed by
 // its saved Lichess evaluation. Every move has the small hover board.
-function chapterTreeEl(ch) {
-  const p = parseChapter(ch);
-  const box = h('div', { class: 'tree' });
+function chapterTree(ch) {
+  const parsed = parseChapter(ch);
+  const box = element('div', { class: 'tree' });
   // One move: its number (when needed), SAN, glyphs, bubble. Returns the elements, the move entry
   // and the position after it; practiced says whether the move lies on a practiced line.
   const moveEls = (child, pos, path, practiced, showNo) => {
     const move = san.parseSan(pos, child.data.san);
     if (!move) return null;
-    const userTurn = pos.turn === p.color;
-    const entry = { san: san.makeSan(pos, move), uci: makeUci(move), user: userTurn && practiced, side: !practiced,
-      moveNo: pos.fullmoves, color: pos.turn, notes: moveNotes(child.data) };
+    const yourTurn = pos.turn === parsed.yourColor;
+    const entry = { san: san.makeSan(pos, move), uci: makeUci(move), isYours: yourTurn && practiced, untested: !practiced,
+      moveNumber: pos.fullmoves, color: pos.turn, notes: moveNotes(child.data), positionBefore: epdOf(fenOf(pos)) };
     const moves = [...path, entry];
-    const line = { chapterKey: ch.key, color: p.color, moves };
+    const line = { chapterKey: ch.key, yourColor: parsed.yourColor, moves };
     const i = moves.length - 1;
-    const cls = entry.user ? scoreClass(scoreOf(attemptsAt(line, i))) : practiced ? 'opp' : 'mv-side';
-    const el = h('span', { class: 'smv ' + cls + glyphClass(entry), tabindex: '0' }, fig(entry.san));
-    const show = () => showPreview(el, line, i);
+    const cls = entry.isYours ? scoreClass(scoreOf(attemptsAt(line, i))) : practiced ? 'opp' : 'untested-move';
+    const el = element('span', { class: 'tree-move ' + cls + moveQualityClass(entry), tabindex: '0' }, withFigurines(entry.san));
+    const show = () => showHoverBoard(el, line, i);
     el.addEventListener('mouseenter', show); el.addEventListener('focus', show); el.addEventListener('click', show);
-    el.addEventListener('mouseleave', hidePreview); el.addEventListener('blur', hidePreview);
-    const num = entry.color === 'white' ? `${entry.moveNo}.` : showNo ? `${entry.moveNo}…` : null;
+    el.addEventListener('mouseleave', hideHoverBoard); el.addEventListener('blur', hideHoverBoard);
+    const num = entry.color === 'white' ? `${entry.moveNumber}.` : showNo ? `${entry.moveNumber}…` : null;
     const next = pos.clone();
     next.play(move);
-    return { els: [num ? h('span', { class: 'smv-num' }, num, ' ') : null, el, glyphMarks(entry),
-      hasBubble(entry) ? bubbleEl(moveLabel(entry), entry.notes, false) : null, ' '], moves, pos: next };
+    return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null, el, glyphMarks(entry),
+      hasComment(entry) ? commentBubble(moveLabel(entry), entry.notes, false) : null, ' '], moves, pos: next };
   };
   // A sequence of moves from node, following main moves; variations open below their branch point.
   const walk = (node, pos, path, practiced, container) => {
-    let flow = h('div', { class: 'tree-line' });
+    let flow = element('div', { class: 'tree-line' });
     container.append(flow);
     let showNo = true, lastRow = flow;
     while (node.children.length) {
       const [main, ...alts] = node.children;
-      const userTurn = pos.turn === p.color;
+      const yourTurn = pos.turn === parsed.yourColor;
       const res = moveEls(main, pos, path, practiced, showNo);
       if (!res) break;
       flow.append(...res.els.flat(Infinity).filter(x => x != null));
@@ -1427,15 +1422,15 @@ function chapterTreeEl(ch) {
       if (alts.length) {
         const key = ch.key + '|' + path.map(e => e.san).join(' ');
         const open = openBranches.has(key);
-        flow.append(h('button', { class: 'tree-toggle', 'aria-openStudies': String(open),
+        flow.append(element('button', { class: 'tree-toggle', 'aria-openStudies': String(open),
           title: open ? 'Hide variations' : `Show ${plural(alts.length, 'variation')}`,
           onclick: () => { open ? openBranches.delete(key) : openBranches.add(key); renderStudies(); } }, open ? '−' : '+'), ' ');
         if (open) {
-          const vars = h('div', { class: 'tree-vars' });
+          const vars = element('div', { class: 'tree-vars' });
           container.append(vars);
           // Alternatives at the user's turn are side variations (never practiced).
-          for (const alt of alts) walk({ children: [alt] }, pos, path, practiced && !userTurn, vars);
-          flow = h('div', { class: 'tree-line' });
+          for (const alt of alts) walk({ children: [alt] }, pos, path, practiced && !yourTurn, vars);
+          flow = element('div', { class: 'tree-line' });
           container.append(flow);
           showNo = true;
         }
@@ -1443,12 +1438,12 @@ function chapterTreeEl(ch) {
       node = main; pos = res.pos; path = res.moves; lastRow = moveRow;
     }
     // The end of a practiced line: its saved Lichess evaluation.
-    const e = practiced && path.some(m => m.user) && !node.children.length ? positions[epdOf(fenOf(pos))]?.eval : null;
-    if (e && !e.none) lastRow.append(h('span', { class: 'eval', title: `Lichess cloud evaluation of the final position, depth ${e.depth}` }, formatEval(e)));
+    const e = practiced && path.some(m => m.isYours) && !node.children.length ? evaluationAt(epdOf(fenOf(pos))) : null;
+    if (e && !e.none) lastRow.append(element('span', { class: 'eval', title: `Lichess cloud evaluation of the final position, depth ${e.depth}` }, formatEvaluation(e)));
     if (!flow.childNodes.length) flow.remove();
   };
-  if (!p.error) {
-    walk(p.game.moves, p.start.clone(), [], true, box);
+  if (!parsed.error) {
+    walk(parsed.game.moves, parsed.start.clone(), [], true, box);
   }
   return box;
 }
@@ -1456,7 +1451,7 @@ function chapterTreeEl(ch) {
 // The keys of every branch point in a chapter's tree (every node with alternatives), as used
 // for openBranches: "chapter key|moves before the branch".
 function branchKeys(ch) {
-  const p = parseChapter(ch);
+  const parsed = parseChapter(ch);
   const keys = [];
   const walk = (node, pos, sans) => {
     if (node.children.length > 1) keys.push(ch.key + '|' + sans.join(' '));
@@ -1469,7 +1464,7 @@ function branchKeys(ch) {
       walk(child, next, [...sans, s]);
     }
   };
-  if (!p.error) walk(p.game.moves, p.start.clone(), []);
+  if (!parsed.error) walk(parsed.game.moves, parsed.start.clone(), []);
   return keys;
 }
 
@@ -1477,8 +1472,8 @@ function branchKeys(ch) {
 // for a visible study (click to hide it), an eye with a line for a hidden one (click to unhide).
 const EYE_PATH = 'M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z';
 
-function hideStudyBtn(study, isHidden) {
-  const btn = h('button', { class: 'icon-btn hide-btn',
+function hideStudyButton(study, isHidden) {
+  const btn = element('button', { class: 'icon-btn hide-btn',
     title: isHidden ? 'Unhide this study' : "Hide this study (it won't be practiced)",
     onclick: () => toggleHideStudy(study) });
   btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="${EYE_PATH}" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>`
@@ -1503,14 +1498,14 @@ function toggleHideStudy(study) {
 
 $('show-hidden-btn').addEventListener('click', () => { showHiddenStudies = !showHiddenStudies; renderStudies(); });
 
-function updateToolbar() {
+function updateSelectionPanel() {
   const all = visibleChapters();
   const selected = all.filter(c => selection.has(c.key));
   const all_ = $('all-box');
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
   const all_lines = selected.flatMap(chapterLines);
-  const lines = selected.flatMap(practiceLines);
+  const lines = selected.flatMap(linesToPractice);
   const nLines = lines.length;
   $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · `
     + (settings.opponentMode === 'main'
@@ -1537,7 +1532,7 @@ $('all-box').addEventListener('change', e => {
 $('fav-set-btn').addEventListener('click', () => {
   favorites = [...selection];
   store.set('favorites', favorites);
-  updateToolbar();
+  updateSelectionPanel();
   showBanner(`Saved ${plural(favorites.length, 'chapter')} as your favorites.`);
 });
 
@@ -1558,7 +1553,7 @@ for (const r of document.querySelectorAll('input[name=opp-mode]')) {
   r.addEventListener('change', () => {
     settings.opponentMode = r.value;
     saveSettings();
-    updateToolbar();
+    updateSelectionPanel();
   });
 }
 
@@ -1568,17 +1563,17 @@ for (const r of document.querySelectorAll('input[name=start-mode]')) {
     settings.startMode = r.value;
     saveSettings();
     for (const other of document.querySelectorAll('input[name=start-mode]')) other.checked = other.value === settings.startMode;
-    updateToolbar(); // Test single positions leaves out lines with nothing from move 5 on
+    updateSelectionPanel(); // Test single positions leaves out lines with nothing from move 5 on
   });
 }
 
 // ---------- Choosing the next line ----------
 
 // A move you always get right has weight 1, one you always get wrong 5; never tried counts as 50% wrong.
-const moveWeight = tries => { const s = scoreOf(tries); return s == null ? 3 : 1 + 4 * (1 - s); };
+const moveWeight = attempts => { const s = scoreOf(attempts); return s == null ? 3 : 1 + 4 * (1 - s); };
 
 // A line's weight is its weakest move's weight.
-const lineWeight = line => Math.max(...userIndexes(line).map(i => moveWeight(attemptsAt(line, i))));
+const lineWeight = line => Math.max(...yourMoveIndexes(line).map(i => moveWeight(attemptsAt(line, i))));
 
 function weightedPick(items, weight) {
   const total = items.reduce((s, x) => s + weight(x), 0);
@@ -1590,11 +1585,11 @@ function weightedPick(items, weight) {
   return items[items.length - 1];
 }
 
-let lastLineKey = null;
+let previousLineKey = null;
 
 // Never give the same line twice in a row when there is any other choice.
-const notLast = lines => {
-  const others = lines.filter(l => l.key !== lastLineKey);
+const avoidingPreviousLine = lines => {
+  const others = lines.filter(l => l.key !== previousLineKey);
   return others.length ? others : lines;
 };
 
@@ -1603,108 +1598,111 @@ const notLast = lines => {
 // isn't practiced there.
 const SINGLE_FROM_MOVE = 5;
 
-const practiceLines = ch => chapterLines(ch).filter(l => (settings.opponentMode !== 'main' || l.main)
-  && (settings.startMode !== 'single' || l.moves.some(m => m.user && m.moveNo >= SINGLE_FROM_MOVE)));
+const linesToPractice = ch => chapterLines(ch).filter(l => (settings.opponentMode !== 'main' || l.isMainLine)
+  && (settings.startMode !== 'single' || l.moves.some(m => m.isYours && m.moveNumber >= SINGLE_FROM_MOVE)));
 
 function replyPreference(san, nags, epd) {
   if (settings.opponentMode === 'equal') return 1;
   if (settings.opponentMode === 'mistakes') return nags.some(n => MISTAKE_NAGS.includes(n)) ? 4 : 1;
-  const stat = positions[epd]?.lichess; // common: games played (+1 so unknown moves still get a chance)
-  return gamesWith(stat, san) + 1;
+  const stats = lichessGamesAt(epd); // common: games played (+1 so unknown moves still get a chance)
+  return gamesWith(stats, san) + 1;
 }
 
 function preferenceWeight(line) {
   let w = 1;
   for (const m of line.moves) {
-    if (!m.siblings) continue;
-    const total = m.siblings.reduce((sum, x) => sum + replyPreference(x.san, x.nags, m.epd), 0);
-    const chosen = m.siblings.find(x => x.san === m.san);
-    w *= (chosen ? replyPreference(chosen.san, chosen.nags, m.epd) : 1) / total;
+    if (!m.replies) continue;
+    const total = m.replies.reduce((sum, x) => sum + replyPreference(x.san, x.nags, m.positionBefore), 0);
+    const chosen = m.replies.find(x => x.san === m.san);
+    w *= (chosen ? replyPreference(chosen.san, chosen.nags, m.positionBefore) : 1) / total;
   }
   return w;
 }
 
-const usesMoveResults = () => !['common', 'mistakes', 'equal'].includes(settings.opponentMode);
+// "Prefer lines I miss" and "Main line only": a line is weighted by its weakest move. "Prefer most
+// common moves" / "Prefer opponent's mistakes" / "All moves equally": a line's weight is the chance
+// of the opponent choosing its replies at each branch, by that preference.
+const usesYourHistory = () => !['common', 'mistakes', 'equal'].includes(settings.opponentMode);
 
 function pickWeighted(lines) {
-  return weightedPick(notLast(lines), usesMoveResults() ? lineWeight : preferenceWeight);
+  return weightedPick(avoidingPreviousLine(lines), usesYourHistory() ? lineWeight : preferenceWeight);
 }
 
 function pickLine() {
-  const line = chooseLine();
-  if (line) lastLineKey = line.key;
+  const line = chooseLineFromSelection();
+  if (line) previousLineKey = line.key;
   return line;
 }
 
-function chooseLine() {
-  const chapters = visibleChapters().filter(c => selection.has(c.key) && practiceLines(c).length);
+function chooseLineFromSelection() {
+  const chapters = visibleChapters().filter(c => selection.has(c.key) && linesToPractice(c).length);
   if (!chapters.length) return null;
   // Lines come from all selected chapters, weighted by the "Opponent's moves" choice.
-  return pickWeighted(chapters.flatMap(practiceLines));
+  return pickWeighted(chapters.flatMap(linesToPractice));
 }
 
 // ---------- Practice: the board ----------
 
-let cg = null;
-let q = null; // current line state
+let board = null;
+let practice = null; // current line state
 
 function ensureBoard() {
-  if (cg) return;
-  cg = Chessground($('board'), {
+  if (board) return;
+  board = Chessground($('board'), {
     coordinates: true,
     animation: { enabled: true, duration: 200 },
     highlight: { lastMove: true, check: true },
     premovable: { enabled: false },
     drawable: { enabled: true },
-    movable: { free: false, showDests: true, events: { after: onUserMove } },
+    movable: { free: false, showDests: true, events: { after: onYourMove } },
   });
-  window.addEventListener('resize', () => cg.redrawAll());
+  window.addEventListener('resize', () => board.redrawAll());
 }
 
 function setStatus(html, cls = '') {
-  const el = $('q-status');
+  const el = $('practice-status');
   el.className = 'status' + (cls ? ' ' + cls : '');
   el.replaceChildren(...[].concat(html).filter(c => c != null));
 }
 
 function setShapes(shapes) {
-  if (q) q.shapes = shapes;
-  cg.setAutoShapes(shapes);
+  if (practice) practice.shapes = shapes;
+  board.setAutoShapes(shapes);
 }
 
-function syncBoard(lastMove) {
-  q.view = null; // any game update returns to the live position
+function updateBoard(lastMove) {
+  practice.viewing = null; // any game update returns to the live position
   // Back from an earlier position during a line: the status says what it said before.
-  if (q.savedStatus) {
-    const s = q.savedStatus;
-    q.savedStatus = null;
-    $('q-status').className = s.cls;
-    $('q-status').replaceChildren(...s.nodes);
+  if (practice.savedStatus) {
+    const s = practice.savedStatus;
+    practice.savedStatus = null;
+    $('practice-status').className = s.cls;
+    $('practice-status').replaceChildren(...s.nodes);
   }
-  const userTurn = q.idx < q.line.moves.length && q.line.moves[q.idx].user && !q.busy;
-  cg.set({
-    fen: fenOf(q.pos),
-    orientation: q.line.color,
-    turnColor: q.pos.turn,
-    check: q.pos.isCheck() ? q.pos.turn : false,
-    lastMove: lastMove ?? q.lastMove,
-    movable: { color: q.line.color, dests: userTurn ? compat.chessgroundDests(q.pos) : new Map() },
+  const yourTurn = practice.movesPlayed < practice.line.moves.length && practice.line.moves[practice.movesPlayed].isYours && !practice.busy;
+  board.set({
+    fen: fenOf(practice.position),
+    orientation: practice.line.yourColor,
+    turnColor: practice.position.turn,
+    check: practice.position.isCheck() ? practice.position.turn : false,
+    lastMove: lastMove ?? practice.lastMove,
+    movable: { color: practice.line.yourColor, dests: yourTurn ? compat.chessgroundDests(practice.position) : new Map() },
   });
-  if (lastMove) q.lastMove = lastMove;
-  cg.setAutoShapes(q.shapes || []);
+  if (lastMove) practice.lastMove = lastMove;
+  board.setAutoShapes(practice.shapes || []);
   // One button: "Hint" circles the piece to move; after that it becomes "Show correct move",
   // which draws the arrow (the player then plays the move).
   // After "Show correct move" the arrow stays and the button is disabled until the move is played.
-  const hinted = q.hint > 0;
+  const hinted = practice.hintStep > 0;
   $('hint-btn').textContent = hinted ? 'Show correct move' : 'Hint';
   $('hint-btn').title = hinted ? 'Shows the correct move with an arrow; you then play it. Counts as a miss.' : 'Circles the piece to move. Counts as a miss.';
-  $('hint-btn').disabled = !userTurn || q.hint >= 2;
-  $('end-btn').disabled = !userTurn;
-  renderMoves();
+  $('hint-btn').disabled = !yourTurn || practice.hintStep >= 2;
+  $('end-btn').disabled = !yourTurn;
+  renderMoveList();
 }
 
 // Squares for drawing a move; castling is shown as the king's two-square move.
-const moveSquares = m => arrowSquares(q.pos, parseUci(m.uci));
+const moveSquares = m => arrowSquares(practice.position, parseUci(m.uci));
 
 function choosePromotion(color) {
   return new Promise(resolve => {
@@ -1712,8 +1710,8 @@ function choosePromotion(color) {
     const inner = box.firstElementChild;
     inner.replaceChildren(...['queen', 'rook', 'bishop', 'knight'].map(role => {
       // Reuse chessground's piece images.
-      const btn = h('button', { title: role, onclick: () => { box.classList.add('hidden'); resolve(role); } });
-      btn.append(h('piece', { class: `${role} ${color}`, style: 'width:100%;height:100%;transform:none' }));
+      const btn = element('button', { title: role, onclick: () => { box.classList.add('hidden'); resolve(role); } });
+      btn.append(element('piece', { class: `${role} ${color}`, style: 'width:100%;height:100%;transform:none' }));
       return btn;
     }));
     box.classList.remove('hidden');
@@ -1728,34 +1726,34 @@ const practiceSignature = () => JSON.stringify({
 });
 
 function showPracticeIdle() {
-  q = null;
+  practice = null;
   showScreen('practice');
   ensureBoard();
-  cg.set({
+  board.set({
     fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     orientation: 'white', turnColor: 'white', lastMove: undefined, check: false,
     movable: { color: undefined, dests: new Map() },
   });
-  cg.setAutoShapes([]);
-  cg.redrawAll();
-  updateToolbar(); // refreshes the selection count
+  board.setAutoShapes([]);
+  board.redrawAll();
+  updateSelectionPanel(); // refreshes the selection count
   const ready = !$('start-btn').disabled;
   // "3 chapters · 13 lines selected", then the Opponent's-moves choice from the Studies page.
   const chapters = allChapters().filter(c => selection.has(c.key));
-  const nLines = chapters.reduce((sum, c) => sum + practiceLines(c).length, 0);
-  $('q-study').textContent = '';
-  $('q-opening').textContent = '';
-  $('q-chapter').classList.add('muted'); // the idle page's selection count
-  $('q-chapter').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`;
-  $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${settings.opponentMode}]`).closest('label').textContent.trim();
-  $('q-moves').replaceChildren(h('span', { class: 'none' }, 'No moves yet.'));
+  const nLines = chapters.reduce((sum, c) => sum + linesToPractice(c).length, 0);
+  $('practice-study').textContent = '';
+  $('practice-opening').textContent = '';
+  $('practice-chapter').classList.add('muted'); // the idle page's selection count
+  $('practice-chapter').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`;
+  $('practice-side').textContent = document.querySelector(`input[name=opp-mode][value=${settings.opponentMode}]`).closest('label').textContent.trim();
+  $('practice-moves').replaceChildren(element('span', { class: 'none' }, 'No moves yet.'));
   for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
   // Keep the idle page clean: no status text unless there's nothing to practice.
   // (setStatus resets the box's classes, so it reappears as soon as a line starts.)
   setStatus('Select chapters on the Studies page');
-  if (ready) $('q-status').classList.add('hidden');
-  $('q-summary').classList.add('hidden');
-  hideNotePop();
+  if (ready) $('practice-status').classList.add('hidden');
+  $('practice-summary').classList.add('hidden');
+  hideCommentPopup();
   $('next-btn').classList.add('hidden');
   hideLineButtons();
   $('practice-start-btn').classList.remove('hidden');
@@ -1773,31 +1771,31 @@ function startPractice() {
   hideBanner();
   showScreen('practice');
   ensureBoard();
-  cg.redrawAll();
+  board.redrawAll();
   startLine(line);
   return true;
 }
 
 function startLine(line) {
   const ch = chapterByKey(line.chapterKey);
-  const p = parseChapter(ch);
-  q = { line, pos: p.start.clone(), idx: 0, tries: 0, missed: false, results: [], busy: false, lastMove: undefined, token: {}, shapes: [], view: null, startedAt: null, single: settings.startMode === 'single' };
-  q.sig = practiceSignature();
+  const parsed = parseChapter(ch);
+  practice = { line, position: parsed.start.clone(), movesPlayed: 0, hadMistake: false, attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: 0, isSinglePosition: settings.startMode === 'single' };
+  practice.signature = practiceSignature();
   // The board's orientation already shows the user's side.
-  $('q-side').textContent = '';
-  $('q-summary').classList.add('hidden');
+  $('practice-side').textContent = '';
+  $('practice-summary').classList.add('hidden');
   $('next-btn').classList.add('hidden');
   $('practice-start-btn').classList.add('hidden');
   $('hint-btn').classList.remove('hidden');
   $('end-btn').classList.toggle('hidden', settings.startMode === 'single');
-  hideNotePop();
+  hideCommentPopup();
   updateNames();
   setShapes([]);
-  const start = partwayStart(line);
-  q.startIdx = start;
-  if (q.single) {
+  const start = chooseStartIndex(line);
+  practice.startIndex = start;
+  if (practice.isSinglePosition) {
     const label = `Single position: ${positionName(line, start)}`;
-    $('q-side').textContent = $('q-side').textContent ? `${$('q-side').textContent} · ${label}` : label;
+    $('practice-side').textContent = $('practice-side').textContent ? `${$('practice-side').textContent} · ${label}` : label;
   }
   if (start) {
     // Set up the position before the chosen move instantly (no sounds); the earlier
@@ -1805,127 +1803,124 @@ function startLine(line) {
     let last;
     for (const m of line.moves.slice(0, start)) {
       const move = parseUci(m.uci);
-      q.pos.play(move);
+      practice.position.play(move);
       last = compat.chessgroundMove(move).slice(0, 2);
     }
-    q.idx = start;
-    q.startedAt = line.moves[start];
-    q.lastMove = last;
-    if (!q.single) {
+    practice.movesPlayed = start;
+    practice.lastMove = last;
+    if (!practice.isSinglePosition) {
       const from = `Started partway: ${positionName(line, start)}`;
-      $('q-side').textContent = $('q-side').textContent ? `${$('q-side').textContent} · ${from}` : from;
+      $('practice-side').textContent = $('practice-side').textContent ? `${$('practice-side').textContent} · ${from}` : from;
     }
   }
-  syncBoard();
+  updateBoard();
   advance();
 }
 
 // Where a line starts, per the "Where lines start" setting: an index into line.moves,
 // or 0 for the beginning. A partway start is one of the user's moves, never the first,
 // leaving at least two of the user's moves to play.
-function partwayStart(line) {
+function chooseStartIndex(line) {
   if (settings.startMode === 'start') return 0;
-  const userMoves = line.moves.map((m, i) => m.user ? i : -1).filter(i => i >= 0);
-  if (settings.startMode === 'single') return singlePosition(line, userMoves.filter(i => line.moves[i].moveNo >= SINGLE_FROM_MOVE));
-  const candidates = userMoves.slice(1, -1);
+  const yourMoves = line.moves.map((m, i) => m.isYours ? i : -1).filter(i => i >= 0);
+  if (settings.startMode === 'single') return chooseSinglePosition(line, yourMoves.filter(i => line.moves[i].moveNumber >= SINGLE_FROM_MOVE));
+  const candidates = yourMoves.slice(1, -1);
   return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : 0;
 }
 
 // "Single positions": any of the user's moves (the first included), avoiding the
 // position just tested when there's another choice. With move-results weighting,
 // moves you get wrong more often come up more.
-let lastPositionFen = null;
+let previousSingleFen = null;
 
-function singlePosition(line, userMoves) {
+function chooseSinglePosition(line, yourMoves) {
   const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
   const fens = new Map();
   line.moves.forEach((m, i) => { fens.set(i, fenOf(pos)); pos.play(parseUci(m.uci)); });
-  const others = userMoves.filter(i => fens.get(i) !== lastPositionFen);
-  const choices = others.length ? others : userMoves;
-  const k = usesMoveResults()
+  const others = yourMoves.filter(i => fens.get(i) !== previousSingleFen);
+  const choices = others.length ? others : yourMoves;
+  const k = usesYourHistory()
     ? weightedPick(choices, i => moveWeight(attemptsAt(line, i)))
     : choices[Math.floor(Math.random() * choices.length)];
-  lastPositionFen = fens.get(k);
+  previousSingleFen = fens.get(k);
   return k;
 }
 
 // Play opponent moves until it is the user's turn or the line ends.
 async function advance() {
-  if (q.single && q.idx > q.startIdx) return endSingle();
-  const run = q.token;
-  while (q.idx < q.line.moves.length && !q.line.moves[q.idx].user) {
-    q.busy = true;
-    syncBoard();
+  if (practice.isSinglePosition && practice.movesPlayed > practice.startIndex) return endSinglePosition();
+  const run = practice.run;
+  while (practice.movesPlayed < practice.line.moves.length && !practice.line.moves[practice.movesPlayed].isYours) {
+    practice.busy = true;
+    updateBoard();
     setStatus('Opponent to move…');
-    await sleep(q.idx === 0 ? 600 : 450);
-    if (!q || q.token !== run) return;
-    playLineMove(q.line.moves[q.idx]);
+    await sleep(practice.movesPlayed === 0 ? 600 : 450);
+    if (!practice || practice.run !== run) return;
+    playMove(practice.line.moves[practice.movesPlayed]);
   }
-  q.busy = false;
-  if (q.idx >= q.line.moves.length) return endLine();
-  q.tries = 0;
-  q.hint = 0;
-  q.wrong = null;
-  q.seq = []; // what the user does at this move, in order: moves tried, "hint", "show"
-  q.hintNote = null; // what the study says about a wrong move, shown with Hint
-  syncBoard();
+  practice.busy = false;
+  if (practice.movesPlayed >= practice.line.moves.length) return endLine();
+  practice.hintStep = 0;
+  practice.lastWrongMove = null;
+  practice.tried = []; // what the user does at this move, in order: moves tried, "hint", "show"
+  practice.hintComment = null; // what the study says about a wrong move, shown with Hint
+  updateBoard();
   setStatus('Your move.');
 }
 
-async function onUserMove(orig, dest) {
-  if (!q || q.busy) return;
-  const expected = q.line.moves[q.idx];
-  const piece = q.pos.board.get(parseSquare(orig));
+async function onYourMove(orig, dest) {
+  if (!practice || practice.busy) return;
+  const expected = practice.line.moves[practice.movesPlayed];
+  const piece = practice.position.board.get(parseSquare(orig));
   let promotion;
   if (piece && piece.role === 'pawn' && (dest[1] === '8' || dest[1] === '1')) {
-    const run = q.token;
-    promotion = await choosePromotion(q.pos.turn);
-    if (!q || q.token !== run) return;
+    const run = practice.run;
+    promotion = await choosePromotion(practice.position.turn);
+    if (!practice || practice.run !== run) return;
   }
-  const move = variant.normalizeMove(q.pos, parseUci(orig + dest + (promotion ? { queen: 'q', rook: 'r', bishop: 'b', knight: 'n' }[promotion] : '')));
-  const played = san.makeSan(q.pos, move);
+  const move = variant.normalizeMove(practice.position, parseUci(orig + dest + (promotion ? { queen: 'q', rook: 'r', bishop: 'b', knight: 'n' }[promotion] : '')));
+  const played = san.makeSan(practice.position, move);
 
-  q.seq.push(played);
+  practice.tried.push(played);
   if (played === expected.san) {
-    q.results.push(attemptResult(expected, q.idx));
-    playLineMove(expected);
+    practice.attempts.push(newAttempt(expected, practice.movesPlayed));
+    playMove(expected);
     setStatus('Correct.'); // status messages are standard grey
-    const run = q.token;
+    const run = practice.run;
     await sleep(250);
-    if (!q || q.token !== run) return;
+    if (!practice || practice.run !== run) return;
     return advance();
   }
 
   // A move that's in the study as a side variation at this point.
-  const alt = expected.alts?.[played];
-  if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return studyMistake(orig, dest, move, played, alt);
+  const alt = expected.alternatives?.[played];
+  if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return showMarkedAlternative(orig, dest, move, played, alt);
   if (alt) {
     // Not marked as an error: a gentle nudge (it costs the alternative's penalty).
-    q.missed = true;
-    q.busy = true;
-    syncBoard();
-    setStatus(`${fig(played)} is one of your alternative moves`);
-    const run = q.token;
+    practice.hadMistake = true;
+    practice.busy = true;
+    updateBoard();
+    setStatus(`${withFigurines(played)} is one of your alternative moves`);
+    const run = practice.run;
     await sleep(350);
-    if (!q || q.token !== run) return;
-    q.busy = false;
-    syncBoard();
+    if (!practice || practice.run !== run) return;
+    practice.busy = false;
+    updateBoard();
     return;
   }
 
   // Wrong try: count it, then put the piece back.
-  q.tries++;
-  q.wrong = { san: played };
-  q.missed = true;
-  q.busy = true;
-  syncBoard();
-  // Unlimited tries: the correct move is only shown when the user asks for it.
+  practice.lastWrongMove = played;
+  practice.hadMistake = true;
+  practice.busy = true;
+  updateBoard();
+  // Unlimited attempts: the correct move is only shown when the user asks for it.
   setStatus(...wrongMoveStatus(expected, played));
-  const run = q.token;
+  const run = practice.run;
   await sleep(350);
-  if (!q || q.token !== run) return;
-  q.busy = false;
-  syncBoard();
+  if (!practice || practice.run !== run) return;
+  practice.busy = false;
+  updateBoard();
 }
 
 // A side variation the study marks ?, ?? or ?!: say so, show the opponent's reply from that
@@ -1935,81 +1930,80 @@ async function onUserMove(orig, dest) {
 // "♕d3 is the #3 masters move but not your move"; otherwise, if Lichess games play it, "♕d3 is the
 // #4 Lichess move but not your move"; else "♕d3 is not your move". Only the masters move isn't red.
 function wrongMoveStatus(expected, played) {
-  if (isMasterMove(expected.epd, played)) return [`${fig(played)} is the #${rankOf(positions[expected.epd]?.masters, played)} masters move but not your move`];
-  const stat = positions[expected.epd]?.lichess;
-  const r = stat && rankOf(stat, played);
-  return [r ? `${fig(played)} is the #${r} Lichess move but not your move` : `${fig(played)} is not your move`, 'bad'];
+  if (isMasterMove(expected.positionBefore, played)) return [`${withFigurines(played)} is the #${moveRank(masterGamesAt(expected.positionBefore), played)} masters move but not your move`];
+  const stats = lichessGamesAt(expected.positionBefore);
+  const r = stats && moveRank(stats, played);
+  return [r ? `${withFigurines(played)} is the #${r} Lichess move but not your move` : `${withFigurines(played)} is not your move`, 'bad'];
 }
 
-async function studyMistake(orig, dest, move, played, alt) {
-  q.tries++;
-  q.wrong = { san: played };
-  q.missed = true;
-  q.busy = true;
-  const run = q.token;
+async function showMarkedAlternative(orig, dest, move, played, alt) {
+  practice.lastWrongMove = played;
+  practice.hadMistake = true;
+  practice.busy = true;
+  const run = practice.run;
   const n = alt.nags.find(x => MISTAKE_NAGS.includes(x));
   const [sym, name] = GLYPHS[n];
-  const pos = q.pos.clone();
+  const pos = practice.position.clone();
   pos.play(move);
   const r = alt.reply;
   const replyLabel = r && moveLabel(r);
-  const said = `${fig(played)}${sym} is one of your alternative moves, marked as a ${name.toLowerCase()}`;
+  const said = `${withFigurines(played)}${sym} is one of your alternative moves, marked as a ${name.toLowerCase()}`;
   setStatus(said + (r ? `. The opponent replies ${replyLabel}.` : ''), 'bad');
   // Show the user's move, then the reply, on the board.
-  cg.set({ fen: fenOf(pos), lastMove: [orig, dest], turnColor: pos.turn, movable: { color: q.line.color, dests: new Map() } });
+  board.set({ fen: fenOf(pos), lastMove: [orig, dest], turnColor: pos.turn, movable: { color: practice.line.yourColor, dests: new Map() } });
   if (r) {
     await sleep(700);
-    if (!q || q.token !== run) return;
+    if (!practice || practice.run !== run) return;
     const rm = parseUci(r.uci);
     playSound(isCapture(pos, rm) ? 'Capture' : 'Move');
     pos.play(rm);
-    cg.set({ fen: fenOf(pos), lastMove: compat.chessgroundMove(rm).slice(0, 2), check: pos.isCheck() ? pos.turn : false });
+    board.set({ fen: fenOf(pos), lastMove: compat.chessgroundMove(rm).slice(0, 2), check: pos.isCheck() ? pos.turn : false });
   }
   await sleep(2200);
-  if (!q || q.token !== run) return;
-  q.busy = false;
-  syncBoard(); // back to the position before the mistake
+  if (!practice || practice.run !== run) return;
+  practice.busy = false;
+  updateBoard(); // back to the position before the mistake
   setStatus(said, 'bad');
 }
 
 $('hint-btn').addEventListener('click', () => {
-  if (!q || q.busy) return;
-  const expected = q.line.moves[q.idx];
-  if (!expected?.user) return;
-  q.missed = true;
+  if (!practice || practice.busy) return;
+  const expected = practice.line.moves[practice.movesPlayed];
+  if (!expected?.isYours) return;
+  practice.hadMistake = true;
   const [from, to] = moveSquares(expected);
-  if (q.hint) {
+  if (practice.hintStep) {
     // "Show correct move": an arrow shows the move; the player still has to play it.
-    q.hint = 2;
-    q.seq.push('show');
+    practice.hintStep = 2;
+    practice.tried.push('show');
     setShapes([{ orig: from, dest: to, brush: 'green' }]);
-    setStatus([`The move is ${moveLabel(expected)}. Play it on the board.`, q.hintNote]);
-    syncBoard();
+    setStatus([`The move is ${moveLabel(expected)}. Play it on the board.`, practice.hintComment]);
+    updateBoard();
     return;
   }
-  q.hint = 1;
-  q.seq.push('hint');
+  practice.hintStep = 1;
+  practice.tried.push('hint');
   setShapes([{ orig: from, brush: 'green' }]);
   // After a wrong move, the status also shows what the study says about it.
-  const w = q.wrong;
-  const notes = w && expected.alts?.[w.san]?.notes;
-  if (notes) q.hintNote = h('div', { class: 'hint-note' },
-    h('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w.san })} (your move)`),
-    notes.nags.map(n => [glyphSpan(n), h('span', { class: 'muted' }, ' ' + GLYPHS[n][1])]),
+  const w = practice.lastWrongMove;
+  const notes = w && expected.alternatives?.[w]?.notes;
+  if (notes) practice.hintComment = element('div', { class: 'hint-note' },
+    element('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w })} (your move)`),
+    notes.nags.map(n => [glyphSpan(n), element('span', { class: 'muted' }, ' ' + GLYPHS[n][1])]),
     notes.text.length ? ': ' + notes.text.join(' ') : '');
-  setStatus(['Hint: move the circled piece.', q.hintNote]);
-  syncBoard();
+  setStatus(['Hint: move the circled piece.', practice.hintComment]);
+  updateBoard();
 });
 
 // "End line here": stop this play-through now (one-off; next time the line is played in full).
 // The moves played so far count; the move you're on counts as wrong only if you already had
 // a wrong try or a hint on it.
 $('end-btn').addEventListener('click', () => {
-  if (!q || q.busy || q.single || q.view != null) return;
-  const expected = q.line.moves[q.idx];
-  if (!expected?.user) return;
-  if (q.seq.length) q.results.push(attemptResult(expected, q.idx)); // counts only if something was tried
-  q.endedAt = expected;
+  if (!practice || practice.busy || practice.isSinglePosition || practice.viewing != null) return;
+  const expected = practice.line.moves[practice.movesPlayed];
+  if (!expected?.isYours) return;
+  if (practice.tried.length) practice.attempts.push(newAttempt(expected, practice.movesPlayed)); // counts only if something was tried
+  practice.endedEarly = true;
   setShapes([]);
   endLine();
 });
@@ -2025,24 +2019,24 @@ function showNextButton(label) {
 }
 
 function endLine() {
-  const { line, missed } = q;
-  recordResults();
-  if (!q.endedAt && !q.startedAt) { // played all the way through, from move 1 to the end
+  const { line, missed } = practice;
+  saveAttempts();
+  if (!practice.endedEarly && !practice.startIndex) { // played all the way through, from move 1 to the end
     // The line's time is when its last move was attempted.
-    const at = q.results[q.results.length - 1]?.at ?? Date.now();
+    const at = practice.attempts[practice.attempts.length - 1]?.at ?? Date.now();
     const record = history.lines[line.key] ||= { played: [] };
-    record.played = [...record.played, at].slice(-KEEP_TRIES);
+    record.played = [...record.played, at].slice(-HISTORY_LENGTH);
     saveHistory();
   }
-  q.done = true; // the move list gets hover boards
+  practice.isOver = true; // the move list gets hover boards
 
-  q.busy = true;
-  syncBoard();
-  if (q.endedAt) setStatus('Line ended early.');
-  else setStatus([missed ? 'Line complete.' : 'Line complete. No mistakes.', evalStatus(finalFen(line))]); // standard grey, not green
-  const summary = $('q-summary');
+  practice.busy = true;
+  updateBoard();
+  if (practice.endedEarly) setStatus('Line ended early.');
+  else setStatus([missed ? 'Line complete.' : 'Line complete. No mistakes.', evaluationText(finalFen(line))]); // standard grey, not green
+  const summary = $('practice-summary');
   summary.replaceChildren(...[
-    q.startedAt ? h('p', { class: 'muted' }, `Started partway: ${positionName(q.line, q.startIdx)}.`) : null,
+    practice.startIndex ? element('p', { class: 'muted' }, `Started partway: ${positionName(practice.line, practice.startIndex)}.`) : null,
   ].filter(Boolean));
   summary.classList.toggle('hidden', !summary.childElementCount); // nothing to say after a clean line
   hideLineButtons();
@@ -2060,24 +2054,24 @@ $('next-btn').addEventListener('click', nextLine);
 
 // End of a single position: recorded as one try of that move in its line. A right answer
 // moves on after a second; after a reveal, wait for "Next position" so the move can be studied.
-function endSingle() {
-  recordResults();
-  q.done = true; // the move list gets hover boards
-  q.busy = true;
-  syncBoard();
+function endSinglePosition() {
+  saveAttempts();
+  practice.isOver = true; // the move list gets hover boards
+  practice.busy = true;
+  updateBoard();
   hideLineButtons();
-  const r = q.results[q.results.length - 1];
-  if (r && !r.seq.includes('show')) { // after Show correct move, wait so the move can be studied
+  const r = practice.attempts[practice.attempts.length - 1];
+  if (r && !r.tried.includes('show')) { // after Show correct move, wait so the move can be studied
     setStatus('Correct. Next position…');
-    const run = q.token;
-    setTimeout(() => { if (q && q.token === run) nextLine(); }, 1000);
+    const run = practice.run;
+    setTimeout(() => { if (practice && practice.run === run) nextLine(); }, 1000);
   } else {
     showNextButton('Next position');
   }
 }
 
-function leaveQuiz() {
-  q = null; // pending timers check q and stop
+function leavePractice() {
+  practice = null; // pending timers check practice and stop
   $('next-btn').classList.add('hidden');
   hideLineButtons();
   $('promo').classList.add('hidden');
@@ -2086,10 +2080,10 @@ function leaveQuiz() {
 // ---------- Practice: the move list ----------
 
 // A move's text color class from its move-quality glyph, as on Lichess.
-function glyphClass(m) {
+function moveQualityClass(m) {
   if (!m.notes) return '';
   const n = m.notes.nags.find(x => GLYPHS[x]?.[2]);
-  return n ? ' mvq-' + GLYPHS[n][2] : '';
+  return n ? ' quality-' + GLYPHS[n][2] : '';
 }
 
 // Glyphs shown after a move in the list, as on Lichess.
@@ -2098,91 +2092,91 @@ function glyphMarks(m) {
   return m.notes.nags.filter(n => n <= 7).map(glyphSpan);
 }
 
-function renderMoves() {
-  const box = $('q-moves');
-  const played = q.line.moves.slice(0, q.idx);
-  const shown = q.view ?? q.idx; // number of moves in the position on the board
+function renderMoveList() {
+  const box = $('practice-moves');
+  const played = practice.line.moves.slice(0, practice.movesPlayed);
+  const shown = practice.viewing ?? practice.movesPlayed; // number of moves in the position on the board
   const cells = [];
   // The newest bubble (the latest move played with a comment) is highlighted.
   // It pops once when it first appears (the list is redrawn often, so remember which popped).
   let newest = -1;
-  played.forEach((m, i) => { if (hasBubble(m)) newest = i; });
-  const pop = newest > (q.bubblePopped ?? -1);
-  if (pop) q.bubblePopped = newest;
+  played.forEach((m, i) => { if (hasComment(m)) newest = i; });
+  const pop = newest > (practice.bubblePopped ?? -1);
+  if (pop) practice.bubblePopped = newest;
   played.forEach((m, i) => {
-    if (m.color === 'white' || i === 0) cells.push(h('span', { class: 'num' }, m.moveNo));
-    if (m.color === 'black' && i === 0) cells.push(h('span', { class: 'mv empty' }, '…'));
+    if (m.color === 'white' || i === 0) cells.push(element('span', { class: 'num' }, m.moveNumber));
+    if (m.color === 'black' && i === 0) cells.push(element('span', { class: 'mv empty' }, '…'));
     // Once the line is over, moves you got wrong this time get the violet background.
-    const attempt = q.results.find(r => r.idx === i);
+    const attempt = practice.attempts.find(r => r.index === i);
     const missedNow = attempt && attempt.points < 10;
     // The move, its glyphs and its comment bubble; a missed move has them all in one fixed-width
     // violet box, so boxes line up down the column.
-    const content = [fig(m.san), glyphMarks(m), hasBubble(m) ? bubbleEl(moveLabel(m), m.notes, i === newest, i === newest && pop) : null];
-    const cell = h('span', { class: 'mv' + glyphClass(m) + (i === shown - 1 ? ' active' : ''), onclick: () => viewPly(i + 1) },
-      missedNow ? h('span', { class: 'missed-now' }, content) : content);
+    const content = [withFigurines(m.san), glyphMarks(m), hasComment(m) ? commentBubble(moveLabel(m), m.notes, i === newest, i === newest && pop) : null];
+    const cell = element('span', { class: 'mv' + moveQualityClass(m) + (i === shown - 1 ? ' active' : ''), onclick: () => viewAfterMoves(i + 1) },
+      missedNow ? element('span', { class: 'missed-now' }, content) : content);
     // Every move already played has the small hover board, during the line too, with its Lichess
     // share and, for your moves, how you did on it this time. (Only played moves are listed, so it
     // never shows a move still to come.)
-    cell.addEventListener('mouseenter', () => showPreview(cell, q.line, i, { attempt }));
-    cell.addEventListener('mouseleave', hidePreview);
+    cell.addEventListener('mouseenter', () => showHoverBoard(cell, practice.line, i, { attempt }));
+    cell.addEventListener('mouseleave', hideHoverBoard);
     cells.push(cell);
   });
-  box.replaceChildren(...(cells.length ? cells : [h('span', { class: 'none' }, 'No moves yet.')]));
+  box.replaceChildren(...(cells.length ? cells : [element('span', { class: 'none' }, 'No moves yet.')]));
   box.querySelector('.active')?.scrollIntoView({ block: 'nearest' });
   $('view-first').disabled = $('view-prev').disabled = shown === 0;
-  $('view-next').disabled = $('view-last').disabled = q.view == null;
+  $('view-next').disabled = $('view-last').disabled = practice.viewing == null;
 }
 
 // Show the position after the first k moves; k equal to the moves played returns to the live game.
-function viewPly(k) {
-  if (!q || !cg) return;
-  k = Math.max(0, Math.min(k, q.idx));
-  if (k === q.idx) { syncBoard(); return; }
-  const pos = parseChapter(chapterByKey(q.line.chapterKey)).start.clone();
+function viewAfterMoves(k) {
+  if (!practice || !board) return;
+  k = Math.max(0, Math.min(k, practice.movesPlayed));
+  if (k === practice.movesPlayed) { updateBoard(); return; }
+  const pos = parseChapter(chapterByKey(practice.line.chapterKey)).start.clone();
   let last;
-  for (const m of q.line.moves.slice(0, k)) {
+  for (const m of practice.line.moves.slice(0, k)) {
     const mv = parseUci(m.uci);
     pos.play(mv);
     last = compat.chessgroundMove(mv).slice(0, 2);
   }
-  q.view = k;
+  practice.viewing = k;
   // During a line, the status says how to get back (and is restored on return). After the line
   // has ended there's nothing to return to, so the status is left alone.
-  if (!q.done && !q.savedStatus) {
-    q.savedStatus = { cls: $('q-status').className, nodes: [...$('q-status').childNodes] };
+  if (!practice.isOver && !practice.savedStatus) {
+    practice.savedStatus = { cls: $('practice-status').className, nodes: [...$('practice-status').childNodes] };
     setStatus('Press ⏭ or End to return.');
   }
-  cg.set({
+  board.set({
     fen: fenOf(pos),
     turnColor: pos.turn,
     check: pos.isCheck() ? pos.turn : false,
     lastMove: last,
-    movable: { color: q.line.color, dests: new Map() },
+    movable: { color: practice.line.yourColor, dests: new Map() },
   });
-  cg.setAutoShapes([]);
+  board.setAutoShapes([]);
   $('hint-btn').disabled = true;
   $('end-btn').disabled = true;
-  renderMoves();
+  renderMoveList();
 }
 
-$('view-first').addEventListener('click', () => viewPly(0));
-$('view-prev').addEventListener('click', () => q && viewPly((q.view ?? q.idx) - 1));
-$('view-next').addEventListener('click', () => q && viewPly((q.view ?? q.idx) + 1));
-$('view-last').addEventListener('click', () => q && viewPly(q.idx));
+$('view-first').addEventListener('click', () => viewAfterMoves(0));
+$('view-prev').addEventListener('click', () => practice && viewAfterMoves((practice.viewing ?? practice.movesPlayed) - 1));
+$('view-next').addEventListener('click', () => practice && viewAfterMoves((practice.viewing ?? practice.movesPlayed) + 1));
+$('view-last').addEventListener('click', () => practice && viewAfterMoves(practice.movesPlayed));
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && q && screen === 'practice' && !$('next-btn').classList.contains('hidden')) {
+  if (e.key === 'Enter' && practice && currentScreen === 'practice' && !$('next-btn').classList.contains('hidden')) {
     e.preventDefault();
     $('next-btn').click();
     return;
   }
   // Step through the moves played, as on Lichess.
-  if (!q || screen !== 'practice' || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-  const shown = q.view ?? q.idx;
-  const target = { ArrowLeft: shown - 1, ArrowRight: shown + 1, Home: 0, End: q.idx }[e.key];
+  if (!practice || currentScreen !== 'practice' || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  const shown = practice.viewing ?? practice.movesPlayed;
+  const target = { ArrowLeft: shown - 1, ArrowRight: shown + 1, Home: 0, End: practice.movesPlayed }[e.key];
   if (target === undefined) return;
   e.preventDefault();
-  viewPly(target);
+  viewAfterMoves(target);
 });
 
 // ---------- Practice: names and sounds ----------
@@ -2191,23 +2185,23 @@ document.addEventListener('keydown', e => {
 // chapter (with its introductory comment's bubble) and the opening from the PGN tags (left out if
 // the chapter has none).
 function updateNames() {
-  if (!q) return;
-  const ch = chapterByKey(q.line.chapterKey);
+  if (!practice) return;
+  const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  $('q-study').textContent = studyOf(ch).name;
-  $('q-chapter').replaceChildren(ch.name, intro.length ? bubbleEl('', { text: intro, nags: [] }, false) : '');
-  $('q-opening').textContent = openingName(parseChapter(ch)) || '';
-  $('q-chapter').classList.remove('muted');
+  $('practice-study').textContent = studyOfChapter(ch).name;
+  $('practice-chapter').replaceChildren(ch.name, intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '');
+  $('practice-opening').textContent = openingName(parseChapter(ch)) || '';
+  $('practice-chapter').classList.remove('muted');
 }
 
 // Lichess "SFX" sounds (Enigmahack, AGPLv3+), pinned to a Lichess commit.
 const SOUND_BASE = 'https://cdn.jsdelivr.net/gh/lichess-org/lila@b3f190be9d532d5f9cdf746938e9d480b1464e25/public/sound/sfx/';
 
-const sounds = {};
+const soundCache = {};
 
 function playSound(name) {
   if (!settings.sounds) return;
-  const audio = sounds[name] ||= new Audio(SOUND_BASE + name + '.mp3');
+  const audio = soundCache[name] ||= new Audio(SOUND_BASE + name + '.mp3');
   audio.currentTime = 0;
   audio.play().catch(() => {}); // e.g. blocked before any user interaction
 }
@@ -2220,42 +2214,42 @@ function isCapture(pos, move) {
   return piece?.role === 'pawn' && (move.from % 8) !== (move.to % 8);
 }
 
-function playLineMove(m) {
+function playMove(m) {
   const move = parseUci(m.uci);
-  playSound(isCapture(q.pos, move) ? 'Capture' : 'Move');
-  q.pos.play(move);
-  q.idx++;
+  playSound(isCapture(practice.position, move) ? 'Capture' : 'Move');
+  practice.position.play(move);
+  practice.movesPlayed++;
   setShapes([]);
-  syncBoard(compat.chessgroundMove(move).slice(0, 2)); // the move list shows any new bubble
+  updateBoard(compat.chessgroundMove(move).slice(0, 2)); // the move list shows any new bubble
 }
 
 function setSounds(on) {
   settings.sounds = on;
   saveSettings();
-  updateSoundControls();
+  updateSoundButton();
   if (settings.sounds) playSound('Move'); // a quick sample
 }
 
 // The bell under the board shows whether sounds are on.
-const updateSoundControls = () => setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
+const updateSoundButton = () => setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
 
 $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 
-// ---------- Move preview (small board on hover) ----------
+// ---------- Hover board (the small board shown when hovering over a move) ----------
 // Your moves: the position before the move, a green arrow for the correct move and red arrows
-// for your wrong moves over its last 10 tries. The opponent's moves: the position after the
+// for your wrong moves over its last 10 attempts. The opponent's moves: the position after the
 // move, highlighted as on Lichess, with a white arrow (red if the study marks it ?, ?? or ?!).
 
-let previewCg = null;
+let hoverBoard = null;
 
 // With { attempt }, the board describes this attempt at the move (the practice move list after a
-// line): the wrong moves played this time, not the last 10 tries. attempt is null for a move of
+// line): the wrong moves played this time, not the last 10 attempts. attempt is null for a move of
 // yours that wasn't played this time (before a partway start).
-function showPreview(el, line, i, thisTime = null) {
+function showHoverBoard(el, line, i, thisTime = null) {
   let box = $('move-preview');
   if (!box) {
-    box = h('div', { id: 'move-preview', class: 'move-preview hidden' },
-      h('div', { class: 'mp-text' }), h('div', { class: 'mp-board' }, h('div', { class: 'cg-wrap' })));
+    box = element('div', { id: 'move-preview', class: 'move-preview hidden' },
+      element('div', { class: 'preview-text' }), element('div', { class: 'preview-board' }, element('div', { class: 'cg-wrap' })));
     document.body.append(box);
   }
   const m = line.moves[i];
@@ -2264,7 +2258,7 @@ function showPreview(el, line, i, thisTime = null) {
   let lastMove;
   line.moves.slice(0, i).forEach((x, k) => {
     const mv = parseUci(x.uci);
-    if (k === i - 1 && !x.user) lastMove = compat.chessgroundMove(mv).slice(0, 2);
+    if (k === i - 1 && !x.isYours) lastMove = compat.chessgroundMove(mv).slice(0, 2);
     pos.play(mv);
   });
   let shapes = [], text;
@@ -2273,31 +2267,31 @@ function showPreview(el, line, i, thisTime = null) {
   // "Position reached 23k times": games reaching the position after the move, any move order.
   const after = pos.clone();
   after.play(parseUci(m.uci));
-  const countLine = h('div', { class: 'muted' }, reachedText(positions[epdOf(fenOf(after))]?.lichess));
+  const countLine = element('div', { class: 'muted' }, positionCountText(lichessGamesAt(epdOf(fenOf(after)))));
   // The practice move list: the move alone, its rank and share among all Lichess games and among
   // master games (each left out until downloaded), the position count, then how this attempt went.
   // The Studies page's move tree keeps the share on the top line, e.g. "2… Nc6 (Lichess games 62%)".
-  const topLine = thisTime ? h('div', {}, h('b', {}, moveLabel(m))) : h('div', {}, h('b', {}, moveLabel(m)),
-    h('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
+  const topLine = thisTime ? element('div', {}, element('b', {}, moveLabel(m))) : element('div', {}, element('b', {}, moveLabel(m)),
+    element('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
       ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(pos, m.san))));
   const shareLines = thisTime ? [lichessShareText(pos, m.san), mastersShareText(pos, m.san)]
-    .map(t => t && h('div', { class: 'muted' }, t)) : [];
-  if (m.user && thisTime) {
+    .map(t => t && element('div', { class: 'muted' }, t)) : [];
+  if (m.isYours && thisTime) {
     const r = thisTime.attempt;
     // Blue arrows for alternatives and masters moves (by default the cheaper mistakes).
-    shapes = answerArrows(pos, m, r ? countWrongs([{ tried: r.seq }], m.san) : [],
+    shapes = answerArrows(pos, m, r ? wrongMoveCounts([{ tried: r.tried }], m.san) : [],
       x => ['alternative', 'masters'].includes(errorKind(m, x)) ? 'blue' : 'red');
     // Just the accuracy: the arrows already show the wrong moves played.
     const result = !r ? 'Not tested this time' : `${r.points * 10}% accuracy this time`;
-    const errors = r ? r.seq.filter(x => x === 'hint' || x === 'show' || bareSan(x) !== bareSan(m.san)).map(x => errorLabel(m, x)) : [];
-    text = [topLine, ...shareLines, countLine, h('div', {}, result), errors.length ? h('div', {}, 'Errors: ' + errors.join(', ')) : null];
-  } else if (m.user) {
-    const tries = attemptsAt(line, i);
-    const wrong = countWrongs(tries, m.san);
+    const errors = r ? r.tried.filter(x => x === 'hint' || x === 'show' || withoutCheckMarks(x) !== withoutCheckMarks(m.san)).map(x => errorLabel(m, x)) : [];
+    text = [topLine, ...shareLines, countLine, element('div', {}, result), errors.length ? element('div', {}, 'Errors: ' + errors.join(', ')) : null];
+  } else if (m.isYours) {
+    const attempts = attemptsAt(line, i);
+    const wrong = wrongMoveCounts(attempts, m.san);
     shapes = answerArrows(pos, m, wrong);
-    const avg = tries.length ? scoreOf(tries) * 10 : 0;
-    text = [topLine, countLine, h('div', {}, tries.length ? `Average ${avg.toFixed(1)} of 10 (last ${plural(tries.length, 'try', 'tries')})` : 'Not tried yet'),
-      wrong.length ? h('div', {}, 'Wrong: ' + wrong.map(([s, n]) => fig(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null];
+    const avg = attempts.length ? scoreOf(attempts) * 10 : 0;
+    text = [topLine, countLine, element('div', {}, attempts.length ? `Average ${avg.toFixed(1)} of 10 (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet'),
+      wrong.length ? element('div', {}, 'Wrong: ' + wrong.map(([s, n]) => withFigurines(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null];
   } else {
     // The opponent's move itself: the position after it, with the move as a white arrow,
     // or red if the study marks it ?, ?? or ?!.
@@ -2307,21 +2301,21 @@ function showPreview(el, line, i, thisTime = null) {
     shapes.push({ orig: f, dest: t, brush: mistake ? 'red' : 'white' });
     lastMove = compat.chessgroundMove(mv).slice(0, 2);
     pos.play(mv);
-    text = [topLine, ...shareLines, countLine, m.side ? h('div', { class: 'muted' }, 'Alternative move, not tested') : null];
+    text = [topLine, ...shareLines, countLine, m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null];
   }
   box.firstChild.replaceChildren(...text.filter(Boolean));
   box.classList.remove('hidden');
   const config = {
-    fen: fenOf(pos), orientation: line.color, turnColor: pos.turn, lastMove,
+    fen: fenOf(pos), orientation: line.yourColor, turnColor: pos.turn, lastMove,
     check: pos.isCheck() ? pos.turn : false,
     viewOnly: true, coordinates: false, animation: { enabled: false },
     drawable: { enabled: false, visible: true },
   };
-  if (!previewCg) previewCg = Chessground(box.querySelector('.cg-wrap'), config);
-  else previewCg.set(config); // lastMove: undefined clears the previous highlight
-  previewCg.setAutoShapes(shapes);
+  if (!hoverBoard) hoverBoard = Chessground(box.querySelector('.cg-wrap'), config);
+  else hoverBoard.set(config); // lastMove: undefined clears the previous highlight
+  hoverBoard.setAutoShapes(shapes);
   placePopup(box, el);
-  previewCg.redrawAll();
+  hoverBoard.redrawAll();
 }
 
 // One thing tried before the correct move m, for the practice pop-up's "Errors: …" row, labelled by
@@ -2332,16 +2326,16 @@ function showPreview(el, line, i, thisTime = null) {
 function errorLabel(m, x) {
   if (x === 'hint') return 'hint';
   if (x === 'show') return 'show correct move';
-  const mark = m.alts?.[x]?.nags.find(n => MISTAKE_NAGS.includes(n));
+  const mark = m.alternatives?.[x]?.nags.find(n => MISTAKE_NAGS.includes(n));
   const label = { alternative: 'alternative', masters: 'masters', marked: `alternative ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
-  return fig(x) + (label ? ` (${label})` : '');
+  return withFigurines(x) + (label ? ` (${label})` : '');
 }
 // How a move tried instead of m was scored: 'alternative', 'masters', 'marked' (an alternative the
 // study marks ?, ?? or ?!) or 'wrong' (the last two cost the error penalty).
 function errorKind(m, x) {
-  const alt = m.alts?.[x];
+  const alt = m.alternatives?.[x];
   if (alt) return alt.nags.some(n => MISTAKE_NAGS.includes(n)) ? 'marked' : 'alternative';
-  return isMasterMove(m.epd, x) ? 'masters' : 'wrong';
+  return isMasterMove(m.positionBefore, x) ? 'masters' : 'wrong';
 }
 
 // An arrow for each wrong move played ([[san, count], …]), red unless brushOf says otherwise, and a
@@ -2352,8 +2346,8 @@ function answerArrows(pos, m, wrong, brushOf = () => 'red') {
   return [...shapes, arrow(parseUci(m.uci), 'green')];
 }
 
-function hidePreview() { $('move-preview')?.classList.add('hidden'); }
-window.addEventListener('scroll', hidePreview, { passive: true });
+function hideHoverBoard() { $('move-preview')?.classList.add('hidden'); }
+window.addEventListener('scroll', hideHoverBoard, { passive: true });
 
 // ---------- Lichess downloads ----------
 
@@ -2367,7 +2361,7 @@ async function startDownloads() {
   downloadsRunning = true;
   try {
     if (token) { await downloadExplorer('lichess'); await downloadExplorer('masters'); }
-    await downloadEvals();
+    await downloadEvaluations();
   } finally { downloadsRunning = false; }
 }
 
@@ -2375,33 +2369,33 @@ async function startDownloads() {
 // and each line's final position included. For each: its FEN, depth (in plies), the positions and
 // moves leading to it, whether it's on a chapter's main line, whether the opponent has several
 // replies there (a branch point), and every move the studies have there.
-function studyPositions() {
-  const out = new Map(); // epd -> { fen, depth, parents: [{ epd, san }], main, branch, studyMoves: Set }
+function allStudyPositions() {
+  const found = new Map(); // epd -> { fen, depth, parents: [{ epd, san }], onMainLine, isBranchPoint, studyMoves: Set }
   for (const ch of allChapters()) {
-    const p = parseChapter(ch);
-    if (p.error) continue;
-    const walk = (node, pos, depth, parent, onMain) => {
-      const f = fenOf(pos);
-      const epd = epdOf(f);
-      let e = out.get(epd);
-      if (!e) out.set(epd, e = { fen: f, depth, parents: [], main: false, branch: false, studyMoves: new Set() });
-      e.depth = Math.min(e.depth, depth);
-      if (parent) e.parents.push(parent);
-      if (onMain) e.main = true;
-      if (pos.turn !== p.color && node.children.length > 1) e.branch = true;
+    const parsed = parseChapter(ch);
+    if (parsed.error) continue;
+    const walk = (node, pos, depth, parent, onMainLine) => {
+      const fen = fenOf(pos);
+      const epd = epdOf(fen);
+      let position = found.get(epd);
+      if (!position) found.set(epd, position = { fen, depth, parents: [], onMainLine: false, isBranchPoint: false, studyMoves: new Set() });
+      position.depth = Math.min(position.depth, depth);
+      if (parent) position.parents.push(parent);
+      if (onMainLine) position.onMainLine = true;
+      if (pos.turn !== parsed.yourColor && node.children.length > 1) position.isBranchPoint = true;
       node.children.forEach((child, k) => {
         const move = san.parseSan(pos, child.data.san);
         if (!move) return;
-        const moveSan = bareSan(san.makeSan(pos, move));
-        e.studyMoves.add(moveSan);
+        const moveSan = withoutCheckMarks(san.makeSan(pos, move));
+        position.studyMoves.add(moveSan);
         const next = pos.clone();
         next.play(move);
-        walk(child, next, depth + 1, { epd, san: moveSan }, onMain && k === 0);
+        walk(child, next, depth + 1, { epd, san: moveSan }, onMainLine && k === 0);
       });
     };
-    walk(p.game.moves, p.start.clone(), 0, null, true);
+    walk(parsed.game.moves, parsed.start.clone(), 0, null, true);
   }
-  return out;
+  return found;
 }
 
 // After a download completes: suggest saving a backup (the library took a while).
@@ -2409,8 +2403,8 @@ function suggestBackup(what) {
   const b = $('banner');
   b.className = 'banner';
   b.replaceChildren(`${what} are complete. Save a backup so you won't need to download them again? `,
-    h('button', { class: 'small', onclick: () => { hideBanner(); $('backup-btn').click(); } }, 'Save backup'), ' ',
-    h('button', { class: 'small', onclick: hideBanner }, 'Not now'));
+    element('button', { class: 'small', onclick: () => { hideBanner(); $('backup-btn').click(); } }, 'Save backup'), ' ',
+    element('button', { class: 'small', onclick: hideBanner }, 'Not now'));
 }
 
 // ---------- Move statistics (Lichess Opening Explorer) ----------
@@ -2427,7 +2421,7 @@ const totalGames = stats => stats.white + stats.draws + stats.black;
 
 // Games that played a move in a position (+ and # ignored when matching).
 function gamesWith(stats, s) {
-  const m = stats?.moves.find(x => bareSan(x.san) === bareSan(s));
+  const m = stats?.moves.find(x => withoutCheckMarks(x.san) === withoutCheckMarks(s));
   return m ? totalGames(m) : 0;
 }
 
@@ -2438,7 +2432,7 @@ const EXPLORER_DATABASES = {
     label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
     status: 'lichess-status', info: 'opt-stats-info',
-    keep: (answer, position) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(bareSan(m.san))), at: Date.now() }),
+    keep: (answer, position) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(withoutCheckMarks(m.san))), at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, at: Date.now() }),
   },
   masters: {
@@ -2450,13 +2444,18 @@ const EXPLORER_DATABASES = {
   },
 };
 
+// What Lichess says about a position (by EPD); undefined until downloaded.
+const lichessGamesAt = epd => positions[epd]?.lichess;
+const masterGamesAt = epd => positions[epd]?.masters;
+const evaluationAt = epd => positions[epd]?.eval;
+
 // Saves one part of what Lichess says about a position ('lichess', 'masters' or 'eval').
 function setPositionData(epd, part, value) {
   (positions[epd] ||= {})[part] = value;
   savePositions([epd]);
 }
 
-const explorerRuns = { lichess: null, masters: null };
+const explorerDownloads = { lichess: null, masters: null };
 
 function setExplorerStatus(kind, text) {
   const el = $(EXPLORER_DATABASES[kind].status);
@@ -2466,86 +2465,86 @@ function setExplorerStatus(kind, text) {
 
 async function downloadExplorer(kind) {
   if (!token || !library) return;
-  const run = explorerRuns[kind] = {};
+  const run = explorerDownloads[kind] = {};
   try { await downloadExplorerPositions(kind, run); }
   finally {
-    if (explorerRuns[kind] === run) explorerRuns[kind] = null; // finished or stopped
-    if (screen === 'options') updateStatsInfo();
+    if (explorerDownloads[kind] === run) explorerDownloads[kind] = null; // finished or stopped
+    if (currentScreen === 'options') updateStatisticsInfo();
   }
 }
 
 async function downloadExplorerPositions(kind, run) {
-  const db = EXPLORER_DATABASES[kind];
+  const explorer = EXPLORER_DATABASES[kind];
   const saved = epd => positions[epd]?.[kind];
   const status = text => setExplorerStatus(kind, text);
   // The same order whatever is ticked: branch points (the opponent has several replies), then the
   // rest of the chapters' main lines, then everything else; by move number within each group, so a
   // position's parents are usually known before it's reached.
-  const tier = e => e.branch ? 0 : e.main ? 1 : 2;
-  const todo = [...studyPositions()].filter(([epd]) => !saved(epd))
+  const tier = position => position.isBranchPoint ? 0 : position.onMainLine ? 1 : 2;
+  const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   const total = todo.length;
   if (!total) return; // nothing missing: nothing to say
   let skipped = 0;
   for (let i = 0; i < todo.length; ) {
-    if (explorerRuns[kind] !== run) return; // a newer download took over
-    status(`Downloading ${db.label}: ${i} of ${total} positions`);
-    const [epd, e] = todo[i];
+    if (explorerDownloads[kind] !== run) return; // a newer download took over
+    status(`Downloading ${explorer.label}: ${i} of ${total} positions`);
+    const [epd, position] = todo[i];
     // Skip positions nobody reaches: every known way here is a move no game in this database played.
     // (A different move order could still reach it, so this is a close approximation.)
-    if (e.parents.length && e.parents.every(pp => saved(pp.epd) && !(gamesWith(saved(pp.epd), pp.san) > 0))) {
-      setPositionData(epd, kind, db.empty());
+    if (position.parents.length && position.parents.every(parent => saved(parent.epd) && !(gamesWith(saved(parent.epd), parent.san) > 0))) {
+      setPositionData(epd, kind, explorer.empty());
       skipped++;
       i++;
       continue;
     }
     let res;
     try {
-      res = await fetch(db.url(e.fen), { headers: { Authorization: 'Bearer ' + token } });
+      res = await fetch(explorer.url(position.fen), { headers: { Authorization: 'Bearer ' + token } });
     } catch {
-      status(`Couldn't reach the Lichess explorer. ${db.Label} stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
+      status(`Couldn't reach the Lichess explorer. ${explorer.Label} stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
       return;
     }
     if (res.status === 429) {
       // Lichess asks clients to wait a minute after a rate-limit response.
-      status(`Downloading ${db.label}: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
+      status(`Downloading ${explorer.label}: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
       await sleep(61000);
       continue;
     }
     if (res.status === 401) {
-      status(`Lichess rejected the token for ${db.label}. Replace it on the Options page; the download then continues.`);
+      status(`Lichess rejected the token for ${explorer.label}. Replace it on the Options page; the download then continues.`);
       return;
     }
     if (res.ok) {
-      setPositionData(epd, kind, db.keep(await res.json(), e));
+      setPositionData(epd, kind, explorer.keep(await res.json(), position));
     }
     i++;
-    status(`Downloading ${db.label}: ${i} of ${total} positions`);
-    if (screen === 'options') updateStatsInfo();
+    status(`Downloading ${explorer.label}: ${i} of ${total} positions`);
+    if (currentScreen === 'options') updateStatisticsInfo();
   }
-  if (explorerRuns[kind] !== run) return;
-  status(`${db.Label} downloaded for ${plural(total, 'position')}` + (skipped ? ` (${skipped} skipped because ${db.none}).` : '.'));
-  setTimeout(() => { if (!explorerRuns[kind]) status(''); }, 5000); // unless a newer download is running
-  suggestBackup(db.Label); // every position now has these statistics
+  if (explorerDownloads[kind] !== run) return;
+  status(`${explorer.Label} downloaded for ${plural(total, 'position')}` + (skipped ? ` (${skipped} skipped because ${explorer.none}).` : '.'));
+  setTimeout(() => { if (!explorerDownloads[kind]) status(''); }, 5000); // unless a newer download is running
+  suggestBackup(explorer.Label); // every position now has these statistics
 }
 
 // The Options page's "Move statistics: N of M positions downloaded" and "Masters statistics: …" lines.
-function updateStatsInfo() {
-  const studied = library ? [...studyPositions().keys()] : [];
+function updateStatisticsInfo() {
+  const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
-    const db = EXPLORER_DATABASES[kind], el = $(db.info);
+    const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
     if (!library) { el.textContent = ''; continue; }
     const done = studied.filter(epd => positions[epd]?.[kind]).length;
-    el.textContent = `${db.Label}: ${done} of ${plural(studied.length, 'position')} downloaded`
-      + (explorerRuns[kind] && done < studied.length ? ' (downloading now…)' : '')
-      + (!explorerRuns[kind] && done < studied.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
+    el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')} downloaded`
+      + (explorerDownloads[kind] && done < studied.length ? ' (downloading now…)' : '')
+      + (!explorerDownloads[kind] && done < studied.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
   }
 }
 
 // "Position reached 23k times" / "<1k" / "1.2M" / "…" (not downloaded yet) / "Position never reached".
-function reachedText(stat) {
-  if (!stat) return 'Position reached … times';
-  const n = totalGames(stat);
+function positionCountText(stats) {
+  if (!stats) return 'Position reached … times';
+  const n = totalGames(stats);
   if (!n) return 'Position never reached';
   if (n < 1000) return 'Position reached <1k times';
   const k = Math.round(n / 1000);
@@ -2555,44 +2554,44 @@ function reachedText(stat) {
 // A move's share of the Lichess games in a position: "45%", "<1%", "0%", "no games", or "–" when
 // that position's statistics haven't been downloaded yet.
 function moveShare(pos, moveSan) {
-  const stat = positions[epdOf(fenOf(pos))]?.lichess;
-  if (!stat) return '–';
-  if (!totalGames(stat)) return 'no games';
-  const share = gamesWith(stat, moveSan) / totalGames(stat) * 100;
+  const stats = lichessGamesAt(epdOf(fenOf(pos)));
+  if (!stats) return '–';
+  if (!totalGames(stats)) return 'no games';
+  const share = gamesWith(stats, moveSan) / totalGames(stats) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
 
 // A move's share of a position's games as a percentage ("45%", "<1%", "0%"); null when the
 // statistics haven't been downloaded yet, '' when no game reaches the position.
-function shareOf(stat, moveSan) {
-  if (!stat) return null;
-  if (!totalGames(stat)) return '';
-  const share = gamesWith(stat, moveSan) / totalGames(stat) * 100;
+function shareText(stats, moveSan) {
+  if (!stats) return null;
+  if (!totalGames(stats)) return '';
+  const share = gamesWith(stats, moveSan) / totalGames(stats) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
 // A move's popularity rank in a position: 1 for the most played; moves played equally often share a
 // rank. null when no game played it. (Lichess games keep the 10 most played moves plus the studies'
 // own, so the ranks are exact.)
-function rankOf(stat, moveSan) {
-  const n = gamesWith(stat, moveSan);
+function moveRank(stats, moveSan) {
+  const n = gamesWith(stats, moveSan);
   if (!n) return null;
-  const counts = stat.moves.map(totalGames);
+  const counts = stats.moves.map(totalGames);
   return 1 + counts.filter(c => c > n).length;
 }
 // The practice pop-up board's share lines, e.g. "#2 overall move (27%)" and "#1 masters move (90%)";
 // "Not played overall" / "Not played by masters" for a move no game played there.
-function shareText(stat, moveSan, who, none) {
-  const s = shareOf(stat, moveSan);
+function rankAndShareText(stats, moveSan, who, none) {
+  const s = shareText(stats, moveSan);
   if (s == null) return null;
-  const r = s && rankOf(stat, moveSan);
+  const r = s && moveRank(stats, moveSan);
   return r ? `#${r} ${who} move (${s})` : none;
 }
 function lichessShareText(pos, moveSan) {
-  return shareText(positions[epdOf(fenOf(pos))]?.lichess, moveSan, 'overall', 'Not played overall');
+  return rankAndShareText(lichessGamesAt(epdOf(fenOf(pos))), moveSan, 'overall', 'Not played overall');
 }
 function mastersShareText(pos, moveSan) {
-  const stat = positions[epdOf(fenOf(pos))]?.masters;
-  return stat && !totalGames(stat) ? 'Not in master games' : shareText(stat, moveSan, 'masters', 'Not played by masters');
+  const stats = masterGamesAt(epdOf(fenOf(pos)));
+  return stats && !totalGames(stats) ? 'Not in master games' : rankAndShareText(stats, moveSan, 'masters', 'Not played by masters');
 }
 
 // ---------- Position evaluation (Lichess cloud) ----------
@@ -2602,9 +2601,9 @@ function mastersShareText(pos, moveSan) {
 // line ends without one. The cloud API only looks up stored results,
 // so requests are cheap; they're still spaced out, and slowed down if Lichess asks.
 
-const EVAL_INTERVAL = 3000; // one request every 3 seconds
+const EVALUATION_INTERVAL = 3000; // one request every 3 seconds
 // positions[epd].eval: { cp } or { mate }, with depth; or { none: true } when Lichess's cloud has none.
-let evalRun = null;          // the download in progress, if any
+let evaluationDownload = null;          // the download in progress, if any
 
 // The final position of a line, as a FEN (cached on the line).
 function finalFen(line) {
@@ -2617,14 +2616,14 @@ function finalFen(line) {
 }
 
 // "+0.4", "-1.2", "0.0", or "#3" / "#-3" for a forced mate, as Lichess shows them.
-function formatEval(e) {
+function formatEvaluation(e) {
   if (e.mate != null) return '#' + e.mate;
   const v = e.cp / 100;
   return (v > 0 ? '+' : '') + v.toFixed(1);
 }
 
 // Fetch one position's evaluation. Returns how long to wait before the next request.
-async function fetchEval(fen) {
+async function fetchEvaluation(fen) {
   const epd = epdOf(fen);
   let res;
   try { res = await fetch(`${LICHESS}/api/cloud-eval?fen=${encodeURIComponent(fen)}`); }
@@ -2636,93 +2635,93 @@ async function fetchEval(fen) {
     const pv = j.pvs && j.pvs[0];
     setPositionData(epd, 'eval', !pv ? { none: true } : pv.mate != null ? { mate: pv.mate, depth: j.depth } : { cp: pv.cp, depth: j.depth });
   } else return 60000;
-  if (screen === 'options') updateEvalInfo();
-  return EVAL_INTERVAL;
+  if (currentScreen === 'options') updateEvaluationInfo();
+  return EVALUATION_INTERVAL;
 }
 
 // Final positions without a saved evaluation: the selected chapters' lines first, then the rest.
-function missingEvals() {
+function lineEndsWithoutEvaluation() {
   const seen = new Set();
   const out = [];
   const chapters = allChapters();
   for (const ch of [...chapters.filter(c => selection.has(c.key)), ...chapters.filter(c => !selection.has(c.key))]) {
     for (const line of chapterLines(ch)) {
       const f = finalFen(line), epd = epdOf(f);
-      if (!positions[epd]?.eval && !seen.has(epd)) { seen.add(epd); out.push(f); }
+      if (!evaluationAt(epd) && !seen.has(epd)) { seen.add(epd); out.push(f); }
     }
   }
   return out;
 }
 
-function setEvalStatus(text) {
+function setEvaluationStatus(text) {
   $('eval-status').textContent = text;
   $('eval-status').classList.toggle('hidden', !text);
 }
 
 // Every line end without a saved evaluation, one at a time (in the background; see startDownloads).
-async function downloadEvals() {
-  if (evalRun || !library) return;
-  const run = evalRun = {};
-  const todo = missingEvals();
+async function downloadEvaluations() {
+  if (evaluationDownload || !library) return;
+  const run = evaluationDownload = {};
+  const todo = lineEndsWithoutEvaluation();
   let done = 0, none = 0;
   try {
     if (!todo.length) return; // nothing missing: nothing to say
     for (let i = 0; i < todo.length; ) {
-      setEvalStatus(`Downloading evaluations: ${i} of ${todo.length} line ends (about ${minutes((todo.length - i) * EVAL_INTERVAL)})`);
-      const wait = await fetchEval(todo[i]);
-      if (evalRun !== run) return;
-      if (wait == null) { setEvalStatus(`Couldn't reach Lichess. Evaluations stopped at ${i} of ${todo.length}; the rest downloads the next time you open the app or press Update studies.`); return; }
-      if (wait > EVAL_INTERVAL) { // too many requests: wait a minute, then retry the same position
-        setEvalStatus(`Downloading evaluations: ${i} of ${todo.length} line ends (Lichess asked to slow down; waiting a minute…)`);
+      setEvaluationStatus(`Downloading evaluations: ${i} of ${todo.length} line ends (about ${minutesText((todo.length - i) * EVALUATION_INTERVAL)})`);
+      const wait = await fetchEvaluation(todo[i]);
+      if (evaluationDownload !== run) return;
+      if (wait == null) { setEvaluationStatus(`Couldn't reach Lichess. Evaluations stopped at ${i} of ${todo.length}; the rest downloads the next time you open the app or press Update studies.`); return; }
+      if (wait > EVALUATION_INTERVAL) { // too many requests: wait a minute, then retry the same position
+        setEvaluationStatus(`Downloading evaluations: ${i} of ${todo.length} line ends (Lichess asked to slow down; waiting a minute…)`);
         await sleep(wait);
         continue;
       }
-      if (positions[epdOf(todo[i])]?.eval?.none) none++; else done++;
+      if (evaluationAt(epdOf(todo[i]))?.none) none++; else done++;
       i++;
-      if (i < todo.length) await sleep(EVAL_INTERVAL);
+      if (i < todo.length) await sleep(EVALUATION_INTERVAL);
     }
-    setEvalStatus(`Evaluations downloaded for ${plural(done, 'position')}` + (none ? ` (${none} not in Lichess's cloud).` : '.'));
-    setTimeout(() => { if (!evalRun) setEvalStatus(''); }, 5000);
+    setEvaluationStatus(`Evaluations downloaded for ${plural(done, 'position')}` + (none ? ` (${none} not in Lichess's cloud).` : '.'));
+    setTimeout(() => { if (!evaluationDownload) setEvaluationStatus(''); }, 5000);
   } finally {
-    if (evalRun === run) evalRun = null;
-    if (screen === 'options') updateEvalInfo();
+    if (evaluationDownload === run) evaluationDownload = null;
+    if (currentScreen === 'options') updateEvaluationInfo();
   }
 }
 
-const minutes = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return plural(m, 'minute'); };
+const minutesText = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return plural(m, 'minute'); };
 
 // " Evaluation +1.6" after "Line complete." in the status: the Lichess evaluation of the finished
 // line's final position, fetched straight away if it isn't saved yet ("…" meanwhile). Nothing is
 // shown if Lichess has no evaluation or can't be reached.
-function evalStatus(fen) {
-  if (positions[epdOf(fen)]?.eval?.none) return null;
-  const num = h('b', { class: 'eval-num' });
-  const el = h('span', {}, ' Evaluation ', num);
+function evaluationText(fen) {
+  if (evaluationAt(epdOf(fen))?.none) return null;
+  const num = element('b', { class: 'eval-num' });
+  const el = element('span', {}, ' Evaluation ', num);
   const fill = () => {
-    const e = positions[epdOf(fen)]?.eval;
+    const e = evaluationAt(epdOf(fen));
     if (!e || e.none) { el.remove(); return; }
-    num.textContent = formatEval(e);
+    num.textContent = formatEvaluation(e);
     el.title = `Lichess cloud evaluation of the final position, depth ${e.depth}`;
   };
-  if (positions[epdOf(fen)]?.eval) fill();
+  if (evaluationAt(epdOf(fen))) fill();
   else {
     num.textContent = '…';
     el.title = 'Getting the Lichess evaluation…';
-    fetchEval(fen).then(fill);
+    fetchEvaluation(fen).then(fill);
   }
   return el;
 }
 
 // The Options page's "Evaluations saved: …" line.
-function updateEvalInfo() {
+function updateEvaluationInfo() {
   if (!library) { $('opt-eval-info').textContent = ''; return; }
   const epds = new Set(allChapters().flatMap(ch => chapterLines(ch).map(l => epdOf(finalFen(l)))));
   let saved = 0, none = 0;
-  for (const epd of epds) { if (positions[epd]?.eval?.none) none++; else if (positions[epd]?.eval) saved++; }
+  for (const epd of epds) { if (evaluationAt(epd)?.none) none++; else if (evaluationAt(epd)) saved++; }
   const left = epds.size - saved - none;
   $('opt-eval-info').textContent = `Evaluations: ${saved} of ${epds.size} line ends saved`
     + (none ? `, ${none} not in Lichess's cloud` : '')
-    + (left ? ` · ${left} still to download${evalRun ? ' (downloading now…)' : ' (automatically, after Update studies or when you next open the app)'}` : '')
+    + (left ? ` · ${left} still to download${evaluationDownload ? ' (downloading now…)' : ' (automatically, after Update studies or when you next open the app)'}` : '')
     + '.';
 }
 
@@ -2745,26 +2744,26 @@ function showWeaknesses() {
 function renderWeaknesses() {
   const found = new Map(); // position key -> { line, i, score, games }
   let waiting = 0;
-  for (const ch of visibleChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) {
-    const key = posKey(line, i);
+  for (const ch of visibleChapters()) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
+    const key = moveKey(line, i);
     if (found.has(key)) continue;
-    const tries = attemptsAt(line, i);
-    if (!tries.length) continue;
-    const score = scoreOf(tries);
-    if (pct(score) > settings.weaknessMaxAccuracy) continue;
-    const stat = positions[line.moves[i].epd]?.lichess;
-    if (!stat) { waiting++; continue; }
-    found.set(key, { line, i, score, games: totalGames(stat) });
+    const attempts = attemptsAt(line, i);
+    if (!attempts.length) continue;
+    const score = scoreOf(attempts);
+    if (percent(score) > settings.weaknessMaxAccuracy) continue;
+    const stats = lichessGamesAt(line.moves[i].positionBefore);
+    if (!stats) { waiting++; continue; }
+    found.set(key, { line, i, score, games: totalGames(stats) });
   }
   const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.weaknessCount);
   $('weak-rows').replaceChildren(...rows.map(({ line, i, score, games }) => {
     const ch = chapterByKey(line.chapterKey);
-    const tr = h('tr', {},
-      h('td', {}, positionName(line, i), h('span', { class: 'muted weak-chapter' }, ch.name)),
-      h('td', { class: 'num' }, shortCount(games)),
-      h('td', { class: 'num' }, h('span', { class: scoreClass(score) }, `${pct(score)}%`)));
-    tr.addEventListener('mouseenter', () => showPreview(tr.firstChild, line, i));
-    tr.addEventListener('mouseleave', hidePreview);
+    const tr = element('tr', {},
+      element('td', {}, positionName(line, i), element('span', { class: 'muted weak-chapter' }, ch.name)),
+      element('td', { class: 'num' }, shortCount(games)),
+      element('td', { class: 'num' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)));
+    tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, i));
+    tr.addEventListener('mouseleave', hideHoverBoard);
     return tr;
   }));
   const its = waiting === 1 ? 'its' : 'their';
@@ -2785,16 +2784,16 @@ function renderWeaknesses() {
 const NAME_TAIL_PLIES = 6;
 function positionName(line, i) {
   const pos = parseChapter(chapterByKey(line.chapterKey)).start.clone();
-  let name = positions[epdOf(fenOf(pos))]?.lichess?.opening?.name, since = 0; // since: the first move after it
+  let name = lichessGamesAt(epdOf(fenOf(pos)))?.opening?.name, since = 0; // since: the first move after it
   line.moves.slice(0, i).forEach((m, k) => {
     pos.play(parseUci(m.uci));
-    const n = positions[epdOf(fenOf(pos))]?.lichess?.opening?.name;
+    const n = lichessGamesAt(epdOf(fenOf(pos)))?.opening?.name;
     if (n) { name = n; since = k + 1; }
   });
   since = Math.min(since, Math.max(0, i - 1)); // always list at least the last move played
   const tail = line.moves.slice(Math.max(since, i - NAME_TAIL_PLIES), i);
   const cut = i - since > NAME_TAIL_PLIES;
-  const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNo}. ${fig(m.san)}` : k === 0 ? `${m.moveNo}… ${fig(m.san)}` : fig(m.san)).join(' ');
+  const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNumber}. ${withFigurines(m.san)}` : k === 0 ? `${m.moveNumber}… ${withFigurines(m.san)}` : withFigurines(m.san)).join(' ');
   return [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ') || 'Starting position';
 }
 
@@ -2818,7 +2817,7 @@ function formatWithZone(ts) {
 
 // The Mistake penalties card: each drop-down 0%–100% in steps of 10 (1 point each).
 for (const sel of document.querySelectorAll('.pen-select')) {
-  for (let pts = 0; pts <= 10; pts++) sel.append(h('option', { value: String(pts) }, `${pts * 10}%`));
+  for (let pts = 0; pts <= 10; pts++) sel.append(element('option', { value: String(pts) }, `${pts * 10}%`));
   sel.addEventListener('change', () => {
     settings.penalties = { ...settings.penalties, [sel.id.slice(4)]: +sel.value };
     saveSettings();
@@ -2841,19 +2840,19 @@ function renderOptions() {
   $('opt-fetch-info').textContent = library
     ? `${library.username} · ${plural(library.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(library.fetchedAt)}`
     : 'No studies fetched yet.';
-  updateSoundControls();
-  updateStatsInfo();
+  updateSoundButton();
+  updateStatisticsInfo();
   $('opt-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
   $('opt-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
-  updateEvalInfo();
+  updateEvaluationInfo();
 }
 
 $('update-studies-btn').addEventListener('click', fetchStudies);
 
 $('token-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if (await acceptToken($('token-input').value, $('token-error'))) {
+  if (await checkAndSaveToken($('token-input').value, $('token-error'))) {
     $('token-input').value = '';
     fetchStudies(); // first visit: fetch automatically
   }
@@ -2861,7 +2860,7 @@ $('token-form').addEventListener('submit', async e => {
 
 $('opt-token-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if (await acceptToken($('opt-token-input').value, $('opt-token-error'))) {
+  if (await checkAndSaveToken($('opt-token-input').value, $('opt-token-error'))) {
     $('opt-token-input').value = '';
     renderOptions();
     if (!library) fetchStudies();
@@ -2906,7 +2905,7 @@ $('backup-btn').addEventListener('click', async () => {
   }
   // Other browsers (Safari, Firefox) download it; where it goes depends on the browser's download settings.
   const url = URL.createObjectURL(blob);
-  const a = h('a', { href: url, download: name });
+  const a = element('a', { href: url, download: name });
   document.body.append(a);
   a.click();
   a.remove();
@@ -2953,7 +2952,7 @@ $('restore-file').addEventListener('change', async e => {
   await savePositions();
   saveHistory(); saveSettings(); saveSelection(); saveHidden(); store.set('favorites', favorites);
   rescoreHistory(); // restored attempts scored with the current rules and data
-  updateSoundControls();
+  updateSoundButton();
   renderOptions();
   showBanner(`Restored your history for ${plural(n, 'move')} and your settings from the backup.`);
 });
@@ -2963,19 +2962,19 @@ $('restore-file').addEventListener('change', async e => {
 // Practice: the practice page with the board idle and a "Start practice" button;
 // nothing is tested until that's pressed.
 $('nav-practice').addEventListener('click', () => {
-  if (screen === 'practice') return; // already on the practice page
+  if (currentScreen === 'practice') return; // already on the practice page
   if (!library) { $('nav-studies').click(); return; }
   hideBanner();
-  if (q && q.sig === practiceSignature()) { // back to the line in progress (or its summary), exactly as it was
+  if (practice && practice.signature === practiceSignature()) { // back to the line in progress (or its summary), exactly as it was
     showScreen('practice');
-    cg.redrawAll();
+    board.redrawAll();
     return;
   }
-  if (q) leaveQuiz(); // something that affects the lines changed: start afresh
+  if (practice) leavePractice(); // something that affects the lines changed: start afresh
   showPracticeIdle();
 });
 
-// Studies: the selection screen (or the token screen before any studies are fetched).
+// Studies: the selection page (or the token screen before any studies are fetched).
 // A line in progress is kept; Practice returns to it if nothing that affects it changed.
 $('nav-studies').addEventListener('click', () => {
   hideBanner();
@@ -3008,7 +3007,7 @@ async function init() {
     positions = await loadPositions();
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
-  updateSoundControls(); // the bell shows the saved setting
+  updateSoundButton(); // the bell shows the saved setting
   rescoreHistory(); // attempts scored again with the current rules and data
   // Open on the Practice page, waiting for "Start practice", and resume any missing Lichess downloads.
   if (library) { showPracticeIdle(); startDownloads(); }

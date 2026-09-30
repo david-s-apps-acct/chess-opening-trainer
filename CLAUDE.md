@@ -22,7 +22,7 @@ Building. The app is `trainer.html`; keep it in line with SPEC.md.
 - Call the Lichess API directly from the page.
 - Browser storage:
   - localStorage for the Lichess token, the selection, stats and preferences (backups never include the token)
-  - IndexedDB for cached study data and the downloaded Lichess data (move statistics, evaluations; these are included in backups)
+  - IndexedDB for cached study data and the downloaded Lichess data (move statistics, masters statistics, evaluations; these are included in backups)
 
 ## Working with the user
 
@@ -40,5 +40,6 @@ For testing without a real token: serve the folder over localhost (the Browser p
 
 - Natural-language selection ("Describe what to practice") was removed; its spec and code are archived in `archive/natural-language-selection.md` (not loaded by the app) in case it's rebuilt.
 - The script in `trainer.html` is divided into sections marked `// ---------- Name ----------`: Storage, State, helpers, Lichess, chapters and lines, annotations, move results and grading, then one section per page (Studies, Practice, Weaknesses, Options), the Lichess downloads, backup, navigation and start. Put new code in the section it belongs to.
-- Some names in storage and backups are older than the code's names: `popularity` (the code's `lichessStats`) and `showComments` (`showAnnotations`). Keep the stored names so existing data and backups still load.
+- Stored data: localStorage (`cot.` + `token`, `settings`, `selection`, `favorites`, `hiddenStudies`, `history`) and IndexedDB database `chess-opening-trainer` (store `library` for the fetched studies, store `positions` keyed by EPD, each `{ lichess, masters, eval }`). `history` is `{ moves: { moveKey: { attempts: [{ tried, points }], lastTried } }, lines: { lineKey: { played: [times] } } }`. Backups are version 4 and hold the same pieces; older backups can't be restored.
+- `convertOldStorage()` is TEMPORARY: it converts the storage format used before 30 September 2026, once. Remove it (and bump the IndexedDB version to delete the old `kv` store) once it has run in the user's browser.
 - The Lichess downloads (move statistics, masters statistics, evaluations) run automatically from `startDownloads()` after Update studies and when the app opens.
