@@ -619,6 +619,11 @@ const cache = {
   },
 };
 
+// Saves to IndexedDB; a failure (e.g. storage full) is only logged.
+async function saveCache(key, value) {
+  try { await cache.put(key, value); } catch (e) { console.warn('IndexedDB write failed', e); }
+}
+
 // ---------- State ----------
 
 let token = store.get('token', null);
@@ -653,6 +658,17 @@ let opponentMode = OPP_MODES.includes(store.get('opponentMode')) ? store.get('op
 // ---------- DOM helpers ----------
 
 const $ = id => document.getElementById(id);
+
+// "1 chapter", "3 chapters" (irregular plurals are given).
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+
+// Places a pop-up below el, or above it if there's no room, kept inside the window.
+function placePopup(pop, el) {
+  const r = el.getBoundingClientRect();
+  const w = pop.offsetWidth, hgt = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+  pop.style.top = (r.bottom + 6 + hgt <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - hgt - 6)) + 'px';
+}
 
 function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
@@ -735,11 +751,6 @@ function needToken() {
   $('opt-token-input').focus();
 }
 
-async function saveData() {
-  try { await cache.put('studies', data); }
-  catch (e) { console.warn('IndexedDB write failed', e); }
-}
-
 async function refreshFromLichess() {
   if (!token) return needToken();
   const btn = $('refresh-btn');
@@ -749,16 +760,16 @@ async function refreshFromLichess() {
     const account = await lichess('/api/account', token);
     const text = await lichess(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
     data = buildData(text, account.username);
-    await saveData();
+    await saveCache('studies', data);
     resetParsed();
     pruneAfterRefresh();
     // Lichess's cloud grows over time, so positions it didn't have are asked about again.
     evals = Object.fromEntries(Object.entries(evals).filter(([, v]) => !v.none));
-    try { await cache.put('evals', evals); } catch (e) { console.warn('IndexedDB write failed', e); }
+    await saveCache('evals', evals);
     startDownloads(); // missing Lichess data, quietly in the background
     const n = data.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = data.studies.length;
-    showBanner(`Fetched ${ns} ${ns === 1 ? 'study' : 'studies'} (${n} ${n === 1 ? 'chapter' : 'chapters'}).`);
+    showBanner(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
     if (screen === 'options') renderOptions(); else showSelection();
   } catch (e) {
     showBanner(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
@@ -877,8 +888,8 @@ function chapterLines(ch) {
 // ---------- Move results ----------
 // "· 5 lines · 2 alternative moves" after a chapter's name (the alternative moves only when there are any).
 function chapterCounts(nLines, nAlt) {
-  return [h('span', { class: 'muted' }, ` · ${nLines} line${nLines === 1 ? '' : 's'}`),
-    nAlt ? quickTip(h('span', { class: 'muted' }, ` · ${nAlt} alternative move${nAlt === 1 ? '' : 's'}`),
+  return [h('span', { class: 'muted' }, ` · ${plural(nLines, 'line')}`),
+    nAlt ? quickTip(h('span', { class: 'muted' }, ` · ${plural(nAlt, 'alternative move')}`),
       "Other moves your study gives you at your turns, besides the main move. They aren't tested; only the main move counts as correct.") : null];
 }
 
@@ -1023,7 +1034,7 @@ function rateEl({ lines, tried, score }) {
   if (!lines) return h('span', { class: 'rate' }, 'no lines to test');
   if (!tried) return h('span', { class: 'rate' });
   return quickTip(h('span', { class: 'rate' }, h('span', { class: scoreClass(score) }, `${pct(score)}%`)), // highlight just the text
-    `How often you play your moves here correctly: the average over the ${tried} ${tried === 1 ? 'move' : 'moves'} you've tried, each over its last 10 tries.`);
+    `How often you play your moves here correctly: the average over the ${plural(tried, 'move')} you've tried, each over its last 10 tries.`);
 }
 
 function showSelection() {
@@ -1061,7 +1072,7 @@ function renderStudies() {
         box,
         h('span', { class: 'name' }, h('label', { for: 'st-' + study.id }, study.name),
           showHiddenStudies ? hideStudyBtn(study, isHidden) : null,
-          h('span', { class: 'muted', style: 'font-weight:400' }, ` · ${study.chapters.length} chapter${study.chapters.length === 1 ? '' : 's'}`)),
+          h('span', { class: 'muted', style: 'font-weight:400' }, ` · ${plural(study.chapters.length, 'chapter')}`)),
         rateEl(aggregate(study.chapters))),
     );
     if (open) {
@@ -1120,9 +1131,7 @@ function quickTip(el, text) {
       if (!tip) { tip = h('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
       tip.textContent = text;
       tip.classList.remove('hidden');
-      const r = el.getBoundingClientRect();
-      tip.style.left = Math.max(8, Math.min(r.left, window.innerWidth - tip.offsetWidth - 8)) + 'px';
-      tip.style.top = (r.bottom + 6 + tip.offsetHeight <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - tip.offsetHeight - 6)) + 'px';
+      placePopup(tip, el);
     }, 0);
   });
   el.addEventListener('mouseleave', hideQuickTip);
@@ -1187,7 +1196,7 @@ function chapterTreeEl(ch) {
         const key = ch.key + '|' + path.map(e => e.san).join(' ');
         const open = openBranches.has(key);
         flow.append(h('button', { class: 'tree-toggle', 'aria-expanded': String(open),
-          title: open ? 'Hide variations' : `Show ${alts.length} ${alts.length === 1 ? 'variation' : 'variations'}`,
+          title: open ? 'Hide variations' : `Show ${plural(alts.length, 'variation')}`,
           onclick: () => { open ? openBranches.delete(key) : openBranches.add(key); renderStudies(); } }, open ? '−' : '+'), ' ');
         if (open) {
           const vars = h('div', { class: 'tree-vars' });
@@ -1270,10 +1279,10 @@ function updateToolbar() {
   const all_lines = selected.flatMap(chapterLines);
   const lines = selected.flatMap(practiceLines);
   const nLines = lines.length;
-  $('sel-summary').textContent = `${selected.length} chapter${selected.length === 1 ? '' : 's'} selected · `
+  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · `
     + (opponentMode === 'main'
-        ? `${nLines} main line${nLines === 1 ? '' : 's'} of ${all_lines.length}`
-        : `${nLines} line${nLines === 1 ? '' : 's'}`);
+        ? `${plural(nLines, 'main line')} of ${all_lines.length}`
+        : plural(nLines, 'line'));
   for (const r of document.querySelectorAll('input[name=opp-mode]')) r.checked = r.value === opponentMode;
   $('fav-set-btn').disabled = selection.size === 0;
   $('fav-recall-btn').disabled = !favorites || !favorites.length;
@@ -1714,10 +1723,7 @@ function showNotePop(el, label, { text, nags }) {
     ...text.map(x => h('p', {}, x)),
   ].filter(Boolean));
   pop.classList.remove('hidden');
-  const r = el.getBoundingClientRect();
-  const w = pop.offsetWidth, hgt = pop.offsetHeight;
-  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
-  pop.style.top = (r.bottom + 6 + hgt <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - hgt - 6)) + 'px';
+  placePopup(pop, el);
 }
 function hideNotePop() { $('note-pop')?.classList.add('hidden'); }
 window.addEventListener('scroll', hideNotePop, { passive: true });
@@ -1791,7 +1797,7 @@ async function studyMistake(orig, dest, move, played, alt) {
   const pos = q.pos.clone();
   pos.play(move);
   const r = alt.reply;
-  const replyLabel = r && `${r.moveNo}${r.color === 'white' ? '.' : '…'} ${fig(r.san)}`;
+  const replyLabel = r && moveLabel(r);
   setStatus(`${fig(played)}${sym} is marked as a ${name.toLowerCase()} in your study.` + (r ? ` The opponent replies ${replyLabel}.` : ''), 'bad');
   // Show the user's move, then the reply, on the board.
   cg.set({ fen: fenOf(pos), lastMove: [orig, dest], turnColor: pos.turn, movable: { color: q.line.color, dests: new Map() } });
@@ -1875,7 +1881,7 @@ $('hint-btn').addEventListener('click', () => {
   const w = q.wrong;
   const notes = annotationsOn() && w && expected.alts?.[w.san]?.notes;
   if (notes) q.hintNote = h('div', { class: 'hint-note' },
-    h('span', { class: 'note-move' }, `${expected.moveNo}${expected.color === 'white' ? '.' : '…'} ${fig(w.san)} (your move)`),
+    h('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w.san })} (your move)`),
     notes.nags.map(n => [glyphSpan(n), h('span', { class: 'muted' }, ' ' + GLYPHS[n][1])]),
     notes.text.length ? ': ' + notes.text.join(' ') : '');
   setStatus(['Hint: move the circled piece.', q.hintNote]);
@@ -1935,11 +1941,15 @@ function updateEco() {
 
 // The eye shows the setting: whether names are shown during a line. After a line they're always
 // shown, whatever the setting, and the setting carries on to the next line.
-function updateNamesControl() {
-  const eye = $('names-toggle');
-  eye.classList.toggle('off', hideNames);
-  eye.title = hideNames ? 'Hide chapter names during the line' : 'Show chapter names during the line'; // the current state
-  eye.setAttribute('aria-pressed', String(!hideNames));
+const updateNamesControl = () => setToggle('names-toggle', !hideNames,
+  hideNames ? 'Hide chapter names during the line' : 'Show chapter names during the line'); // the current state
+
+// An icon next to the chapter name: a line through it when off; title is its hover text.
+function setToggle(id, on, title) {
+  const btn = $(id);
+  btn.classList.toggle('off', !on);
+  btn.title = title;
+  btn.setAttribute('aria-pressed', String(on));
 }
 
 // ---------- Move popularity (Lichess Opening Explorer) ----------
@@ -2037,9 +2047,7 @@ const EXPLORER_DBS = {
   },
 };
 const explorerRuns = { lichess: null, masters: null };
-const saveExplorer = async kind => {
-  try { await cache.put(EXPLORER_DBS[kind].key, EXPLORER_DBS[kind].get()); } catch (e) { console.warn('IndexedDB write failed', e); }
-};
+const saveExplorer = kind => saveCache(EXPLORER_DBS[kind].key, EXPLORER_DBS[kind].get());
 function setExplorerStatus(kind, text) {
   const el = $(EXPLORER_DBS[kind].status);
   el.textContent = text;
@@ -2110,7 +2118,7 @@ async function downloadExplorerPositions(kind, run) {
   }
   await saveExplorer(kind);
   if (explorerRuns[kind] !== run) return;
-  status(`${db.Label} downloaded for ${total} ${total === 1 ? 'position' : 'positions'}` + (skipped ? ` (${skipped} skipped because ${db.none}).` : '.'));
+  status(`${db.Label} downloaded for ${plural(total, 'position')}` + (skipped ? ` (${skipped} skipped because ${db.none}).` : '.'));
   setTimeout(() => { if (!explorerRuns[kind]) status(''); }, 5000); // unless a newer download is running
   suggestBackup(db.Label); // every position now has these statistics
 }
@@ -2131,7 +2139,7 @@ function updateStatsInfo() {
     const db = EXPLORER_DBS[kind], el = $(db.info);
     if (!data) { el.textContent = ''; continue; }
     const done = positions.filter(epd => db.current(db.get()[epd])).length;
-    el.textContent = `${db.Label}: ${done} of ${positions.length} ${positions.length === 1 ? 'position' : 'positions'} downloaded`
+    el.textContent = `${db.Label}: ${done} of ${plural(positions.length, 'position')} downloaded`
       + (explorerRuns[kind] && done < positions.length ? ' (downloading now…)' : '')
       + (!explorerRuns[kind] && done < positions.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
   }
@@ -2199,7 +2207,7 @@ async function fetchEval(fen) {
     if (pv) evals[epd] = pv.mate != null ? { mate: pv.mate, depth: j.depth } : { cp: pv.cp, depth: j.depth };
     else evals[epd] = { none: true };
   } else return 60000;
-  try { await cache.put('evals', evals); } catch (e) { console.warn('IndexedDB write failed', e); }
+  await saveCache('evals', evals);
   if (screen === 'options') updateEvalInfo();
   return EVAL_INTERVAL;
 }
@@ -2245,14 +2253,14 @@ async function downloadEvals() {
       i++;
       if (i < todo.length) await sleep(EVAL_INTERVAL);
     }
-    setEvalStatus(`Evaluations downloaded for ${done} ${done === 1 ? 'position' : 'positions'}` + (none ? ` (${none} not in Lichess's cloud).` : '.'));
+    setEvalStatus(`Evaluations downloaded for ${plural(done, 'position')}` + (none ? ` (${none} not in Lichess's cloud).` : '.'));
     setTimeout(() => { if (!evalRun) setEvalStatus(''); }, 5000);
   } finally {
     if (evalRun === run) evalRun = null;
     if (screen === 'options') updateEvalInfo();
   }
 }
-const minutes = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return `${m} ${m === 1 ? 'minute' : 'minutes'}`; };
+const minutes = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return plural(m, 'minute'); };
 
 // " Evaluation +1.6" after "Line complete." in the status: the Lichess evaluation of the finished
 // line's final position, fetched straight away if it isn't saved yet ("…" meanwhile). Nothing is
@@ -2289,6 +2297,15 @@ function updateEvalInfo() {
     + '.';
 }
 
+// The buttons under the board: Hint and End line here during a line, Next line/position after it.
+function hideLineButtons() { $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden'); }
+function showNextButton(label) {
+  const b = $('next-btn');
+  b.textContent = label;
+  b.classList.remove('hidden');
+  b.focus();
+}
+
 function endLine() {
   const { line, missed } = q;
   recordResults();
@@ -2305,10 +2322,8 @@ function endLine() {
     q.startedAt ? h('p', { class: 'muted' }, `Started partway, at ${moveLabel(q.startedAt)}.`) : null,
   ].filter(Boolean));
   summary.classList.toggle('hidden', !summary.childElementCount); // nothing to say after a clean line
-  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
-  $('next-btn').textContent = 'Next line';
-  $('next-btn').classList.remove('hidden');
-  $('next-btn').focus();
+  hideLineButtons();
+  showNextButton('Next line');
 }
 
 $('next-btn').addEventListener('click', nextLine);
@@ -2327,7 +2342,7 @@ function endSingle() {
   q.done = true; // the move list gets hover boards
   q.busy = true;
   syncBoard();
-  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  hideLineButtons();
   q.forceNames = true; // the names always show after each answer
   updateNames();
   const r = q.results[q.results.length - 1];
@@ -2336,9 +2351,7 @@ function endSingle() {
     const run = q.token;
     setTimeout(() => { if (q && q.token === run) nextLine(); }, 1000);
   } else {
-    $('next-btn').textContent = 'Next position';
-    $('next-btn').classList.remove('hidden');
-    $('next-btn').focus();
+    showNextButton('Next position');
   }
 }
 
@@ -2347,7 +2360,7 @@ $('fav-set-btn').addEventListener('click', () => {
   favorites = [...selection];
   store.set('favorites', favorites);
   updateToolbar();
-  showBanner(`Saved ${favorites.length} ${favorites.length === 1 ? 'chapter' : 'chapters'} as your favorites.`);
+  showBanner(`Saved ${plural(favorites.length, 'chapter')} as your favorites.`);
 });
 
 $('fav-recall-btn').addEventListener('click', () => {
@@ -2358,7 +2371,7 @@ $('fav-recall-btn').addEventListener('click', () => {
   saveSelection();
   renderStudies(); // open and closed studies stay as they were
   const missing = (favorites || []).length - found.length, skipped = found.length - keys.length;
-  showBanner(`Recalled your favorites: ${keys.length} ${keys.length === 1 ? 'chapter' : 'chapters'} selected.`
+  showBanner(`Recalled your favorites: ${plural(keys.length, 'chapter')} selected.`
     + (missing ? ` (${missing} no longer ${missing === 1 ? 'exists' : 'exist'} on Lichess.)` : '')
     + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''));
 });
@@ -2374,7 +2387,7 @@ for (const r of document.querySelectorAll('input[name=opp-mode]')) {
 function leaveQuiz() {
   q = null; // pending timers check q and stop
   $('next-btn').classList.add('hidden');
-  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  hideLineButtons();
   $('promo').classList.add('hidden');
 }
 
@@ -2461,31 +2474,16 @@ function showPreview(el, line, i, thisTime = null) {
     ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(pos, m.san))));
   if (m.user && thisTime) {
     const r = thisTime.attempt;
-    const [from, to] = arrowSquares(pos, parseUci(m.uci));
-    const wrong = r ? countWrongs([{ s: r.seq }], m.san) : [];
-    for (const [s] of wrong) {
-      const mv = san.parseSan(pos, s);
-      if (!mv) continue;
-      const [f, t] = arrowSquares(pos, mv);
-      shapes.push({ orig: f, dest: t, brush: 'red' });
-    }
-    shapes.push({ orig: from, dest: to, brush: 'green' });
+    shapes = answerArrows(pos, m, r ? countWrongs([{ s: r.seq }], m.san) : []);
     // Just the points: the arrows already show the wrong moves played.
-    const result = !r ? 'Not tested this time' : `${r.points} ${r.points === 1 ? 'point' : 'points'} this time`;
+    const result = !r ? 'Not tested this time' : `${plural(r.points, 'point')} this time`;
     text = [topLine, countLine, h('div', {}, result)];
   } else if (m.user) {
     const tries = triesOf(line, i);
     const wrong = countWrongs(tries, m.san);
-    const [from, to] = arrowSquares(pos, parseUci(m.uci));
-    for (const [s] of wrong) {
-      const mv = san.parseSan(pos, s);
-      if (!mv) continue;
-      const [f, t] = arrowSquares(pos, mv);
-      shapes.push({ orig: f, dest: t, brush: 'red' });
-    }
-    shapes.push({ orig: from, dest: to, brush: 'green' });
+    shapes = answerArrows(pos, m, wrong);
     const avg = tries.length ? scoreOf(tries) * 10 : 0;
-    text = [topLine, countLine, h('div', {}, tries.length ? `Average ${avg.toFixed(1)} of 10 (last ${tries.length} ${tries.length === 1 ? 'try' : 'tries'})` : 'Not tried yet'),
+    text = [topLine, countLine, h('div', {}, tries.length ? `Average ${avg.toFixed(1)} of 10 (last ${plural(tries.length, 'try', 'tries')})` : 'Not tried yet'),
       wrong.length ? h('div', {}, 'Wrong: ' + wrong.map(([s, n]) => fig(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null];
   } else {
     // The opponent's move itself: the position after it, with the move as a white arrow,
@@ -2509,14 +2507,15 @@ function showPreview(el, line, i, thisTime = null) {
   if (!previewCg) previewCg = Chessground(box.querySelector('.cg-wrap'), config);
   else previewCg.set(config); // lastMove: undefined clears the previous highlight
   previewCg.setAutoShapes(shapes);
-  // Below the move, or above it if there's no room; kept inside the window.
-  const r = el.getBoundingClientRect();
-  const w = box.offsetWidth, hgt = box.offsetHeight;
-  const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
-  const top = r.bottom + 6 + hgt <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - hgt - 6);
-  box.style.left = left + 'px';
-  box.style.top = top + 'px';
+  placePopup(box, el);
   previewCg.redrawAll();
+}
+
+// A red arrow for each wrong move played ([[san, count], …]) and a green one for the correct move.
+function answerArrows(pos, m, wrong) {
+  const arrow = (mv, brush) => { const [orig, dest] = arrowSquares(pos, mv); return { orig, dest, brush }; };
+  const shapes = wrong.map(([s]) => san.parseSan(pos, s)).filter(Boolean).map(mv => arrow(mv, 'red'));
+  return [...shapes, arrow(parseUci(m.uci), 'green')];
 }
 
 function hidePreview() { $('move-preview')?.classList.add('hidden'); }
@@ -2544,7 +2543,7 @@ function formatWithZone(ts) {
 function renderOptions() {
   const nChapters = allChapters().length;
   $('opt-fetch-info').textContent = data
-    ? `${data.username} · ${data.studies.length} ${data.studies.length === 1 ? 'study' : 'studies'}, ${nChapters} ${nChapters === 1 ? 'chapter' : 'chapters'} · fetched ${formatWithZone(data.fetchedAt)}`
+    ? `${data.username} · ${plural(data.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(data.fetchedAt)}`
     : 'No studies fetched yet.';
   updateSoundControls();
   updateStatsInfo();
@@ -2580,31 +2579,18 @@ function setSounds(on) {
 }
 
 // The bell next to the names shows whether sounds are on.
-function updateSoundControls() {
-  const bell = $('sound-toggle');
-  bell.classList.toggle('off', !soundsOn);
-  bell.title = soundsOn ? 'Turn sounds off' : 'Turn sounds on';
-  bell.setAttribute('aria-pressed', String(soundsOn));
-}
+const updateSoundControls = () => setToggle('sound-toggle', soundsOn, soundsOn ? 'Turn sounds off' : 'Turn sounds on');
 
 $('sound-toggle').addEventListener('click', () => setSounds(!soundsOn));
 updateSoundControls();
 
 // The speech-bubble icon next to the names turns annotations (glyphs and comment bubbles) on and
 // off, at any time: the move list and the intro bubble update straight away.
-function updateAnnotationsControl() {
-  const btn = $('annotations-toggle');
-  btn.classList.toggle('off', !showComments);
-  btn.title = showComments ? 'Show annotations during the line' : 'Hide annotations during the line'; // the current state
-  btn.setAttribute('aria-pressed', String(showComments));
-}
+const updateAnnotationsControl = () => setToggle('annotations-toggle', showComments,
+  showComments ? 'Show annotations during the line' : 'Hide annotations during the line'); // the current state
 // The violet-rectangle icon: highlight missed moves during the line too (on), or only once it's over (off).
-function updateMissesControl() {
-  const btn = $('misses-toggle');
-  btn.classList.toggle('off', !liveMisses);
-  btn.title = liveMisses ? 'Highlight missed moves during the line' : 'Hide missed moves during the line'; // the current state
-  btn.setAttribute('aria-pressed', String(liveMisses));
-}
+const updateMissesControl = () => setToggle('misses-toggle', liveMisses,
+  liveMisses ? 'Highlight missed moves during the line' : 'Hide missed moves during the line'); // the current state
 $('misses-toggle').addEventListener('click', () => {
   liveMisses = !liveMisses;
   store.set('liveMisses', liveMisses);
@@ -2685,7 +2671,7 @@ $('restore-file').addEventListener('change', async e => {
   const oldFormat = Object.values(b.stats).some(isOldStats);
   const n = Object.keys(restored).length;
   const when = b.exportedAt ? ` from ${new Date(b.exportedAt).toLocaleString()}` : '';
-  if (!confirm(`Are you sure? This replaces your current stats and settings with the backup${when} (${n} ${n === 1 ? 'position' : 'positions'} with results). It can't be undone.`)) return;
+  if (!confirm(`Are you sure? This replaces your current stats and settings with the backup${when} (${plural(n, 'position')} with results). It can't be undone.`)) return;
 
   stats = restored;
   selection = new Set(Array.isArray(b.selection) ? b.selection.filter(k => typeof k === 'string') : []);
@@ -2704,7 +2690,7 @@ $('restore-file').addEventListener('change', async e => {
     if (!masters[epd] || (s.at || 0) > (masters[epd].at || 0)) masters[epd] = s;
   }
   if (lich.popularity || lich.evals || lich.masters) {
-    try { await cache.put('popularity', popularity); await cache.put('evals', evals); await cache.put('masters', masters); } catch (err) { console.warn('IndexedDB write failed', err); }
+    await saveCache('popularity', popularity); await saveCache('evals', evals); await saveCache('masters', masters);
   }
   if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
   const st = b.settings || {};
@@ -2723,7 +2709,7 @@ $('restore-file').addEventListener('change', async e => {
   store.set('opponentMode', opponentMode);
   lineCache.clear();
   renderOptions();
-  showBanner(`Restored stats for ${n} ${n === 1 ? 'position' : 'positions'} and your settings from the backup.`
+  showBanner(`Restored stats for ${plural(n, 'position')} and your settings from the backup.`
     + (oldFormat ? ' Its older per-line stats (which don\'t say which move was missed) were left out.' : ''));
 });
 
@@ -2780,7 +2766,7 @@ function showPracticeIdle() {
   $('q-eco').textContent = '';
   $('q-eco').classList.remove('placeholder');
   $('q-chapter').classList.add('muted'); // the idle page's selection count
-  $('q-chapter').textContent = `${chapters.length} ${chapters.length === 1 ? 'chapter' : 'chapters'} · ${nLines} ${nLines === 1 ? 'line' : 'lines'} selected`;
+  $('q-chapter').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`;
   $('q-side').textContent = document.querySelector(`input[name=opp-mode][value=${opponentMode}]`).closest('label').textContent.trim();
   $('q-moves').replaceChildren(h('span', { class: 'none' }, 'No moves yet.'));
   for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
@@ -2791,7 +2777,7 @@ function showPracticeIdle() {
   $('q-summary').classList.add('hidden');
   hideNotePop();
   $('next-btn').classList.add('hidden');
-  $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden');
+  hideLineButtons();
   $('practice-start-btn').classList.remove('hidden');
   $('practice-start-btn').disabled = !ready;
   if (ready) $('practice-start-btn').focus();
