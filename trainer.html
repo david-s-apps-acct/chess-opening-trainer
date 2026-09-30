@@ -648,11 +648,11 @@ let database = null;
 
 function openDatabase() {
   return database ||= new Promise((resolve, reject) => {
-    const req = indexedDB.open('chess-opening-trainer', 2);
+    const req = indexedDB.open('chess-opening-trainer', 3);
     req.onupgradeneeded = () => {
-      for (const name of ['library', 'positions']) {
-        if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
-      }
+      const db = req.result;
+      for (const name of ['library', 'positions']) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
+      if (db.objectStoreNames.contains('kv')) db.deleteObjectStore('kv'); // used by versions before 30 September 2026
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -3002,7 +3002,6 @@ $('nav-help').addEventListener('click', () => {
 
 async function init() {
   try {
-    await convertOldStorage();
     library = await loadLibrary();
     positions = await loadPositions();
   }
@@ -3013,54 +3012,6 @@ async function init() {
   if (library) { showPracticeIdle(); startDownloads(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
-}
-
-// TEMPORARY: converts what an earlier version of the app stored (before 30 September 2026) to the
-// current format, once. To be removed after it has run in the user's browser.
-async function convertOldStorage() {
-  // IndexedDB: the old "kv" store held the studies and three collections keyed by position:
-  // "popularity" (Lichess games), "masters" and "evals".
-  const db = await openDatabase();
-  if (db.objectStoreNames.contains('kv')) {
-    const requests = await inDatabase('kv', 'readonly', s => ['studies', 'popularity', 'masters', 'evals'].map(k => s.get(k)));
-    const [studies, lichessGames, masterGames, evaluations] = requests.map(r => r.result);
-    if (studies || lichessGames || masterGames || evaluations) {
-      if (studies) { library = studies; await saveLibrary(); }
-      positions = await loadPositions();
-      const at = epd => positions[epd] ||= {};
-      const withoutVersion = ({ v, ...rest }) => rest;
-      for (const [epd, x] of Object.entries(lichessGames || {})) if (x?.v === 3) at(epd).lichess = withoutVersion(x);
-      for (const [epd, x] of Object.entries(masterGames || {})) if (x?.v === 1) at(epd).masters = withoutVersion(x);
-      for (const [epd, x] of Object.entries(evaluations || {})) if (x && typeof x === 'object') at(epd).eval = x;
-      await savePositions();
-      await inDatabase('kv', 'readwrite', s => s.clear());
-    }
-  }
-  // localStorage: "stats" (attempts, as { s, p }), "lastTried" and "plays" become the history.
-  const oldStats = store.get('stats');
-  if (oldStats && typeof oldStats === 'object') {
-    const lastTried = store.get('lastTried', {}), plays = store.get('plays', {});
-    history = emptyHistory();
-    for (const [key, attempts] of Object.entries(oldStats)) {
-      if (!Array.isArray(attempts)) continue;
-      const correct = key.slice(key.indexOf('|') + 1).split(' ').pop();
-      history.moves[key] = { attempts: attempts.map(a => a && Array.isArray(a.s) ? { tried: a.s, points: a.p }
-        : a === 1 ? { tried: [correct], points: 10 } : { tried: [...(Array.isArray(a) && a.length ? a : ['hint']), correct], points: 0 }) };
-      if (Number.isFinite(lastTried[key])) history.moves[key].lastTried = lastTried[key];
-    }
-    for (const [key, times] of Object.entries(plays || {})) if (Array.isArray(times)) history.lines[key] = { played: times };
-    saveHistory();
-    // The settings were stored one by one.
-    settings = checkedSettings({
-      startMode: store.get('startMode'), opponentMode: store.get('opponentMode'), sounds: store.get('soundsOn'),
-      penalties: store.get('penalties'), mastersTop: store.get('mastersTop'),
-      weaknessCount: store.get('weakCount'), weaknessMaxAccuracy: store.get('weakMax'),
-    });
-    saveSettings();
-  }
-  // Everything else the earlier versions stored is removed.
-  const current = new Set(['token', 'settings', 'selection', 'favorites', 'hiddenStudies', 'history']);
-  try { for (const k of Object.keys(localStorage)) if (k.startsWith('cot.') && !current.has(k.slice(4))) localStorage.removeItem(k); } catch {}
 }
 
 init();
