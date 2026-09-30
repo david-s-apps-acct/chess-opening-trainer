@@ -326,7 +326,7 @@ Lines are shown with the user's moves highlighted by score (see Progress trackin
 
 A page, **Weaknesses**, listing the user's most common weak positions (built at the user's request; to iterate on).
 
-- **Title with two drop-downs:** "Common [x] positions with accuracy [y]% or lower". [x] is 25, 50, 75 or 100; [y] is 90%, 80%, 70% … 10%. Changing either updates the table straight away.
+- **Two drop-downs**, in a row just below the column headings: under **Position**, how many positions to show, [x] (25, 50, 75 or 100); under **Accuracy**, "≤ [y]" (90%, 80%, 70% … 10%). Changing either updates the table straight away. (They were first built into the title, "Common [x] positions with accuracy [y]% or lower"; the user moved them under the headings.) *Claude's choices, for the user to accept or reject:* the title is now "Common positions with low accuracy"; the count drop-down has no label of its own (its hover text says "How many positions to show").
 - **Rows:** the [x] most common of the user's positions (where it's the user's move) whose accuracy is [y]% or lower, **most common first**.
 - **Columns:**
   - **Position:** Lichess's opening name for the position (or for the last named position before it) plus the move to find, e.g. "Italian Game: Giuoco Piano, your move 4"; just "Your move 1" when nothing up to it has a Lichess name (e.g. the starting position). The chapter name follows in small grey text.

@@ -108,9 +108,10 @@
 
   /* Weaknesses page */
   .cards .weak-card { max-width: 760px; }
-  .weak-card h2 select { flex: none; width: auto; padding: 2px 6px; font-size: 16px; font-weight: 600; margin: 0 2px; }
+  .weak-filters th { border-bottom: 1px solid var(--border); padding-top: 0; }
+  .weak-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; }
   .weak-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
-  .weak-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  .weak-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
   .weak-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
   .weak-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .weak-table tbody tr { cursor: default; }
@@ -382,15 +383,22 @@
   <section id="weaknesses-screen" class="hidden">
     <div class="cards">
       <div class="card weak-card">
-        <h2>Common <select id="weak-count" aria-label="How many positions">
-            <option>25</option><option>50</option><option>75</option><option>100</option>
-          </select> positions with accuracy <select id="weak-max" aria-label="Highest accuracy">
-            <option value="90">90%</option><option value="80">80%</option><option value="70">70%</option>
-            <option value="60">60%</option><option value="50">50%</option><option value="40">40%</option>
-            <option value="30">30%</option><option value="20">20%</option><option value="10">10%</option>
-          </select> or lower</h2>
+        <h2>Common positions with low accuracy</h2>
         <table class="weak-table">
-          <thead><tr><th>Position</th><th class="num">Lichess games</th><th class="num">Accuracy</th></tr></thead>
+          <thead>
+            <tr><th>Position</th><th class="num">Lichess games</th><th class="num">Accuracy</th></tr>
+            <tr class="weak-filters">
+              <th><select id="weak-count" aria-label="How many positions" title="How many positions to show">
+                <option>25</option><option>50</option><option>75</option><option>100</option>
+              </select></th>
+              <th></th>
+              <th class="num">≤ <select id="weak-max" aria-label="Highest accuracy" title="Show positions with this accuracy or lower">
+                <option value="90">90%</option><option value="80">80%</option><option value="70">70%</option>
+                <option value="60">60%</option><option value="50">50%</option><option value="40">40%</option>
+                <option value="30">30%</option><option value="20">20%</option><option value="10">10%</option>
+              </select></th>
+            </tr>
+          </thead>
           <tbody id="weak-rows"></tbody>
         </table>
         <p id="weak-note" class="muted"></p>
@@ -502,7 +510,7 @@
       <div class="card">
         <h2>Weaknesses</h2>
         <ul>
-          <li>The <b>Weaknesses</b> page lists your most common weak positions: "Common 25 positions with accuracy 70% or lower". Choose how many (25, 50, 75 or 100) and the accuracy (90% down to 10%) in the title.</li>
+          <li>The <b>Weaknesses</b> page lists your most common weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Accuracy</b>, choose the highest accuracy to include (≤ 90% down to ≤ 10%).</li>
           <li>Each row is one of your moves: the position's opening name and the move you have to find (e.g. "Italian Game: Giuoco Piano, your move 4", with the chapter in grey), how many rated Lichess games reach that position, and your accuracy there (its score over the last 10 tries). The most common positions come first.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the wrong moves you've played.</li>
