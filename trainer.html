@@ -405,7 +405,7 @@
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs 10 points; an unmarked one gets "also in your study, but it isn't the main move" and costs 2 points (see Your statistics).</li>
+          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs 5 points; an unmarked one gets "also in your study, but it isn't the main move" and costs 2 points (see Your statistics).</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Either costs 10 points, so the move scores 0 this time.</li>
           <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
@@ -422,7 +422,8 @@
         <ul>
           <li>Each attempt at a move starts with <b>10 points</b>; finding the move on your first try keeps all 10.</li>
           <li><b>−2</b> each time you play one of your study's unmarked alternative moves, or a move masters play more than 10% of the time in that position.</li>
-          <li><b>−10</b> for an alternative your study marks ?!, ? or ??, any other wrong move, or the <b>Hint</b> (so Show correct move leaves 0). Points never go below 0.</li>
+          <li><b>−5</b> each time you play an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
+          <li><b>−10</b> for the <b>Hint</b> (so Show correct move leaves 0). Points never go below 0.</li>
           <li>Each move keeps its <b>last 10 attempts</b>, including everything you tried. Its score is their average, as a percentage, with recent attempts counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. attempts of 0, 8, 10, 10 (oldest to newest) give about 7.5, so 75%. Scores are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
           <li><b>Not counted</b>: a line you leave unfinished.</li>
           <li>Highlighting: moves you know (<span class="s100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="s90">90–99%</span> faint, <span class="s70">70–89%</span> medium, <span class="s0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="mvq-good">!</span> green, <span class="mvq-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
@@ -1049,8 +1050,8 @@ function scoreOf(tries) {
 
 // Each attempt at one of the user's moves starts at 10 points: every unmarked alternative move from
 // the study, or a move played in more than 10% of master games there, costs 2 (once, even if it's
-// both); an alternative marked ?, ?? or ?!, any other wrong move, the hint and Show correct move
-// cost 10; never below 0. Repeats cost each time. entry is the move in the line (its SAN, the
+// both); an alternative marked ?, ?? or ?! and any other wrong move cost 5; the hint and Show
+// correct move cost 10; never below 0. Repeats cost each time. entry is the move in the line (its SAN, the
 // study's alternatives there, and the position before it).
 const MASTERS_SHARE = 0.1;
 
@@ -1065,9 +1066,9 @@ function scoreAttempt(seq, entry) {
     if (x === 'hint' || x === 'show') { p -= 10; continue; }
     if (bareSan(x) === bareSan(entry.san)) break; // the correct move ends the attempt
     const alt = entry.alts?.[x];
-    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= 10; // the study's marking wins
+    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= 5; // the study's marking wins
     else if (alt || isMasterMove(entry.epd, x)) p -= 2;
-    else p -= 10;
+    else p -= 5;
   }
   return Math.max(0, p);
 }
@@ -2179,7 +2180,7 @@ function errorLabel(m, x) {
   return fig(x) + (label ? ` (${label})` : '');
 }
 // How a move tried instead of m was scored: 'alternative' or 'masters' (2 points), 'marked' (an
-// alternative the study marks ?, ?? or ?!) or 'wrong' (10 points each).
+// alternative the study marks ?, ?? or ?!) or 'wrong' (5 points each).
 function errorKind(m, x) {
   const alt = m.alts?.[x];
   if (alt) return alt.nags.some(n => MISTAKE_NAGS.includes(n)) ? 'marked' : 'alternative';
