@@ -385,6 +385,15 @@ A separate System page, opened from the "System" button in the header. (It was c
 
 Ideas agreed or mentioned along the way that haven't been built yet:
 
+- **Options page with mistake penalties** (agreed, for later):
+  - **Rename** the System page (and its header button) to **Options**.
+  - Add a card titled **"Mistake penalties"**, with one drop-down per kind of mistake, each 0%, 10%, 20% … 100% of an attempt's score (1 internal point = 10%). The defaults are the current values:
+    - Alternative move (an unmarked alternative from the study): 20%
+    - Masters move (masters play it more than 10% of the time): 20%
+    - Error (any other wrong move, **and alternatives the study marks ?, ?? or ?!**, which share this setting rather than having their own): 50%
+    - Hint: 100% (Show correct move stays tied to the hint)
+  - Changing a penalty **re-scores all saved attempts straight away** (they're saved with what was done), so the highlighting, Studies percentages and Weaknesses page update at once.
+  - A move that's both an unmarked alternative and a masters move costs the alternative's penalty. The 10% masters threshold stays fixed. The penalties are remembered and included in backups.
 - Selecting individual lines (not just whole chapters) from a natural-language request such as "lines longer than 10 moves"; this needs a line-level filter. Only relevant if natural-language selection is ever brought back (it was removed; see Describe what to practice).
 - **Offline copy:** a separate `trainer-offline.html` that runs without an internet connection, for practicing with saved studies, stats, move frequencies and evaluations (anything that talks to Lichess or Anthropic would still need a connection: Update studies, the two download buttons, fetching an evaluation at the end of a line, checking a token, natural-language selection).
   - Everything the page now loads from jsDelivr would be embedded in the one file: chessops and chessground bundled into the script (a one-time bundling step, e.g. esbuild, since jsDelivr's versions import further files), and the board and piece images, fonts (only the subsets used) and sounds embedded as data. A folder of files beside the page wouldn't work, because browsers block scripts loaded from neighbouring files on `file://`.
