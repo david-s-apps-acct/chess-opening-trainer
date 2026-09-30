@@ -344,6 +344,8 @@ A separate System page, opened from the "System" button in the header. (It was c
 
 ## Technology
 
+- **Version control:** the project folder is a local git repository (no GitHub or upload), set up at the user's request; each agreed change can be committed as a snapshot and undone by going back to an earlier one. The first commit recorded the app, spec, project notes and the natural-language archive.
+
 - **Delivery:** a single HTML file (`trainer.html`) on the user's computer, opened directly in the browser (`file://`). No server, no build step.
 - **Lichess API:** called directly from the page; the Lichess API allows cross-origin browser requests.
 - **Libraries:** chessops and chessground (JS and CSS) are loaded from the jsDelivr CDN via ES module imports. The app needs internet to reach Lichess anyway, so this adds no new requirement.
@@ -359,7 +361,6 @@ A separate System page, opened from the "System" button in the header. (It was c
 Ideas agreed or mentioned along the way that haven't been built yet:
 
 - Selecting individual lines (not just whole chapters) from a natural-language request such as "lines longer than 10 moves"; this needs a line-level filter. Only relevant if natural-language selection is ever brought back (it was removed; see Describe what to practice).
-- **Set up local git:** put the project folder under version control with git, locally only (no GitHub or upload), so every change can be saved as a snapshot, compared, and undone by going back to any earlier version. Once it's in place, archive copies (like the natural-language one above) aren't needed. The first commit would record the current app and spec as a known-good starting point.
 - **Offline copy:** a separate `trainer-offline.html` that runs without an internet connection, for practicing with saved studies, stats, move frequencies and evaluations (anything that talks to Lichess or Anthropic would still need a connection: Update studies, the two download buttons, fetching an evaluation at the end of a line, checking a token, natural-language selection).
   - Everything the page now loads from jsDelivr would be embedded in the one file: chessops and chessground bundled into the script (a one-time bundling step, e.g. esbuild, since jsDelivr's versions import further files), and the board and piece images, fonts (only the subsets used) and sounds embedded as data. A folder of files beside the page wouldn't work, because browsers block scripts loaded from neighbouring files on `file://`.
   - The file would grow from about 144 KB to roughly 1–2 MB.
