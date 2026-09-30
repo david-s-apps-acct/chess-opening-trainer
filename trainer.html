@@ -421,7 +421,7 @@
           <li>On Lichess, <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">create a personal API token</a> with the <b>Read private studies</b> (<code>study:read</code>) permission.</li>
           <li>Paste it into the app. It fetches all your studies, private ones included, and remembers the token.</li>
           <li>When you change your studies on Lichess, use <b>Update studies</b> on the System page.</li>
-          <li>How often each move is played on Lichess, and Lichess's evaluations, download automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the System page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
+          <li>How often each move is played on Lichess (and in master games), and Lichess's evaluations, download automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the System page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
         </ol>
         <details>
           <summary>What the app stores, and where</summary>
@@ -539,9 +539,11 @@
 
       <div class="card">
         <h2>Move frequency</h2>
-        <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
+        <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move, and in the Masters database (over-the-board games between players rated 2200+ FIDE), saved for later use. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
         <p id="opt-stats-info" class="muted"></p>
         <div id="bg-status" class="bg-status hidden" aria-live="polite"></div>
+        <p id="opt-masters-info" class="muted"></p>
+        <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div class="card">
@@ -1928,15 +1930,10 @@ function gamesOf(stat, s) {
   const m = stat.moves[want];
   return !m ? 0 : typeof m === 'number' ? m : m.white + m.draws + m.black;
 }
-let popularityRun = null;
 
 const epdOf = f => f.split(' ').slice(0, 4).join(' ');
 const bareSan = x => x.replace(/[+#]/g, '');
 
-function setBgStatus(text) {
-  $('bg-status').textContent = text;
-  $('bg-status').classList.toggle('hidden', !text);
-}
 
 // Every position reached in the studies: every move and variation, alternative moves' variations
 // and each line's final position included. For each: its FEN, depth (in plies), the positions and
@@ -1973,110 +1970,141 @@ function studyPositions() {
 
 // The Lichess downloads run by themselves, in the background, after Update studies and when the
 // app opens (so an interrupted download resumes): missing move statistics (they need the token),
-// then missing position evaluations. Each fetches only what's missing, and says nothing if nothing is.
+// then missing Masters statistics, then missing position evaluations. Each fetches only what's missing, and says nothing if nothing is.
 let downloadsRunning = false;
 async function startDownloads() {
   if (downloadsRunning || !data) return;
   downloadsRunning = true;
   try {
-    if (token) await downloadPopularity();
+    if (token) { await downloadExplorer('lichess'); await downloadExplorer('masters'); }
     await downloadEvals();
   } finally { downloadsRunning = false; }
 }
 
-async function downloadPopularity() {
+// The two Opening Explorer databases that are downloaded for every position in the studies: all
+// rated Lichess games (popularity) and Masters (over-the-board games, players 2200+ FIDE). Each
+// answer is saved as Lichess sends it; for Lichess games only the 10 most played moves plus the
+// studies' own moves are kept, for Masters the full move list (topGames isn't requested).
+let masters = {}; // position (EPD) -> the Masters answer, plus v: 1 and at
+const EXPLORER_DBS = {
+  lichess: {
+    label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
+    url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
+    get: () => popularity, key: 'popularity', status: 'bg-status', info: 'opt-stats-info',
+    current: s => s?.v === 3,
+    keep: (j, e) => ({ ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() }),
+    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() }),
+  },
+  masters: {
+    label: 'masters statistics', Label: 'Masters statistics', none: 'no master game reaches them',
+    url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
+    get: () => masters, key: 'masters', status: 'masters-status', info: 'opt-masters-info',
+    current: s => s?.v === 1,
+    keep: j => ({ ...j, v: 1, at: Date.now() }),
+    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, v: 1, at: Date.now() }),
+  },
+};
+const explorerRuns = { lichess: null, masters: null };
+const saveExplorer = async kind => {
+  try { await cache.put(EXPLORER_DBS[kind].key, EXPLORER_DBS[kind].get()); } catch (e) { console.warn('IndexedDB write failed', e); }
+};
+function setExplorerStatus(kind, text) {
+  const el = $(EXPLORER_DBS[kind].status);
+  el.textContent = text;
+  el.classList.toggle('hidden', !text);
+}
+
+async function downloadExplorer(kind) {
   if (!token || !data) return;
-  const run = popularityRun = {};
-  try { await downloadPositions(run); }
+  const run = explorerRuns[kind] = {};
+  try { await downloadExplorerPositions(kind, run); }
   finally {
-    if (popularityRun === run) popularityRun = null; // finished or stopped
+    if (explorerRuns[kind] === run) explorerRuns[kind] = null; // finished or stopped
     if (screen === 'options') updateStatsInfo();
   }
 }
 
-async function downloadPositions(run) {
+async function downloadExplorerPositions(kind, run) {
+  const db = EXPLORER_DBS[kind], store = db.get();
+  const status = text => setExplorerStatus(kind, text);
   // The same order whatever is ticked: branch points (the opponent has several replies), then the
   // rest of the chapters' main lines, then everything else; by move number within each group, so a
   // position's parents are usually known before it's reached.
   const tier = e => e.branch ? 0 : e.main ? 1 : 2;
-  const todo = [...studyPositions()].filter(([epd]) => !isCurrentStat(popularity[epd])) // older saves are fetched again
+  const todo = [...studyPositions()].filter(([epd]) => !db.current(store[epd])) // older saves are fetched again
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   const total = todo.length;
   if (!total) return; // nothing missing: nothing to say
   let skipped = 0;
   for (let i = 0; i < todo.length; ) {
-    if (popularityRun !== run) return; // a newer refresh took over
-    setBgStatus(`Downloading move statistics: ${i} of ${total} positions`);
+    if (explorerRuns[kind] !== run) return; // a newer download took over
+    status(`Downloading ${db.label}: ${i} of ${total} positions`);
     const [epd, e] = todo[i];
-    // Skip positions nobody reaches: every known way here is a move no Lichess game played.
+    // Skip positions nobody reaches: every known way here is a move no game in this database played.
     // (A different move order could still reach it, so this is a close approximation.)
-    if (e.parents.length && e.parents.every(pp => isCurrentStat(popularity[pp.epd]) && !(gamesOf(popularity[pp.epd], pp.san) > 0))) {
-      popularity[epd] = { white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() };
+    if (e.parents.length && e.parents.every(pp => db.current(store[pp.epd]) && !(gamesOf(store[pp.epd], pp.san) > 0))) {
+      store[epd] = db.empty();
       skipped++;
       i++;
       continue;
     }
     let res;
     try {
-      res = await fetch(`${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(e.fen)}&moves=100&topGames=0&recentGames=0`,
-        { headers: { Authorization: 'Bearer ' + token } });
+      res = await fetch(db.url(e.fen), { headers: { Authorization: 'Bearer ' + token } });
     } catch {
-      await savePopularity();
-      setBgStatus(`Couldn't reach the Lichess explorer. Move statistics stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
+      await saveExplorer(kind);
+      status(`Couldn't reach the Lichess explorer. ${db.Label} stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
       return;
     }
     if (res.status === 429) {
       // Lichess asks clients to wait a minute after a rate-limit response.
-      await savePopularity();
-      setBgStatus(`Downloading move statistics: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
+      await saveExplorer(kind);
+      status(`Downloading ${db.label}: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
       await sleep(61000);
       continue;
     }
     if (res.status === 401) {
-      await savePopularity();
-      setBgStatus('Lichess rejected the token for move statistics. Replace it on the System page; the download then continues.');
+      await saveExplorer(kind);
+      status(`Lichess rejected the token for ${db.label}. Replace it on the System page; the download then continues.`);
       return;
     }
     if (res.ok) {
-      const j = await res.json();
-      // Saved as Lichess sends it. Lichess lists moves most played first: keep the top 10, plus
-      // any other move the studies have here.
-      popularity[epd] = { ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() };
-      if (i % 20 === 19) await savePopularity();
+      store[epd] = db.keep(await res.json(), e);
+      if (i % 20 === 19) await saveExplorer(kind);
     }
     i++;
-    setBgStatus(`Downloading move statistics: ${i} of ${total} positions`);
+    status(`Downloading ${db.label}: ${i} of ${total} positions`);
     if (screen === 'options') updateStatsInfo();
   }
-  await savePopularity();
-  if (popularityRun !== run) return;
-  setBgStatus(`Move statistics downloaded for ${total} ${total === 1 ? 'position' : 'positions'}` + (skipped ? ` (${skipped} skipped because no Lichess game reaches them).` : '.'));
-  setTimeout(() => { if (!popularityRun) setBgStatus(''); }, 5000); // unless a newer download is running
-  suggestBackup(); // every position now has its statistics
+  await saveExplorer(kind);
+  if (explorerRuns[kind] !== run) return;
+  status(`${db.Label} downloaded for ${total} ${total === 1 ? 'position' : 'positions'}` + (skipped ? ` (${skipped} skipped because ${db.none}).` : '.'));
+  setTimeout(() => { if (!explorerRuns[kind]) status(''); }, 5000); // unless a newer download is running
+  suggestBackup(db.Label); // every position now has these statistics
 }
 
-// After a move-statistics download completes: suggest saving a backup (the data took a while).
-function suggestBackup() {
+// After a download completes: suggest saving a backup (the data took a while).
+function suggestBackup(what) {
   const b = $('banner');
   b.className = 'banner';
-  b.replaceChildren('Move statistics are complete. Save a backup so you won\'t need to download them again? ',
+  b.replaceChildren(`${what} are complete. Save a backup so you won't need to download them again? `,
     h('button', { class: 'small', onclick: () => { hideBanner(); $('backup-btn').click(); } }, 'Save backup'), ' ',
     h('button', { class: 'small', onclick: hideBanner }, 'Not now'));
 }
 
-// The Options page's "Move statistics: N of M positions downloaded" line.
+// The System page's "Move statistics: N of M positions downloaded" and "Masters statistics: …" lines.
 function updateStatsInfo() {
-  if (!data) { $('opt-stats-info').textContent = ''; return; }
-  const positions = [...studyPositions().keys()];
-  const done = positions.filter(epd => isCurrentStat(popularity[epd])).length;
-  $('opt-stats-info').textContent = `Move statistics: ${done} of ${positions.length} ${positions.length === 1 ? 'position' : 'positions'} downloaded`
-    + (popularityRun && done < positions.length ? ' (downloading now…)' : '')
-    + (!popularityRun && done < positions.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
+  const positions = data ? [...studyPositions().keys()] : [];
+  for (const kind of ['lichess', 'masters']) {
+    const db = EXPLORER_DBS[kind], el = $(db.info);
+    if (!data) { el.textContent = ''; continue; }
+    const done = positions.filter(epd => db.current(db.get()[epd])).length;
+    el.textContent = `${db.Label}: ${done} of ${positions.length} ${positions.length === 1 ? 'position' : 'positions'} downloaded`
+      + (explorerRuns[kind] && done < positions.length ? ' (downloading now…)' : '')
+      + (!explorerRuns[kind] && done < positions.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
+  }
 }
 
-async function savePopularity() {
-  try { await cache.put('popularity', popularity); } catch (e) { console.warn('IndexedDB write failed', e); }
-}
 
 // "Position reached 23k times" / "<1k" / "1.2M" / "…" (not downloaded yet) / "Position never reached".
 function reachedText(stat) {
@@ -2593,7 +2621,7 @@ $('backup-btn').addEventListener('click', async () => {
     app: BACKUP_APP, version: 3, exportedAt: new Date().toISOString(),
     stats, selection: [...selection], hiddenStudies: [...hiddenStudies],
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
-    lichess: { popularity, evals },
+    lichess: { popularity, evals, masters },
     favorites,
     settings: { startMode, showComments, soundsOn, hideNames, opponentMode, liveMisses },
   };
@@ -2654,8 +2682,12 @@ $('restore-file').addEventListener('change', async e => {
     if (newer) popularity[epd] = s;
   }
   for (const [epd, ev] of Object.entries(lich.evals || {})) if (ev && typeof ev === 'object' && !evals[epd]) evals[epd] = ev;
-  if (lich.popularity || lich.evals) {
-    try { await cache.put('popularity', popularity); await cache.put('evals', evals); } catch (err) { console.warn('IndexedDB write failed', err); }
+  for (const [epd, s] of Object.entries(lich.masters || {})) {
+    if (!s || typeof s !== 'object' || !Array.isArray(s.moves)) continue;
+    if (!masters[epd] || (s.at || 0) > (masters[epd].at || 0)) masters[epd] = s;
+  }
+  if (lich.popularity || lich.evals || lich.masters) {
+    try { await cache.put('popularity', popularity); await cache.put('evals', evals); await cache.put('masters', masters); } catch (err) { console.warn('IndexedDB write failed', err); }
   }
   if (Array.isArray(b.hiddenStudies)) { hiddenStudies = new Set(b.hiddenStudies.filter(k => typeof k === 'string')); saveHidden(); }
   const st = b.settings || {};
@@ -2770,6 +2802,7 @@ async function init() {
   try {
     data = (await cache.get('studies')) || null;
     popularity = (await cache.get('popularity')) || {};
+    masters = (await cache.get('masters')) || {};
     evals = (await cache.get('evals')) || {};
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
