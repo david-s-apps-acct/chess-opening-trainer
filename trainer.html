@@ -437,7 +437,7 @@
           <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move. Click the speech-bubble icon to hide all this while you play a line, or show it again; a line through it means annotations are hidden during lines. They always appear once the line is over, and on the Studies page.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>When a line ends, the moves you got wrong this time get a violet background in the move list, and the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often it's played in Lichess games and, for your moves, how you did this time (e.g. "8 points this time", with red arrows for any wrong moves you played). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li>When a line ends, the moves you got wrong this time get a violet background in the move list, and the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often the position is reached, the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% accuracy this attempt", with red arrows for any wrong moves you played). Press <b>Next line</b> (or Enter) to continue.</li>
           <li><b>Position evaluation</b>: after each line, the summary shows Lichess's cloud evaluation of the final position in the status, e.g. "Line complete. Evaluation <b>+0.4</b>" (if you end a line early, it shows none). As on Lichess, it's from White's side: + means White is better, − means Black is better, and #3 / #-3 means White / Black mates in 3. Hover over it to see how deeply Lichess analyzed it. Lichess only has evaluations for positions in its cloud database (most common opening positions), so some line ends have none. They download automatically in the background; they're saved, and a chapter's move tree on the Studies page shows each at the end of its line. If a line ends without one, the summary fetches it on the spot.</li>
           <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
           <li>To make it harder, click the eye icon (<b>Hide chapter names during the line</b>) to hide the study and chapter names (a line through the eye means they're hidden; "Chapter" and "Study" show instead). The chapter's introductory comment is hidden with them. They always appear when the line ends, and the eye stays as you left it for the next line. Click it again to show them.</li>
@@ -2224,14 +2224,20 @@ function showPreview(el, line, i, thisTime = null) {
   const after = pos.clone();
   after.play(parseUci(m.uci));
   const countLine = h('div', { class: 'muted' }, reachedText(lichessStats[epdOf(fenOf(after))]));
-  const topLine = h('div', {}, h('b', {}, moveLabel(m)), h('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
-    ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(pos, m.san))));
+  // The practice move list: the move alone, then the position count, its share of all Lichess
+  // games and of master games (each left out until downloaded), then how this attempt went.
+  // The Studies page's move tree keeps the share on the top line, e.g. "2… Nc6 (Lichess games 62%)".
+  const topLine = thisTime ? h('div', {}, h('b', {}, moveLabel(m))) : h('div', {}, h('b', {}, moveLabel(m)),
+    h('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
+      ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(pos, m.san))));
+  const shareLines = thisTime ? [lichessShareText(pos, m.san), mastersShareText(pos, m.san)]
+    .map(t => t && h('div', { class: 'muted' }, t)) : [];
   if (m.user && thisTime) {
     const r = thisTime.attempt;
     shapes = answerArrows(pos, m, r ? countWrongs([{ s: r.seq }], m.san) : []);
-    // Just the points: the arrows already show the wrong moves played.
-    const result = !r ? 'Not tested this time' : `${plural(r.points, 'point')} this time`;
-    text = [topLine, countLine, h('div', {}, result)];
+    // Just the accuracy: the arrows already show the wrong moves played.
+    const result = !r ? 'Not tested this time' : `${r.points * 10}% accuracy this attempt`;
+    text = [topLine, countLine, ...shareLines, h('div', {}, result)];
   } else if (m.user) {
     const tries = triesOf(line, i);
     const wrong = countWrongs(tries, m.san);
@@ -2248,7 +2254,7 @@ function showPreview(el, line, i, thisTime = null) {
     shapes.push({ orig: f, dest: t, brush: mistake ? 'red' : 'white' });
     lastMove = compat.chessgroundMove(mv).slice(0, 2);
     pos.play(mv);
-    text = [topLine, countLine, m.side ? h('div', { class: 'muted' }, 'Alternative move, not tested') : null];
+    text = [topLine, countLine, ...shareLines, m.side ? h('div', { class: 'muted' }, 'Alternative move, not tested') : null];
   }
   box.firstChild.replaceChildren(...text.filter(Boolean));
   box.classList.remove('hidden');
@@ -2491,6 +2497,24 @@ function moveShare(pos, moveSan) {
   if (!totalOf(stat)) return 'no games';
   const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
+}
+
+// A move's share of a position's games as a percentage ("45%", "<1%", "0%"); null when the
+// statistics haven't been downloaded yet, '' when no game reaches the position.
+function shareOf(stat, moveSan) {
+  if (!stat) return null;
+  if (!totalOf(stat)) return '';
+  const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
+  return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
+}
+// The practice pop-up board's share lines, e.g. "74% played by all" and "45% played by masters".
+function lichessShareText(pos, moveSan) {
+  const s = shareOf(lichessStats[epdOf(fenOf(pos))], moveSan);
+  return s == null ? null : `${s || '0%'} played by all`;
+}
+function mastersShareText(pos, moveSan) {
+  const s = shareOf(masters[epdOf(fenOf(pos))], moveSan);
+  return s == null ? null : s ? `${s} played by masters` : 'Not in master games';
 }
 
 // ---------- Position evaluation (Lichess cloud) ----------
