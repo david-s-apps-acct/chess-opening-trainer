@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Opening Trainer tests</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; background: #161512; color: #bababa; margin: 16px; }
+  h1 { font-size: 18px; color: #ddd; }
+  .pass { color: #629924; } .fail { color: #df5353; }
+  pre { white-space: pre-wrap; background: #262421; padding: 8px; border-radius: 4px; }
+  #app-markup { display: none; }
+</style>
+</head>
+<body>
+<h1>Opening Trainer tests</h1>
+<p>Checks the app's core logic (scoring, penalties, masters moves, position names, and how chapters are
+turned into lines and trees) against known answers. Open over localhost (e.g. <code>python3 -m http.server</code>
+in this folder); the page loads <code>trainer.html</code> without starting the app, so nothing stored is touched.
+<a href="?record">Record a new snapshot</a> prints the current chapter structures, to paste into
+<code>EXPECTED_SNAPSHOT</code> after a deliberate change.</p>
+<div id="summary"></div>
+<div id="results"></div>
+<div id="app-markup"></div>
+
+<script type="module">
+// ---------- Loading the app without starting it ----------
+
+// The app's script, with its last line (init()) removed and a hook added that gives the tests
+// access to its functions and lets them set its state.
+const TEST_HOOK = `
+export const app = {
+  setLibrary(l) { library = l; forgetParsedChapters(); },
+  setPositions(p) { positions = p; },
+  setSettings(s) { settings = checkedSettings(s); },
+  setHistory(h) { history = h; },
+  checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
+  renderChapterTree: typeof renderChapterTree === 'function' ? renderChapterTree : chapterTree,
+  positionName, finalFen, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
+  parseStudyExport, errorKind, yourMoveIndexes,
+};`;
+
+async function loadApp() {
+  const html = await (await fetch('trainer.html', { cache: 'no-store' })).text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const script = doc.querySelector('script[type=module]');
+  script.remove();
+  document.getElementById('app-markup').innerHTML = doc.body.innerHTML; // the elements the app looks up
+  const code = script.textContent.replace(/\ninit\(\);\s*$/, '\n') + TEST_HOOK;
+  const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+  return (await import(url)).app;
+}
+
+// ---------- Test data ----------
+
+const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
+const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -';
+const AFTER_E4_E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -';
+
+const ITALIAN = `[Event "Test Study: Italian"]
+[Site "https://lichess.org/study/AAAAAAAA/BBBBBBBB"]
+[Orientation "white"]
+[Opening "Italian Game"]
+[ECO "C50"]
+
+{ The Italian Game: develop quickly. } 1. e4 { Best by test. } e5 2. Nf3 $1 ( 2. Nc3 ) 2... Nc6 ( 2... d6 3. d4 ( 3. Bc4 $6 3... h6 ) ) 3. Bc4 ( 3. Bb5 $2 { Not in this repertoire. } ) 3... Bc5 $10 { Giuoco Piano } ( 3... Nf6 4. Ng5 ) 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ *`;
+
+const SICILIAN = `[Event "Test Study: Sicilian"]
+[Site "https://lichess.org/study/AAAAAAAA/CCCCCCCC"]
+[Orientation "black"]
+
+1. e4 c5 2. Nf3 d6 ( 2... Nc6 3. d4 ( 3. Bb5 g6 ) 3... cxd4 ) 3. d4 cxd4 4. Nxd4 Nf6 *`;
+
+const LIBRARY = {
+  fetchedAt: 0, username: 'tester', studies: [{ id: 'AAAAAAAA', name: 'Test Study', chapters: [
+    { key: 'AAAAAAAA/BBBBBBBB', id: 'BBBBBBBB', name: 'Italian', pgn: ITALIAN },
+    { key: 'AAAAAAAA/CCCCCCCC', id: 'CCCCCCCC', name: 'Sicilian', pgn: SICILIAN },
+  ] }],
+};
+
+const explorer = (moves, extra = {}) => {
+  const list = moves.map(([san, n]) => ({ san, uci: '', white: n, draws: 0, black: 0 }));
+  return { white: list.reduce((s, m) => s + m.white, 0), draws: 0, black: 0, moves: list, ...extra };
+};
+
+// Master games at the start: e4 40%, d4 30%, Nf3 15%, c4 exactly 10%, g3 5%.
+const POSITIONS = {
+  [START]: { masters: explorer([['e4', 400], ['d4', 300], ['Nf3', 150], ['c4', 100], ['g3', 50]]),
+             lichess: explorer([['e4', 500], ['d4', 300], ['c4', 100], ['Nf3', 100]]) },
+  [AFTER_E4]: { lichess: explorer([['c5', 300], ['e5', 300], ['e6', 200]], { opening: { eco: 'B00', name: "King's Pawn Game" } }) },
+  [AFTER_E4_E5]: { lichess: explorer([['Nf3', 700], ['Nc3', 100]], { opening: { eco: 'C20', name: "King's Pawn Game" } }) },
+};
+
+// ---------- A tiny test runner ----------
+
+const results = [];
+function check(name, actual, expected) {
+  const a = JSON.stringify(actual), e = JSON.stringify(expected);
+  results.push({ name, ok: a === e, detail: a === e ? '' : `expected ${e}\n     got ${a}` });
+}
+
+// ---------- The chapter structures, as plain data (compared with the recorded snapshot) ----------
+
+function snapshot(app) {
+  const out = {};
+  for (const key of ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']) {
+    const ch = app.chapterByKey(key);
+    const lines = app.chapterLines(ch);
+    out[key] = {
+      lines: lines.map(l => ({
+        key: l.key, yourColor: l.yourColor, isMainLine: l.isMainLine, finalFen: app.finalFen(l),
+        moves: l.moves.map(m => ({
+          san: m.san, uci: m.uci, isYours: !!m.isYours, moveNumber: m.moveNumber, color: m.color,
+          epdBefore: m.epdBefore ?? m.positionBefore,
+          notes: m.notes ?? null,
+          alternatives: m.isYours ? Object.entries(m.alternatives || {}).map(([san, a]) => [san, a.nags, a.notes ?? null, a.reply ? a.reply.san : null]) : null,
+          replies: (m.replies || null) && m.replies.map(r => [r.san, r.nags]),
+        })),
+        names: l.moves.map((m, i) => app.positionName(l, i)),
+      })),
+      alternativeCount: app.alternativeCount(ch),
+      branchKeys: app.branchKeys(ch),
+      tree: app.renderChapterTree(ch).innerHTML.replace(/<svg.*?<\/svg>/g, '<svg/>'),
+    };
+  }
+  out.positions = [...app.allStudyPositions()].map(([epd, p]) => [epd, p.fen, p.depth, p.parents, p.onMainLine, p.isBranchPoint, [...p.studyMoves].sort()]);
+  return out;
+}
+
+// ---------- The tests ----------
+
+function run(app) {
+  app.setLibrary(structuredClone(LIBRARY));
+  app.setPositions(structuredClone(POSITIONS));
+  app.setHistory({ moves: {}, lines: {} });
+  app.setSettings({});
+
+  // Settings
+  check('settings: defaults', app.checkedSettings({}), { startMode: 'start', opponentMode: 'misses', sounds: false,
+    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, weaknessCount: 25, weaknessMaxAccuracy: 70 });
+  check('settings: invalid values fall back', app.checkedSettings({ startMode: 'x', mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
+
+  // Masters moves: top N and 10% or more
+  const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
+  check('masters move: top 5, 10% or more', top(5), ['e4', 'd4', 'Nf3', 'c4']);
+  check('masters move: top 3', top(3), ['e4', 'd4', 'Nf3']);
+  check('masters move: top 1', top(1), ['e4']);
+  check('masters move: no data', app.isMasterMove(AFTER_E4, 'c5'), false);
+  app.setSettings({});
+
+  // Points for one attempt (white's first move is e4; its alternatives: none; masters data at the start)
+  const italian = app.chapterLines(app.chapterByKey('AAAAAAAA/BBBBBBBB'));
+  const e4 = italian[0].moves[0];
+  const nf3 = italian[0].moves[2]; // 2. Nf3, with alternative 2. Nc3 (unmarked)
+  const bc4 = italian[0].moves[4]; // 3. Bc4, with alternative 3. Bb5? (marked)
+  check('points: first try', app.pointsFor(['e4'], e4), 10);
+  check('points: masters move', app.pointsFor(['d4', 'e4'], e4), 8);
+  check('points: wrong move', app.pointsFor(['g3', 'e4'], e4), 5);
+  check('points: two wrong moves reach 0', app.pointsFor(['g3', 'a3', 'e4'], e4), 0);
+  check('points: the same wrong move twice costs twice', app.pointsFor(['d4', 'd4', 'e4'], e4), 6);
+  check('points: hint', app.pointsFor(['hint', 'e4'], e4), 0);
+  check('points: alternative', app.pointsFor(['Nc3', 'Nf3'], nf3), 8);
+  check('points: marked alternative', app.pointsFor(['Bb5', 'Bc4'], bc4), 5);
+  check('points: + and # ignored', app.pointsFor(['e4'], { ...e4, san: 'e4+' }), 10);
+  app.setSettings({ penalties: { alternative: 0, masters: 1, error: 3, hint: 4 } });
+  check('points: custom penalties', [app.pointsFor(['Nc3', 'Nf3'], nf3), app.pointsFor(['d4', 'e4'], e4), app.pointsFor(['g3', 'e4'], e4), app.pointsFor(['hint', 'e4'], e4)], [10, 9, 7, 6]);
+  app.setSettings({});
+  check('error kinds', [app.errorKind(nf3, 'Nc3'), app.errorKind(bc4, 'Bb5'), app.errorKind(e4, 'd4'), app.errorKind(e4, 'g3')], ['alternative', 'marked', 'masters', 'wrong']);
+
+  // Scores: weighted average, newest counts most
+  check('score: none', app.scoreOf([]), null);
+  check('score: weighted', Math.round(app.scoreOf([0, 8, 10, 10].map(points => ({ tried: [], points }))) * 1000) / 1000, 0.747);
+
+  // Ranks
+  check('rank: ties share a rank', ['e5', 'c5', 'e6', 'a6'].map(s => app.moveRank(POSITIONS[AFTER_E4].lichess, s)), [1, 1, 3, null]);
+
+  // Wrong moves counted over attempts
+  check('wrong move counts', app.wrongMoveCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['c4', 1]]);
+
+  // Move keys
+  check('move key', app.moveKey(italian[0], 2), 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3');
+
+  // Position names (the chess-book convention)
+  const names = italian[0].moves.map((m, i) => app.positionName(italian[0], i));
+  check('position name: start', names[0], 'Starting position');
+  check('position name: a named position still lists its last move', names[2], "King's Pawn Game, 1… e5");
+  check('position name: moves since the last name', names[4], "King's Pawn Game, 2. ♘f3 ♘c6");
+
+  // Study export parsing
+  const parsed = app.parseStudyExport(ITALIAN + '\n\n' + SICILIAN, 'tester');
+  check('study export', parsed.studies.map(s => [s.id, s.name, s.chapters.map(c => [c.key, c.name])]),
+    [['AAAAAAAA', 'Test Study', [['AAAAAAAA/BBBBBBBB', 'Italian'], ['AAAAAAAA/CCCCCCCC', 'Sicilian']]]]);
+
+  // The chapter structures, compared with the recorded snapshot
+  const snap = snapshot(app);
+  if (location.search.includes('record')) {
+    document.getElementById('results').append(Object.assign(document.createElement('pre'), { textContent: 'const EXPECTED_SNAPSHOT = ' + JSON.stringify(snap) + ';' }));
+  } else if (typeof EXPECTED_SNAPSHOT !== 'undefined') {
+    for (const [k, v] of Object.entries(EXPECTED_SNAPSHOT)) {
+      if (k === 'positions') check('snapshot: study positions', snap.positions, v);
+      else for (const part of Object.keys(v)) check(`snapshot: ${k} ${part}`, snap[k][part], v[part]);
+    }
+  }
+}
+
+// ---------- Report ----------
+
+try {
+  const app = await loadApp();
+  run(app);
+} catch (e) {
+  results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
+}
+const failed = results.filter(r => !r.ok);
+document.getElementById('summary').innerHTML = failed.length
+  ? `<p class="fail"><b>${failed.length} of ${results.length} checks failed.</b></p>`
+  : `<p class="pass"><b>All ${results.length} checks passed.</b></p>`;
+document.getElementById('results').prepend(...results.map(r => Object.assign(document.createElement('pre'),
+  { className: r.ok ? 'pass' : 'fail', textContent: (r.ok ? '✓ ' : '✗ ') + r.name + (r.detail ? '\n     ' + r.detail : '') })));
+window.testResults = { passed: results.length - failed.length, failed: failed.map(r => r.name) };
+</script>
+<script>
+// The chapter structures as recorded with ?record (before the chapter-tree restructuring).
+const EXPECTED_SNAPSHOT = {"AAAAAAAA/BBBBBBBB":{"lines":[{"key":"AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d4 exd4 cxd4 Bb4+","yourColor":"white","isMainLine":true,"finalFen":"r1bqk2r/pppp1ppp/2n2n2/8/1bBPP3/5N2/PP3PPP/RNBQK2R w KQkq - 1 7","moves":[{"san":"e4","uci":"e2e4","isYours":true,"moveNumber":1,"color":"white","epdBefore":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","notes":{"text":["Best by test."],"nags":[]},"alternatives":[],"replies":null},{"san":"e5","uci":"e7e5","isYours":false,"moveNumber":1,"color":"black","epdBefore":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"Nf3","uci":"g1f3","isYours":true,"moveNumber":2,"color":"white","epdBefore":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","notes":{"text":[],"nags":[1]},"alternatives":[["Nc3",[],null,null]],"replies":null},{"san":"Nc6","uci":"b8c6","isYours":false,"moveNumber":2,"color":"black","epdBefore":"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","notes":null,"alternatives":null,"replies":[["Nc6",[]],["d6",[]]]},{"san":"Bc4","uci":"f1c4","isYours":true,"moveNumber":3,"color":"white","epdBefore":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","notes":null,"alternatives":[["Bb5",[2],{"text":["Not in this repertoire."],"nags":[2]},null]],"replies":null},{"san":"Bc5","uci":"f8c5","isYours":false,"moveNumber":3,"color":"black","epdBefore":"r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","notes":{"text":["Giuoco Piano"],"nags":[10]},"alternatives":null,"replies":[["Bc5",[10]],["Nf6",[]]]},{"san":"c3","uci":"c2c3","isYours":true,"moveNumber":4,"color":"white","epdBefore":"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","notes":null,"alternatives":[],"replies":null},{"san":"Nf6","uci":"g8f6","isYours":false,"moveNumber":4,"color":"black","epdBefore":"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R b KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"d4","uci":"d2d4","isYours":true,"moveNumber":5,"color":"white","epdBefore":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w KQkq -","notes":null,"alternatives":[],"replies":null},{"san":"exd4","uci":"e5d4","isYours":false,"moveNumber":5,"color":"black","epdBefore":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"cxd4","uci":"c3d4","isYours":true,"moveNumber":6,"color":"white","epdBefore":"r1bqk2r/pppp1ppp/2n2n2/2b5/2BpP3/2P2N2/PP3PPP/RNBQK2R w KQkq -","notes":null,"alternatives":[],"replies":null},{"san":"Bb4+","uci":"c5b4","isYours":false,"moveNumber":6,"color":"black","epdBefore":"r1bqk2r/pppp1ppp/2n2n2/2b5/2BPP3/5N2/PP3PPP/RNBQK2R b KQkq -","notes":null,"alternatives":null,"replies":null}],"names":["Starting position","King's Pawn Game, 1. e4","King's Pawn Game, 1… e5","King's Pawn Game, 2. ♘f3","King's Pawn Game, 2. ♘f3 ♘c6","King's Pawn Game, 2. ♘f3 ♘c6 3. ♗c4","King's Pawn Game, 2. ♘f3 ♘c6 3. ♗c4 ♗c5","King's Pawn Game, 2. ♘f3 ♘c6 3. ♗c4 ♗c5 4. c3","King's Pawn Game, 2. ♘f3 ♘c6 3. ♗c4 ♗c5 4. c3 ♘f6","King's Pawn Game, … 2… ♘c6 3. ♗c4 ♗c5 4. c3 ♘f6 5. d4","King's Pawn Game, … 3. ♗c4 ♗c5 4. c3 ♘f6 5. d4 exd4","King's Pawn Game, … 3… ♗c5 4. c3 ♘f6 5. d4 exd4 6. cxd4"]},{"key":"AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5","yourColor":"white","isMainLine":false,"finalFen":"r1bqkb1r/pppp1ppp/2n2n2/4p1N1/2B1P3/8/PPPP1PPP/RNBQK2R b KQkq - 5 4","moves":[{"san":"e4","uci":"e2e4","isYours":true,"moveNumber":1,"color":"white","epdBefore":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","notes":{"text":["Best by test."],"nags":[]},"alternatives":[],"replies":null},{"san":"e5","uci":"e7e5","isYours":false,"moveNumber":1,"color":"black","epdBefore":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"Nf3","uci":"g1f3","isYours":true,"moveNumber":2,"color":"white","epdBefore":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","notes":{"text":[],"nags":[1]},"alternatives":[["Nc3",[],null,null]],"replies":null},{"san":"Nc6","uci":"b8c6","isYours":false,"moveNumber":2,"color":"black","epdBefore":"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","notes":null,"alternatives":null,"replies":[["Nc6",[]],["d6",[]]]},{"san":"Bc4","uci":"f1c4","isYours":true,"moveNumber":3,"color":"white","epdBefore":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","notes":null,"alternatives":[["Bb5",[2],{"text":["Not in this repertoire."],"nags":[2]},null]],"replies":null},{"san":"Nf6","uci":"g8f6","isYours":false,"moveNumber":3,"color":"black","epdBefore":"r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","notes":null,"alternatives":null,"replies":[["Bc5",[10]],["Nf6",[]]]},{"san":"Ng5","uci":"f3g5","isYours":true,"moveNumber":4,"color":"white","epdBefore":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","notes":null,"alternatives":[],"replies":null}],"names":["Starting position","King's Pawn Game, 1. e4","King's Pawn Game, 1… e5","King's Pawn Game, 2. ♘f3","King's Pawn Game, 2. ♘f3 ♘c6","King's Pawn Game, 2. ♘f3 ♘c6 3. ♗c4","King's Pawn Game, 2. ♘f3 ♘c6 3. ♗c4 ♘f6"]},{"key":"AAAAAAAA/BBBBBBBB|e4 e5 Nf3 d6 d4","yourColor":"white","isMainLine":false,"finalFen":"rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3","moves":[{"san":"e4","uci":"e2e4","isYours":true,"moveNumber":1,"color":"white","epdBefore":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","notes":{"text":["Best by test."],"nags":[]},"alternatives":[],"replies":null},{"san":"e5","uci":"e7e5","isYours":false,"moveNumber":1,"color":"black","epdBefore":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"Nf3","uci":"g1f3","isYours":true,"moveNumber":2,"color":"white","epdBefore":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","notes":{"text":[],"nags":[1]},"alternatives":[["Nc3",[],null,null]],"replies":null},{"san":"d6","uci":"d7d6","isYours":false,"moveNumber":2,"color":"black","epdBefore":"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","notes":null,"alternatives":null,"replies":[["Nc6",[]],["d6",[]]]},{"san":"d4","uci":"d2d4","isYours":true,"moveNumber":3,"color":"white","epdBefore":"rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","notes":null,"alternatives":[["Bc4",[6],{"text":[],"nags":[6]},"h6"]],"replies":null}],"names":["Starting position","King's Pawn Game, 1. e4","King's Pawn Game, 1… e5","King's Pawn Game, 2. ♘f3","King's Pawn Game, 2. ♘f3 d6"]}],"alternativeCount":3,"branchKeys":["AAAAAAAA/BBBBBBBB|e4 e5","AAAAAAAA/BBBBBBBB|e4 e5 Nf3","AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6","AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6 Bc4","AAAAAAAA/BBBBBBBB|e4 e5 Nf3 d6"],"tree":"<div class=\"tree-line\"><span class=\"tree-move-number\">1. </span><span class=\"tree-move untried\" tabindex=\"0\">e4</span><span class=\"bubble\" tabindex=\"0\" role=\"button\" aria-label=\"Study comment\"><svg/></span> <span class=\"tree-move opp\" tabindex=\"0\">e5</span> <span class=\"tree-move-number\">2. </span><span class=\"tree-move untried quality-good\" tabindex=\"0\">♘f3</span><span class=\"glyph good\" aria-label=\"Good move\">!</span> <button class=\"tree-toggle\" aria-expanded=\"false\" title=\"Show 1 variation\">+</button> <span class=\"tree-move opp\" tabindex=\"0\">♘c6</span> <button class=\"tree-toggle\" aria-expanded=\"false\" title=\"Show 1 variation\">+</button> <span class=\"tree-move-number\">3. </span><span class=\"tree-move untried\" tabindex=\"0\">♗c4</span> <button class=\"tree-toggle\" aria-expanded=\"false\" title=\"Show 1 variation\">+</button> <span class=\"tree-move opp\" tabindex=\"0\">♗c5</span><span class=\"bubble\" tabindex=\"0\" role=\"button\" aria-label=\"Study comment\"><svg/></span> <button class=\"tree-toggle\" aria-expanded=\"false\" title=\"Show 1 variation\">+</button> <span class=\"tree-move-number\">4. </span><span class=\"tree-move untried\" tabindex=\"0\">c3</span> <span class=\"tree-move opp\" tabindex=\"0\">♘f6</span> <span class=\"tree-move-number\">5. </span><span class=\"tree-move untried\" tabindex=\"0\">d4</span> <span class=\"tree-move opp\" tabindex=\"0\">exd4</span> <span class=\"tree-move-number\">6. </span><span class=\"tree-move untried\" tabindex=\"0\">cxd4</span> <span class=\"tree-move opp\" tabindex=\"0\">♗b4+</span> </div>"},"AAAAAAAA/CCCCCCCC":{"lines":[{"key":"AAAAAAAA/CCCCCCCC|e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6","yourColor":"black","isMainLine":true,"finalFen":"rnbqkb1r/pp2pppp/3p1n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5","moves":[{"san":"e4","uci":"e2e4","isYours":false,"moveNumber":1,"color":"white","epdBefore":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"c5","uci":"c7c5","isYours":true,"moveNumber":1,"color":"black","epdBefore":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","notes":null,"alternatives":[],"replies":null},{"san":"Nf3","uci":"g1f3","isYours":false,"moveNumber":2,"color":"white","epdBefore":"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"d6","uci":"d7d6","isYours":true,"moveNumber":2,"color":"black","epdBefore":"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","notes":null,"alternatives":[["Nc6",[],null,"d4"]],"replies":null},{"san":"d4","uci":"d2d4","isYours":false,"moveNumber":3,"color":"white","epdBefore":"rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"cxd4","uci":"c5d4","isYours":true,"moveNumber":3,"color":"black","epdBefore":"rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -","notes":null,"alternatives":[],"replies":null},{"san":"Nxd4","uci":"f3d4","isYours":false,"moveNumber":4,"color":"white","epdBefore":"rnbqkbnr/pp2pppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq -","notes":null,"alternatives":null,"replies":null},{"san":"Nf6","uci":"g8f6","isYours":true,"moveNumber":4,"color":"black","epdBefore":"rnbqkbnr/pp2pppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq -","notes":null,"alternatives":[],"replies":null}],"names":["Starting position","King's Pawn Game, 1. e4","King's Pawn Game, 1… c5","King's Pawn Game, 1… c5 2. ♘f3","King's Pawn Game, 1… c5 2. ♘f3 d6","King's Pawn Game, 1… c5 2. ♘f3 d6 3. d4","King's Pawn Game, 1… c5 2. ♘f3 d6 3. d4 cxd4","King's Pawn Game, 1… c5 2. ♘f3 d6 3. d4 cxd4 4. ♘xd4"]}],"alternativeCount":1,"branchKeys":["AAAAAAAA/CCCCCCCC|e4 c5 Nf3","AAAAAAAA/CCCCCCCC|e4 c5 Nf3 Nc6"],"tree":"<div class=\"tree-line\"><span class=\"tree-move-number\">1. </span><span class=\"tree-move opp\" tabindex=\"0\">e4</span> <span class=\"tree-move untried\" tabindex=\"0\">c5</span> <span class=\"tree-move-number\">2. </span><span class=\"tree-move opp\" tabindex=\"0\">♘f3</span> <span class=\"tree-move untried\" tabindex=\"0\">d6</span> <button class=\"tree-toggle\" aria-expanded=\"false\" title=\"Show 1 variation\">+</button> <span class=\"tree-move-number\">3. </span><span class=\"tree-move opp\" tabindex=\"0\">d4</span> <span class=\"tree-move untried\" tabindex=\"0\">cxd4</span> <span class=\"tree-move-number\">4. </span><span class=\"tree-move opp\" tabindex=\"0\">♘xd4</span> <span class=\"tree-move untried\" tabindex=\"0\">♘f6</span> </div>"},"positions":[["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",0,[],true,false,["e4"]],["rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",1,[{"epd":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","san":"e4"},{"epd":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","san":"e4"}],true,false,["c5","e5"]],["rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",2,[{"epd":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","san":"e5"}],true,false,["Nc3","Nf3"]],["rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",3,[{"epd":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","san":"Nf3"}],true,true,["Nc6","d6"]],["r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",4,[{"epd":"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","san":"Nc6"}],true,false,["Bb5","Bc4"]],["r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",5,[{"epd":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"Bc4"}],true,true,["Bc5","Nf6"]],["r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",6,[{"epd":"r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","san":"Bc5"}],true,false,["c3"]],["r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R b KQkq -","r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R b KQkq - 0 4",7,[{"epd":"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","san":"c3"}],true,false,["Nf6"]],["r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w KQkq -","r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w KQkq - 1 5",8,[{"epd":"r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R b KQkq -","san":"Nf6"}],true,false,["d4"]],["r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq -","r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq - 0 5",9,[{"epd":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w KQkq -","san":"d4"}],true,false,["exd4"]],["r1bqk2r/pppp1ppp/2n2n2/2b5/2BpP3/2P2N2/PP3PPP/RNBQK2R w KQkq -","r1bqk2r/pppp1ppp/2n2n2/2b5/2BpP3/2P2N2/PP3PPP/RNBQK2R w KQkq - 0 6",10,[{"epd":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq -","san":"exd4"}],true,false,["cxd4"]],["r1bqk2r/pppp1ppp/2n2n2/2b5/2BPP3/5N2/PP3PPP/RNBQK2R b KQkq -","r1bqk2r/pppp1ppp/2n2n2/2b5/2BPP3/5N2/PP3PPP/RNBQK2R b KQkq - 0 6",11,[{"epd":"r1bqk2r/pppp1ppp/2n2n2/2b5/2BpP3/2P2N2/PP3PPP/RNBQK2R w KQkq -","san":"cxd4"}],true,false,["Bb4"]],["r1bqk2r/pppp1ppp/2n2n2/8/1bBPP3/5N2/PP3PPP/RNBQK2R w KQkq -","r1bqk2r/pppp1ppp/2n2n2/8/1bBPP3/5N2/PP3PPP/RNBQK2R w KQkq - 1 7",12,[{"epd":"r1bqk2r/pppp1ppp/2n2n2/2b5/2BPP3/5N2/PP3PPP/RNBQK2R b KQkq -","san":"Bb4"}],true,false,[]],["r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",6,[{"epd":"r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","san":"Nf6"}],false,false,["Ng5"]],["r1bqkb1r/pppp1ppp/2n2n2/4p1N1/2B1P3/8/PPPP1PPP/RNBQK2R b KQkq -","r1bqkb1r/pppp1ppp/2n2n2/4p1N1/2B1P3/8/PPPP1PPP/RNBQK2R b KQkq - 5 4",7,[{"epd":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","san":"Ng5"}],false,false,[]],["r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",5,[{"epd":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"Bb5"}],false,false,[]],["rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3",4,[{"epd":"rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","san":"d6"}],false,false,["Bc4","d4"]],["rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -","rnbqkbnr/ppp2ppp/3p4/4p3/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",5,[{"epd":"rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"d4"}],false,false,[]],["rnbqkbnr/ppp2ppp/3p4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","rnbqkbnr/ppp2ppp/3p4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 3",5,[{"epd":"rnbqkbnr/ppp2ppp/3p4/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"Bc4"}],false,false,["h6"]],["rnbqkbnr/ppp2pp1/3p3p/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","rnbqkbnr/ppp2pp1/3p3p/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",6,[{"epd":"rnbqkbnr/ppp2ppp/3p4/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","san":"h6"}],false,false,[]],["rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq -","rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2",3,[{"epd":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","san":"Nc3"}],false,false,[]],["rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",2,[{"epd":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -","san":"c5"}],true,false,["Nf3"]],["rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",3,[{"epd":"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -","san":"Nf3"}],true,false,["Nc6","d6"]],["rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3",4,[{"epd":"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","san":"d6"}],true,false,["d4"]],["rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -","rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",5,[{"epd":"rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"d4"}],true,false,["cxd4"]],["rnbqkbnr/pp2pppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq -","rnbqkbnr/pp2pppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4",6,[{"epd":"rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -","san":"cxd4"}],true,false,["Nxd4"]],["rnbqkbnr/pp2pppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq -","rnbqkbnr/pp2pppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq - 0 4",7,[{"epd":"rnbqkbnr/pp2pppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq -","san":"Nxd4"}],true,false,["Nf6"]],["rnbqkb1r/pp2pppp/3p1n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq -","rnbqkb1r/pp2pppp/3p1n2/8/3NP3/8/PPP2PPP/RNBQKB1R w KQkq - 1 5",8,[{"epd":"rnbqkbnr/pp2pppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq -","san":"Nf6"}],true,false,[]],["r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",4,[{"epd":"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -","san":"Nc6"}],false,true,["Bb5","d4"]],["r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -","r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3",5,[{"epd":"r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"d4"}],false,false,["cxd4"]],["r1bqkbnr/pp1ppppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq -","r1bqkbnr/pp1ppppp/2n5/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4",6,[{"epd":"r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -","san":"cxd4"}],false,false,[]],["r1bqkbnr/pp1ppppp/2n5/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","r1bqkbnr/pp1ppppp/2n5/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",5,[{"epd":"r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -","san":"Bb5"}],false,false,["g6"]],["r1bqkbnr/pp1ppp1p/2n3p1/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -","r1bqkbnr/pp1ppp1p/2n3p1/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4",6,[{"epd":"r1bqkbnr/pp1ppppp/2n5/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -","san":"g6"}],false,false,[]]]};
+</script>
+</body>
+</html>

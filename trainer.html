@@ -1315,7 +1315,7 @@ function renderStudies() {
     });
     const studyEl = element('div', { class: 'study' + (isHidden ? ' hidden-study' : '') },
       element('div', { class: 'row study-row' },
-        element('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-openStudies': String(open),
+        element('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-expanded': String(open),
           onclick: () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
         box,
         element('span', { class: 'name' }, element('label', { for: 'st-' + study.id }, study.name),
@@ -1335,11 +1335,11 @@ function renderStudies() {
         const allOpen = allVariationsOpen.has(ch.key);
         list.append(element('div', { class: 'row chapter-row' },
           chLines.length
-            ? element('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-openStudies': String(chOpen),
+            ? element('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(chOpen),
                 onclick: () => { chOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); } }, chOpen ? '▾' : '▸')
             : element('span', { class: 'toggle-space' }),
           keys.length
-            ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-openStudies': String(allOpen),
+            ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen),
                 onclick: () => {
                   for (const k of keys) allOpen ? openBranches.delete(k) : openBranches.add(k);
                   if (allOpen) allVariationsOpen.delete(ch.key);
@@ -1422,7 +1422,7 @@ function chapterTree(ch) {
       if (alts.length) {
         const key = ch.key + '|' + path.map(e => e.san).join(' ');
         const open = openBranches.has(key);
-        flow.append(element('button', { class: 'tree-toggle', 'aria-openStudies': String(open),
+        flow.append(element('button', { class: 'tree-toggle', 'aria-expanded': String(open),
           title: open ? 'Hide variations' : `Show ${plural(alts.length, 'variation')}`,
           onclick: () => { open ? openBranches.delete(key) : openBranches.add(key); renderStudies(); } }, open ? '−' : '+'), ' ');
         if (open) {

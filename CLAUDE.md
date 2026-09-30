@@ -36,6 +36,8 @@ Open `trainer.html` in a browser. It needs internet access, for Lichess and the 
 
 For testing without a real token: serve the folder over localhost (the Browser pane blocks storage on `file://`), seed IndexedDB key `studies` in database `chess-opening-trainer`, or stub `window.fetch` for `/api/account` and `/export.pgn` (and `explorer.lichess.org` for move statistics).
 
+**Tests:** `tests.html` (open over localhost) loads `trainer.html` without starting the app and checks the core logic (scoring, penalties, masters moves, position names, study parsing) plus a recorded snapshot of how the test chapters become lines, trees and positions. Run it after any change to that logic; all checks should pass. After a deliberate change to the chapter structures, re-record the snapshot with `tests.html?record` and replace `EXPECTED_SNAPSHOT`.
+
 ## Where things are
 
 - Natural-language selection ("Describe what to practice") was removed; its spec and code are archived in `archive/natural-language-selection.md` (not loaded by the app) in case it's rebuilt.
