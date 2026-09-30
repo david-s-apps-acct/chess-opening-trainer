@@ -61,7 +61,7 @@
   button.primary { background: var(--accent); color: var(--accent-text); font-weight: 600; }
   button.primary:hover:not(:disabled) { background: #4ba0ef; color: var(--accent-text); }
   a { color: var(--accent); }
-  input[type=text], input[type=password], input[type=number], select { background: var(--surface-2) !important; border-color: var(--border) !important; color: var(--text); }
+  input[type=text], input[type=password], select { background: var(--surface-2) !important; border-color: var(--border) !important; color: var(--text); }
   .muted { color: var(--muted); }
   .hidden { display: none !important; }
 
@@ -90,8 +90,6 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 
-  /* Natural-language selection */
-
   /* Help screen */
   .help { max-width: 760px; }
   .options.help .card { max-width: none; }
@@ -103,21 +101,10 @@
   .help summary { cursor: pointer; color: var(--accent); }
   .help details[open] summary { margin-bottom: 4px; }
 
-  /* Stats screen */
-  .stat-line { flex: 1; min-width: 0; }
-  .stat-line b { font-weight: 600; }
-  .stat-nums { display: flex; gap: 16px; font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .stat-nums .rate { min-width: 0; text-align: left; }
-
   /* Options screen */
   .options { display: flex; flex-direction: column; gap: 16px; }
   .options .card { max-width: 640px; }
-  .options h3 { font-size: 14px; margin: 18px 0 4px; }
-  .options h3:first-of-type { margin-top: 4px; }
   .options p { margin: 4px 0; }
-  .choice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
-  .choice input { margin-top: 3px; accent-color: var(--accent); }
-  .choice b { display: block; }
 
   /* Selection screen */
   .toolbar {
@@ -125,14 +112,12 @@
     padding: 10px 12px; margin-bottom: 8px;
     background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow);
   }
-  .toolbar .spacer { margin-left: auto; }
   .toolbar label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
   .toolbar .weak { font-weight: 400; }
   .toolbar .start-mode { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-  .toolbar .start-mode label { white-space: nowrap; }
+  .toolbar .start-mode label { white-space: nowrap; font-weight: 400; }
   .toolbar .filters { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-top: 8px; border-top: 1px solid var(--border); }
   .toolbar .filters label { display: flex; align-items: center; gap: 6px; }
-  .toolbar .start-mode label { font-weight: 400; }
   /* Studies page: the list on the left, the selection controls on the right. */
   .select-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
   .side-panel { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 0; position: sticky; top: 16px; }
@@ -147,7 +132,6 @@
   button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
   .toggle-space { width: 24px; flex: none; }
   .side-panel .weak { white-space: nowrap; }
-  .toolbar .weak input[type=number] { width: 56px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
   .studies { background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); overflow: hidden; }
   .study + .study { border-top: 1px solid var(--border); }
   .row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; min-height: 40px; }
@@ -172,7 +156,7 @@
   .rate { font-size: 13px; color: var(--muted); white-space: nowrap; min-width: 150px; text-align: right; font-variant-numeric: tabular-nums; }
   /* Move scores: only moves that need work are highlighted, with a violet background (a color
      chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
-     the tint, the weaker the move. 100%: plain; never tried: grey with a dotted underline. */
+     the tint, the weaker the move. 100% and never tried: plain. */
   .s90, .s70, .s0 { border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
   .s90 { background: rgba(138, 92, 246, .22); }
   .s70 { background: rgba(138, 92, 246, .42); }
@@ -222,10 +206,9 @@
   .comment-pop b { color: #fff; }
   .comment-pop .muted { color: rgba(255, 255, 255, .85); }
   .hint-note { margin-top: 6px; color: var(--text); }
-  .glyph { cursor: help; }
   .note-move { font-weight: 600; }
   #q-chapter .bubble { vertical-align: -1px; }
-  .glyph { font-weight: 700; margin-left: 4px; }
+  .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   /* Lichess's glyph colors (default dark theme, from lila's _theme.default.scss). */
   .glyph.good { color: #629924; }
   .glyph.brilliant { color: #21c43a; }
@@ -251,7 +234,6 @@
   #q-opening, #q-eco { font-size: 13px; }
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status.bad { color: var(--bad); }
-  .summary ul { margin: 6px 0 0; padding-left: 20px; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
   .promo {
@@ -261,7 +243,6 @@
   }
   .promo div { display: flex; gap: 8px; background: var(--surface); padding: 10px; border-radius: 8px; }
   .promo button { position: relative; width: 64px; height: 64px; padding: 0; }
-
 
   @media (max-width: 800px) {
     .select-layout { grid-template-columns: 1fr; }
@@ -437,7 +418,7 @@
           <li>Click the first ▸ next to a chapter to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. The end of each line shows its Lichess evaluation. Hover over a move to see the small board.</li>
           <li><b>Save favorites</b> remembers the chapters ticked now; <b>Recall favorites</b> ticks exactly those chapters again.</li>
           <li>To hide a study you no longer use, click the eye at the top (next to the favorites buttons): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
-          <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, how often you get its moves right (e.g. "82%" (hover over it for an explanation)), highlighted the same way as your moves (see Your statistics).</li>
+          <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average score of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
           <li><b>Opponent's moves</b>: <b>Main line only</b> (the opponent always plays the chapter's main move), <b>Prefer most common moves</b> (replies played most often on Lichess come up most; until their statistics have downloaded, replies without them are treated as equally likely, so it works like All moves equally for them), <b>Prefer opponent's mistakes</b> (replies you marked ?, ?? or ?! come up about 4 times as often), <b>Prefer lines I miss</b> (the default: lines with moves you often get wrong come up more), or <b>All moves equally</b> (every reply in your study is equally likely).</li>
         </ul>
       </div>
@@ -451,13 +432,13 @@
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and counts as a wrong try; an unmarked one just gets "also in your study, but it isn't the main move" and doesn't count against you.</li>
-          <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Either counts as getting the move wrong.</li>
-          <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already had a wrong try or a hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
+          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs 10 points; an unmarked one gets "also in your study, but it isn't the main move" and costs 2 points (see Your statistics).</li>
+          <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Either costs 10 points, so the move scores 0 this time.</li>
+          <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The chapter's introductory comment is a bubble next to the chapter name. After a wrong move, <b>Hint</b> also shows what your study says about that move. Click the speech-bubble icon to hide all this while you play a line, or show it again; a line through it means annotations are hidden during lines. They always appear once the line is over, and on the Studies page.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>When a line ends, the moves you got wrong this time get a violet background in the move list, and the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often it's played in Lichess games and, for your moves, how you did this time ("Correct first try" or "Wrong this time", with red arrows for any wrong moves you played). Press <b>Next line</b> (or Enter) to continue.</li>
-          <li><b>Position evaluation</b>: after each line, the summary shows Lichess's cloud evaluation of the final position in the status, e.g. "Line complete. Evaluation <b>+0.4</b>" (if you end a line early, the summary shows only the moves you played, with no evaluation). As on Lichess, it's from White's side: + means White is better, − means Black is better, and #3 / #-3 means White / Black mates in 3. Hover over it to see how deeply Lichess analyzed it. Lichess only has evaluations for positions in its cloud database (most common opening positions), so some line ends have none. They download automatically in the background; they're saved, and a chapter's move tree on the Studies page shows each at the end of its line. If a line ends without one, the summary fetches it on the spot.</li>
+          <li>When a line ends, the moves you got wrong this time get a violet background in the move list, and the status says e.g. "Line complete. Evaluation +0.4", with Lichess's evaluation of the final position. Hover over any move in the move list to see how often it's played in Lichess games and, for your moves, how you did this time (e.g. "8 points this time", with red arrows for any wrong moves you played). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li><b>Position evaluation</b>: after each line, the summary shows Lichess's cloud evaluation of the final position in the status, e.g. "Line complete. Evaluation <b>+0.4</b>" (if you end a line early, it shows none). As on Lichess, it's from White's side: + means White is better, − means Black is better, and #3 / #-3 means White / Black mates in 3. Hover over it to see how deeply Lichess analyzed it. Lichess only has evaluations for positions in its cloud database (most common opening positions), so some line ends have none. They download automatically in the background; they're saved, and a chapter's move tree on the Studies page shows each at the end of its line. If a line ends without one, the summary fetches it on the spot.</li>
           <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
           <li>To make it harder, click the eye icon (<b>Hide chapter names during the line</b>) to hide the study and chapter names (a line through the eye means they're hidden; "Chapter" and "Study" show instead). The chapter's introductory comment is hidden with them. They always appear when the line ends, and the eye stays as you left it for the next line. Click it again to show them.</li>
         </ul>
@@ -491,9 +472,9 @@
           <summary>Where you see your statistics</summary>
           <ul>
             <li><b>Studies page</b>: each study and chapter shows the average score of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
-            <li><b>End of a line</b>: the moves you got wrong this time, in the order you played them, e.g. "5. Bc4 and 5. d3 instead of 5. c3", with "(shown)" or "(hint: piece)" if you used those. Below that, the line's moves colored by their updated scores.</li>
+            <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
             <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by score and, once saved, the Lichess evaluation at the end of each line.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="s90">green arrow</span> for the correct move, and a <span class="s0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "7 of last 10 correct" and "Wrong: Bc4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="s90">green arrow</span> for the correct move, and a <span class="s0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "Average 7.5 of 10 (last 10 tries)" and "Wrong: Bc4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
           </ul>
         </details>
         <details>
@@ -513,15 +494,15 @@
         </ul>
         <details>
           <summary>How the weighting works</summary>
-          <p>Each of your moves gets a weight of 1 + 4 × how often you get it wrong (over its last 10 tries): a move you always get right has weight 1, one you always get wrong has weight 5, and one you haven't tried yet has weight 3. A line's chance of coming up is its <b>weakest</b> move's weight, not the average, so one bad move is enough to bring a line back. For example, a line where every move is 100% has weight 1, but if one move is at 50% the line has weight 3, so it comes up three times as often. In Test single positions, the move tested within the line is picked by the same weights.</p>
+          <p>Each of your moves gets a weight of 1 + 4 × how far its score is below 100%: a move scoring 100% has weight 1, one scoring 0% has weight 5, and one you haven't tried yet has weight 3. A line's chance of coming up is its <b>weakest</b> move's weight, not the average, so one bad move is enough to bring a line back. For example, a line where every move is 100% has weight 1, but if one move is at 50% the line has weight 3, so it comes up three times as often. In Test single positions, the move tested within the line is picked by the same weights.</p>
         </details>
       </div>
 
       <div class="card">
         <h2>System and backups</h2>
         <ul>
-          <li><b>System</b>: refreshing studies and move statistics, downloading position evaluations, your Lichess token, and backups.</li>
-          <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move frequencies and evaluations, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
+          <li><b>System</b>: updating your studies, the progress of the automatic Lichess downloads (move statistics, masters statistics and evaluations), your Lichess token, and backups.</li>
+          <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move statistics, masters statistics and evaluations, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
       </div>
@@ -654,20 +635,12 @@ const visibleChapters = () => allChapters().filter(c => !isHiddenChapter(c.key))
 const openBranches = new Set();     // tree branch points whose variations are open ("chapter key|moves before")
 const allVariations = new Set();    // chapters whose all-variations triangle is down (changed only by that triangle)
 
-
 const saveSelection = () => store.set('selection', [...selection]);
 const saveStats = () => store.set('stats', stats);
-// Stats from before move-level results (plays and misses per line) can't say which move was
-// missed, so they're cleared once.
-const isOldStats = v => !!v && typeof v === 'object' && 'plays' in v;
-if (Object.values(stats).some(isOldStats)) { stats = {}; saveStats(); }
 let showComments = store.get('showComments', true);        // annotations during a line (always shown after it)
 // Annotations are shown unless the setting is off and a line is being played (not yet over).
 // Outside practice (e.g. the Studies page's move tree) they're always shown.
 const annotationsOn = () => showComments || screen !== 'quiz' || !q || !!q.done;
-// Natural-language selection was removed (archived in archive/natural-language-selection.md);
-// clear what it stored.
-store.remove('anthropicKey'); store.remove('useNL');
 let favorites = store.get('favorites', null);              // chapter keys saved with "Save favorites"
 let soundsOn = store.get('soundsOn', false);
 let hideNames = store.get('hideNames', false);
@@ -675,7 +648,7 @@ let liveMisses = store.get('liveMisses', false);          // highlight missed mo
 const START_MODES = ['start', 'partway', 'single'];
 let startMode = START_MODES.includes(store.get('startMode', 'start')) ? store.get('startMode', 'start') : 'start';
 const OPP_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
-let opponentMode = OPP_MODES.includes(store.get('opponentMode')) ? store.get('opponentMode') : (store.get('mainOnly', false) ? 'main' : 'misses');
+let opponentMode = OPP_MODES.includes(store.get('opponentMode')) ? store.get('opponentMode') : 'misses';
 
 // ---------- DOM helpers ----------
 
@@ -751,7 +724,7 @@ function buildData(exportText, username) {
     if (!studies.has(studyId)) studies.set(studyId, { id: studyId, name: studyName, chapters: [] });
     studies.get(studyId).chapters.push({ key: `${studyId}/${chapterId}`, id: chapterId, name: chapterName, pgn: pgn.makePgn(game) });
   });
-  return { fetchedAt: Date.now(), username, comments: true, studies: sortStudies([...studies.values()]) };
+  return { fetchedAt: Date.now(), username, studies: sortStudies([...studies.values()]) };
 }
 
 const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
@@ -807,7 +780,7 @@ function pruneAfterRefresh() {
   saveSelection(); saveStats();
 }
 
-// Converts stats to position keys. Stats kept per line ({ line key: { move index: results } },
+// Restoring a backup from an older version: stats kept per line ({ line key: { move index: results } },
 // including lines shortened by the old "to move" depth limits) become per position: each line's
 // record for a move joins that position's record, keeping the most recent 10. Per-line stats
 // with only plays and misses can't be converted and are dropped.
@@ -816,6 +789,7 @@ function pruneAfterRefresh() {
 const validResults = a => Array.isArray(a) && a.every(r => r === 1
   || (Array.isArray(r) && r.every(s => typeof s === 'string'))
   || (r && typeof r === 'object' && Array.isArray(r.s) && r.s.every(s => typeof s === 'string') && Number.isFinite(r.p)));
+const isOldStats = v => !!v && typeof v === 'object' && 'plays' in v;
 function convertStats(obj) {
   const out = {};
   const add = (key, results) => { out[key] = [...(out[key] || []), ...results].slice(-KEEP_TRIES); };
@@ -1026,7 +1000,6 @@ function countWrongs(attempts, correct) {
 // One attempt, as recorded when the move is played (or the line is ended on it).
 const attemptResult = (expected, idx) => ({ move: expected, idx, seq: q.seq, points: scoreAttempt(q.seq, expected) });
 
-
 // The average score of the tried moves (each position once) in these chapters.
 function aggregate(chapters) {
   let lines = 0, tried = 0, sum = 0;
@@ -1098,7 +1071,6 @@ function renderStudies() {
         const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
         const chLines = chapterLines(ch);
         const chOpen = expandedChapters.has(ch.key) && chLines.length > 0;
-        const chHidden = hiddenStudies.has(study.id);
         // Two triangles: the chapter's moves (main line), then all its variations at once.
         const keys = chLines.length ? branchKeys(ch) : [];
         const allOpen = allVariations.has(ch.key);
@@ -1421,7 +1393,6 @@ function setStatus(html, cls = '') {
   el.className = 'status' + (cls ? ' ' + cls : '');
   el.replaceChildren(...[].concat(html).filter(c => c != null));
 }
-
 
 function setShapes(shapes) {
   if (q) q.shapes = shapes;
@@ -1839,7 +1810,6 @@ async function studyMistake(orig, dest, move, played, alt) {
   setStatus(`Try again, or press ${q.hint ? 'Show correct move' : 'Hint'}.`, 'bad');
 }
 
-
 // Squares for drawing a move; castling is shown as the king's two-square move.
 const moveSquares = m => arrowSquares(q.pos, parseUci(m.uci));
 function arrowSquares(pos, move) {
@@ -1869,7 +1839,6 @@ function sideVariations(node, pos) {
   }
   return Object.keys(alts).length ? alts : undefined;
 }
-
 
 // "End line here": stop this play-through now (one-off; next time the line is played in full).
 // The moves played so far count; the move you're on counts as wrong only if you already had
@@ -1998,7 +1967,6 @@ function gamesOf(stat, s) {
 const epdOf = f => f.split(' ').slice(0, 4).join(' ');
 const bareSan = x => x.replace(/[+#]/g, '');
 
-
 // Every position reached in the studies: every move and variation, alternative moves' variations
 // and each line's final position included. For each: its FEN, depth (in plies), the positions and
 // moves leading to it, whether it's on a chapter's main line, whether the opponent has several
@@ -2055,7 +2023,7 @@ const EXPLORER_DBS = {
     label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
     get: () => popularity, key: 'popularity', status: 'bg-status', info: 'opt-stats-info',
-    current: s => s?.v === 3,
+    current: isCurrentStat,
     keep: (j, e) => ({ ...j, moves: j.moves.filter((m, k) => k < 10 || e.studyMoves.has(bareSan(m.san))), v: 3, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, v: 3, at: Date.now() }),
   },
@@ -2169,7 +2137,6 @@ function updateStatsInfo() {
   }
 }
 
-
 // "Position reached 23k times" / "<1k" / "1.2M" / "…" (not downloaded yet) / "Position never reached".
 function reachedText(stat) {
   if (!stat) return 'Position reached … times';
@@ -2189,7 +2156,6 @@ function moveShare(pos, moveSan) {
   const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
-
 
 // ---------- Position evaluation (Lichess cloud) ----------
 // Lichess's stored cloud evaluation of each line's final position, from White's side.
@@ -2211,7 +2177,6 @@ function finalFen(line) {
   }
   return line.finalFen;
 }
-const evalOf = line => evals[epdOf(finalFen(line))];
 
 // "+0.4", "-1.2", "0.0", or "#3" / "#-3" for a forced mate, as Lichess shows them.
 function formatEval(e) {
@@ -2406,7 +2371,6 @@ for (const r of document.querySelectorAll('input[name=opp-mode]')) {
   });
 }
 
-
 function leaveQuiz() {
   q = null; // pending timers check q and stop
   $('next-btn').classList.add('hidden');
@@ -2459,9 +2423,6 @@ $('token-clear-btn').addEventListener('click', () => {
   renderOptions();
   showBanner('Stored token cleared. Your cached studies are still available; refreshing needs a new token.');
 });
-
-// ---------- Colored moves ----------
-
 
 // ---------- Move preview (small board on hover) ----------
 // Your moves: the position before the move, a green arrow for the correct move and red arrows
@@ -2561,7 +2522,6 @@ function showPreview(el, line, i, thisTime = null) {
 function hidePreview() { $('move-preview')?.classList.add('hidden'); }
 window.addEventListener('scroll', hidePreview, { passive: true });
 
-
 $('nav-help').addEventListener('click', () => {
   hideBanner();
   showScreen('help'); // a line in progress is kept
@@ -2592,12 +2552,7 @@ function renderOptions() {
   $('opt-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
   updateEvalInfo();
-
 }
-
-
-
-
 
 // Radio buttons: one is always chosen.
 for (const r of document.querySelectorAll('input[name=start-mode]')) {
@@ -2676,7 +2631,6 @@ $('refresh-btn').addEventListener('click', refreshFromLichess);
 // ---------- Backup ----------
 
 const BACKUP_APP = 'chess-opening-trainer';
-
 
 $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
@@ -2870,12 +2824,9 @@ async function init() {
     evals = (await cache.get('evals')) || {};
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
-  stats = convertStats(stats); // older per-line stats become per position (a no-op once converted)
-  saveStats();
   rescoreAll(); // attempts scored again with the current rules and data
-  store.remove('depths');      // the old "to move" depth limits
-  store.remove('evalOn'); // evaluations are always shown now
-  if (data) { showPracticeIdle(); startDownloads(); } // resume any missing Lichess downloads // open on the Practice page, waiting for "Start practice"
+  // Open on the Practice page, waiting for "Start practice", and resume any missing Lichess downloads.
+  if (data) { showPracticeIdle(); startDownloads(); }
   else if (token) { showScreen('select'); $('studies').replaceChildren(); refreshFromLichess(); }
   else showScreen('token');
 }
