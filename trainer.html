@@ -2420,14 +2420,28 @@ function shareOf(stat, moveSan) {
   const share = gamesOf(stat, moveSan) / totalOf(stat) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
-// The practice pop-up board's share lines, e.g. "74% played by all" and "45% played by masters".
+// A move's popularity rank in a position: 1 for the most played; moves played equally often share a
+// rank. null when no game played it. (Lichess games keep the 10 most played moves plus the studies'
+// own, so the ranks are exact.)
+function rankOf(stat, moveSan) {
+  const n = gamesOf(stat, moveSan);
+  if (!n) return null;
+  const counts = Array.isArray(stat.moves) ? stat.moves.map(m => m.white + m.draws + m.black)
+    : Object.values(stat.moves).map(m => typeof m === 'number' ? m : m.white + m.draws + m.black);
+  return 1 + counts.filter(c => c > n).length;
+}
+const rankText = (stat, moveSan) => { const r = rankOf(stat, moveSan); return r ? ` (#${r} move)` : ''; };
+// The practice pop-up board's share lines, e.g. "74% played by all (#1 move)" and
+// "45% played by masters (#2 move)".
 function lichessShareText(pos, moveSan) {
-  const s = shareOf(lichessStats[epdOf(fenOf(pos))], moveSan);
-  return s == null ? null : `${s || '0%'} played by all`;
+  const stat = lichessStats[epdOf(fenOf(pos))];
+  const s = shareOf(stat, moveSan);
+  return s == null ? null : `${s || '0%'} played by all${rankText(stat, moveSan)}`;
 }
 function mastersShareText(pos, moveSan) {
-  const s = shareOf(masters[epdOf(fenOf(pos))], moveSan);
-  return s == null ? null : s ? `${s} played by masters` : 'Not in master games';
+  const stat = masters[epdOf(fenOf(pos))];
+  const s = shareOf(stat, moveSan);
+  return s == null ? null : s ? `${s} played by masters${rankText(stat, moveSan)}` : 'Not in master games';
 }
 
 // ---------- Position evaluation (Lichess cloud) ----------
