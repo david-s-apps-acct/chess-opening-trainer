@@ -365,6 +365,19 @@ A separate System page, opened from the "System" button in the header. (It was c
 
 Ideas agreed or mentioned along the way that haven't been built yet:
 
+- **Weaknesses page** (agreed; to build, then iterate): a new page, "Weaknesses", with a table titled "Common [x] positions with accuracy [y]% or lower".
+  - **[x]** is a drop-down: 25, 50, 75 or 100. **[y]** is a drop-down: 90%, 80%, 70% … down to 10%.
+  - **Rows:** the [x] most common of the user's positions (a position where it's the user's move) whose accuracy is [y]% or lower, **most common first**.
+  - **Columns:**
+    - **Name:** the opening name plus the move to find, e.g. "Italian Game: Giuoco Piano, your move 4", using Lichess's opening name for the position or the last named position before it.
+    - **How common:** the number of rated Lichess games that reach the position where it's the user's move (the position before the move), from the move statistics.
+    - **Accuracy:** the user's average move accuracy there, i.e. the move's score, the weighted average of its last 10 attempts.
+  - Hovering over a row shows the small hover board of the position.
+  - *Details Claude assumed, for the user to accept or reject:*
+    - Only positions with at least one attempt are listed, since untried ones have no accuracy.
+    - Because history is kept per chapter, the same board position weak in two chapters appears twice, once per chapter, with the chapter name in smaller grey text after the name.
+    - Without its Lichess statistics a position has no count yet and is left out until they download.
+    - The drop-downs' starting values (e.g. 25 and 70%) are to be decided, and remembered between visits.
 - Selecting individual lines (not just whole chapters) from a natural-language request such as "lines longer than 10 moves"; this needs a line-level filter. Only relevant if natural-language selection is ever brought back (it was removed; see Describe what to practice).
 - **Offline copy:** a separate `trainer-offline.html` that runs without an internet connection, for practicing with saved studies, stats, move frequencies and evaluations (anything that talks to Lichess or Anthropic would still need a connection: Update studies, the two download buttons, fetching an evaluation at the end of a line, checking a token, natural-language selection).
   - Everything the page now loads from jsDelivr would be embedded in the one file: chessops and chessground bundled into the script (a one-time bundling step, e.g. esbuild, since jsDelivr's versions import further files), and the board and piece images, fonts (only the subsets used) and sounds embedded as data. A folder of files beside the page wouldn't work, because browsers block scripts loaded from neighbouring files on `file://`.
