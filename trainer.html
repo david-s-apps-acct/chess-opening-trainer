@@ -467,10 +467,11 @@
         <h2>Your statistics</h2>
         <p>The app scores each of <b>your</b> moves separately, not whole lines, so you can see exactly which moves you know and which you don't.</p>
         <ul>
-          <li><b>Right</b>: you played the move on your first try, with no hint.</li>
-          <li><b>Wrong</b>: any wrong try (including a move your study marks ?, ?? or ?!), a hint, or <b>Show correct move</b>. The wrong moves you actually played are remembered too.</li>
-          <li><b>Not counted</b>: a move your study has as an unmarked alternative (you just try again), and any line you leave unfinished.</li>
-          <li>Each move keeps only its <b>last 10 tries</b>. Its score is the percentage right over those tries, e.g. 7 right out of 10 is 70%. With fewer than 10 tries, it's out of however many there are.</li>
+          <li>Each attempt at a move starts with <b>10 points</b>; finding the move on your first try keeps all 10.</li>
+          <li><b>−2</b> each time you play one of your study's unmarked alternative moves, or a move masters play more than 10% of the time in that position.</li>
+          <li><b>−10</b> for an alternative your study marks ?!, ? or ??, any other wrong move, or the <b>Hint</b> (so Show correct move leaves 0). Points never go below 0.</li>
+          <li>Each move keeps its <b>last 10 attempts</b>, including everything you tried. Its score is their average, as a percentage: e.g. 10, 10, 8 and 0 average 7.0, so 70%. Scores are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
+          <li><b>Not counted</b>: a line you leave unfinished.</li>
           <li>Highlighting: moves you know (<span class="s100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="s90">90–99%</span> faint, <span class="s70">70–89%</span> medium, <span class="s0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="mvq-good">!</span> green, <span class="mvq-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
         </ul>
         <details>
@@ -810,7 +811,11 @@ function pruneAfterRefresh() {
 // including lines shortened by the old "to move" depth limits) become per position: each line's
 // record for a move joins that position's record, keeping the most recent 10. Per-line stats
 // with only plays and misses can't be converted and are dropped.
-const validResults = a => Array.isArray(a) && a.every(r => r === 1 || (Array.isArray(r) && r.every(s => typeof s === 'string')));
+// A saved attempt: { s: what the user did, in order (moves as SAN, "hint", "show"), p: points 0–10 };
+// older saves hold 1 (right) or the list of wrong moves.
+const validResults = a => Array.isArray(a) && a.every(r => r === 1
+  || (Array.isArray(r) && r.every(s => typeof s === 'string'))
+  || (r && typeof r === 'object' && Array.isArray(r.s) && r.s.every(s => typeof s === 'string') && Number.isFinite(r.p)));
 function convertStats(obj) {
   const out = {};
   const add = (key, results) => { out[key] = [...(out[key] || []), ...results].slice(-KEEP_TRIES); };
@@ -939,7 +944,52 @@ function posKey(line, i) {
   return keys[i] ||= line.chapterKey + '|' + line.moves.slice(0, i + 1).map(m => m.san).join(' ');
 }
 const triesOf = (line, i) => stats[posKey(line, i)] || [];
-const scoreOf = tries => tries.length ? tries.filter(t => t === 1).length / tries.length : null;
+// A move's score: the average points of its last 10 attempts, as a fraction of 10 (0–1).
+const pointsOf = a => a && typeof a === 'object' && !Array.isArray(a) ? a.p : a === 1 ? 10 : 0;
+const scoreOf = tries => tries.length ? tries.reduce((sum, a) => sum + pointsOf(a), 0) / tries.length / 10 : null;
+
+// ---------- Grading an attempt ----------
+// Each attempt at one of the user's moves starts at 10 points: every unmarked alternative move from
+// the study, or a move played in more than 10% of master games there, costs 2 (once, even if it's
+// both); an alternative marked ?, ?? or ?!, any other wrong move, the hint and Show correct move
+// cost 10; never below 0. Repeats cost each time. entry is the move in the line (its SAN, the
+// study's alternatives there, and the position before it).
+const MASTERS_SHARE = 0.1;
+function isMasterMove(epd, s) {
+  const st = masters[epd], n = st && totalOf(st);
+  return !!n && gamesOf(st, s) / n > MASTERS_SHARE;
+}
+function scoreAttempt(seq, entry) {
+  let p = 10;
+  for (const x of seq) {
+    if (x === 'hint' || x === 'show') { p -= 10; continue; }
+    if (bareSan(x) === bareSan(entry.san)) break; // the correct move ends the attempt
+    const alt = entry.alts?.[x];
+    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) p -= 10; // the study's marking wins
+    else if (alt || isMasterMove(entry.epd, x)) p -= 2;
+    else p -= 10;
+  }
+  return Math.max(0, p);
+}
+
+// When the app opens (and after a restore), every saved attempt is scored again from what was
+// done, with the current rules and data (e.g. masters statistics downloaded since), and saved.
+// Older saves are turned into attempts here: right = the correct move alone; wrong = the wrong
+// moves played (a hint or Show correct move alone was saved as an empty list: now "hint").
+function rescoreAll() {
+  if (!data) return;
+  const entries = new Map();
+  for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of userIndexes(line)) entries.set(posKey(line, i), line.moves[i]);
+  for (const [key, attempts] of Object.entries(stats)) {
+    const entry = entries.get(key);
+    const correct = key.slice(key.indexOf('|') + 1).split(' ').pop();
+    stats[key] = attempts.map(a => {
+      const seq = pointsOf(a) === 10 && !(a && a.s) ? [correct] : a && a.s ? a.s : (a.length ? a : ['hint']);
+      return { s: seq, p: entry ? scoreAttempt(seq, entry) : pointsOf(a) };
+    });
+  }
+  saveStats();
+}
 const pct = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
 // A move you always get right has weight 1, one you always get wrong 5; never tried counts as 50% wrong.
 const moveWeight = tries => { const s = scoreOf(tries); return s == null ? 3 : 1 + 4 * (1 - s); };
@@ -951,18 +1001,24 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 's100' : s >= 0.9 ? 's9
 function recordResults() {
   for (const r of q.results) {
     const key = posKey(q.line, r.idx);
-    const result = r.tries === 0 && !r.hint && !r.revealed ? 1 : r.wrongs;
-    stats[key] = [...(stats[key] || []), result].slice(-KEEP_TRIES);
+    stats[key] = [...(stats[key] || []), { s: r.seq, p: r.points }].slice(-KEEP_TRIES);
   }
   saveStats();
 }
 
-// Wrong moves from a list of results, with how often each was played: [['Bc4', 2], ['d3', 1]].
-function countWrongs(results) {
+// The moves other than the correct one in a list of attempts, with how often each was played:
+// [['Bc4', 2], ['d3', 1]].
+function countWrongs(attempts, correct) {
   const counts = new Map();
-  for (const t of results) if (Array.isArray(t)) for (const s of t) counts.set(s, (counts.get(s) || 0) + 1);
+  for (const a of attempts) {
+    const seq = a && a.s ? a.s : Array.isArray(a) ? a : [];
+    for (const s of seq) if (s !== 'hint' && s !== 'show' && bareSan(s) !== bareSan(correct)) counts.set(s, (counts.get(s) || 0) + 1);
+  }
   return [...counts];
 }
+
+// One attempt, as recorded when the move is played (or the line is ended on it).
+const attemptResult = (expected, idx) => ({ move: expected, idx, seq: q.seq, points: scoreAttempt(q.seq, expected) });
 
 
 // The average score of the tried moves (each position once) in these chapters.
@@ -1429,7 +1485,7 @@ function renderMoves() {
     if (m.color === 'black' && i === 0) cells.push(h('span', { class: 'mv empty' }, '…'));
     // Once the line is over, moves you got wrong this time get the violet background.
     const attempt = q.results.find(r => r.idx === i);
-    const missedNow = (q.done || liveMisses) && attempt && (attempt.tries > 0 || attempt.hint || attempt.revealed);
+    const missedNow = (q.done || liveMisses) && attempt && attempt.points < 10;
     // The move, its glyphs and its comment bubble; a missed move has them all in one fixed-width
     // violet box, so boxes line up down the column.
     const content = [fig(m.san), glyphMarks(m), hasBubble(m) ? bubbleEl(moveLabel(m), m.notes, i === newest, i === newest && pop) : null];
@@ -1584,7 +1640,7 @@ async function advance() {
   q.tries = 0;
   q.hint = 0;
   q.wrong = null;
-  q.wrongs = []; // wrong moves played at this move, in order
+  q.seq = []; // what the user does at this move, in order: moves tried, "hint", "show"
   q.hintNote = null; // what the study says about a wrong move, shown with Hint
   syncBoard();
   setStatus('Your move.');
@@ -1702,8 +1758,9 @@ async function onUserMove(orig, dest) {
   const move = variant.normalizeMove(q.pos, parseUci(orig + dest + (promotion ? { queen: 'q', rook: 'r', bishop: 'b', knight: 'n' }[promotion] : '')));
   const played = san.makeSan(q.pos, move);
 
+  q.seq.push(played);
   if (played === expected.san) {
-    q.results.push({ move: expected, idx: q.idx, tries: q.tries, hint: q.hint, revealed: q.hint >= 2, wrongs: q.wrongs });
+    q.results.push(attemptResult(expected, q.idx));
     playLineMove(expected);
     setStatus('Correct.'); // status messages are standard grey
     const run = q.token;
@@ -1716,7 +1773,8 @@ async function onUserMove(orig, dest) {
   const alt = expected.alts?.[played];
   if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return studyMistake(orig, dest, move, played, alt);
   if (alt) {
-    // Not marked as an error: a gentle nudge, not counted as a miss.
+    // Not marked as an error: a gentle nudge (it costs 2 points).
+    q.missed = true;
     q.busy = true;
     syncBoard();
     setStatus(`${fig(played)} is also in your study, but it isn't the main move. Try again.`);
@@ -1731,7 +1789,6 @@ async function onUserMove(orig, dest) {
   // Wrong try: count it, then put the piece back.
   q.tries++;
   q.wrong = { san: played };
-  q.wrongs.push(played);
   q.missed = true;
   q.busy = true;
   syncBoard();
@@ -1749,7 +1806,6 @@ async function onUserMove(orig, dest) {
 async function studyMistake(orig, dest, move, played, alt) {
   q.tries++;
   q.wrong = { san: played };
-  q.wrongs.push(played);
   q.missed = true;
   q.busy = true;
   const run = q.token;
@@ -1816,7 +1872,7 @@ $('end-btn').addEventListener('click', () => {
   if (!q || q.busy || q.single || q.view != null) return;
   const expected = q.line.moves[q.idx];
   if (!expected?.user) return;
-  if (q.tries || q.hint) q.results.push({ move: expected, idx: q.idx, tries: q.tries, hint: q.hint, revealed: q.hint >= 2, wrongs: q.wrongs });
+  if (q.seq.length) q.results.push(attemptResult(expected, q.idx)); // counts only if something was tried
   q.endedAt = expected;
   setShapes([]);
   endLine();
@@ -1831,12 +1887,14 @@ $('hint-btn').addEventListener('click', () => {
   if (q.hint) {
     // "Show correct move": an arrow shows the move; the player still has to play it.
     q.hint = 2;
+    q.seq.push('show');
     setShapes([{ orig: from, dest: to, brush: 'green' }]);
     setStatus([`The move is ${moveLabel(expected)}. Play it on the board.`, q.hintNote]);
     syncBoard();
     return;
   }
   q.hint = 1;
+  q.seq.push('hint');
   setShapes([{ orig: from, brush: 'green' }]);
   // After a wrong move, the status also shows what the study says about it (with annotations on).
   const w = q.wrong;
@@ -2302,7 +2360,7 @@ function endSingle() {
   q.forceNames = true; // the names always show after each answer
   updateNames();
   const r = q.results[q.results.length - 1];
-  if (r && !r.revealed) {
+  if (r && !r.seq.includes('show')) { // after Show correct move, wait so the move can be studied
     setStatus('Correct. Next position…');
     const run = q.token;
     setTimeout(() => { if (q && q.token === run) nextLine(); }, 1000);
@@ -2437,7 +2495,7 @@ function showPreview(el, line, i, thisTime = null) {
   if (m.user && thisTime) {
     const r = thisTime.attempt;
     const [from, to] = arrowSquares(pos, parseUci(m.uci));
-    const wrong = r ? countWrongs([r.wrongs]) : [];
+    const wrong = r ? countWrongs([{ s: r.seq }], m.san) : [];
     for (const [s] of wrong) {
       const mv = san.parseSan(pos, s);
       if (!mv) continue;
@@ -2445,13 +2503,12 @@ function showPreview(el, line, i, thisTime = null) {
       shapes.push({ orig: f, dest: t, brush: 'red' });
     }
     shapes.push({ orig: from, dest: to, brush: 'green' });
-    // Just the outcome: the arrows already show the wrong moves played.
-    const result = !r ? 'Not tested this time'
-      : r.tries || r.hint || r.revealed ? 'Wrong this time' : 'Correct first try';
+    // Just the points: the arrows already show the wrong moves played.
+    const result = !r ? 'Not tested this time' : `${r.points} ${r.points === 1 ? 'point' : 'points'} this time`;
     text = [topLine, countLine, h('div', {}, result)];
   } else if (m.user) {
     const tries = triesOf(line, i);
-    const wrong = countWrongs(tries);
+    const wrong = countWrongs(tries, m.san);
     const [from, to] = arrowSquares(pos, parseUci(m.uci));
     for (const [s] of wrong) {
       const mv = san.parseSan(pos, s);
@@ -2460,8 +2517,8 @@ function showPreview(el, line, i, thisTime = null) {
       shapes.push({ orig: f, dest: t, brush: 'red' });
     }
     shapes.push({ orig: from, dest: to, brush: 'green' });
-    const right = tries.filter(t => t === 1).length;
-    text = [topLine, countLine, h('div', {}, tries.length ? `${right} of last ${tries.length} correct` : 'Not tried yet'),
+    const avg = tries.length ? scoreOf(tries) * 10 : 0;
+    text = [topLine, countLine, h('div', {}, tries.length ? `Average ${avg.toFixed(1)} of 10 (last ${tries.length} ${tries.length === 1 ? 'try' : 'tries'})` : 'Not tried yet'),
       wrong.length ? h('div', {}, 'Wrong: ' + wrong.map(([s, n]) => fig(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null];
   } else {
     // The opponent's move itself: the position after it, with the move as a white arrow,
@@ -2700,6 +2757,7 @@ $('restore-file').addEventListener('change', async e => {
   if (typeof st.liveMisses === 'boolean') { liveMisses = st.liveMisses; store.set('liveMisses', liveMisses); updateMissesControl(); }
   if (Array.isArray(b.favorites)) { favorites = b.favorites.filter(k => typeof k === 'string'); store.set('favorites', favorites); }
   saveStats(); saveSelection();
+  rescoreAll(); // restored attempts scored with the current rules and data
   updateAnnotationsControl(); updateSoundControls();
   store.set('showComments', showComments); store.set('soundsOn', soundsOn); store.set('hideNames', hideNames); store.set('startMode', startMode);
   store.set('opponentMode', opponentMode);
@@ -2808,6 +2866,7 @@ async function init() {
   catch (e) { console.warn('IndexedDB read failed', e); }
   stats = convertStats(stats); // older per-line stats become per position (a no-op once converted)
   saveStats();
+  rescoreAll(); // attempts scored again with the current rules and data
   store.remove('depths');      // the old "to move" depth limits
   store.remove('evalOn'); // evaluations are always shown now
   if (data) { showPracticeIdle(); startDownloads(); } // resume any missing Lichess downloads // open on the Practice page, waiting for "Start practice"
