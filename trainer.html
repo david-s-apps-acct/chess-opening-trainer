@@ -2412,18 +2412,20 @@ function rankOf(stat, moveSan) {
     : Object.values(stat.moves).map(m => typeof m === 'number' ? m : m.white + m.draws + m.black);
   return 1 + counts.filter(c => c > n).length;
 }
-const rankText = (stat, moveSan) => { const r = rankOf(stat, moveSan); return r ? ` (#${r} move)` : ''; };
-// The practice pop-up board's share lines, e.g. "74% played by all (#1 move)" and
-// "45% played by masters (#2 move)".
-function lichessShareText(pos, moveSan) {
-  const stat = lichessStats[epdOf(fenOf(pos))];
+// The practice pop-up board's share lines, e.g. "#2 overall move (27%)" and "#1 masters move (90%)";
+// "Not played overall" / "Not played by masters" for a move no game played there.
+function shareText(stat, moveSan, who, none) {
   const s = shareOf(stat, moveSan);
-  return s == null ? null : `${s || '0%'} played by all${rankText(stat, moveSan)}`;
+  if (s == null) return null;
+  const r = s && rankOf(stat, moveSan);
+  return r ? `#${r} ${who} move (${s})` : none;
+}
+function lichessShareText(pos, moveSan) {
+  return shareText(lichessStats[epdOf(fenOf(pos))], moveSan, 'overall', 'Not played overall');
 }
 function mastersShareText(pos, moveSan) {
   const stat = masters[epdOf(fenOf(pos))];
-  const s = shareOf(stat, moveSan);
-  return s == null ? null : s ? `${s} played by masters${rankText(stat, moveSan)}` : 'Not in master games';
+  return stat && !totalOf(stat) ? 'Not in master games' : shareText(stat, moveSan, 'masters', 'Not played by masters');
 }
 
 // ---------- Position evaluation (Lichess cloud) ----------
