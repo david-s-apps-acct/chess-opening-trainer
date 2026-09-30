@@ -617,6 +617,9 @@ const saveStats = () => store.set('stats', stats);
 // was attempted, in ms; oldest first); for spaced repetition later.
 let plays = store.get('plays', {});
 const savePlays = () => store.set('plays', plays);
+// position key (as in stats) -> when that move was last attempted (ms), in any mode.
+let lastTried = store.get('lastTried', {});
+const saveLastTried = () => store.set('lastTried', lastTried);
 
 
 
@@ -817,7 +820,8 @@ function pruneAfterRefresh() {
   stats = Object.fromEntries(Object.entries(stats).filter(([k]) => posKeys.has(k)));
   const lineKeys = new Set(chapters.flatMap(ch => chapterLines(ch).map(l => l.key)));
   plays = Object.fromEntries(Object.entries(plays).filter(([k]) => lineKeys.has(k)));
-  saveSelection(); saveStats(); savePlays();
+  lastTried = Object.fromEntries(Object.entries(lastTried).filter(([k]) => posKeys.has(k)));
+  saveSelection(); saveStats(); savePlays(); saveLastTried();
 }
 
 async function acceptToken(value, errorEl) {
@@ -1102,8 +1106,9 @@ function recordResults() {
   for (const r of q.results) {
     const key = posKey(q.line, r.idx);
     stats[key] = [...(stats[key] || []), { s: r.seq, p: r.points }].slice(-KEEP_TRIES);
+    lastTried[key] = r.at;
   }
-  saveStats();
+  saveStats(); saveLastTried();
 }
 
 // The moves other than the correct one in a list of attempts, with how often each was played:
@@ -2670,7 +2675,7 @@ $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: 3, exportedAt: new Date().toISOString(),
-    stats, plays, selection: [...selection], hiddenStudies: [...hiddenStudies],
+    stats, plays, lastTried, selection: [...selection], hiddenStudies: [...hiddenStudies],
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
     lichess: { popularity: lichessStats, evals, masters },
     favorites,
@@ -2750,6 +2755,10 @@ $('restore-file').addEventListener('change', async e => {
   if (!confirm(`Are you sure? This replaces your current stats and settings with the backup${when} (${plural(n, 'position')} with results). It can't be undone.`)) return;
 
   stats = restored;
+  if (b.lastTried && typeof b.lastTried === 'object') {
+    lastTried = Object.fromEntries(Object.entries(b.lastTried).filter(([, v]) => Number.isFinite(v)));
+    saveLastTried();
+  }
   if (b.plays && typeof b.plays === 'object') {
     plays = Object.fromEntries(Object.entries(b.plays).filter(([, v]) => Array.isArray(v) && v.every(Number.isFinite)));
     savePlays();
