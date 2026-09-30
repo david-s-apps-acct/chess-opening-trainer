@@ -2116,8 +2116,8 @@ function showPreview(el, line, i, thisTime = null) {
   const after = pos.clone();
   after.play(parseUci(m.uci));
   const countLine = h('div', { class: 'muted' }, reachedText(lichessStats[epdOf(fenOf(after))]));
-  // The practice move list: the move alone, then the position count, its share of all Lichess
-  // games and of master games (each left out until downloaded), then how this attempt went.
+  // The practice move list: the move alone, its rank and share among all Lichess games and among
+  // master games (each left out until downloaded), the position count, then how this attempt went.
   // The Studies page's move tree keeps the share on the top line, e.g. "2… Nc6 (Lichess games 62%)".
   const topLine = thisTime ? h('div', {}, h('b', {}, moveLabel(m))) : h('div', {}, h('b', {}, moveLabel(m)),
     h('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
@@ -2132,7 +2132,7 @@ function showPreview(el, line, i, thisTime = null) {
     // Everything tried before the correct move, in order, e.g. "Tried ♘f3, b4, hint, ♗c4".
     const tried = r ? r.seq.filter(x => x === 'hint' || x === 'show' || bareSan(x) !== bareSan(m.san))
       .map(x => x === 'hint' ? 'hint' : x === 'show' ? 'show correct move' : fig(x)) : [];
-    text = [topLine, countLine, ...shareLines, h('div', {}, result), tried.length ? h('div', {}, 'Tried ' + tried.join(', ')) : null];
+    text = [topLine, ...shareLines, countLine, h('div', {}, result), tried.length ? h('div', {}, 'Tried ' + tried.join(', ')) : null];
   } else if (m.user) {
     const tries = triesOf(line, i);
     const wrong = countWrongs(tries, m.san);
@@ -2149,7 +2149,7 @@ function showPreview(el, line, i, thisTime = null) {
     shapes.push({ orig: f, dest: t, brush: mistake ? 'red' : 'white' });
     lastMove = compat.chessgroundMove(mv).slice(0, 2);
     pos.play(mv);
-    text = [topLine, countLine, ...shareLines, m.side ? h('div', { class: 'muted' }, 'Alternative move, not tested') : null];
+    text = [topLine, ...shareLines, countLine, m.side ? h('div', { class: 'muted' }, 'Alternative move, not tested') : null];
   }
   box.firstChild.replaceChildren(...text.filter(Boolean));
   box.classList.remove('hidden');
