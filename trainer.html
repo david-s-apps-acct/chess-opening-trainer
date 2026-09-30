@@ -2762,7 +2762,8 @@ function renderWeaknesses() {
 // applies (Lichess's name for the position, or for the last named position before it), then the
 // moves played since that named position, e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"
 // (the position before move i; whose move it is follows from the last move listed). At most the
-// last 3 full moves (6 plies) are shown, with "…" before them when there are more. Without any
+// last 3 full moves (6 plies) are shown, with "…" before them when there are more, and at least the
+// last move played, even when the position itself is named ("King's Pawn Game, 1… e5"). Without any
 // named position, the moves from the start; "Starting position" before any move.
 // Used wherever the app names a position.
 const NAME_TAIL_PLIES = 6;
@@ -2774,6 +2775,7 @@ function positionName(line, i) {
     const n = lichessStats[epdOf(fenOf(pos))]?.opening?.name;
     if (n) { name = n; since = k + 1; }
   });
+  since = Math.min(since, Math.max(0, i - 1)); // always list at least the last move played
   const tail = line.moves.slice(Math.max(since, i - NAME_TAIL_PLIES), i);
   const cut = i - since > NAME_TAIL_PLIES;
   const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNo}. ${fig(m.san)}` : k === 0 ? `${m.moveNo}… ${fig(m.san)}` : fig(m.san)).join(' ');
