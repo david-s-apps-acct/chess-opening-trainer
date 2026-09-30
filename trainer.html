@@ -613,6 +613,10 @@ const openBranches = new Set();     // tree branch points whose variations are o
 const allVariations = new Set();    // chapters whose all-variations triangle is down (changed only by that triangle)
 const saveSelection = () => store.set('selection', [...selection]);
 const saveStats = () => store.set('stats', stats);
+// line key -> when the line was played through to its end, the last 10 times (the time its last move
+// was attempted, in ms; oldest first); for spaced repetition later.
+let plays = store.get('plays', {});
+const savePlays = () => store.set('plays', plays);
 
 
 
@@ -811,7 +815,9 @@ function pruneAfterRefresh() {
   hiddenStudies = new Set([...hiddenStudies].filter(id => data.studies.some(s => s.id === id)));
   saveHidden();
   stats = Object.fromEntries(Object.entries(stats).filter(([k]) => posKeys.has(k)));
-  saveSelection(); saveStats();
+  const lineKeys = new Set(chapters.flatMap(ch => chapterLines(ch).map(l => l.key)));
+  plays = Object.fromEntries(Object.entries(plays).filter(([k]) => lineKeys.has(k)));
+  saveSelection(); saveStats(); savePlays();
 }
 
 async function acceptToken(value, errorEl) {
@@ -1112,7 +1118,7 @@ function countWrongs(attempts, correct) {
 }
 
 // One attempt, as recorded when the move is played (or the line is ended on it).
-const attemptResult = (expected, idx) => ({ move: expected, idx, seq: q.seq, points: scoreAttempt(q.seq, expected) });
+const attemptResult = (expected, idx) => ({ move: expected, idx, seq: q.seq, points: scoreAttempt(q.seq, expected), at: Date.now() });
 
 const pct = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
 
@@ -1889,6 +1895,12 @@ function showNextButton(label) {
 function endLine() {
   const { line, missed } = q;
   recordResults();
+  if (!q.endedAt) { // played through to the end (from the start or partway), not ended early
+    // The line's time is when its last move was attempted.
+    const at = q.results[q.results.length - 1]?.at ?? Date.now();
+    plays[line.key] = [...(plays[line.key] || []), at].slice(-KEEP_TRIES);
+    savePlays();
+  }
   q.done = true; // the move list gets hover boards
 
   q.busy = true;
@@ -2658,7 +2670,7 @@ $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: 3, exportedAt: new Date().toISOString(),
-    stats, selection: [...selection], hiddenStudies: [...hiddenStudies],
+    stats, plays, selection: [...selection], hiddenStudies: [...hiddenStudies],
     // The Lichess data (move statistics and evaluations) takes a long time to download, so it's included.
     lichess: { popularity: lichessStats, evals, masters },
     favorites,
@@ -2738,6 +2750,10 @@ $('restore-file').addEventListener('change', async e => {
   if (!confirm(`Are you sure? This replaces your current stats and settings with the backup${when} (${plural(n, 'position')} with results). It can't be undone.`)) return;
 
   stats = restored;
+  if (b.plays && typeof b.plays === 'object') {
+    plays = Object.fromEntries(Object.entries(b.plays).filter(([, v]) => Array.isArray(v) && v.every(Number.isFinite)));
+    savePlays();
+  }
   selection = new Set(Array.isArray(b.selection) ? b.selection.filter(k => typeof k === 'string') : []);
   // Lichess data is merged, not replaced: a position keeps whichever copy is newer (a newer-format
   // move statistic wins over an older one), so downloads made since the backup aren't lost.
