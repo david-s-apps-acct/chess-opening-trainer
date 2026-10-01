@@ -267,14 +267,14 @@ async function runPractice(app) {
   check('practice: hint shows the study comment on the wrong move', status(), 'Hint: move the circled piece.3. ♗b5 (your move)? Mistake: Not in this repertoire.');
   await playRest();
   const summary = () => [...document.getElementById('practice-status').querySelectorAll('div')].map(d => d.textContent);
-  check('practice: line summary', summary(), ['3 of 6 moves correct', '77% overall accuracy']);
+  check('practice: line summary', summary(), ['3 of 6 moves correct', '77% line accuracy']);
   check('practice: points', [points('e4'), points('e4 e5 Nf3'), points('e4 e5 Nf3 Nc6 Bc4'), points('e4 e5 Nf3 Nc6 Bc4 Bc5 c3')], [[8], [8], [0], [10]]);
   check('practice: the play-through is recorded', app.history.lines[main.key]?.played.length, 1);
 
   // 2. A clean line.
   app.startLine(main);
   await playRest();
-  check('practice: clean line summary', summary(), ['No mistakes.', '100% overall accuracy']);
+  check('practice: clean line summary', summary(), ['No mistakes.', '100% line accuracy']);
   check('practice: second play-through recorded', app.history.lines[main.key]?.played.length, 2);
 
   // 3. Hint, Show correct move, then End line here.

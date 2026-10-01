@@ -26,6 +26,12 @@ Building. The app is `trainer.html`; keep it in line with SPEC.md.
 
 ## Working with the user
 
+- **Terminology (the user's standing rule):** use these terms consistently in everything the user sees (the app, Help, messages) and in SPEC.md:
+  - **move accuracy**: how well one of your moves is known, as a percentage. For one attempt, its points × 10 (e.g. "80% move accuracy" on the practice hover board); over time, the weighted average of its last 10 attempts (e.g. "75% move accuracy (last 4 tries)").
+  - **line accuracy**: the average move accuracy of your moves in one completed line (e.g. "92% line accuracy").
+  - Don't use "score" or a bare "accuracy" for these on screen. (Internal code names like `scoreOf` and the `score-90` classes may stay.)
+  - Name positions with the agreed convention (opening name plus the moves since; see SPEC.md, Naming positions), and show counts of games with `shortCount()`.
+
 - When editing SPEC.md, record only what the user decided. If you add a detail or make an assumption they didn't state, add it and then point it out explicitly so they can accept or reject it.
 - Ask before changing any decision already recorded in the spec.
 - Ask one or two focused questions at a time, not long lists.
