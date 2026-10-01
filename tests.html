@@ -37,6 +37,17 @@ export const app = {
   renderChapterTree,
   positionName, finalFen, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
   parseStudyExport, errorKind, yourMoveIndexes,
+  // Practice: saving and network requests are switched off, so stored data is never touched.
+  isolate() {
+    store.set = () => {}; store.remove = () => {};
+    savePositions = async () => {}; saveLibrary = async () => {};
+    window.fetch = async () => new Response('', { status: 404 });
+  },
+  setSelection(keys) { selection = new Set(keys); },
+  get practice() { return practice; },
+  get history() { return history; },
+  startLine(line) { ensureBoard(); return startLine(line); },
+  onYourMove,
 };`;
 
 async function loadApp() {
@@ -202,11 +213,100 @@ function run(app) {
   }
 }
 
+// ---------- Practice: whole lines played through the app ----------
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function until(condition, what, ms = 6000) {
+  const start = Date.now();
+  while (!condition()) {
+    if (Date.now() - start > ms) throw new Error('timed out waiting for ' + what);
+    await wait(25);
+  }
+}
+
+async function runPractice(app) {
+  app.isolate();
+  app.setLibrary(structuredClone(LIBRARY));
+  app.setPositions(structuredClone(POSITIONS));
+  app.setHistory({ moves: {}, lines: {} });
+  app.setSettings({});
+  app.setSelection(['AAAAAAAA/BBBBBBBB']);
+  const main = app.chapterLines(app.chapterByKey('AAAAAAAA/BBBBBBBB'))[0];
+  const status = () => document.getElementById('practice-status').textContent;
+  const p = () => app.practice;
+  const yourTurn = () => p() && !p().busy && p().line.moves[p().movesPlayed]?.isYours;
+  const play = async (uci) => { await until(yourTurn, 'your turn'); await app.onYourMove(uci.slice(0, 2), uci.slice(2, 4)); };
+  // Plays the correct moves until the line (or single position) is over.
+  const playRest = async () => {
+    for (;;) {
+      await until(() => p().isOver || yourTurn(), 'your turn or the end');
+      if (p().isOver) return;
+      await app.onYourMove(...[p().line.moves[p().movesPlayed].uci].map(u => [u.slice(0, 2), u.slice(2, 4)])[0]);
+    }
+  };
+  const points = key => app.history.moves['AAAAAAAA/BBBBBBBB|' + key]?.attempts.map(a => a.points);
+
+  // 1. The main line, with a masters move, an alternative, a marked alternative and a hint.
+  app.startLine(main);
+  await play('d2d4');
+  check('practice: masters move message', status(), 'd4 is the #2 masters move but not your move');
+  await play('e2e4');
+  await play('b1c3');
+  check('practice: alternative message', status(), '♘c3 is one of your alternative moves');
+  await play('g1f3');
+  await play('f1b5');
+  check('practice: marked alternative message', status(), '♗b5? is one of your alternative moves, marked as a mistake');
+  await until(yourTurn, 'the marked alternative to be taken back');
+  document.getElementById('hint-btn').click();
+  check('practice: hint shows the study comment on the wrong move', status(), 'Hint: move the circled piece.3. ♗b5 (your move)? Mistake: Not in this repertoire.');
+  await playRest();
+  check('practice: a line with mistakes', status().startsWith('Line complete.') && !status().includes('No mistakes'), true);
+  check('practice: points', [points('e4'), points('e4 e5 Nf3'), points('e4 e5 Nf3 Nc6 Bc4'), points('e4 e5 Nf3 Nc6 Bc4 Bc5 c3')], [[8], [8], [0], [10]]);
+  check('practice: the play-through is recorded', app.history.lines[main.key]?.played.length, 1);
+
+  // 2. A clean line.
+  app.startLine(main);
+  await playRest();
+  check('practice: a clean line', status().startsWith('Line complete. No mistakes.'), true);
+  check('practice: second play-through recorded', app.history.lines[main.key]?.played.length, 2);
+
+  // 3. Hint, Show correct move, then End line here.
+  app.startLine(main);
+  await until(yourTurn, 'your turn');
+  document.getElementById('hint-btn').click();
+  document.getElementById('hint-btn').click();
+  check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
+  document.getElementById('end-btn').click();
+  check('practice: ended early', status(), 'Line ended early.');
+  check('practice: the move on was recorded', app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.at(-1), { tried: ['hint', 'show'], points: 0 });
+  check('practice: an ended line is not a play-through', app.history.lines[main.key]?.played.length, 2);
+
+  // 4. Partway through.
+  app.setSettings({ startMode: 'partway' });
+  app.startLine(main);
+  check('practice: partway start', p().startIndex > 0 && document.getElementById('practice-side').textContent.startsWith('Started partway: '), true);
+  await playRest();
+  check('practice: partway summary', document.getElementById('practice-summary').textContent.startsWith('Started partway: '), true);
+  check('practice: a partway line is not a play-through', app.history.lines[main.key]?.played.length, 2);
+
+  // 5. A single position: a right answer moves on to the next position by itself.
+  app.setSettings({ startMode: 'single' });
+  app.startLine(main);
+  const first = p();
+  check('practice: single position from move 5 on', p().line.moves[p().startIndex].moveNumber >= 5, true);
+  await playRest();
+  check('practice: single position answered', status(), 'Correct. Next position…');
+  await until(() => p() !== first, 'the next position', 3000);
+  check('practice: the next position started', p().isSinglePosition, true);
+  app.setSettings({});
+}
+
 // ---------- Report ----------
 
 try {
   const app = await loadApp();
   run(app);
+  await runPractice(app);
 } catch (e) {
   results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
 }

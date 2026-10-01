@@ -1678,10 +1678,10 @@ function updateBoard(lastMove) {
   // One button: "Hint" circles the piece to move; after that it becomes "Show correct move",
   // which draws the arrow (the player then plays the move).
   // After "Show correct move" the arrow stays and the button is disabled until the move is played.
-  const hinted = practice.hintStep > 0;
+  const hinted = hintStep() > 0;
   $('hint-btn').textContent = hinted ? 'Show correct move' : 'Hint';
   $('hint-btn').title = hinted ? 'Shows the correct move with an arrow; you then play it. Counts as a miss.' : 'Circles the piece to move. Counts as a miss.';
-  $('hint-btn').disabled = !yourTurn || practice.hintStep >= 2;
+  $('hint-btn').disabled = !yourTurn || hintStep() >= 2;
   $('end-btn').disabled = !yourTurn;
   renderMoveList();
 }
@@ -1762,7 +1762,7 @@ function startPractice() {
 }
 
 function startLine(line) {
-  practice = { line, position: line.root.position.clone(), movesPlayed: 0, hadMistake: false, attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: 0, isSinglePosition: settings.startMode === 'single' };
+  practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: 0, isSinglePosition: settings.startMode === 'single' };
   practice.signature = practiceSignature();
   // The board's orientation already shows the user's side.
   $('practice-side').textContent = '';
@@ -1822,23 +1822,43 @@ function chooseSinglePosition(line, yourMoves) {
   return k;
 }
 
-// Play opponent moves until it is the user's turn or the line ends.
+// The line in progress (practice) holds: the line, the position on the board, movesPlayed, tried
+// (what you've done at the move you're on, in order: moves as SAN, "hint", "show"), attempts (one
+// per move of yours finished in this line), and the board's state. Things that take time (the
+// opponent's moves, messages shown for a moment) check afterwards that the same line is still
+// being played: the user may have moved on.
+
+// Waits ms; true if the same line is still being played afterwards.
+async function pause(ms) {
+  const run = practice.run;
+  await sleep(ms);
+  return practice?.run === run;
+}
+
+// Worked out from what you've tried at the move you're on: 0 before the hint, 1 after it, 2 after
+// Show correct move; and the last wrong move tried (a marked alternative or a move not in the study).
+const hintStep = () => practice.tried.includes('show') ? 2 : practice.tried.includes('hint') ? 1 : 0;
+function lastWrongMove() {
+  const expected = practice.line.moves[practice.movesPlayed];
+  return practice.tried.filter(x => x !== 'hint' && x !== 'show' && x !== expected.san
+    && !(expected.alternatives?.[x] && !expected.alternatives[x].nags.some(n => MISTAKE_NAGS.includes(n)))).pop();
+}
+// Whether any move of yours in this line needed more than one try (or the hint).
+const hadMistake = () => practice.attempts.some(a => a.tried.length > 1);
+
+// Play opponent moves until it's your turn or the line ends.
 async function advance() {
   if (practice.isSinglePosition && practice.movesPlayed > practice.startIndex) return endSinglePosition();
-  const run = practice.run;
   while (practice.movesPlayed < practice.line.moves.length && !practice.line.moves[practice.movesPlayed].isYours) {
     practice.busy = true;
     updateBoard();
     setStatus('Opponent to move…');
-    await sleep(practice.movesPlayed === 0 ? 600 : 450);
-    if (!practice || practice.run !== run) return;
+    if (!await pause(practice.movesPlayed === 0 ? 600 : 450)) return;
     playMove(practice.line.moves[practice.movesPlayed]);
   }
   practice.busy = false;
   if (practice.movesPlayed >= practice.line.moves.length) return endLine();
-  practice.hintStep = 0;
-  practice.lastWrongMove = null;
-  practice.tried = []; // what the user does at this move, in order: moves tried, "hint", "show"
+  practice.tried = [];
   practice.hintComment = null; // what the study says about a wrong move, shown with Hint
   updateBoard();
   setStatus('Your move.');
@@ -1852,55 +1872,37 @@ async function onYourMove(orig, dest) {
   if (piece && piece.role === 'pawn' && (dest[1] === '8' || dest[1] === '1')) {
     const run = practice.run;
     promotion = await choosePromotion(practice.position.turn);
-    if (!practice || practice.run !== run) return;
+    if (practice?.run !== run) return;
   }
   const move = variant.normalizeMove(practice.position, parseUci(orig + dest + (promotion ? { queen: 'q', rook: 'r', bishop: 'b', knight: 'n' }[promotion] : '')));
   const played = san.makeSan(practice.position, move);
-
   practice.tried.push(played);
+
   if (played === expected.san) {
     practice.attempts.push(newAttempt(expected, practice.movesPlayed));
     playMove(expected);
     setStatus('Correct.'); // status messages are standard grey
-    const run = practice.run;
-    await sleep(250);
-    if (!practice || practice.run !== run) return;
-    return advance();
-  }
-
-  // A move that's in the study as a side variation at this point.
-  const alt = expected.alternatives?.[played];
-  if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return showMarkedAlternative(orig, dest, move, played, alt);
-  if (alt) {
-    // Not marked as an error: a gentle nudge (it costs the alternative's penalty).
-    practice.hadMistake = true;
-    practice.busy = true;
-    updateBoard();
-    setStatus(`${withFigurines(played)} is one of your alternative moves`);
-    const run = practice.run;
-    await sleep(350);
-    if (!practice || practice.run !== run) return;
-    practice.busy = false;
-    updateBoard();
+    if (await pause(250)) advance();
     return;
   }
+  // A move that's in the study as an alternative at this point.
+  const alt = expected.alternatives?.[played];
+  if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return showMarkedAlternative(orig, dest, move, played, alt);
+  if (alt) return rejectMove([`${withFigurines(played)} is one of your alternative moves`]); // a gentle nudge
+  // Any other wrong move. There's no limit: the correct move is only shown when you ask for it.
+  return rejectMove(wrongMoveStatus(expected, played));
+}
 
-  // Wrong try: count it, then put the piece back.
-  practice.lastWrongMove = played;
-  practice.hadMistake = true;
+// Puts a wrong move back, after showing its message for a moment.
+async function rejectMove(status) {
   practice.busy = true;
   updateBoard();
-  // Unlimited attempts: the correct move is only shown when the user asks for it.
-  setStatus(...wrongMoveStatus(expected, played));
-  const run = practice.run;
-  await sleep(350);
-  if (!practice || practice.run !== run) return;
+  setStatus(...status);
+  if (!await pause(350)) return;
   practice.busy = false;
   updateBoard();
 }
 
-// A side variation the study marks ?, ?? or ?!: say so, show the opponent's reply from that
-// variation, then take both moves back. Counts as a wrong try.
 // The status after a wrong move that isn't in the study, in the same words as the alternatives
 // ("♕d3 is one of your alternative moves"): a masters move (see isMasterMove)
 // "♕d3 is the #3 masters move but not your move"; otherwise, if Lichess games play it, "♕d3 is the
@@ -1912,11 +1914,10 @@ function wrongMoveStatus(expected, played) {
   return [r ? `${withFigurines(played)} is the #${r} Lichess move but not your move` : `${withFigurines(played)} is not your move`, 'bad'];
 }
 
+// An alternative the study marks ?, ?? or ?!: say so, show the opponent's reply from that
+// variation, then take both moves back. Counts as a wrong try.
 async function showMarkedAlternative(orig, dest, move, played, alt) {
-  practice.lastWrongMove = played;
-  practice.hadMistake = true;
   practice.busy = true;
-  const run = practice.run;
   const n = alt.nags.find(x => MISTAKE_NAGS.includes(x));
   const [sym, name] = GLYPHS[n];
   const pos = practice.position.clone();
@@ -1928,15 +1929,13 @@ async function showMarkedAlternative(orig, dest, move, played, alt) {
   // Show the user's move, then the reply, on the board.
   board.set({ fen: fenOf(pos), lastMove: [orig, dest], turnColor: pos.turn, movable: { color: practice.line.yourColor, dests: new Map() } });
   if (r) {
-    await sleep(700);
-    if (!practice || practice.run !== run) return;
+    if (!await pause(700)) return;
     const rm = parseUci(r.uci);
     playSound(isCapture(pos, rm) ? 'Capture' : 'Move');
     pos.play(rm);
     board.set({ fen: fenOf(pos), lastMove: compat.chessgroundMove(rm).slice(0, 2), check: pos.isCheck() ? pos.turn : false });
   }
-  await sleep(2200);
-  if (!practice || practice.run !== run) return;
+  if (!await pause(2200)) return;
   practice.busy = false;
   updateBoard(); // back to the position before the mistake
   setStatus(said, 'bad');
@@ -1946,22 +1945,19 @@ $('hint-btn').addEventListener('click', () => {
   if (!practice || practice.busy) return;
   const expected = practice.line.moves[practice.movesPlayed];
   if (!expected?.isYours) return;
-  practice.hadMistake = true;
   const [from, to] = moveSquares(expected);
-  if (practice.hintStep) {
+  if (hintStep()) {
     // "Show correct move": an arrow shows the move; the player still has to play it.
-    practice.hintStep = 2;
     practice.tried.push('show');
     setShapes([{ orig: from, dest: to, brush: 'green' }]);
     setStatus([`The move is ${moveLabel(expected)}. Play it on the board.`, practice.hintComment]);
     updateBoard();
     return;
   }
-  practice.hintStep = 1;
+  // After a wrong move, the status also shows what the study says about it.
+  const w = lastWrongMove();
   practice.tried.push('hint');
   setShapes([{ orig: from, brush: 'green' }]);
-  // After a wrong move, the status also shows what the study says about it.
-  const w = practice.lastWrongMove;
   const notes = w && expected.alternatives?.[w]?.notes;
   if (notes) practice.hintComment = element('div', { class: 'hint-note' },
     element('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w })} (your move)`),
@@ -1995,7 +1991,7 @@ function showNextButton(label) {
 }
 
 function endLine() {
-  const { line, missed } = practice;
+  const { line } = practice;
   saveAttempts();
   if (!practice.endedEarly && !practice.startIndex) { // played all the way through, from move 1 to the end
     // The line's time is when its last move was attempted.
@@ -2009,7 +2005,7 @@ function endLine() {
   practice.busy = true;
   updateBoard();
   if (practice.endedEarly) setStatus('Line ended early.');
-  else setStatus([missed ? 'Line complete.' : 'Line complete. No mistakes.', evaluationText(finalFen(line))]); // standard grey, not green
+  else setStatus([hadMistake() ? 'Line complete.' : 'Line complete. No mistakes.', evaluationText(finalFen(line))]); // standard grey, not green
   const summary = $('practice-summary');
   summary.replaceChildren(...[
     practice.startIndex ? element('p', { class: 'muted' }, `Started partway: ${positionName(practice.line, practice.startIndex)}.`) : null,
@@ -2039,8 +2035,7 @@ function endSinglePosition() {
   const r = practice.attempts[practice.attempts.length - 1];
   if (r && !r.tried.includes('show')) { // after Show correct move, wait so the move can be studied
     setStatus('Correct. Next position…');
-    const run = practice.run;
-    setTimeout(() => { if (practice && practice.run === run) nextLine(); }, 1000);
+    pause(1000).then(stillHere => { if (stillHere) nextLine(); });
   } else {
     showNextButton('Next position');
   }
