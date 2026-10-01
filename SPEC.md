@@ -393,6 +393,15 @@ Ideas agreed or mentioned along the way that haven't been built yet:
   - `trainer.html` stays the file that's edited; a small script generates the offline copy whenever a fresh one is wanted (this keeps the "no build step" rule for the app itself). The offline copy would also be a fully self-contained backup that keeps working if jsDelivr or the pinned library versions ever disappear.
   - Discussed and deferred by the user ("not yet").
 
+## Ideas for a separate app
+
+Not part of this app; recorded so they aren't lost.
+
+- **AI game reviewer that explains moves** (30 September 2026): an app to evaluate a whole game, combining a chess engine (Stockfish or Lichess's cloud evaluations) with an AI (Claude) that explains *why* a position is better for one side and why a move is good or bad, in human terms (pawn structure, king safety, piece activity, plans), rather than only giving numbers and engine lines.
+  - How it would work (Claude's outline): the engine supplies the facts (evaluation, best moves, the refutation of a mistake); code works out the concrete board features (material, pawn structure, king safety, open files, loose pieces); the AI turns these into an explanation; and the engine checks each claim (e.g. that a stated threat really works), discarding explanations that don't hold up. Where an evaluation rests on deep tactics with no human-sized reason, it should say so instead of inventing one, and small differences between good moves aren't worth explaining.
+  - Why separate (the user's decision): explanations matter most at a game's turning points, mostly in the middlegame, rather than in prepared openings, whose ideas the study comments already cover; a game review has a natural shape (find the turning points, explain only those), which also keeps the number and cost of AI questions low; and it keeps this app free of an API key, an engine download and per-question costs.
+  - A possible link: finding where a game left the repertoire is close to this app's future idea of comparing your Lichess games with your repertoire, so the two could share that step.
+
 ## Open questions
 
 _None yet._
