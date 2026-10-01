@@ -1302,66 +1302,13 @@ function renderStudies() {
     container.append(element('div', { class: 'row muted' }, `No studies found for ${library.username}.`));
   }
   for (const study of library.studies) {
-    // Hidden studies are left out, or shown dimmed (and can't be ticked) with "Show hidden" on.
+    // Hidden studies are left out, or shown dimmed (and can't be ticked) with the top eye open.
     const isHidden = hiddenStudies.has(study.id);
     if (isHidden && !showHiddenStudies) continue;
-    const keys = study.chapters.map(c => c.key);
-    const nSel = keys.filter(k => selection.has(k)).length;
-    const open = openStudies.has(study.id);
-    const box = element('input', {
-      type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
-      checked: nSel === keys.length && keys.length > 0,
-      indeterminate: nSel > 0 && nSel < keys.length,
-      onchange: e => {
-        keys.forEach(k => e.target.checked ? selection.add(k) : selection.delete(k));
-        saveSelection(); renderStudies();
-      },
-    });
-    const studyEl = element('div', { class: 'study' + (isHidden ? ' hidden-study' : '') },
-      element('div', { class: 'row study-row' },
-        element('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-expanded': String(open),
-          onclick: () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
-        box,
-        element('span', { class: 'name' }, element('label', { for: 'st-' + study.id }, study.name),
-          showHiddenStudies ? hideStudyButton(study, isHidden) : null,
-          element('span', { class: 'muted', style: 'font-weight:400' }, ` · ${plural(study.chapters.length, 'chapter')}`)),
-        scoreElement(averageScore(study.chapters))),
-    );
-    if (open) {
-      const list = element('div', { class: 'chapters' });
-      for (const ch of study.chapters) {
-        const parsed = parseChapter(ch);
-        const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
-        const chLines = chapterLines(ch);
-        const chOpen = openChapters.has(ch.key) && chLines.length > 0;
-        // Two triangles: the chapter's moves (main line), then all its variations at once.
-        const keys = chLines.length ? branchKeys(ch) : [];
-        const allOpen = allVariationsOpen.has(ch.key);
-        list.append(element('div', { class: 'row chapter-row' },
-          chLines.length
-            ? element('button', { class: 'toggle', title: chOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(chOpen),
-                onclick: () => { chOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); } }, chOpen ? '▾' : '▸')
-            : element('span', { class: 'toggle-space' }),
-          keys.length
-            ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen),
-                onclick: () => {
-                  for (const k of keys) allOpen ? openBranches.delete(k) : openBranches.add(k);
-                  if (allOpen) allVariationsOpen.delete(ch.key);
-                  else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
-                  renderStudies();
-                } }, allOpen ? '▾' : '▸')
-            : element('span', { class: 'toggle-space' }),
-          element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: hiddenStudies.has(study.id),
-            onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
-          // The side you play: a small white or black circle right after the chapter name.
-          element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), openingName(parsed)),
-            parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
-            chLines.length ? chapterCounts(chLines.length, alternativeCount(ch)) : null),
-          parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
-          scoreElement(averageScore([ch]))));
-        if (chOpen) list.append(renderChapterTree(ch));
-      }
-      studyEl.append(list);
+    const studyEl = element('div', { class: 'study' + (isHidden ? ' hidden-study' : '') }, studyRow(study, isHidden));
+    if (openStudies.has(study.id)) {
+      studyEl.append(element('div', { class: 'chapters' }, study.chapters.map(ch =>
+        [chapterRow(ch, isHidden), openChapters.has(ch.key) && chapterLines(ch).length ? renderChapterTree(ch) : null])));
     }
     container.append(studyEl);
   }
@@ -1369,6 +1316,63 @@ function renderStudies() {
     container.append(element('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
   }
   updateSelectionPanel();
+}
+
+// A study's row: its triangle (show or hide its chapters), checkbox (all its chapters), name, eye
+// (while the top eye is open), chapter count and score.
+function studyRow(study, isHidden) {
+  const keys = study.chapters.map(c => c.key);
+  const ticked = keys.filter(k => selection.has(k)).length;
+  const open = openStudies.has(study.id);
+  return element('div', { class: 'row study-row' },
+    element('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-expanded': String(open),
+      onclick: () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); } }, open ? '▾' : '▸'),
+    element('input', {
+      type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
+      checked: ticked === keys.length && keys.length > 0,
+      indeterminate: ticked > 0 && ticked < keys.length,
+      onchange: e => {
+        keys.forEach(k => e.target.checked ? selection.add(k) : selection.delete(k));
+        saveSelection(); renderStudies();
+      },
+    }),
+    element('span', { class: 'name' }, element('label', { for: 'st-' + study.id }, study.name),
+      showHiddenStudies ? hideStudyButton(study, isHidden) : null,
+      element('span', { class: 'muted', style: 'font-weight:400' }, ` · ${plural(study.chapters.length, 'chapter')}`)),
+    scoreElement(averageScore(study.chapters)));
+}
+
+// A chapter's row: two triangles (its moves as a tree, then all its variations at once), its
+// checkbox, its name (the opening on hover), the side you play, its counts and score.
+function chapterRow(ch, studyHidden) {
+  const parsed = parseChapter(ch);
+  const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
+  const lines = chapterLines(ch);
+  const movesOpen = openChapters.has(ch.key) && lines.length > 0;
+  const branches = lines.length ? branchKeys(ch) : [];
+  const allOpen = allVariationsOpen.has(ch.key);
+  return element('div', { class: 'row chapter-row' },
+    lines.length
+      ? element('button', { class: 'toggle', title: movesOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(movesOpen),
+          onclick: () => { movesOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); } }, movesOpen ? '▾' : '▸')
+      : element('span', { class: 'toggle-space' }),
+    branches.length
+      ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen),
+          onclick: () => {
+            for (const k of branches) allOpen ? openBranches.delete(k) : openBranches.add(k);
+            if (allOpen) allVariationsOpen.delete(ch.key);
+            else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
+            renderStudies();
+          } }, allOpen ? '▾' : '▸')
+      : element('span', { class: 'toggle-space' }),
+    element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
+      onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
+    // The side you play: a small white or black circle right after the chapter name.
+    element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), openingName(parsed)),
+      parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
+      lines.length ? chapterCounts(lines.length, alternativeCount(ch)) : null),
+    parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
+    scoreElement(averageScore([ch])));
 }
 
 // The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
