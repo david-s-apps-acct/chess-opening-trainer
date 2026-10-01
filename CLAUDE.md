@@ -40,6 +40,8 @@ For testing without a real token: serve the folder over localhost (the Browser p
 
 ## Where things are
 
+- Counts of games are always shown with `shortCount()` (950, 23k, 1.2M, 1.8bn). Use it for any new place that shows how often a position was reached.
+
 - Natural-language selection ("Describe what to practice") was removed; its spec and code are archived in `archive/natural-language-selection.md` (not loaded by the app) in case it's rebuilt.
 - The script in `trainer.html` is divided into sections marked `// ---------- Name ----------`: Storage, State, helpers, Lichess, chapters and lines, annotations, move results and grading, then one section per page (Studies, Practice, Weaknesses, Options), the Lichess downloads, backup, navigation and start. Put new code in the section it belongs to.
 - Stored data: localStorage (`cot.` + `token`, `settings`, `selection`, `favorites`, `hiddenStudies`, `history`) and IndexedDB database `chess-opening-trainer` (store `library` for the fetched studies, store `positions` keyed by EPD, each `{ lichess, masters }`). `history` is `{ moves: { moveKey: { attempts: [{ tried, points }], lastTried } }, lines: { lineKey: { played: [times] } } }`. Backups are version 4 and hold the same pieces; older backups can't be restored.

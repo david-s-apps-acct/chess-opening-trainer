@@ -2507,12 +2507,13 @@ function updateStatisticsInfo() {
   }
 }
 
-// "Position reached 23k times" / "<1k" / "1.2M" / "1.8bn" / "…" (not downloaded yet) / "Position never reached".
+// "Position reached 950 / 23k / 1.2M / 1.8bn times" (the same short counts as everywhere), "Position reached … times"
+// (not downloaded yet) or "Position never reached".
 function positionCountText(stats) {
   if (!stats) return 'Position reached … times';
   const n = totalGames(stats);
   if (!n) return 'Position never reached';
-  return `Position reached ${n < 1000 ? '<1k' : shortCount(n)} times`;
+  return `Position reached ${shortCount(n)} times`;
 }
 
 // A move's share of the Lichess games in a position: "45%", "<1%", "0%", "no games", or "–" when

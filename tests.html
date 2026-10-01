@@ -36,7 +36,7 @@ export const app = {
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
   renderChapterTree,
   positionName, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
-  parseStudyExport, errorKind, yourMoveIndexes, shortCount,
+  parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
   // Practice: saving and network requests are switched off, so stored data is never touched.
   isolate() {
     store.set = () => {}; store.remove = () => {};
@@ -186,6 +186,9 @@ function run(app) {
 
   // Short counts
   check('short counts', [950, 23400, 999600, 1234567, 999960000, 1846500000].map(app.shortCount), ['950', '23k', '1.0M', '1.2M', '1.0bn', '1.8bn']);
+
+  check('position counts use the same short counts', [undefined, explorer([]), explorer([['e4', 950]]), explorer([['e4', 1846500000]])].map(app.positionCountText),
+    ['Position reached … times', 'Position never reached', 'Position reached 950 times', 'Position reached 1.8bn times']);
 
   // Wrong moves counted over attempts
   check('wrong move counts', app.wrongMoveCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['c4', 1]]);
