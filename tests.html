@@ -34,7 +34,7 @@ export const app = {
   setSettings(s) { settings = checkedSettings(s); },
   setHistory(h) { history = h; },
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
-  renderChapterTree: typeof renderChapterTree === 'function' ? renderChapterTree : chapterTree,
+  renderChapterTree,
   positionName, finalFen, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
   parseStudyExport, errorKind, yourMoveIndexes,
 };`;
@@ -112,7 +112,7 @@ function snapshot(app) {
           san: m.san, uci: m.uci, isYours: !!m.isYours, moveNumber: m.moveNumber, color: m.color,
           epdBefore: m.epdBefore ?? m.positionBefore,
           notes: m.notes ?? null,
-          alternatives: m.isYours ? Object.entries(m.alternatives || {}).map(([san, a]) => [san, a.nags, a.notes ?? null, a.reply ? a.reply.san : null]) : null,
+          alternatives: m.isYours ? Object.entries(m.alternatives || {}).map(([san, a]) => [san, a.nags, a.notes ?? null, (a.reply ?? a.children?.[0])?.san ?? null]) : null,
           replies: (m.replies || null) && m.replies.map(r => [r.san, r.nags]),
         })),
         names: l.moves.map((m, i) => app.positionName(l, i)),
