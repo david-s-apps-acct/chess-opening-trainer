@@ -29,6 +29,7 @@ Building. The app is `trainer.html`; keep it in line with SPEC.md.
 - **Terminology (the user's standing rule):** use these terms consistently in everything the user sees (the app, Help, messages) and in SPEC.md:
   - **move accuracy**: how well one of your moves is known, as a percentage. For one attempt, its points × 10 (e.g. "80% move accuracy" on the practice hover board); over time, the weighted average of its last 10 attempts (e.g. "75% move accuracy (last 4 tries)").
   - **line accuracy**: the average move accuracy of your moves in one completed line (e.g. "92% line accuracy").
+  - **position reached**: how many times a position was reached in rated Lichess games, always with `shortCount()`: "Position reached 23k times" on the hover boards, the column "Position reached (times)" on the Weaknesses page.
   - Don't use "score" or a bare "accuracy" for these on screen. (Internal code names like `scoreOf` and the `score-90` classes may stay.)
   - Name positions with the agreed convention (opening name plus the moves since; see SPEC.md, Naming positions), and show counts of games with `shortCount()`.
 
