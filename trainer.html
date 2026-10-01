@@ -2210,66 +2210,24 @@ $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 
 let hoverBoard = null;
 
-// With { attempt }, the board describes this attempt at the move (the practice move list after a
-// line): the wrong moves played this time, not the last 10 attempts. attempt is null for a move of
-// yours that wasn't played this time (before a partway start).
+// Shows the hover board for move i of line next to el. With { attempt }, it describes this
+// attempt at the move (the practice move list): the wrong moves played this time, not the last 10
+// attempts; attempt is null for a move of yours that wasn't played this time (before a partway start).
 function showHoverBoard(el, line, i, thisTime = null) {
+  const m = line.moves[i];
+  const { position, lastMove, shapes, rows } = !m.isYours ? opponentMoveBoard(line, i, thisTime)
+    : thisTime ? yourAttemptBoard(line, i, thisTime.attempt) : yourHistoryBoard(line, i);
   let box = $('move-preview');
   if (!box) {
     box = element('div', { id: 'move-preview', class: 'move-preview hidden' },
       element('div', { class: 'preview-text' }), element('div', { class: 'preview-board' }, element('div', { class: 'cg-wrap' })));
     document.body.append(box);
   }
-  const m = line.moves[i];
-  let pos = m.parent.position; // the position before the move
-  // Before a user's move, the opponent's previous move is highlighted (no arrow).
-  const previous = line.moves[i - 1];
-  let lastMove = previous && !previous.isYours ? squaresOf(previous) : undefined;
-  let shapes = [], text;
-  // How often this move is played in that position in all rated Lichess games (downloaded automatically).
-  // Top line: the move and its share, e.g. "2… Nc6 (Lichess games 62%)".
-  // "Position reached 23k times": games reaching the position after the move, any move order.
-  const countLine = element('div', { class: 'muted' }, positionCountText(lichessGamesAt(m.epd)));
-  // The practice move list: the move alone, its rank and share among all Lichess games and among
-  // master games (each left out until downloaded), the position count, then how this attempt went.
-  // The Studies page's move tree keeps the share on the top line, e.g. "2… Nc6 (Lichess games 62%)".
-  const topLine = thisTime ? element('div', {}, element('b', {}, moveLabel(m))) : element('div', {}, element('b', {}, moveLabel(m)),
-    element('span', { class: 'muted', style: 'margin-left: 0.6em' }, // a wider gap after the move
-      ((s) => s === 'no games' ? '(no Lichess games)' : `(Lichess games ${s})`)(moveShare(m.epdBefore, m.san))));
-  const shareLines = thisTime ? [lichessShareText(m.epdBefore, m.san), mastersShareText(m.epdBefore, m.san)]
-    .map(t => t && element('div', { class: 'muted' }, t)) : [];
-  if (m.isYours && thisTime) {
-    const r = thisTime.attempt;
-    // Blue arrows for alternatives and masters moves (by default the cheaper mistakes).
-    shapes = answerArrows(pos, m, r ? wrongMoveCounts([{ tried: r.tried }], m.san) : [],
-      x => ['alternative', 'masters'].includes(errorKind(m, x)) ? 'blue' : 'red');
-    // Just the accuracy: the arrows already show the wrong moves played.
-    const result = !r ? 'Not tested this time' : `${r.points * 10}% accuracy this time`;
-    const errors = r ? r.tried.filter(x => x === 'hint' || x === 'show' || withoutCheckMarks(x) !== withoutCheckMarks(m.san)).map(x => errorLabel(m, x)) : [];
-    text = [topLine, ...shareLines, countLine, element('div', {}, result), errors.length ? element('div', {}, 'Errors: ' + errors.join(', ')) : null];
-  } else if (m.isYours) {
-    const attempts = attemptsAt(line, i);
-    const wrong = wrongMoveCounts(attempts, m.san);
-    shapes = answerArrows(pos, m, wrong);
-    const avg = attempts.length ? scoreOf(attempts) * 10 : 0;
-    text = [topLine, countLine, element('div', {}, attempts.length ? `Average ${avg.toFixed(1)} of 10 (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet'),
-      wrong.length ? element('div', {}, 'Wrong: ' + wrong.map(([s, n]) => withFigurines(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null];
-  } else {
-    // The opponent's move itself: the position after it, with the move as a white arrow,
-    // or red if the study marks it ?, ?? or ?!.
-    const mv = parseUci(m.uci);
-    const [f, t] = arrowSquares(pos, mv);
-    const mistake = m.notes?.nags.some(n => MISTAKE_NAGS.includes(n));
-    shapes.push({ orig: f, dest: t, brush: mistake ? 'red' : 'white' });
-    lastMove = squaresOf(m);
-    pos = m.position; // the position after the move
-    text = [topLine, ...shareLines, countLine, m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null];
-  }
-  box.firstChild.replaceChildren(...text.filter(Boolean));
+  box.firstChild.replaceChildren(...rows.filter(Boolean));
   box.classList.remove('hidden');
   const config = {
-    fen: fenOf(pos), orientation: line.yourColor, turnColor: pos.turn, lastMove,
-    check: pos.isCheck() ? pos.turn : false,
+    fen: fenOf(position), orientation: line.yourColor, turnColor: position.turn, lastMove,
+    check: position.isCheck() ? position.turn : false,
     viewOnly: true, coordinates: false, animation: { enabled: false },
     drawable: { enabled: false, visible: true },
   };
@@ -2278,6 +2236,64 @@ function showHoverBoard(el, line, i, thisTime = null) {
   hoverBoard.setAutoShapes(shapes);
   placePopup(box, el);
   hoverBoard.redrawAll();
+}
+
+// The rows shared by every hover board. In the practice move list: the move alone, then its rank
+// and share among all Lichess games and among master games (each left out until downloaded). In
+// the Studies page's move tree: the move with its Lichess share, e.g. "2… ♘c6 (Lichess games 62%)".
+// Then "Position reached 23k times": the Lichess games reaching the position after the move.
+function hoverBoardHeading(m, inPractice) {
+  const count = element('div', { class: 'muted' }, positionCountText(lichessGamesAt(m.epd)));
+  if (!inPractice) {
+    const share = moveShare(m.epdBefore, m.san);
+    return [element('div', {}, element('b', {}, moveLabel(m)),
+      element('span', { class: 'muted', style: 'margin-left: 0.6em' }, share === 'no games' ? '(no Lichess games)' : `(Lichess games ${share})`)), count];
+  }
+  const shares = [lichessShareText(m.epdBefore, m.san), mastersShareText(m.epdBefore, m.san)].map(t => t && element('div', { class: 'muted' }, t));
+  return [element('div', {}, element('b', {}, moveLabel(m))), ...shares, count];
+}
+
+// Before one of your moves the opponent's previous move is highlighted (no arrow).
+const previousOpponentMove = (line, i) => {
+  const previous = line.moves[i - 1];
+  return previous && !previous.isYours ? squaresOf(previous) : undefined;
+};
+
+// Your move in the practice move list: the position before it, a green arrow for the correct move,
+// blue arrows for alternatives and masters moves tried this time and red ones for other wrong moves;
+// the accuracy of this attempt and everything tried before the correct move.
+function yourAttemptBoard(line, i, attempt) {
+  const m = line.moves[i];
+  const tried = attempt ? attempt.tried : [];
+  const shapes = answerArrows(m.parent.position, m, wrongMoveCounts([{ tried }], m.san),
+    x => ['alternative', 'masters'].includes(errorKind(m, x)) ? 'blue' : 'red');
+  const errors = tried.filter(x => x === 'hint' || x === 'show' || withoutCheckMarks(x) !== withoutCheckMarks(m.san)).map(x => errorLabel(m, x));
+  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes, rows: [...hoverBoardHeading(m, true),
+    element('div', {}, attempt ? `${attempt.points * 10}% accuracy this time` : 'Not tested this time'),
+    errors.length ? element('div', {}, 'Errors: ' + errors.join(', ')) : null] };
+}
+
+// Your move in the Studies page's move tree (and the Weaknesses page): the position before it,
+// a green arrow for the correct move and red arrows for the wrong moves in its last 10 attempts.
+function yourHistoryBoard(line, i) {
+  const m = line.moves[i];
+  const attempts = attemptsAt(line, i);
+  const wrong = wrongMoveCounts(attempts, m.san);
+  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, wrong), rows: [
+    ...hoverBoardHeading(m, false),
+    element('div', {}, attempts.length ? `Average ${(scoreOf(attempts) * 10).toFixed(1)} of 10 (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet'),
+    wrong.length ? element('div', {}, 'Wrong: ' + wrong.map(([s, n]) => withFigurines(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null] };
+}
+
+// The opponent's move (or one of the study's untested moves): the position after it, highlighted as
+// on Lichess, with the move as a white arrow, or red if the study marks it ?, ?? or ?!.
+function opponentMoveBoard(line, i, thisTime) {
+  const m = line.moves[i];
+  const [orig, dest] = arrowSquares(m.parent.position, parseUci(m.uci));
+  const mistake = m.notes?.nags.some(n => MISTAKE_NAGS.includes(n));
+  return { position: m.position, lastMove: squaresOf(m), shapes: [{ orig, dest, brush: mistake ? 'red' : 'white' }], rows: [
+    ...hoverBoardHeading(m, !!thisTime),
+    m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
 }
 
 // One thing tried before the correct move m, for the practice pop-up's "Errors: …" row, labelled by
