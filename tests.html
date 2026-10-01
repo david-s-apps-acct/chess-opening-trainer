@@ -35,7 +35,7 @@ export const app = {
   setHistory(h) { history = h; },
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
   renderChapterTree,
-  positionName, finalFen, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
+  positionName, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
   parseStudyExport, errorKind, yourMoveIndexes,
   // Practice: saving and network requests are switched off, so stored data is never touched.
   isolate() {
@@ -118,7 +118,7 @@ function snapshot(app) {
     const lines = app.chapterLines(ch);
     out[key] = {
       lines: lines.map(l => ({
-        key: l.key, yourColor: l.yourColor, isMainLine: l.isMainLine, finalFen: app.finalFen(l),
+        key: l.key, yourColor: l.yourColor, isMainLine: l.isMainLine, finalFen: l.moves[l.moves.length - 1].fen,
         moves: l.moves.map(m => ({
           san: m.san, uci: m.uci, isYours: !!m.isYours, moveNumber: m.moveNumber, color: m.color,
           epdBefore: m.epdBefore ?? m.positionBefore,
