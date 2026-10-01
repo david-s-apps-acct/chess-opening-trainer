@@ -116,7 +116,7 @@
   .weak-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .weak-table tbody tr { cursor: default; }
   .weak-table tbody tr:hover { background: var(--surface-2); }
-  .weak-chapter { font-size: 12px; margin-left: 6px; }
+  .weak-position { font-size: 13px; }
 
   /* Studies page */
   .toolbar {
@@ -510,7 +510,7 @@
         <h2>Weaknesses</h2>
         <ul>
           <li>The <b>Weaknesses</b> page lists your most common weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Accuracy</b>, choose the highest accuracy to include (≤ 90% down to ≤ 10%).</li>
-          <li>Each row is one of your moves, named the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4", with the chapter in grey; at most the last 3 moves are shown, after "…"). Then how many rated Lichess games reach that position, and your accuracy there (its score over the last 10 tries). The most common positions come first.</li>
+          <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then how many rated Lichess games reach that position, and your accuracy there (its score over the last 10 tries). The most common positions come first.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the wrong moves you've played.</li>
         </ul>
@@ -2574,7 +2574,7 @@ function renderWeaknesses() {
   $('weak-rows').replaceChildren(...rows.map(({ line, i, score, games }) => {
     const ch = chapterByKey(line.chapterKey);
     const tr = element('tr', {},
-      element('td', {}, positionName(line, i), element('span', { class: 'muted weak-chapter' }, ch.name)),
+      element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted weak-position' }, positionName(line, i))),
       element('td', { class: 'num' }, shortCount(games)),
       element('td', { class: 'num' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)));
     tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, i));
