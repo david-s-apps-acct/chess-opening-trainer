@@ -424,7 +424,7 @@
       <div class="card">
         <h2>Choosing what to practice</h2>
         <ul>
-          <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves; clicking a name doesn't tick it.</li>
+          <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
           <li><b>Save favorites</b> remembers the chapters ticked now; <b>Recall favorites</b> ticks exactly those chapters again.</li>
@@ -1282,8 +1282,9 @@ function scoreElement({ lines, tried, score }) {
 }
 
 // "· 5 lines · 2 alternative moves" after a chapter's name (the alternative moves only when there are any).
-function chapterCounts(nLines, nAlt) {
-  return [element('span', { class: 'muted' }, ` · ${plural(nLines, 'line')}`),
+// Clicking the number of lines (when the chapter has variations) shows or hides all of them.
+function chapterCounts(nLines, nAlt, toggleVariations) {
+  return [element('span', { class: 'muted' }, ' · ', toggleVariations ? opener(plural(nLines, 'line'), toggleVariations) : plural(nLines, 'line')),
     nAlt ? quickTip(element('span', { class: 'muted' }, ` · ${plural(nAlt, 'alternative move')}`),
       "Other moves your study gives you at your turns, besides the main move. They aren't tested; only the main move counts as correct.") : null];
 }
@@ -1353,25 +1354,25 @@ function chapterRow(ch, studyHidden) {
   const branches = lines.length ? branchKeys(ch) : [];
   const allOpen = allVariationsOpen.has(ch.key);
   const toggleMoves = () => { movesOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); };
+  const toggleVariations = () => {
+    for (const k of branches) allOpen ? openBranches.delete(k) : openBranches.add(k);
+    if (allOpen) allVariationsOpen.delete(ch.key);
+    else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
+    renderStudies();
+  };
   return element('div', { class: 'row chapter-row' },
     lines.length
       ? element('button', { class: 'toggle', title: movesOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(movesOpen), onclick: toggleMoves }, movesOpen ? '▾' : '▸')
       : element('span', { class: 'toggle-space' }),
     branches.length
-      ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen),
-          onclick: () => {
-            for (const k of branches) allOpen ? openBranches.delete(k) : openBranches.add(k);
-            if (allOpen) allVariationsOpen.delete(ch.key);
-            else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
-            renderStudies();
-          } }, allOpen ? '▾' : '▸')
+      ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen), onclick: toggleVariations }, allOpen ? '▾' : '▸')
       : element('span', { class: 'toggle-space' }),
     element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
       onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
     // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed)),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
-      lines.length ? chapterCounts(lines.length, alternativeCount(ch)) : null),
+      lines.length ? chapterCounts(lines.length, alternativeCount(ch), branches.length ? toggleVariations : null) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
     scoreElement(averageScore([ch])));
 }
