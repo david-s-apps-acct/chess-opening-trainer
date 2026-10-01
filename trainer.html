@@ -2086,6 +2086,7 @@ function viewAfterMoves(k) {
   const pos = shown.position;
   const last = k ? squaresOf(shown) : undefined;
   practice.viewing = k;
+  updatePositionName();
   // During a line, the status says how to get back (and is restored on return). After the line
   // has ended there's nothing to return to, so the status is left alone.
   if (!practice.isOver && !practice.savedStatus) {
@@ -2130,7 +2131,7 @@ document.addEventListener('keydown', e => {
 // The practice panel's heading, as on the Weaknesses page: the study and chapter (with the chapter's
 // introductory comment as a bubble), then the position reached, named by its opening and the moves
 // since (see positionName), e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6". The position line
-// follows the line as it's played.
+// follows the board: the line as it's played, or an earlier position being looked at.
 function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
@@ -2139,7 +2140,8 @@ function updateNames() {
   updatePositionName();
 }
 
-const updatePositionName = () => { $('practice-position').textContent = positionName(practice.line, practice.movesPlayed); };
+// The position on the board: the live one, or the earlier one being looked at.
+const updatePositionName = () => { $('practice-position').textContent = positionName(practice.line, practice.viewing ?? practice.movesPlayed); };
 
 // Lichess "SFX" sounds (Enigmahack, AGPLv3+), pinned to a Lichess commit.
 const SOUND_BASE = 'https://cdn.jsdelivr.net/gh/lichess-org/lila@b3f190be9d532d5f9cdf746938e9d480b1464e25/public/sound/sfx/';
