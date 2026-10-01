@@ -274,7 +274,7 @@ async function runPractice(app) {
   // 2. A clean line.
   app.startLine(main);
   await playRest();
-  check('practice: clean line summary', summary(), ['No mistakes.', '100% line accuracy']);
+  check('practice: clean line summary', summary(), ['No errors.', '100% line accuracy']);
   check('practice: second play-through recorded', app.history.lines[main.key]?.played.length, 2);
 
   // 3. Hint, Show correct move, then End line here.

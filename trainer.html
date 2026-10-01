@@ -102,7 +102,7 @@
   .cards .card { max-width: 640px; }
   .cards p { margin: 4px 0; }
 
-  /* Options page: mistake penalties */
+  /* Options page: error penalties */
   .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
   .penalties select { flex: none; width: auto; padding: 3px 6px; }
 
@@ -447,7 +447,7 @@
           <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No mistakes." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). Press <b>Next line</b> (or Enter) to continue.</li>
           <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
         </ul>
       </div>
@@ -456,7 +456,7 @@
         <h2>Your statistics</h2>
         <p>The app measures the <b>move accuracy</b> of each of <b>your</b> moves separately (and a <b>line accuracy</b> each time you complete a line), so you can see exactly which moves you know and which you don't.</p>
         <ul>
-          <li>Each attempt at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each mistake before the right move costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past attempts are re-scored straight away.</li>
+          <li>Each attempt at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each <b>error</b> before the right move (any move that isn't the one in your study, or the hint) costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past attempts are re-scored straight away.</li>
           <li><b>Alternative move</b>, −20%: one of your study's unmarked alternative moves.</li>
           <li><b>Masters move</b>, −20%: a move among the <b>top 5</b> master moves in that position that masters play <b>10% of the time or more</b> (in Lichess's Masters database). You can change "top 5" to anything from top 1 to top 5 on the Options page. Other moves masters play count as errors. A move that is both an alternative and a masters move costs the alternative's penalty.</li>
           <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
@@ -493,7 +493,7 @@
             <li><b>Studies page</b>: each study and chapter shows the average move accuracy of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
             <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
             <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by move accuracy.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="score-90">green arrow</span> for the correct move, and a <span class="score-0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "75% move accuracy (last 10 tries)" and "Wrong: Bc4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a <span class="score-90">green arrow</span> for the correct move, and a <span class="score-0">red arrow</span> for each wrong move you've played in the last 10 tries, and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "75% move accuracy (last 10 tries)" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or a red arrow if your study marks it ?, ?? or ?!.</li>
           </ul>
         </details>
         <details>
@@ -530,7 +530,7 @@
       <div class="card">
         <h2>Options and backups</h2>
         <ul>
-          <li><b>Options</b>: mistake penalties and what counts as a masters move, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
+          <li><b>Options</b>: error penalties and what counts as a masters move, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move statistics and masters statistics, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
@@ -542,8 +542,8 @@
   <section id="options-screen" class="hidden">
     <div class="cards">
       <div class="card">
-        <h2>Mistake penalties</h2>
-        <p class="muted">How much of a move's accuracy each mistake costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changing these recalculates the move accuracy of all your past attempts straight away.</p>
+        <h2>Error penalties reducing move accuracy</h2>
+        <p class="muted">How much of a move's accuracy each error costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changing these recalculates the move accuracy of all your past attempts straight away.</p>
         <div class="penalties">
           <label for="pen-alternative">Alternative move <span class="muted">(an unmarked alternative from your study)</span></label>
           <select id="pen-alternative" class="pen-select"></select>
@@ -705,7 +705,7 @@ const saveHistory = () => store.set('history', history);
 let positions = {};
 
 // Settings (chosen on the Studies, Practice, Weaknesses and Options pages).
-// Mistake penalties are in points: 1 point = 10% of an attempt's score.
+// Error penalties are in points: 1 point = 10% of an attempt's score.
 const START_MODES = ['start', 'partway', 'single'];
 const OPPONENT_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
 const MASTERS_TOPS = [1, 2, 3, 4, 5];
@@ -1830,14 +1830,14 @@ function lastWrongMove() {
   return practice.tried.filter(x => x !== 'hint' && x !== 'show' && x !== expected.san
     && !(expected.alternatives?.[x] && !expected.alternatives[x].nags.some(n => MISTAKE_NAGS.includes(n)))).pop();
 }
-// Under "Line complete.": "5 of 6 moves correct" (or "No mistakes.") and "83% line accuracy". A
+// Under "Line complete.": "5 of 6 moves correct" (or "No errors.") and "83% line accuracy". A
 // move is correct when it was found first time, with no hint; the line accuracy is the average of this
 // line's attempts. (The moves that weren't are highlighted in the move list, with details on hover.)
 function lineSummary() {
   const attempts = practice.attempts;
   const correct = attempts.filter(a => a.tried.length === 1).length;
   const accuracy = attempts.length ? Math.round(attempts.reduce((sum, a) => sum + a.points, 0) / attempts.length * 10) : 100;
-  return [element('div', {}, correct < attempts.length ? `${correct} of ${plural(attempts.length, 'move')} correct` : 'No mistakes.'),
+  return [element('div', {}, correct < attempts.length ? `${correct} of ${plural(attempts.length, 'move')} correct` : 'No errors.'),
     element('div', {}, `${accuracy}% line accuracy`)];
 }
 
@@ -2279,7 +2279,7 @@ function yourHistoryBoard(line, i) {
   return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, wrong), rows: [
     ...hoverBoardHeading(m, false),
     element('div', {}, attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet'),
-    wrong.length ? element('div', {}, 'Wrong: ' + wrong.map(([s, n]) => withFigurines(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null] };
+    wrong.length ? element('div', {}, 'Errors: ' + wrong.map(([s, n]) => withFigurines(s) + (n > 1 ? ` ×${n}` : '')).join(', ')) : null] };
 }
 
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
@@ -2642,7 +2642,7 @@ function formatWithZone(ts) {
   catch { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'short' }); } // older browsers: "EDT"
 }
 
-// The Mistake penalties card: each drop-down 0%–100% in steps of 10 (1 point each).
+// The Error penalties card: each drop-down 0%–100% in steps of 10 (1 point each).
 for (const sel of document.querySelectorAll('.pen-select')) {
   for (let pts = 0; pts <= 10; pts++) sel.append(element('option', { value: String(pts) }, `${pts * 10}%`));
   sel.addEventListener('change', () => {

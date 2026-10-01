@@ -31,6 +31,7 @@ Building. The app is `trainer.html`; keep it in line with SPEC.md.
   - **line accuracy**: the average move accuracy of your moves in one completed line (e.g. "92% line accuracy").
   - **position reached**: how many times a position was reached in rated Lichess games, always with `shortCount()`: "Position reached 23k times" on the hover boards, the column "Position reached (times)" on the Weaknesses page.
   - Don't use "score" or a bare "accuracy" for these on screen. (Internal code names like `scoreOf` and the `score-90` classes may stay.)
+  - **error** vs **mistake** (different concepts): an **error** is any move you play that isn't the one in your study (your preferred line), plus the hint; errors cost move accuracy ("Errors: …", "No errors.", "Error penalties reducing move accuracy"). **Mistake** is reserved for moves marked as mistakes or blunders (?, ??) in a study, e.g. "marked as a mistake", "Prefer opponent's mistakes". Never call an error a mistake. Avoid "wrong" in labels; use "error".
   - Name positions with the agreed convention (opening name plus the moves since; see SPEC.md, Naming positions), and show counts of games with `shortCount()`.
 
 - When editing SPEC.md, record only what the user decided. If you add a detail or make an assumption they didn't state, add it and then point it out explicitly so they can accept or reject it.
