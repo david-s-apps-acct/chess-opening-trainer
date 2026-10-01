@@ -381,7 +381,7 @@
   <section id="weaknesses-screen" class="hidden">
     <div class="cards">
       <div class="card weak-card">
-        <h2>Common positions with low move accuracy</h2>
+        <h2>Frequent positions with low move accuracy</h2>
         <table class="weak-table">
           <thead>
             <tr><th>Position</th><th class="num">Position reached (times)</th><th class="num">Move accuracy</th></tr>
@@ -508,8 +508,8 @@
       <div class="card">
         <h2>Weaknesses</h2>
         <ul>
-          <li>The <b>Weaknesses</b> page lists your most common weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
-          <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; and your move accuracy there (over its last 10 tries). The most common positions come first.</li>
+          <li>The <b>Weaknesses</b> page lists your most frequent weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
+          <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; and your move accuracy there (over its last 10 tries). The most frequent positions come first.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the wrong moves you've played.</li>
         </ul>
@@ -2557,7 +2557,7 @@ function mastersShareText(epd, moveSan) {
 }
 
 // ---------- Weaknesses page ----------
-// "Common positions with low move accuracy": the user's positions (where it's their move)
+// "Frequent positions with low move accuracy": the user's positions (where it's their move)
 // that they've tried, with a score of [y]% or lower, the [x] most common first. How common: the
 // rated Lichess games reaching the position (before the move); positions whose statistics haven't
 // downloaded are left out. History is per chapter, so a position weak in two chapters has two rows.
