@@ -47,7 +47,7 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
-  renderPositions, renderLines, practiceFromList,
+  renderPositions, renderLines, practiceFromList, need, priorities, allLineItems, allPositionItems,
   get shownPositions() { return shownPositions; },
   get shownLines() { return shownLines; },
   stopPracticingFromList() { practiceList = null; },
@@ -150,10 +150,10 @@ function run(app) {
   app.setSettings({});
 
   // Settings
-  check('settings: defaults', app.checkedSettings({}), { startMode: 'start', opponentMode: 'misses', sounds: false,
+  check('settings: defaults', app.checkedSettings({}), { sounds: false,
     penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70, positionsMainLinesOnly: false, linesCount: 20, linesMaxAccuracy: 70, linesMainLinesOnly: false });
   check('settings: older names still read', [app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsCount, app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsMaxAccuracy], [50, 40]);
-  check('settings: invalid values fall back', app.checkedSettings({ startMode: 'x', mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
+  check('settings: invalid values fall back', app.checkedSettings({ mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
 
   // Masters moves: top N and 10% or more
   const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
@@ -294,23 +294,17 @@ async function runPractice(app) {
   check('practice: the move on was recorded', app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.at(-1), { tried: ['hint', 'show'], points: 0 });
   check('practice: an ended line is not a play-through', app.history.lines[main.key]?.played.length, 2);
 
-  // 4. Partway through.
-  app.setSettings({ startMode: 'partway' });
-  app.startLine(main);
-  check('practice: partway start', p().startIndex > 0 && document.getElementById('practice-side').textContent.startsWith('Started partway: '), true);
-  await playRest();
-  check('practice: partway summary', document.getElementById('practice-summary').textContent.startsWith('Started partway: '), true);
-  check('practice: a partway line is not a play-through', app.history.lines[main.key]?.played.length, 2);
-
-  // 5. A single position: a right answer moves on to the next position by itself.
-  app.setSettings({ startMode: 'single' });
-  app.startLine(main);
+  // 4. Single positions from a list: a right answer moves on to the next position by itself.
+  app.practiceFromList('Positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
-  check('practice: single position from move 5 on', p().line.moves[p().startIndex].moveNumber >= 5, true);
+  check('practice: single position from the list', [p().isSinglePosition, [8, 10].includes(p().startIndex), p().movesPlayed === p().startIndex,
+    document.getElementById('practice-side').textContent.startsWith('From the Positions page: ')], [true, true, true, true]);
   await playRest();
   check('practice: single position answered', status(), 'Correct. Next position…');
   await until(() => p() !== first, 'the next position', 3000);
-  check('practice: the next position started', p().isSinglePosition, true);
+  check('practice: the next position is the other one', [p().isSinglePosition, p().startIndex !== first.startIndex], [true, true]);
+  check('practice: a single position is not a play-through', app.history.lines[main.key]?.played.length, 2);
+  app.stopPracticingFromList();
   app.setSettings({});
 }
 
@@ -367,6 +361,24 @@ function runPositions(app) {
   app.practiceFromList('Lines', app.shownLines);
   check('lines: practising a listed line from move 1', [app.practice.isSinglePosition, app.practice.startIndex, app.shownLines.some(l => l.line === app.practice.line),
     document.getElementById('practice-side').textContent], [false, 0, true, 'From the Lines page']);
+  app.stopPracticingFromList();
+  // Spaced repetition ("Practice all lines/positions").
+  const DAY = 86400000, now = Date.now();
+  check('spaced repetition: need', [app.need(null, null), app.need(1, now - DAY, now), app.need(0.5, now - 30 * DAY, now).toFixed(2), app.need(0, null)],
+    [6, 0.1, (2 * 30 / 2 ** 3.5).toFixed(2), 9]);
+  check('spaced repetition: all positions, including untried ones', [app.allPositionItems().length, (app.setSettings({ positionsMainLinesOnly: true }), app.allPositionItems().length)], [3, 2]);
+  check('spaced repetition: all lines', [(app.setSettings({}), app.allLineItems().length), (app.setSettings({ linesMainLinesOnly: true }), app.allLineItems().length)], [2, 1]);
+  app.setSettings({});
+  const linePriorities = app.priorities(app.allLineItems());
+  check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
+  const positionItems = app.allPositionItems();
+  const positionPriorities = app.priorities(positionItems);
+  check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === 0));
+  app.practiceFromList('Positions', positionItems, true);
+  check('spaced repetition: practising all positions', [app.practice.isSinglePosition, document.getElementById('practice-side').textContent.startsWith('All positions: ')], [true, true]);
+  app.stopPracticingFromList();
+  app.practiceFromList('Lines', app.allLineItems(), true);
+  check('spaced repetition: practising all lines, from move 1', [app.practice.isSinglePosition, app.practice.movesPlayed <= 1, document.getElementById('practice-side').textContent], [false, true, 'All lines']);
   app.stopPracticingFromList();
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   check('positions: only ticked chapters', rows({}).length, 0);

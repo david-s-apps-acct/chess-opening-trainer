@@ -110,7 +110,7 @@
   .cards .table-card { max-width: 960px; }
   .table-with-actions { display: flex; gap: 16px; align-items: flex-start; }
   .table-with-actions .report-table { flex: 1; min-width: 0; }
-  .table-actions { margin-top: 8px; flex: none; }
+  .table-actions { margin-top: 8px; flex: none; display: flex; flex-direction: column; gap: 8px; }
   @media (max-width: 800px) { .table-with-actions { flex-direction: column; } .table-actions { align-self: flex-end; } }
   .table-filters th { border-bottom: 1px solid var(--border); padding-top: 0; }
   .table-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; }
@@ -134,17 +134,12 @@
   }
   .toolbar label { display: flex; align-items: center; gap: 6px; font-weight: 600; }
   .toolbar .weak { font-weight: 400; }
-  .toolbar .start-mode { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-  .toolbar .start-mode label { white-space: nowrap; font-weight: 400; }
   .toolbar .filters { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-top: 8px; border-top: 1px solid var(--border); }
   .toolbar .filters label { display: flex; align-items: center; gap: 6px; }
   /* Studies page: the list on the left, the selection controls on the right. */
   .select-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
   .side-panel { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 0; position: sticky; top: 16px; }
   .side-panel .filters { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .side-panel .start-mode { flex-direction: column; gap: 6px; margin: 0; padding: 6px 12px 10px; border: 1px solid var(--muted); border-radius: 4px; align-self: stretch; }
-  .side-panel .start-mode legend { padding: 0 4px; font-size: 13px; color: var(--muted); }
-  .start-mode input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
   .all-row { border-bottom: 1px solid var(--border); }
   .all-row #show-hidden-btn { margin-left: 2px; }
   .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
@@ -346,21 +341,6 @@
     </div>
     <aside class="toolbar side-panel" aria-label="Selection and filters">
       <span id="sel-summary" class="muted"></span>
-      <button id="start-btn" class="primary">Start practice</button>
-      <div class="filters">
-        <fieldset class="weak start-mode">
-          <legend>Opponent's moves</legend>
-          <label title="The opponent always plays the chapter's main move."><input type="radio" name="opp-mode" value="main"> Main line only</label>
-          <label title="Replies played most often in Lichess games come up most (uses the move statistics, which download automatically)."><input type="radio" name="opp-mode" value="common"> Prefer most common moves</label>
-          <label title="Replies marked ?, ?? or ?! in your study come up about 4 times as often."><input type="radio" name="opp-mode" value="mistakes"> Prefer opponent's mistakes</label>
-          <label title="Every reply can come up; lines with moves you often get wrong come up more."><input type="radio" name="opp-mode" value="misses"> Prefer lines I miss</label>
-          <label title="At each point, every reply in your study is equally likely; your move results are ignored."><input type="radio" name="opp-mode" value="equal"> All moves equally</label></fieldset>
-        <fieldset class="weak start-mode">
-          <legend>Where lines start</legend>
-          <label title="Each line starts from its first move and is played to the end."><input type="radio" name="start-mode" value="start"> From the start</label>
-          <label title="Jump to a random point in each line and play from there to the end. The earlier moves are in the move list."><input type="radio" name="start-mode" value="partway"> Partway through</label>
-          <label title="Test one of your moves at a time, then move on to a different position. Moves you often get wrong come up more."><input type="radio" name="start-mode" value="single"> Test single positions</label></fieldset>
-      </div>
     </aside>
     </div>
   </section>
@@ -396,9 +376,7 @@
           <button id="view-last" title="Current position (End)" aria-label="Current position">⏭</button>
         </div>
         <div id="practice-status" class="status"></div>
-        <div id="practice-summary" class="summary hidden"></div>
         <div class="actions">
-          <button id="practice-start-btn" class="primary hidden">Start practice</button>
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
           <button id="end-btn" class="hidden" title="Stop this line here and see the summary. The moves you've played count; the rest of the line isn't played. Next time the line is played in full.">End line here</button>
@@ -434,7 +412,8 @@
           </thead>
           <tbody id="lines-rows"></tbody>
         </table>
-        <div class="table-actions"><button id="practice-lines-btn" class="primary" title="Practise the lines in this table, one at a time, picked at random, each from move 1">Practice these lines</button></div>
+        <div class="table-actions"><button id="practice-lines-btn" class="primary" title="Practise the lines in this table, one at a time, picked at random, each from move 1">Practice these lines</button>
+          <button id="practice-all-lines-btn" class="primary" title="Practise all the lines of the chapters ticked on the Studies page (main lines only if ticked above), each from move 1. New lines, lines with low line accuracy and lines not tested for a while come up more, frequent lines most of all.">Practice all lines</button></div>
         </div>
         <p id="lines-note" class="muted"></p>
       </div>
@@ -467,7 +446,8 @@
           </thead>
           <tbody id="positions-rows"></tbody>
         </table>
-        <div class="table-actions"><button id="practice-positions-btn" class="primary" title="Practise the positions in this table, one at a time, picked at random">Practice these positions</button></div>
+        <div class="table-actions"><button id="practice-positions-btn" class="primary" title="Practise the positions in this table, one at a time, picked at random">Practice these positions</button>
+          <button id="practice-all-positions-btn" class="primary" title="Practise all your positions in the chapters ticked on the Studies page (from main lines only if ticked above). New positions, positions with low move accuracy and positions not tested for a while come up more, frequent positions most of all.">Practice all positions</button></div>
         </div>
         <p id="positions-note" class="muted"></p>
       </div>
@@ -491,23 +471,23 @@
       </div>
 
       <div class="card">
-        <h2>Choosing what to practice</h2>
+        <h2>Choosing studies and chapters</h2>
         <ul>
           <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
           <li><b>Save favorites</b> remembers the chapters ticked now; <b>Recall favorites</b> ticks exactly those chapters again.</li>
           <li>To hide a study you no longer use, click the eye at the top (next to the favorites buttons): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
+          <li>The Studies page only chooses what you work on: practice starts from the <b>Lines</b> and <b>Positions</b> pages, using the chapters ticked here.</li>
           <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
-          <li><b>Opponent's moves</b>: <b>Main line only</b> (the opponent always plays the chapter's main move), <b>Prefer most common moves</b> (replies played most often on Lichess come up most; until their statistics have downloaded, replies without them are treated as equally likely, so it works like All moves equally for them), <b>Prefer opponent's mistakes</b> (replies you marked ?, ?? or ?! come up about 4 times as often), <b>Prefer lines I miss</b> (the default: lines with moves you often get wrong come up more), or <b>All moves equally</b> (every reply in your study is equally likely).</li>
         </ul>
       </div>
 
       <div class="card">
         <h2>Practicing</h2>
         <ul>
-          <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you change the chapters, Opponent's moves or Where lines start (or refresh your studies) in the meantime, Practice starts afresh instead.</li>
-          <li>Press <b>Practice</b> at the top of any page, then <b>Start practice</b>, to begin (or press <b>Start practice</b> on the Studies page to begin straight away).</li>
+          <li>To begin, press one of the Practice buttons on the <b>Lines</b> page (whole lines, always from move 1 to the end) or the <b>Positions</b> page (single positions: just one of your moves at a time). <b>Practice these…</b> practises what's in the page's table; <b>Practice all…</b> practises everything in your ticked chapters, by spaced repetition (see How practice is chosen).</li>
+          <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
@@ -518,7 +498,6 @@
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
           <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue.</li>
-          <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
         </ul>
       </div>
 
@@ -527,7 +506,7 @@
         <p>The app measures the <b>move accuracy</b> of each of <b>your</b> moves separately (and a <b>line accuracy</b> each time you complete a line), so you can see exactly which moves you know and which you don't.</p>
         <ul>
           <li>Each attempt at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each <b>error</b> before the right move (any move that isn't the one in your study, or the hint) costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past attempts are re-scored straight away.</li>
-          <li><b>Errors and mistakes</b> mean different things in this app. An <b>error</b> is any move you play that isn't the one in your study, or the hint; errors are what reduce move accuracy. A <b>mistake</b> is a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious), for example in "Prefer opponent's mistakes".</li>
+          <li><b>Errors and mistakes</b> mean different things in this app. An <b>error</b> is any move you play that isn't the one in your study, or the hint; errors are what reduce move accuracy. A <b>mistake</b> is a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious), for example a reply your study gives the opponent with ?.</li>
           <li><b>Alternative move</b>, −20%: one of your study's unmarked alternative moves.</li>
           <li><b>Masters move</b>, −20%: a move among the <b>top 5</b> master moves in that position that masters play <b>10% of the time or more</b> (in Lichess's Masters database). You can change "top 5" to anything from top 1 to top 5 on the Options page. Other moves masters play count as errors. A move that is both an alternative and a masters move costs the alternative's penalty.</li>
           <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
@@ -539,18 +518,17 @@
         <details>
           <summary>What counts as a try</summary>
           <ul>
-            <li>Playing a line from the start: one try for each of your moves in it.</li>
-            <li><b>Partway through</b>: one try for each of your moves from the starting point on; the moves before it aren't counted.</li>
-            <li><b>Test single positions</b>: one try of the move tested.</li>
-            <li>Leaving a line before it ends (for example when Practice starts afresh after you change the selection) records nothing.</li>
+            <li>Playing a line: one try for each of your moves in it.</li>
+            <li>A single position (from the Positions page): one try of the move tested.</li>
+            <li>Leaving a line before it ends (for example when the line is dropped after you refresh your studies) records nothing.</li>
           </ul>
         </details>
         <details>
           <summary>When lines and positions were last practiced</summary>
-          <p>The app also keeps track of when you practice, for spaced repetition (to be added later). Nothing shows these times yet.</p>
+          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> on the Lines and Positions pages, and used by <b>Practice all…</b> (spaced repetition).</p>
           <ul>
-            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line started <b>Partway through</b>, a line you stop with <b>End line here</b>, a line you leave unfinished, and <b>Test single positions</b> don't count for the line; they only count for the moves you played.</li>
-            <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, in any mode, including Test single positions and the move you're on when you press End line here (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
+            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you stop with <b>End line here</b>, a line you leave unfinished, and single positions don't count for the line; they only count for the moves you played.</li>
+            <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press End line here (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
             <li>Times are kept only from now on, are included in backups, and are dropped for lines and moves that are no longer in your studies after Update studies.</li>
           </ul>
         </details>
@@ -582,7 +560,7 @@
           <li>The <b>Lines</b> page lists your most frequent weak lines, from the chapters ticked on the Studies page. Under the <b>Line</b> heading, choose how many to show (10 to 50); under <b>Line accuracy</b>, choose the highest line accuracy to include (≤ 90% down to ≤ 10%). Tick <b>Main lines only</b> to show only lines where the opponent always plays the study's main move.</li>
           <li>Each row is one line: the study and chapter, then the line's final position, named the usual way. <b>End position reached (times)</b>: how many times that final position was reached in rated Lichess games; the most frequent come first. <b>Line accuracy</b>: the average move accuracy of your moves in the line (each over its last 10 tries). <b>Last tested</b>: how many days ago you last played the whole line from move 1 to the end ("–" if you haven't since these dates were recorded).</li>
           <li>A line is listed once you've tried every one of its moves. Hover over a row to see the line's final move on the small board.</li>
-          <li>Press <b>Practice these lines</b> (to the right of the table) to practise the lines in the table on the Practice page, one at a time, picked at random, each played from move 1 to the end (so it counts as a play-through for Last tested). Press <b>Start practice</b> to go back to practising your ticked chapters.</li>
+          <li>Press <b>Practice these lines</b> (to the right of the table) to practise the lines in the table on the Practice page, one at a time, picked at random, each played from move 1 to the end (so it counts as a play-through for Last tested). Press <b>Practice all lines</b> to practise every line of your ticked chapters (main lines only, if ticked) by spaced repetition, each from move 1; the table's choices don't apply.</li>
         </ul>
       </div>
 
@@ -592,21 +570,27 @@
           <li>The <b>Positions</b> page lists your most frequent weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
           <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; your move accuracy there (over its last 10 tries); and <b>Last tested</b>: how many days ago you last tried that move ("Today" if it was today; "–" if you last tried it before these dates were recorded). The most frequent positions come first.</li>
           <li>Only the chapters ticked on the Studies page are included. Tick <b>Positions from main lines only</b> to show only positions reached through the study's main moves for the opponent.</li>
-          <li>Press <b>Practice these positions</b> (to the right of the table) to practise the positions in the table on the Practice page, one at a time, each as a single position, picked at random. Press <b>Practice</b> and then <b>Start practice</b>, or <b>Start practice</b> on the Studies page, to go back to practising your ticked chapters.</li>
+          <li>Press <b>Practice these positions</b> (to the right of the table) to practise the positions in the table on the Practice page, one at a time, each as a single position, picked at random. Press <b>Practice all positions</b> to practise every one of your moves in your ticked chapters (from main lines only, if ticked) by spaced repetition, including moves you haven't tried yet; the table's choices don't apply.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the errors you've played.</li>
         </ul>
       </div>
 
       <div class="card">
-        <h2>How lines are chosen</h2>
+        <h2>How practice is chosen</h2>
         <ul>
-          <li>With <b>Prefer lines I miss</b> (and <b>Main line only</b>), lines with moves you often get wrong come up more often, and new lines are introduced fairly soon. The other Opponent's moves choices ignore your statistics.</li>
-          <li>The same line is never given twice in a row when there's another to choose.</li>
+          <li><b>Practice these lines</b> and <b>Practice these positions</b> pick from the table at random.</li>
+          <li><b>Practice all lines</b> and <b>Practice all positions</b> use spaced repetition: before each one, every line (or position) gets a priority, and the next is picked at random in proportion to it. New ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
+          <li>The same line or position is never given twice in a row when there's another to choose.</li>
         </ul>
         <details>
-          <summary>How the weighting works</summary>
-          <p>Each of your moves gets a weight of 1 + 4 × how far its move accuracy is below 100%: a move at 100% has weight 1, one at 0% has weight 5, and one you haven't tried yet has weight 3. A line's chance of coming up is its <b>weakest</b> move's weight, not the average, so one bad move is enough to bring a line back. For example, a line where every move is 100% has weight 1, but if one move is at 50% the line has weight 3, so it comes up three times as often. In Test single positions, the move tested within the line is picked by the same weights.</p>
+          <summary>How the priority works</summary>
+          <ul>
+            <li><b>Priority</b> = frequency × need.</li>
+            <li><b>Need</b> is 6 for one you've never tried (for a line: none of its moves tried). Otherwise it's weakness × due. <b>Weakness</b> is 1 at 100% accuracy, rising to 3 at 0%. <b>Due</b> compares the days since you last tested it with a review interval that grows with accuracy: 1 day at 0%, about 11 days at 50%, 128 days at 100%. Due is the days since divided by the interval, between 0.1 and 3 (3 if the last test time isn't known). So a 100% position tested yesterday has need 0.1, and a 50% position untested for a month has need 2 × 2.65 = 5.3.</li>
+            <li>Accuracy is the move accuracy for a position, and the line accuracy for a line, with moves you haven't tried counting as 0%. Last tested is when you last tried the move, or when you last played the line through from move 1 to the end.</li>
+            <li><b>Frequency</b> runs from 0.2 to 1, by how many times the position (for a line, its final position) was reached in rated Lichess games, on a logarithmic scale up to the most frequent one; 0.6 until its statistics have downloaded.</li>
+          </ul>
         </details>
       </div>
 
@@ -787,16 +771,12 @@ const saveHistory = () => store.set('history', history);
 // masters: its master games } (see the Lichess downloads).
 let positions = {};
 
-// Settings (chosen on the Studies, Practice, Positions and Options pages).
+// Settings (chosen on the Practice, Lines, Positions and Options pages).
 // Error penalties are in points: 1 point = 10% of an attempt's score.
-const START_MODES = ['start', 'partway', 'single'];
-const OPPONENT_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
 const MASTERS_TOPS = [1, 2, 3, 4, 5];
 const POSITIONS_COUNTS = [25, 50, 75, 100], POSITIONS_ACCURACIES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
 const LINES_COUNTS = [10, 20, 30, 40, 50];
 const DEFAULT_SETTINGS = {
-  startMode: 'start',          // "Where lines start"
-  opponentMode: 'misses',      // "Opponent's moves"
   sounds: false,
   penalties: { alternative: 2, masters: 2, error: 5, hint: 10 },
   mastersTop: 5,               // a masters move is within this many top master moves
@@ -815,8 +795,6 @@ function checkedSettings(saved) {
   const v = saved && typeof saved === 'object' ? saved : {};
   const d = DEFAULT_SETTINGS;
   return {
-    startMode: START_MODES.includes(v.startMode) ? v.startMode : d.startMode,
-    opponentMode: OPPONENT_MODES.includes(v.opponentMode) ? v.opponentMode : d.opponentMode,
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     penalties: validPenalties(v.penalties) ? { ...v.penalties } : { ...d.penalties },
     mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
@@ -1606,14 +1584,7 @@ function updateSelectionPanel() {
   const all_ = $('all-box');
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
-  const all_lines = selected.flatMap(chapterLines);
-  const lines = selected.flatMap(linesToPractice);
-  const nLines = lines.length;
-  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · `
-    + (settings.opponentMode === 'main'
-        ? `${plural(nLines, 'main line')} of ${all_lines.length}`
-        : plural(nLines, 'line'));
-  for (const r of document.querySelectorAll('input[name=opp-mode]')) r.checked = r.value === settings.opponentMode;
+  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · ${plural(selected.flatMap(chapterLines).length, 'line')}`;
   $('fav-set-btn').disabled = selection.size === 0;
   $('fav-recall-btn').disabled = !favorites || !favorites.length;
   // The top eye: a line through it while hidden studies are out of sight.
@@ -1621,8 +1592,6 @@ function updateSelectionPanel() {
   sh.classList.toggle('off', !showHiddenStudies);
   sh.setAttribute('aria-pressed', String(showHiddenStudies));
   sh.title = showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies';
-  for (const r of document.querySelectorAll('input[name=start-mode]')) r.checked = r.value === settings.startMode;
-  $('start-btn').disabled = nLines === 0;
 }
 
 $('all-box').addEventListener('change', e => {
@@ -1651,31 +1620,23 @@ $('fav-recall-btn').addEventListener('click', () => {
     + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''), missing || skipped ? 5000 : 3000);
 });
 
-for (const r of document.querySelectorAll('input[name=opp-mode]')) {
-  r.addEventListener('change', () => {
-    settings.opponentMode = r.value;
-    saveSettings();
-    updateSelectionPanel();
-  });
-}
-
-// Radio buttons: one is always chosen.
-for (const r of document.querySelectorAll('input[name=start-mode]')) {
-  r.addEventListener('change', () => {
-    settings.startMode = r.value;
-    saveSettings();
-    for (const other of document.querySelectorAll('input[name=start-mode]')) other.checked = other.value === settings.startMode;
-    updateSelectionPanel(); // Test single positions leaves out lines with nothing from move 5 on
-  });
-}
-
-// ---------- Choosing the next line ----------
-
-// A move you always get right has weight 1, one you always get wrong 5; never tried counts as 50% wrong.
-const moveWeight = attempts => { const s = scoreOf(attempts); return s == null ? 3 : 1 + 4 * (1 - s); };
-
-// A line's weight is its weakest move's weight.
-const lineWeight = line => Math.max(...yourMoveIndexes(line).map(i => moveWeight(attemptsAt(line, i))));
+// ---------- Spaced repetition ----------
+// "Practice all lines" / "Practice all positions": all the lines (or positions) of the chapters
+// ticked on the Studies page, with the page's "main lines only" choice. Before each one, every item
+// gets a priority, frequency × need, and one is picked at random with chances in proportion to it.
+//   need: 6 for an item never tried. Otherwise weakness × due:
+//     weakness = 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%;
+//     due = days since last tested ÷ the item's interval, kept between 0.1 and 3, or 3 when the last
+//     test time isn't known; the interval is 2^(7 × accuracy) days: 1 day at 0%, about 11 days at
+//     50%, 128 days at 100%.
+//   A position's accuracy is its move accuracy, last tested is when its move was last tried. A line's
+//   accuracy is its line accuracy with untried moves counting as 0%; last tested is when it was last
+//   played through from move 1 to the end. A line is new when none of its moves have been tried.
+//   frequency: 0.2 to 1, by the rated Lichess games reaching the position (a line's final
+//   position), on a log scale up to the most frequent item; 0.6 while its statistics haven't downloaded.
+const NEW_ITEM_NEED = 6;
+const UNKNOWN_FREQUENCY = 0.6;
+const DAY_MS = 86400000;
 
 function weightedPick(items, weight) {
   const total = items.reduce((s, x) => s + weight(x), 0);
@@ -1687,60 +1648,49 @@ function weightedPick(items, weight) {
   return items[items.length - 1];
 }
 
-let previousLineKey = null;
+const tickedChapters = () => visibleChapters().filter(c => selection.has(c.key));
 
-// Never give the same line twice in a row when there is any other choice.
-const avoidingPreviousLine = lines => {
-  const others = lines.filter(l => l.key !== previousLineKey);
-  return others.length ? others : lines;
-};
+// Whether every opponent move before move i is the study's main move.
+const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours && m.variationIndex !== 0);
 
-// The lines practiced from a chapter: only the main line with "Main line only".
-// In Test single positions only the user's moves from move 5 on are tested, so a line with none
-// isn't practiced there.
-const SINGLE_FROM_MOVE = 5;
+// Every line of the ticked chapters with a move of yours, as practice items (whole lines).
+const allLineItems = () => tickedChapters().flatMap(chapterLines)
+  .filter(line => (!settings.linesMainLinesOnly || line.isMainLine) && yourMoveIndexes(line).length)
+  .map(line => ({ line, i: null }));
 
-const linesToPractice = ch => chapterLines(ch).filter(l => (settings.opponentMode !== 'main' || l.isMainLine)
-  && (settings.startMode !== 'single' || l.moves.some(m => m.isYours && m.moveNumber >= SINGLE_FROM_MOVE)));
-
-function replyPreference(san, nags, epd) {
-  if (settings.opponentMode === 'equal') return 1;
-  if (settings.opponentMode === 'mistakes') return nags.some(n => MISTAKE_NAGS.includes(n)) ? 4 : 1;
-  const stats = lichessGamesAt(epd); // common: games played (+1 so unknown moves still get a chance)
-  return gamesWith(stats, san) + 1;
-}
-
-function preferenceWeight(line) {
-  let w = 1;
-  for (const m of line.moves) {
-    if (!m.replies) continue;
-    const total = m.replies.reduce((sum, x) => sum + replyPreference(x.san, x.nags, m.epdBefore), 0);
-    const chosen = m.replies.find(x => x.san === m.san);
-    w *= (chosen ? replyPreference(chosen.san, chosen.nags, m.epdBefore) : 1) / total;
+// Every move of yours in the ticked chapters, once each, as practice items (single positions).
+function allPositionItems() {
+  const items = new Map();
+  for (const line of tickedChapters().flatMap(chapterLines)) for (const i of yourMoveIndexes(line)) {
+    const key = moveKey(line, i);
+    if (!items.has(key) && (!settings.positionsMainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
   }
-  return w;
+  return [...items.values()];
 }
 
-// "Prefer lines I miss" and "Main line only": a line is weighted by its weakest move. "Prefer most
-// common moves" / "Prefer opponent's mistakes" / "All moves equally": a line's weight is the chance
-// of the opponent choosing its replies at each branch, by that preference.
-const usesYourHistory = () => !['common', 'mistakes', 'equal'].includes(settings.opponentMode);
-
-function pickWeighted(lines) {
-  return weightedPick(avoidingPreviousLine(lines), usesYourHistory() ? lineWeight : preferenceWeight);
+function itemAccuracy({ line, i }) {
+  if (i != null) return scoreOf(attemptsAt(line, i));
+  const scores = yourMoveIndexes(line).map(k => scoreOf(attemptsAt(line, k)));
+  return scores.every(s => s == null) ? null : scores.reduce((sum, s) => sum + (s ?? 0), 0) / scores.length;
 }
 
-function pickLine() {
-  const line = chooseLineFromSelection();
-  if (line) previousLineKey = line.key;
-  return line;
+const itemLastTested = ({ line, i }) => i != null ? history.moves[moveKey(line, i)]?.lastTried : history.lines[line.key]?.played.at(-1);
+
+const itemEpd = ({ line, i }) => i != null ? line.moves[i].epdBefore : line.moves[line.moves.length - 1].epd;
+
+function need(accuracy, lastTested, now = Date.now()) {
+  if (accuracy == null) return NEW_ITEM_NEED;
+  const weakness = 1 + 2 * (1 - accuracy);
+  const interval = 2 ** (7 * accuracy);
+  const due = lastTested ? Math.min(3, Math.max(0.1, (now - lastTested) / DAY_MS / interval)) : 3;
+  return weakness * due;
 }
 
-function chooseLineFromSelection() {
-  const chapters = visibleChapters().filter(c => selection.has(c.key) && linesToPractice(c).length);
-  if (!chapters.length) return null;
-  // Lines come from all selected chapters, weighted by the "Opponent's moves" choice.
-  return pickWeighted(chapters.flatMap(linesToPractice));
+function priorities(items) {
+  const games = items.map(item => { const stats = lichessGamesAt(itemEpd(item)); return stats ? totalGames(stats) : null; });
+  const top = Math.log1p(Math.max(0, ...games.filter(g => g != null)));
+  const frequency = g => g == null ? UNKNOWN_FREQUENCY : top ? 0.2 + 0.8 * Math.log1p(g) / top : 0.2;
+  return items.map((item, k) => frequency(games[k]) * need(itemAccuracy(item), itemLastTested(item)));
 }
 
 // ---------- Practice: the board ----------
@@ -1824,12 +1774,21 @@ function choosePromotion(color) {
 
 // ---------- Practice: playing lines ----------
 
-// What decides which lines are practiced. If any of it changes, a line in progress is dropped.
+// What's being practised, chosen on the Lines or Positions page: { page: 'Lines' or 'Positions',
+// isAll, items: [{ line, i }] }, where i is the move of yours to test as a single position, or null
+// to play the whole line from move 1. "Practice these lines/positions" lists the page's table, and
+// items are picked at random; "Practice all lines/positions" lists all of them, and items are picked
+// by priority (see Spaced repetition). Null when nothing is being practised.
+let practiceList = null;
+let previousListItem = null;
+
+// What decides what's practised. If any of it changes, a line in progress is dropped.
 const practiceSignature = () => JSON.stringify({
-  selection: [...selection].sort(), opponentMode: settings.opponentMode, startMode: settings.startMode, fetchedAt: library?.fetchedAt,
-  list: practiceList && [practiceList.page, ...practiceList.items.map(item => item.i == null ? item.line.key : moveKey(item.line, item.i))],
+  fetchedAt: library?.fetchedAt,
+  list: practiceList && [practiceList.page, practiceList.isAll, ...practiceList.items.map(item => item.i == null ? item.line.key : moveKey(item.line, item.i))],
 });
 
+// The Practice page before anything is practised: practice starts from the Lines or Positions page.
 function showPracticeIdle() {
   practice = null;
   practiceList = null;
@@ -1843,57 +1802,22 @@ function showPracticeIdle() {
   });
   board.setAutoShapes([]);
   board.redrawAll();
-  updateSelectionPanel(); // refreshes the selection count
-  const ready = !$('start-btn').disabled;
-  // "3 chapters · 13 lines selected", then the Opponent's-moves choice from the Studies page.
-  const chapters = allChapters().filter(c => selection.has(c.key));
-  const nLines = chapters.reduce((sum, c) => sum + linesToPractice(c).length, 0);
   $('practice-title').textContent = '';
-  $('practice-position').textContent = `${plural(chapters.length, 'chapter')} · ${plural(nLines, 'line')} selected`; // the idle page's selection count
-  $('practice-side').textContent = document.querySelector(`input[name=opp-mode][value=${settings.opponentMode}]`).closest('label').textContent.trim();
+  $('practice-position').textContent = '';
+  $('practice-side').textContent = '';
   $('practice-moves').replaceChildren(element('span', { class: 'none' }, 'No moves yet.'));
   for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
-  // Keep the idle page clean: no status text unless there's nothing to practice.
-  // (setStatus resets the box's classes, so it reappears as soon as a line starts.)
-  setStatus('Select chapters on the Studies page');
-  if (ready) $('practice-status').classList.add('hidden');
-  $('practice-summary').classList.add('hidden');
+  setStatus('To practise, choose Practice on the Lines or Positions page.');
   hideCommentPopup();
   $('next-btn').classList.add('hidden');
   hideLineButtons();
-  $('practice-start-btn').classList.remove('hidden');
-  $('practice-start-btn').disabled = !ready;
-  if (ready) $('practice-start-btn').focus();
 }
 
-$('practice-start-btn').addEventListener('click', () => { startPractice(); });
-$('start-btn').addEventListener('click', startPractice);
-
-// What's being practised from the Positions or Lines page ("Practice these positions" / "Practice
-// these lines"): { page: 'Positions' or 'Lines', items: [{ line, i }] }, where i is the move of
-// yours to test as a single position, or null to play the whole line from move 1. Null when
-// practising the chapters ticked on the Studies page.
-let practiceList = null;
-let previousListItem = null;
-
-// Returns false when there's nothing to practice.
-function startPractice() {
-  practiceList = null;
-  const line = pickLine();
-  if (!line) return false;
-  hideBanner();
-  showScreen('practice');
-  ensureBoard();
-  board.redrawAll();
-  startLine(line);
-  return true;
-}
-
-// Practise the items listed on the Positions or Lines page, one at a time, picked at random (never
-// the same one twice in a row when there's another).
-function practiceFromList(page, items) {
+// Practise items from the Lines or Positions page, one at a time (never the same one twice in a row
+// when there's another): picked at random, or by priority when isAll.
+function practiceFromList(page, items, isAll = false) {
   if (!items.length) return;
-  practiceList = { page, items };
+  practiceList = { page, items, isAll };
   hideBanner();
   showScreen('practice');
   ensureBoard();
@@ -1902,78 +1826,38 @@ function practiceFromList(page, items) {
 }
 
 function nextFromList() {
-  const { items } = practiceList;
-  const others = items.filter(item => item !== previousListItem);
-  const choices = others.length ? others : items;
-  const pick = previousListItem = choices[Math.floor(Math.random() * choices.length)];
-  startLine(pick.line, pick.i == null ? { fromStart: true } : { singleAt: pick.i });
+  const { items, isAll } = practiceList;
+  const weights = isAll ? priorities(items) : items.map(() => 1);
+  const choices = items.map((item, k) => ({ item, weight: weights[k] })).filter(c => c.item !== previousListItem);
+  const pick = previousListItem = choices.length ? weightedPick(choices, c => c.weight).item : items[0];
+  startLine(pick.line, { singleAt: pick.i });
 }
 
-// Starts a line: where it starts follows the "Where lines start" setting, unless singleAt (just that
-// move of yours is tested, as a single position) or fromStart (the whole line, from move 1) says.
-function startLine(line, { singleAt = null, fromStart = false } = {}) {
-  const single = singleAt != null || (!fromStart && settings.startMode === 'single');
-  practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: 0, isSinglePosition: single };
+// Starts a line from move 1, or with singleAt, tests just that move of yours as a single position.
+function startLine(line, { singleAt = null } = {}) {
+  const single = singleAt != null;
+  practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: singleAt ?? 0, isSinglePosition: single };
   practice.signature = practiceSignature();
   hideBoardNotice(true);
-  // The board's orientation already shows the user's side.
-  $('practice-side').textContent = '';
-  $('practice-summary').classList.add('hidden');
+  // The board's orientation already shows the user's side; this line says where the item came from.
+  const from = !practiceList ? (single ? 'Single position' : '')
+    : practiceList.isAll ? `All ${practiceList.page.toLowerCase()}` : `From the ${practiceList.page} page`;
+  $('practice-side').textContent = single ? `${from}: ${positionName(line, singleAt)}` : from;
   $('next-btn').classList.add('hidden');
-  $('practice-start-btn').classList.add('hidden');
   $('hint-btn').classList.remove('hidden');
   $('end-btn').classList.toggle('hidden', single);
   hideCommentPopup();
   updateNames();
   setShapes([]);
-  const start = singleAt ?? (fromStart ? 0 : chooseStartIndex(line));
-  practice.startIndex = start;
-  if (practice.isSinglePosition) {
-    const label = `${practiceList ? 'From the Positions page' : 'Single position'}: ${positionName(line, start)}`;
-    $('practice-side').textContent = $('practice-side').textContent ? `${$('practice-side').textContent} · ${label}` : label;
-  } else if (practiceList) {
-    $('practice-side').textContent = 'From the Lines page';
-  }
-  if (start) {
-    // Set up the position before the chosen move instantly (no sounds); the earlier
-    // moves appear in the move list, with bubbles for their comments.
-    practice.position = line.moves[start - 1].position.clone();
-    practice.movesPlayed = start;
-    practice.lastMove = squaresOf(line.moves[start - 1]);
-    if (!practice.isSinglePosition) {
-      const from = `Started partway: ${positionName(line, start)}`;
-      $('practice-side').textContent = $('practice-side').textContent ? `${$('practice-side').textContent} · ${from}` : from;
-    }
+  if (single && singleAt) {
+    // Set up the position before the move instantly (no sounds); the earlier moves appear in
+    // the move list, with bubbles for their comments.
+    practice.position = line.moves[singleAt - 1].position.clone();
+    practice.movesPlayed = singleAt;
+    practice.lastMove = squaresOf(line.moves[singleAt - 1]);
   }
   updateBoard();
   advance();
-}
-
-// Where a line starts, per the "Where lines start" setting: an index into line.moves,
-// or 0 for the beginning. A partway start is one of the user's moves, never the first,
-// leaving at least two of the user's moves to play.
-function chooseStartIndex(line) {
-  if (settings.startMode === 'start') return 0;
-  const yourMoves = line.moves.map((m, i) => m.isYours ? i : -1).filter(i => i >= 0);
-  if (settings.startMode === 'single') return chooseSinglePosition(line, yourMoves.filter(i => line.moves[i].moveNumber >= SINGLE_FROM_MOVE));
-  const candidates = yourMoves.slice(1, -1);
-  return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : 0;
-}
-
-// "Single positions": any of the user's moves (the first included), avoiding the
-// position just tested when there's another choice. With move-results weighting,
-// moves you get wrong more often come up more.
-let previousSingleFen = null;
-
-function chooseSinglePosition(line, yourMoves) {
-  const fenBefore = i => line.moves[i].parent.fen;
-  const others = yourMoves.filter(i => fenBefore(i) !== previousSingleFen);
-  const choices = others.length ? others : yourMoves;
-  const k = usesYourHistory()
-    ? weightedPick(choices, i => moveWeight(attemptsAt(line, i)))
-    : choices[Math.floor(Math.random() * choices.length)];
-  previousSingleFen = fenBefore(k);
-  return k;
 }
 
 // The line in progress (practice) holds: the line, the position on the board, movesPlayed, tried
@@ -2155,7 +2039,7 @@ function showNextButton(label) {
 function endLine() {
   const { line } = practice;
   saveAttempts();
-  if (!practice.endedEarly && !practice.startIndex) { // played all the way through, from move 1 to the end
+  if (!practice.endedEarly) { // played all the way through, from move 1 to the end
     // The line's time is when its last move was attempted.
     const at = practice.attempts[practice.attempts.length - 1]?.at ?? Date.now();
     const record = history.lines[line.key] ||= { played: [] };
@@ -2173,11 +2057,6 @@ function endLine() {
     showBoardNotice([element('div', { class: 'notice-title' }, 'Line complete'), ...lineSummary(),
       element('button', { class: 'primary', onclick: nextLine }, 'Next line')], 3500);
   }
-  const summary = $('practice-summary');
-  summary.replaceChildren(...[
-    practice.startIndex ? element('p', { class: 'muted' }, `Started partway: ${positionName(practice.line, practice.startIndex)}.`) : null,
-  ].filter(Boolean));
-  summary.classList.toggle('hidden', !summary.childElementCount); // nothing to say after a clean line
   hideLineButtons();
   showNextButton('Next line');
 }
@@ -2214,10 +2093,7 @@ function onBoardTouched() {
 
 function nextLine() {
   if (practiceList) return nextFromList();
-  const line = pickLine();
-  if (line) return startLine(line);
-  $('next-btn').classList.add('hidden');
-  setStatus('No lines left to practice.');
+  showPracticeIdle();
 }
 
 $('next-btn').addEventListener('click', nextLine);
@@ -2413,7 +2289,7 @@ let hoverBoard = null;
 
 // Shows the hover board for move i of line next to el. With { attempt }, it describes this
 // attempt at the move (the practice move list): the wrong moves played this time, not the last 10
-// attempts; attempt is null for a move of yours that wasn't played this time (before a partway start).
+// attempts; attempt is null for a move of yours that wasn't played this time (before a single position).
 function showHoverBoard(el, line, i, thisTime = null) {
   const m = line.moves[i];
   const { position, lastMove, shapes, rows } = !m.isYours ? opponentMoveBoard(line, i, thisTime)
@@ -2779,7 +2655,7 @@ function showLines() {
 }
 
 function renderLines() {
-  const chapters = visibleChapters().filter(c => selection.has(c.key));
+  const chapters = tickedChapters();
   const found = [];
   let waiting = 0;
   for (const ch of chapters) for (const line of chapterLines(ch)) {
@@ -2795,6 +2671,7 @@ function renderLines() {
   const rows = found.sort((a, b) => b.games - a.games).slice(0, settings.linesCount);
   shownLines = rows.map(({ line }) => ({ line, i: null }));
   $('practice-lines-btn').disabled = !rows.length;
+  $('practice-all-lines-btn').disabled = !allLineItems().length;
   $('lines-rows').replaceChildren(...rows.map(({ line, accuracy, games, lastPlayed }) => {
     const ch = chapterByKey(line.chapterKey);
     const last = line.moves.length - 1;
@@ -2816,6 +2693,7 @@ function renderLines() {
 }
 
 $('practice-lines-btn').addEventListener('click', () => practiceFromList('Lines', shownLines));
+$('practice-all-lines-btn').addEventListener('click', () => practiceFromList('Lines', allLineItems(), true));
 $('lines-count').addEventListener('change', e => { settings.linesCount = +e.target.value; saveSettings(); renderLines(); });
 $('lines-max').addEventListener('change', e => { settings.linesMaxAccuracy = +e.target.value; saveSettings(); renderLines(); });
 $('lines-main-lines').addEventListener('change', e => { settings.linesMainLinesOnly = e.target.checked; saveSettings(); renderLines(); });
@@ -2849,12 +2727,12 @@ function showPositions() {
 function renderPositions() {
   const found = new Map(); // position key -> { line, i, score, games }
   let waiting = 0;
-  const chapters = visibleChapters().filter(c => selection.has(c.key)); // the chapters ticked on the Studies page
+  const chapters = tickedChapters();
   for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
     const key = moveKey(line, i);
     if (found.has(key)) continue;
     // Main lines only: every opponent move on the way is the study's main move.
-    if (settings.positionsMainLinesOnly && line.moves.slice(0, i).some(m => !m.isYours && m.variationIndex !== 0)) continue;
+    if (settings.positionsMainLinesOnly && !onMainLines(line, i)) continue;
     const attempts = attemptsAt(line, i);
     if (!attempts.length) continue;
     const score = scoreOf(attempts);
@@ -2866,6 +2744,7 @@ function renderPositions() {
   const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.positionsCount);
   shownPositions = rows.map(({ line, i }) => ({ line, i }));
   $('practice-positions-btn').disabled = !rows.length;
+  $('practice-all-positions-btn').disabled = !allPositionItems().length;
   $('positions-rows').replaceChildren(...rows.map(({ line, i, score, games, lastTried }) => {
     const ch = chapterByKey(line.chapterKey);
     const tr = element('tr', {},
@@ -2910,6 +2789,7 @@ function positionName(line, i) {
 $('positions-count').addEventListener('change', e => { settings.positionsCount = +e.target.value; saveSettings(); renderPositions(); });
 $('positions-main-lines').addEventListener('change', e => { settings.positionsMainLinesOnly = e.target.checked; saveSettings(); renderPositions(); });
 $('practice-positions-btn').addEventListener('click', () => practiceFromList('Positions', shownPositions));
+$('practice-all-positions-btn').addEventListener('click', () => practiceFromList('Positions', allPositionItems(), true));
 $('positions-max').addEventListener('change', e => { settings.positionsMaxAccuracy = +e.target.value; saveSettings(); renderPositions(); });
 
 // ---------- Options page and token ----------
@@ -3069,8 +2949,7 @@ $('restore-file').addEventListener('change', async e => {
 
 // ---------- Navigation ----------
 
-// Practice: the practice page with the board idle and a "Start practice" button;
-// nothing is tested until that's pressed.
+// Practice: back to what's being practised, or the idle page saying where practice starts.
 $('nav-practice').addEventListener('click', () => {
   if (currentScreen === 'practice') return; // already on the practice page
   if (!library) { $('nav-studies').click(); return; }
