@@ -245,6 +245,16 @@
   .status.bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
+  /* A message over the board that fades away: the end-of-line panel, or a short note. */
+  .board-notice {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 9;
+    min-width: 220px; max-width: 80%; padding: 16px 20px; border-radius: 8px; text-align: center;
+    background: rgba(22, 21, 18, .9); color: var(--text); box-shadow: 0 4px 16px rgba(0,0,0,.6);
+    transition: opacity .6s ease;
+  }
+  .board-notice.fading { opacity: 0; }
+  .board-notice .notice-title { font-size: 18px; font-weight: 600; color: var(--text-strong); margin-bottom: 6px; }
+  .board-notice button { margin-top: 12px; }
   .promo {
     position: absolute; inset: 0; z-index: 10;
     display: flex; align-items: center; justify-content: center;
@@ -344,6 +354,7 @@
         <div class="board-wrap">
           <div id="board"></div>
           <div id="promo" class="promo hidden"><div class="cg-wrap"></div></div>
+          <div id="board-notice" class="board-notice hidden" role="status" aria-live="polite"></div>
         </div>
         <div class="below-board">
         <button id="sound-toggle" class="icon-btn" aria-label="Move sounds">
@@ -448,7 +459,7 @@
           <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). Press <b>Next line</b> (or Enter) to continue.</li>
+          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue.</li>
           <li>At the top of the Studies page, choose <b>From the start</b>, <b>Partway through</b> or <b>Test single positions</b>. Partway through jumps to a random point in each line and quizzes you from there to the end; the moves before that point are in the move list. Test single positions tests just one of your moves, then moves to a different position; each counts as one try of that move, and moves you often get wrong come up more.</li>
         </ul>
       </div>
@@ -1637,6 +1648,7 @@ function ensureBoard() {
     premovable: { enabled: false },
     drawable: { enabled: true },
     movable: { free: false, showDests: true, events: { after: onYourMove } },
+    events: { select: onBoardTouched },
   });
   window.addEventListener('resize', () => board.redrawAll());
 }
@@ -1710,6 +1722,7 @@ const practiceSignature = () => JSON.stringify({
 
 function showPracticeIdle() {
   practice = null;
+  hideBoardNotice(true);
   showScreen('practice');
   ensureBoard();
   board.set({
@@ -1760,6 +1773,7 @@ function startPractice() {
 function startLine(line) {
   practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: 0, isSinglePosition: settings.startMode === 'single' };
   practice.signature = practiceSignature();
+  hideBoardNotice(true);
   // The board's orientation already shows the user's side.
   $('practice-side').textContent = '';
   $('practice-summary').classList.add('hidden');
@@ -2009,7 +2023,12 @@ function endLine() {
   practice.busy = true;
   updateBoard();
   if (practice.endedEarly) setStatus('Line ended early.');
-  else setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
+  else {
+    setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
+    // The same, over the board where you're looking, fading away after a few seconds.
+    showBoardNotice([element('div', { class: 'notice-title' }, 'Line complete'), ...lineSummary(),
+      element('button', { class: 'primary', onclick: nextLine }, 'Next line')], 3500);
+  }
   const summary = $('practice-summary');
   summary.replaceChildren(...[
     practice.startIndex ? element('p', { class: 'muted' }, `Started partway: ${positionName(practice.line, practice.startIndex)}.`) : null,
@@ -2017,6 +2036,36 @@ function endLine() {
   summary.classList.toggle('hidden', !summary.childElementCount); // nothing to say after a clean line
   hideLineButtons();
   showNextButton('Next line');
+}
+
+// A message over the board that fades away after ms (or when clicked).
+let boardNoticeTimer = null;
+
+function showBoardNotice(children, ms) {
+  const box = $('board-notice');
+  clearTimeout(boardNoticeTimer);
+  box.replaceChildren(...children);
+  box.classList.remove('hidden', 'fading');
+  boardNoticeTimer = setTimeout(hideBoardNotice, ms);
+}
+
+function hideBoardNotice(now = false) {
+  const box = $('board-notice');
+  clearTimeout(boardNoticeTimer);
+  if (now) { box.classList.add('hidden'); return; }
+  box.classList.add('fading');
+  boardNoticeTimer = setTimeout(() => box.classList.add('hidden'), 600); // after the fade
+}
+
+$('board-notice').addEventListener('click', e => { if (e.target.tagName !== 'BUTTON') hideBoardNotice(); });
+
+// Touching the board once a line (or single position) is over: say so, since nothing can move.
+function onBoardTouched() {
+  if (!practice?.isOver || $('next-btn').classList.contains('hidden')) return;
+  const box = $('board-notice');
+  if (!box.classList.contains('hidden') && !box.classList.contains('fading')) return; // the end panel already says so
+  const over = practice.isSinglePosition ? 'This position is done.' : 'The line is over.';
+  showBoardNotice([`${over} Press ${$('next-btn').textContent} (or Enter).`], 2500);
 }
 
 function nextLine() {
@@ -2047,6 +2096,7 @@ function endSinglePosition() {
 
 function leavePractice() {
   practice = null; // pending timers check practice and stop
+  hideBoardNotice(true);
   $('next-btn').classList.add('hidden');
   hideLineButtons();
   $('promo').classList.add('hidden');
