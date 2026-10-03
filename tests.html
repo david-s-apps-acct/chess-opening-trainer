@@ -47,9 +47,10 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
-  renderPositions, renderLines, practicePositions,
+  renderPositions, renderLines, practiceFromList,
   get shownPositions() { return shownPositions; },
-  stopPracticingPositions() { positionsToPractice = null; },
+  get shownLines() { return shownLines; },
+  stopPracticingFromList() { practiceList = null; },
   onYourMove,
 };`;
 
@@ -347,10 +348,10 @@ function runPositions(app) {
   // "Practice these positions": a single position picked from the table.
   rows({});
   const listed = app.shownPositions.map(p => app.moveKey(p.line, p.i));
-  app.practicePositions(app.shownPositions);
+  app.practiceFromList('Positions', app.shownPositions);
   check('positions: practising a listed position', [app.practice.isSinglePosition, listed.includes(app.moveKey(app.practice.line, app.practice.startIndex)),
     document.getElementById('practice-side').textContent.startsWith('From the Positions page: ')], [true, true, true]);
-  app.stopPracticingPositions();
+  app.stopPracticingFromList();
   // The Lines page: both lines, all moves tried at 50%.
   const lineRows = settings => {
     app.setSettings({ linesMaxAccuracy: 90, ...settings });
@@ -361,6 +362,12 @@ function runPositions(app) {
     [['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Side line1. e4 f6 2. d4', '50%', '–']]);
   check('lines: main lines only', lineRows({ linesMainLinesOnly: true }).length, 1);
   check('lines: accuracy limit', lineRows({ linesMaxAccuracy: 40 }).length, 0);
+  // "Practice these lines": a whole line from the table, from move 1.
+  lineRows({});
+  app.practiceFromList('Lines', app.shownLines);
+  check('lines: practising a listed line from move 1', [app.practice.isSinglePosition, app.practice.startIndex, app.shownLines.some(l => l.line === app.practice.line),
+    document.getElementById('practice-side').textContent], [false, 0, true, 'From the Lines page']);
+  app.stopPracticingFromList();
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   check('positions: only ticked chapters', rows({}).length, 0);
   check('lines: only ticked chapters, all moves tried', lineRows({}).length, 0);

@@ -415,6 +415,7 @@
         <div class="table-options">
           <label title="Only lines where the opponent always plays the study's main move"><input type="checkbox" id="lines-main-lines"> Main lines only</label>
         </div>
+        <div class="table-with-actions">
         <table class="report-table">
           <thead>
             <tr><th>Line</th><th class="num">End position reached (times)</th><th class="num">Line accuracy</th><th class="num">Last tested</th></tr>
@@ -433,6 +434,8 @@
           </thead>
           <tbody id="lines-rows"></tbody>
         </table>
+        <div class="table-actions"><button id="practice-lines-btn" class="primary" title="Practise the lines in this table, one at a time, picked at random, each from move 1">Practice these lines</button></div>
+        </div>
         <p id="lines-note" class="muted"></p>
       </div>
     </div>
@@ -579,6 +582,7 @@
           <li>The <b>Lines</b> page lists your most frequent weak lines, from the chapters ticked on the Studies page. Under the <b>Line</b> heading, choose how many to show (10 to 50); under <b>Line accuracy</b>, choose the highest line accuracy to include (≤ 90% down to ≤ 10%). Tick <b>Main lines only</b> to show only lines where the opponent always plays the study's main move.</li>
           <li>Each row is one line: the study and chapter, then the line's final position, named the usual way. <b>End position reached (times)</b>: how many times that final position was reached in rated Lichess games; the most frequent come first. <b>Line accuracy</b>: the average move accuracy of your moves in the line (each over its last 10 tries). <b>Last tested</b>: how many days ago you last played the whole line from move 1 to the end ("–" if you haven't since these dates were recorded).</li>
           <li>A line is listed once you've tried every one of its moves. Hover over a row to see the line's final move on the small board.</li>
+          <li>Press <b>Practice these lines</b> (to the right of the table) to practise the lines in the table on the Practice page, one at a time, picked at random, each played from move 1 to the end (so it counts as a play-through for Last tested). Press <b>Start practice</b> to go back to practising your ticked chapters.</li>
         </ul>
       </div>
 
@@ -1823,12 +1827,12 @@ function choosePromotion(color) {
 // What decides which lines are practiced. If any of it changes, a line in progress is dropped.
 const practiceSignature = () => JSON.stringify({
   selection: [...selection].sort(), opponentMode: settings.opponentMode, startMode: settings.startMode, fetchedAt: library?.fetchedAt,
-  positions: positionsToPractice?.map(p => moveKey(p.line, p.i)),
+  list: practiceList && [practiceList.page, ...practiceList.items.map(item => item.i == null ? item.line.key : moveKey(item.line, item.i))],
 });
 
 function showPracticeIdle() {
   practice = null;
-  positionsToPractice = null;
+  practiceList = null;
   hideBoardNotice(true);
   showScreen('practice');
   ensureBoard();
@@ -1865,14 +1869,16 @@ function showPracticeIdle() {
 $('practice-start-btn').addEventListener('click', () => { startPractice(); });
 $('start-btn').addEventListener('click', startPractice);
 
-// Returns false when there's nothing to practice.
-// The positions being practised from the Positions page ("Practice these positions"): [{ line, i }],
-// or null when practising the lines ticked on the Studies page.
-let positionsToPractice = null;
-let previousPracticedPosition = null;
+// What's being practised from the Positions or Lines page ("Practice these positions" / "Practice
+// these lines"): { page: 'Positions' or 'Lines', items: [{ line, i }] }, where i is the move of
+// yours to test as a single position, or null to play the whole line from move 1. Null when
+// practising the chapters ticked on the Studies page.
+let practiceList = null;
+let previousListItem = null;
 
+// Returns false when there's nothing to practice.
 function startPractice() {
-  positionsToPractice = null;
+  practiceList = null;
   const line = pickLine();
   if (!line) return false;
   hideBanner();
@@ -1883,29 +1889,30 @@ function startPractice() {
   return true;
 }
 
-// Practice the positions listed on the Positions page, one at a time, picked at random (never the
-// same one twice in a row when there's another), each as a single position.
-function practicePositions(list) {
-  if (!list.length) return;
-  positionsToPractice = list;
+// Practise the items listed on the Positions or Lines page, one at a time, picked at random (never
+// the same one twice in a row when there's another).
+function practiceFromList(page, items) {
+  if (!items.length) return;
+  practiceList = { page, items };
   hideBanner();
   showScreen('practice');
   ensureBoard();
   board.redrawAll();
-  nextPracticedPosition();
+  nextFromList();
 }
 
-function nextPracticedPosition() {
-  const list = positionsToPractice;
-  const others = list.filter(p => p !== previousPracticedPosition);
-  const pick = (others.length ? others : list)[Math.floor(Math.random() * (others.length || list.length))];
-  previousPracticedPosition = pick;
-  startLine(pick.line, pick.i);
+function nextFromList() {
+  const { items } = practiceList;
+  const others = items.filter(item => item !== previousListItem);
+  const choices = others.length ? others : items;
+  const pick = previousListItem = choices[Math.floor(Math.random() * choices.length)];
+  startLine(pick.line, pick.i == null ? { fromStart: true } : { singleAt: pick.i });
 }
 
-// Starts a line; with singleAt, just that move of yours is tested (a single position).
-function startLine(line, singleAt = null) {
-  const single = singleAt != null || settings.startMode === 'single';
+// Starts a line: where it starts follows the "Where lines start" setting, unless singleAt (just that
+// move of yours is tested, as a single position) or fromStart (the whole line, from move 1) says.
+function startLine(line, { singleAt = null, fromStart = false } = {}) {
+  const single = singleAt != null || (!fromStart && settings.startMode === 'single');
   practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: 0, isSinglePosition: single };
   practice.signature = practiceSignature();
   hideBoardNotice(true);
@@ -1919,11 +1926,13 @@ function startLine(line, singleAt = null) {
   hideCommentPopup();
   updateNames();
   setShapes([]);
-  const start = singleAt ?? chooseStartIndex(line);
+  const start = singleAt ?? (fromStart ? 0 : chooseStartIndex(line));
   practice.startIndex = start;
   if (practice.isSinglePosition) {
-    const label = `${positionsToPractice ? 'From the Positions page' : 'Single position'}: ${positionName(line, start)}`;
+    const label = `${practiceList ? 'From the Positions page' : 'Single position'}: ${positionName(line, start)}`;
     $('practice-side').textContent = $('practice-side').textContent ? `${$('practice-side').textContent} · ${label}` : label;
+  } else if (practiceList) {
+    $('practice-side').textContent = 'From the Lines page';
   }
   if (start) {
     // Set up the position before the chosen move instantly (no sounds); the earlier
@@ -2204,7 +2213,7 @@ function onBoardTouched() {
 }
 
 function nextLine() {
-  if (positionsToPractice) return nextPracticedPosition();
+  if (practiceList) return nextFromList();
   const line = pickLine();
   if (line) return startLine(line);
   $('next-btn').classList.add('hidden');
@@ -2759,6 +2768,8 @@ function mastersShareText(epd, moveSan) {
 // final position's statistics haven't downloaded are left out. Last tested: the last time the line
 // was played through from move 1 to the end.
 
+let shownLines = []; // the lines in the Lines page's table, for "Practice these lines"
+
 function showLines() {
   showScreen('lines');
   $('lines-count').value = String(settings.linesCount);
@@ -2782,6 +2793,8 @@ function renderLines() {
     found.push({ line, accuracy, games: totalGames(stats), lastPlayed: history.lines[line.key]?.played.at(-1) });
   }
   const rows = found.sort((a, b) => b.games - a.games).slice(0, settings.linesCount);
+  shownLines = rows.map(({ line }) => ({ line, i: null }));
+  $('practice-lines-btn').disabled = !rows.length;
   $('lines-rows').replaceChildren(...rows.map(({ line, accuracy, games, lastPlayed }) => {
     const ch = chapterByKey(line.chapterKey);
     const last = line.moves.length - 1;
@@ -2802,6 +2815,7 @@ function renderLines() {
     : 'No lines match these choices. Try other choices, or tick more chapters on the Studies page. Lines are listed once you\'ve tried all their moves.';
 }
 
+$('practice-lines-btn').addEventListener('click', () => practiceFromList('Lines', shownLines));
 $('lines-count').addEventListener('change', e => { settings.linesCount = +e.target.value; saveSettings(); renderLines(); });
 $('lines-max').addEventListener('change', e => { settings.linesMaxAccuracy = +e.target.value; saveSettings(); renderLines(); });
 $('lines-main-lines').addEventListener('change', e => { settings.linesMainLinesOnly = e.target.checked; saveSettings(); renderLines(); });
@@ -2895,7 +2909,7 @@ function positionName(line, i) {
 
 $('positions-count').addEventListener('change', e => { settings.positionsCount = +e.target.value; saveSettings(); renderPositions(); });
 $('positions-main-lines').addEventListener('change', e => { settings.positionsMainLinesOnly = e.target.checked; saveSettings(); renderPositions(); });
-$('practice-positions-btn').addEventListener('click', () => practicePositions(shownPositions));
+$('practice-positions-btn').addEventListener('click', () => practiceFromList('Positions', shownPositions));
 $('positions-max').addEventListener('change', e => { settings.positionsMaxAccuracy = +e.target.value; saveSettings(); renderPositions(); });
 
 // ---------- Options page and token ----------
