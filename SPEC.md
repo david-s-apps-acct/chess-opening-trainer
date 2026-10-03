@@ -292,7 +292,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Header
 
-- Every page, including the first-visit token screen, shows the same five buttons at the top, always in this order: **Practice**, **Studies**, **Positions**, **Options**, **Help**. (Positions, first called Weaknesses, was added between Studies and Options. Options was called **System** until the user renamed it, when the error penalties were added.) (There was a **Statistics** button between Studies and System until the Statistics page was removed.) On phones they shrink to fit on one row.
+- Every page, including the first-visit token screen, shows the same six buttons at the top, always in this order: **Studies**, **Lines**, **Positions**, **Practice**, **Options**, **Help** (the user's order; Practice used to come first, and Lines was added). (Positions, first called Weaknesses, was added between Studies and Options. Options was called **System** until the user renamed it, when the error penalties were added.) (There was a **Statistics** button between Studies and System until the Statistics page was removed.) On phones they shrink to fit on one row.
 - History: the header first had "Back to practice" and "Stats"; they became "Practice" and "Statistics", then that "Practice" button was renamed "Studies", and a new **Practice** button was added to its left. (The Options page's "Practice" section was later renamed "Sounds", once only the sound setting was left in it.) The Help page uses the current names.
 - The button for the current page is highlighted: **Practice** while a line is on the board, **Studies** on the selection screen (and the first-visit token screen).
 - **Practice** opens the practice page without starting a test: the board shows the starting position and can't be moved; the panel shows the selection count as "3 chapters · 13 lines selected" (counting the lines that will actually be practiced, so with "Main line only" it's one per chapter), under it the current "Opponent's moves" choice in words (e.g. "Main line only" or "Prefer most common moves"), and a **Start practice** button that begins the first line. There's no "Practice" heading, since the header button already shows it. To keep the page clean there's no status text (the empty status box is hidden). Clicking Practice while already on the practice page does nothing. If nothing can be practiced (no chapters ticked, or the filters leave no lines), the panel says "Select chapters on the Studies page" and Start practice is disabled. (It used to say "Nothing to practice yet. Tick some chapters (and check the filters) on the Studies page.") Before any studies are fetched, Practice acts like Studies. (The "Start practice" button on the Studies page still begins practice straight away.)
@@ -331,6 +331,10 @@ Lines are shown with the user's moves highlighted by score (see Progress trackin
 **Statistics page (removed).** There used to be a separate Statistics page (a "Statistics" header button) listing every played line across all studies, worst first, with a **Reset stats** control (pick everything, a study or a chapter, then an "Are you sure?"). The user asked to remove both: the page because a chapter's lines on the Studies page (now its move tree) show the same information, and Reset stats because it wasn't useful. Stats can no longer be cleared from the app; they're still dropped for lines that no longer exist after a refresh, and a backup can be restored.
 
 - "Clear stored token" and "Clear stored key" on the Options page don't ask for confirmation, since the token or key can simply be pasted back in; Restore backup does.
+
+## Lines page
+
+- A page named **Lines**, opened from its header button (between Studies and Positions). For now it's **blank**, at the user's request; what it shows is to be decided. Opening it during a line keeps the line, like the other pages.
 
 ## Positions page
 

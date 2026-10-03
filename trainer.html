@@ -292,9 +292,10 @@
 <header>
   <h1>Opening Trainer</h1>
   <nav>
-    <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
+    <button id="nav-lines">Lines</button>
     <button id="nav-positions">Positions</button>
+    <button id="nav-practice">Practice</button>
     <button id="nav-options">Options</button>
     <button id="nav-help">Help</button>
   </nav>
@@ -402,6 +403,9 @@
   </section>
 
   <!-- Help -->
+  <!-- Lines: a page for the user's lines (blank for now) -->
+  <section id="lines-screen" class="hidden"></section>
+
   <section id="positions-screen" class="hidden">
     <div class="cards">
       <div class="card positions-card">
@@ -825,10 +829,10 @@ let currentScreen = null;
 function showScreen(name) {
   currentScreen = name;
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
-  for (const s of ['token', 'studies', 'practice', 'positions', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
+  for (const s of ['token', 'studies', 'lines', 'positions', 'practice', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
   const current = name === 'token' ? 'studies' : name;
-  for (const b of ['practice', 'studies', 'positions', 'options', 'help']) {
+  for (const b of ['studies', 'lines', 'positions', 'practice', 'options', 'help']) {
     $('nav-' + b).classList.toggle('current', b === current);
     if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
   }
@@ -2938,6 +2942,9 @@ $('nav-studies').addEventListener('click', () => {
 });
 
 $('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); });
+
+// Lines: blank for now. A line in progress is kept.
+$('nav-lines').addEventListener('click', () => { hideBanner(); showScreen('lines'); });
 
 // Positions: needs studies (else the Studies page, as Practice does). A line in progress is kept.
 $('nav-positions').addEventListener('click', () => {
