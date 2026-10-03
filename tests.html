@@ -47,7 +47,9 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
-  renderPositions, renderLines,
+  renderPositions, renderLines, practicePositions,
+  get shownPositions() { return shownPositions; },
+  stopPracticingPositions() { positionsToPractice = null; },
   onYourMove,
 };`;
 
@@ -148,7 +150,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { startMode: 'start', opponentMode: 'misses', sounds: false,
-    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70, positionsMainLinesOnly: false, positionsPunishMistakes: false, linesCount: 20, linesMaxAccuracy: 70, linesMainLinesOnly: false });
+    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70, positionsMainLinesOnly: false, linesCount: 20, linesMaxAccuracy: 70, linesMainLinesOnly: false });
   check('settings: older names still read', [app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsCount, app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsMaxAccuracy], [50, 40]);
   check('settings: invalid values fall back', app.checkedSettings({ startMode: 'x', mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
 
@@ -313,8 +315,8 @@ async function runPractice(app) {
 
 // ---------- The Positions page's filters ----------
 
-// A chapter whose side variation starts with an opponent's mistake: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
-const PUNISH = `[Event "Test Study: Punish"]
+// A chapter with a side variation for the opponent: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
+const SIDE_LINE = `[Event "Test Study: Side line"]
 [Site "https://lichess.org/study/AAAAAAAA/DDDDDDDD"]
 [Orientation "white"]
 
@@ -322,7 +324,7 @@ const PUNISH = `[Event "Test Study: Punish"]
 
 function runPositions(app) {
   const library = structuredClone(LIBRARY);
-  library.studies[0].chapters.push({ key: 'AAAAAAAA/DDDDDDDD', id: 'DDDDDDDD', name: 'Punish', pgn: PUNISH });
+  library.studies[0].chapters.push({ key: 'AAAAAAAA/DDDDDDDD', id: 'DDDDDDDD', name: 'Side line', pgn: SIDE_LINE });
   app.setLibrary(library);
   const lines = app.chapterLines(app.chapterByKey('AAAAAAAA/DDDDDDDD'));
   // Every one of your moves tried once, badly; every position has Lichess statistics.
@@ -342,8 +344,13 @@ function runPositions(app) {
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   check('positions: all three moves', rows({}).length, 3);
   check('positions: main lines only', rows({ positionsMainLinesOnly: true }).length, 2);
-  check('positions: punish mistakes', rows({ positionsPunishMistakes: true }), ['1. e4 f6']);
-  check('positions: both', rows({ positionsMainLinesOnly: true, positionsPunishMistakes: true }).length, 0);
+  // "Practice these positions": a single position picked from the table.
+  rows({});
+  const listed = app.shownPositions.map(p => app.moveKey(p.line, p.i));
+  app.practicePositions(app.shownPositions);
+  check('positions: practising a listed position', [app.practice.isSinglePosition, listed.includes(app.moveKey(app.practice.line, app.practice.startIndex)),
+    document.getElementById('practice-side').textContent.startsWith('From the Positions page: ')], [true, true, true]);
+  app.stopPracticingPositions();
   // The Lines page: both lines, all moves tried at 50%.
   const lineRows = settings => {
     app.setSettings({ linesMaxAccuracy: 90, ...settings });
@@ -351,7 +358,7 @@ function runPositions(app) {
     return [...document.querySelectorAll('#lines-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
   };
   check('lines: both lines, most frequent end first', lineRows({}).map(r => [r[0], r[2], r[3]]),
-    [['Test Study · Punish1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Punish1. e4 f6 2. d4', '50%', '–']]);
+    [['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Side line1. e4 f6 2. d4', '50%', '–']]);
   check('lines: main lines only', lineRows({ linesMainLinesOnly: true }).length, 1);
   check('lines: accuracy limit', lineRows({ linesMaxAccuracy: 40 }).length, 0);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
