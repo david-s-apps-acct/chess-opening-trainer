@@ -1587,9 +1587,9 @@ $('fav-recall-btn').addEventListener('click', () => {
   saveSelection();
   renderStudies(); // open and closed studies stay as they were
   const missing = (favorites || []).length - found.length, skipped = found.length - keys.length;
-  showBanner(`Recalled your favorites: ${plural(keys.length, 'chapter')} selected.`
+  showToast(`Recalled your favorites: ${plural(keys.length, 'chapter')} selected.`
     + (missing ? ` (${missing} no longer ${missing === 1 ? 'exists' : 'exist'} on Lichess.)` : '')
-    + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''));
+    + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''), missing || skipped ? 5000 : 3000);
 });
 
 for (const r of document.querySelectorAll('input[name=opp-mode]')) {
