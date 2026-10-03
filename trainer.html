@@ -2969,8 +2969,8 @@ async function init() {
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting
   rescoreHistory(); // attempts scored again with the current rules and data
-  // Open on the Practice page, waiting for "Start practice", and resume any missing Lichess downloads.
-  if (library) { showPracticeIdle(); startDownloads(); }
+  // Open on the Studies page and resume any missing Lichess downloads.
+  if (library) { showStudies(); startDownloads(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
 }
