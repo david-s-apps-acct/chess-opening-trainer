@@ -248,6 +248,17 @@
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status.bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .practice-chooser { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .practice-chooser fieldset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0; padding: 6px 12px 10px; border: 1px solid var(--muted); border-radius: 4px; }
+  .practice-chooser legend { padding: 0 4px; font-size: 13px; color: var(--muted); }
+  .practice-chooser label { display: flex; align-items: center; gap: 6px; }
+  .practice-chooser input[type=radio], .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .chooser-filters { margin-left: 22px; font-size: 13px; color: var(--muted); }
+  .chooser-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; color: var(--text); }
+  .chooser-filters.disabled { opacity: 0.5; }
+  .practice-chooser button { margin-top: 4px; }
+  .practice-chooser p { margin: 0; font-size: 13px; }
+  .practice-chooser p:empty { display: none; }
 
   /* A short message near the top of the page that fades away (e.g. after Save favorites). */
   .toast {
@@ -376,6 +387,26 @@
           <button id="view-last" title="Current position (End)" aria-label="Current position">⏭</button>
         </div>
         <div id="practice-status" class="status"></div>
+        <div id="practice-chooser" class="practice-chooser hidden">
+          <fieldset>
+            <legend>Lines</legend>
+            <label title="Every line of the chapters ticked on the Studies page, each from move 1. New lines, lines with low line accuracy and lines not tested for a while come up more, frequent lines most of all."><input type="radio" name="lines-practice-mode" value="all"> All (spaced repetition)</label>
+            <label title="The Lines page's table: your most frequent lines with low line accuracy, picked at random, each from move 1."><input type="radio" name="lines-practice-mode" value="listed"> Weak and frequent</label>
+            <div class="chooser-filters"><select id="chooser-lines-count" aria-label="How many lines"></select> lines, ≤ <select id="chooser-lines-max" aria-label="Highest line accuracy"></select> line accuracy</div>
+            <label title="Only lines where the opponent always plays the study's main move"><input type="checkbox" id="chooser-lines-main"> Main lines only</label>
+            <button id="chooser-lines-btn" class="primary">Practice lines</button>
+            <p id="chooser-lines-note" class="muted"></p>
+          </fieldset>
+          <fieldset>
+            <legend>Positions</legend>
+            <label title="Every one of your moves in the chapters ticked on the Studies page, each as a single position. New positions, positions with low move accuracy and positions not tested for a while come up more, frequent positions most of all."><input type="radio" name="positions-practice-mode" value="all"> All (spaced repetition)</label>
+            <label title="The Positions page's table: your most frequent positions with low move accuracy, picked at random."><input type="radio" name="positions-practice-mode" value="listed"> Weak and frequent</label>
+            <div class="chooser-filters"><select id="chooser-positions-count" aria-label="How many positions"></select> positions, ≤ <select id="chooser-positions-max" aria-label="Highest move accuracy"></select> move accuracy</div>
+            <label title="Only positions reached by the study's main moves for the opponent"><input type="checkbox" id="chooser-positions-main"> Positions from main lines only</label>
+            <button id="chooser-positions-btn" class="primary">Practice positions</button>
+            <p id="chooser-positions-note" class="muted"></p>
+          </fieldset>
+        </div>
         <div class="actions">
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
@@ -486,7 +517,7 @@
       <div class="card">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press one of the Practice buttons on the <b>Lines</b> page (whole lines, always from move 1 to the end) or the <b>Positions</b> page (single positions: just one of your moves at a time). <b>Practice these…</b> practises what's in the page's table; <b>Practice all…</b> practises everything in your ticked chapters, by spaced repetition (see How practice is chosen).</li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too). Then press <b>Practice lines</b> or <b>Practice positions</b>. The Lines and Positions pages have the same buttons: <b>Practice these…</b> (the table) and <b>Practice all…</b>.</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -786,7 +817,10 @@ const DEFAULT_SETTINGS = {
   linesCount: 20,              // the Lines page: how many lines
   linesMaxAccuracy: 70,        // … with line accuracy at or below this
   linesMainLinesOnly: false,   // … main lines only
+  linesPracticeMode: 'all',    // the Practice page's Lines choice: 'all' (spaced repetition) or 'listed' (weak and frequent)
+  positionsPracticeMode: 'all', // … and its Positions choice
 };
+const PRACTICE_MODES = ['all', 'listed'];
 const validPenalties = v => !!v && typeof v === 'object'
   && Object.keys(DEFAULT_SETTINGS.penalties).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
 
@@ -805,6 +839,8 @@ function checkedSettings(saved) {
     linesCount: LINES_COUNTS.includes(v.linesCount) ? v.linesCount : d.linesCount,
     linesMaxAccuracy: POSITIONS_ACCURACIES.includes(v.linesMaxAccuracy) ? v.linesMaxAccuracy : d.linesMaxAccuracy,
     linesMainLinesOnly: typeof v.linesMainLinesOnly === 'boolean' ? v.linesMainLinesOnly : d.linesMainLinesOnly,
+    linesPracticeMode: PRACTICE_MODES.includes(v.linesPracticeMode) ? v.linesPracticeMode : d.linesPracticeMode,
+    positionsPracticeMode: PRACTICE_MODES.includes(v.positionsPracticeMode) ? v.positionsPracticeMode : d.positionsPracticeMode,
   };
 }
 
@@ -1807,10 +1843,64 @@ function showPracticeIdle() {
   $('practice-side').textContent = '';
   $('practice-moves').replaceChildren(element('span', { class: 'none' }, 'No moves yet.'));
   for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
-  setStatus('To practise, choose Practice on the Lines or Positions page.');
+  setStatus('');
+  $('practice-status').classList.add('hidden'); // the chooser says what to do; setStatus shows it again when a line starts
+  renderPracticeChooser();
+  $('practice-chooser').classList.remove('hidden');
   hideCommentPopup();
   $('next-btn').classList.add('hidden');
   hideLineButtons();
+}
+
+// The idle Practice page's chooser: Lines and Positions, each "All (spaced repetition)" (as Practice
+// all lines/positions) or "Weak and frequent" (the Lines or Positions page's table, with the same
+// choices, shared with those pages).
+const optionsFor = (values, text) => values.map(v => element('option', { value: String(v) }, text(v)));
+$('chooser-lines-count').replaceChildren(...optionsFor(LINES_COUNTS, String));
+$('chooser-lines-max').replaceChildren(...optionsFor(POSITIONS_ACCURACIES, v => `${v}%`));
+$('chooser-positions-count').replaceChildren(...optionsFor(POSITIONS_COUNTS, String));
+$('chooser-positions-max').replaceChildren(...optionsFor(POSITIONS_ACCURACIES, v => `${v}%`));
+
+// Lines or Positions: the chooser's ids, settings, items and notes.
+const CHOOSERS = {
+  lines: { page: 'Lines', mode: 'linesPracticeMode', count: 'linesCount', max: 'linesMaxAccuracy', main: 'linesMainLinesOnly',
+    all: () => allLineItems(), table: () => frequentWeakLines(), note: t => linesNote(t), item: ({ line }) => ({ line, i: null }), noun: 'line' },
+  positions: { page: 'Positions', mode: 'positionsPracticeMode', count: 'positionsCount', max: 'positionsMaxAccuracy', main: 'positionsMainLinesOnly',
+    all: () => allPositionItems(), table: () => frequentWeakPositions(), note: t => positionsNote(t), item: ({ line, i }) => ({ line, i }), noun: 'position' },
+};
+
+// The items a chooser would practise now, and a note when there are none (or some are left out).
+function chooserItems(c) {
+  if (settings[c.mode] === 'all') {
+    const items = c.all();
+    return { items, note: items.length ? '' : `No ${c.noun}s to practise: tick chapters on the Studies page.` };
+  }
+  const table = c.table();
+  return { items: table.rows.map(c.item), note: c.note(table) };
+}
+
+function renderPracticeChooser() {
+  for (const [name, c] of Object.entries(CHOOSERS)) {
+    for (const r of document.querySelectorAll(`input[name=${name}-practice-mode]`)) r.checked = r.value === settings[c.mode];
+    const listed = settings[c.mode] === 'listed';
+    $(`chooser-${name}-count`).value = String(settings[c.count]);
+    $(`chooser-${name}-max`).value = String(settings[c.max]);
+    $(`chooser-${name}-count`).disabled = $(`chooser-${name}-max`).disabled = !listed;
+    $(`chooser-${name}-count`).parentElement.classList.toggle('disabled', !listed);
+    $(`chooser-${name}-main`).checked = settings[c.main];
+    const { items, note } = chooserItems(c);
+    $(`chooser-${name}-btn`).disabled = !items.length;
+    $(`chooser-${name}-note`).textContent = note;
+  }
+}
+
+for (const [name, c] of Object.entries(CHOOSERS)) {
+  const changed = (key, value) => { settings[key] = value; saveSettings(); renderPracticeChooser(); };
+  for (const r of document.querySelectorAll(`input[name=${name}-practice-mode]`)) r.addEventListener('change', () => changed(c.mode, r.value));
+  $(`chooser-${name}-count`).addEventListener('change', e => changed(c.count, +e.target.value));
+  $(`chooser-${name}-max`).addEventListener('change', e => changed(c.max, +e.target.value));
+  $(`chooser-${name}-main`).addEventListener('change', e => changed(c.main, e.target.checked));
+  $(`chooser-${name}-btn`).addEventListener('click', () => practiceFromList(c.page, chooserItems(c).items, settings[c.mode] === 'all'));
 }
 
 // Practise items from the Lines or Positions page, one at a time (never the same one twice in a row
@@ -1839,6 +1929,7 @@ function startLine(line, { singleAt = null } = {}) {
   practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: singleAt ?? 0, isSinglePosition: single };
   practice.signature = practiceSignature();
   hideBoardNotice(true);
+  $('practice-chooser').classList.add('hidden');
   // The board's orientation already shows the user's side; this line says where the item came from.
   const from = !practiceList ? (single ? 'Single position' : '')
     : practiceList.isAll ? `All ${practiceList.page.toLowerCase()}` : `From the ${practiceList.page} page`;
@@ -2654,7 +2745,9 @@ function showLines() {
   renderLines();
 }
 
-function renderLines() {
+// The Lines page's table, by its current choices: { rows, waiting (lines left out until their
+// statistics download), chapters (the ticked ones) }. The Practice page's "Weak and frequent" uses it too.
+function frequentWeakLines() {
   const chapters = tickedChapters();
   const found = [];
   let waiting = 0;
@@ -2669,6 +2762,22 @@ function renderLines() {
     found.push({ line, accuracy, games: totalGames(stats), lastPlayed: history.lines[line.key]?.played.at(-1) });
   }
   const rows = found.sort((a, b) => b.games - a.games).slice(0, settings.linesCount);
+  return { rows, waiting, chapters };
+}
+
+// What to say when the table is empty, or leaves lines out.
+function linesNote({ rows, waiting, chapters }) {
+  const its = waiting === 1 ? 'its' : 'their';
+  return rows.length
+    ? (waiting ? `${plural(waiting, 'line')} left out until ${its} Lichess statistics download.` : '')
+    : waiting ? `No lines to show yet: ${plural(waiting, 'line')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
+    : !chapters.length ? 'Tick chapters on the Studies page to see their lines.'
+    : 'No lines match these choices. Try other choices, or tick more chapters on the Studies page. Lines are listed once you\'ve tried all their moves.';
+}
+
+function renderLines() {
+  const table = frequentWeakLines();
+  const { rows } = table;
   shownLines = rows.map(({ line }) => ({ line, i: null }));
   $('practice-lines-btn').disabled = !rows.length;
   $('practice-all-lines-btn').disabled = !allLineItems().length;
@@ -2684,12 +2793,7 @@ function renderLines() {
     tr.addEventListener('mouseleave', hideHoverBoard);
     return tr;
   }));
-  const its = waiting === 1 ? 'its' : 'their';
-  $('lines-note').textContent = rows.length
-    ? (waiting ? `${plural(waiting, 'line')} left out until ${its} Lichess statistics download.` : '')
-    : waiting ? `No lines to show yet: ${plural(waiting, 'line')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : !chapters.length ? 'Tick chapters on the Studies page to see their lines.'
-    : 'No lines match these choices. Try other choices, or tick more chapters on the Studies page. Lines are listed once you\'ve tried all their moves.';
+  $('lines-note').textContent = linesNote(table);
 }
 
 $('practice-lines-btn').addEventListener('click', () => practiceFromList('Lines', shownLines));
@@ -2724,7 +2828,8 @@ function showPositions() {
   renderPositions();
 }
 
-function renderPositions() {
+// The Positions page's table, by its current choices: { rows, waiting, chapters }, as for the Lines page.
+function frequentWeakPositions() {
   const found = new Map(); // position key -> { line, i, score, games }
   let waiting = 0;
   const chapters = tickedChapters();
@@ -2742,6 +2847,21 @@ function renderPositions() {
     found.set(key, { line, i, score, games: totalGames(stats), lastTried: history.moves[key]?.lastTried });
   }
   const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.positionsCount);
+  return { rows, waiting, chapters };
+}
+
+function positionsNote({ rows, waiting, chapters }) {
+  const its = waiting === 1 ? 'its' : 'their';
+  return rows.length
+    ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
+    : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
+    : !chapters.length ? 'Tick chapters on the Studies page to see their positions.'
+    : 'No positions match these choices. Try other choices, or tick more chapters on the Studies page.';
+}
+
+function renderPositions() {
+  const table = frequentWeakPositions();
+  const { rows } = table;
   shownPositions = rows.map(({ line, i }) => ({ line, i }));
   $('practice-positions-btn').disabled = !rows.length;
   $('practice-all-positions-btn').disabled = !allPositionItems().length;
@@ -2756,12 +2876,7 @@ function renderPositions() {
     tr.addEventListener('mouseleave', hideHoverBoard);
     return tr;
   }));
-  const its = waiting === 1 ? 'its' : 'their';
-  $('positions-note').textContent = rows.length
-    ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
-    : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : !chapters.length ? 'Tick chapters on the Studies page to see their positions.'
-    : 'No positions match these choices. Try other choices, or tick more chapters on the Studies page.';
+  $('positions-note').textContent = positionsNote(table);
 }
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
