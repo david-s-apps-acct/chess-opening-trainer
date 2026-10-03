@@ -48,8 +48,6 @@ export const app = {
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
   renderPositions, renderLines, practiceFromList, renderPracticeChooser, need, priorities, allLineItems, allPositionItems,
-  get shownPositions() { return shownPositions; },
-  get shownLines() { return shownLines; },
   stopPracticingFromList() { practiceList = null; },
   onYourMove,
 };`;
@@ -298,7 +296,7 @@ async function runPractice(app) {
   app.practiceFromList('Positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
   check('practice: single position from the list', [p().isSinglePosition, [8, 10].includes(p().startIndex), p().movesPlayed === p().startIndex,
-    document.getElementById('practice-side').textContent.startsWith('From the Positions page: ')], [true, true, true, true]);
+    document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: ')], [true, true, true, true]);
   await playRest();
   check('practice: single position answered', status(), 'Correct. Next position…');
   await until(() => p() !== first, 'the next position', 3000);
@@ -339,13 +337,6 @@ function runPositions(app) {
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   check('positions: all three moves', rows({}).length, 3);
   check('positions: main lines only', rows({ positionsMainLinesOnly: true }).length, 2);
-  // "Practice these positions": a single position picked from the table.
-  rows({});
-  const listed = app.shownPositions.map(p => app.moveKey(p.line, p.i));
-  app.practiceFromList('Positions', app.shownPositions);
-  check('positions: practising a listed position', [app.practice.isSinglePosition, listed.includes(app.moveKey(app.practice.line, app.practice.startIndex)),
-    document.getElementById('practice-side').textContent.startsWith('From the Positions page: ')], [true, true, true]);
-  app.stopPracticingFromList();
   // The Lines page: both lines, all moves tried at 50%.
   const lineRows = settings => {
     app.setSettings({ linesMaxAccuracy: 90, ...settings });
@@ -356,13 +347,7 @@ function runPositions(app) {
     [['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Side line1. e4 f6 2. d4', '50%', '–']]);
   check('lines: main lines only', lineRows({ linesMainLinesOnly: true }).length, 1);
   check('lines: accuracy limit', lineRows({ linesMaxAccuracy: 40 }).length, 0);
-  // "Practice these lines": a whole line from the table, from move 1.
-  lineRows({});
-  app.practiceFromList('Lines', app.shownLines);
-  check('lines: practising a listed line from move 1', [app.practice.isSinglePosition, app.practice.startIndex, app.shownLines.some(l => l.line === app.practice.line),
-    document.getElementById('practice-side').textContent], [false, 0, true, 'From the Lines page']);
-  app.stopPracticingFromList();
-  // Spaced repetition ("Practice all lines/positions").
+  // Spaced repetition ("All (spaced repetition)").
   const DAY = 86400000, now = Date.now();
   check('spaced repetition: need', [app.need(null, null), app.need(1, now - DAY, now), app.need(0.5, now - 30 * DAY, now).toFixed(2), app.need(0, null)],
     [6, 0.1, (2 * 30 / 2 ** 3.5).toFixed(2), 9]);
@@ -391,8 +376,13 @@ function runPositions(app) {
   check('chooser: Weak and frequent, none at this accuracy', chooser({ linesPracticeMode: 'listed', positionsPracticeMode: 'listed', linesMaxAccuracy: 40, positionsMaxAccuracy: 40 }), [[true, false], [true, false]]);
   chooser({ positionsPracticeMode: 'listed' });
   document.getElementById('chooser-positions-btn').click();
-  check('chooser: practising weak and frequent positions', [app.practice.isSinglePosition, document.getElementById('practice-side').textContent.startsWith('From the Positions page: '),
-    document.getElementById('practice-chooser').classList.contains('hidden')], [true, true, true]);
+  check('chooser: practising weak and frequent positions', [app.practice.isSinglePosition, document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: '),
+    document.getElementById('practice-chooser').classList.contains('hidden'), !document.getElementById('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
+  document.getElementById('end-practice-btn').click();
+  check('chooser: End practice brings the chooser back', [app.practice, document.getElementById('practice-chooser').classList.contains('hidden'), document.getElementById('end-practice-btn').classList.contains('hidden')], [null, false, true]);
+  chooser({ linesPracticeMode: 'listed' });
+  document.getElementById('chooser-lines-btn').click();
+  check('chooser: practising weak and frequent lines, from move 1', [app.practice.isSinglePosition, app.practice.startIndex, document.getElementById('practice-side').textContent], [false, 0, 'Weak and frequent lines']);
   app.stopPracticingFromList();
   chooser({});
   document.getElementById('chooser-lines-btn').click();

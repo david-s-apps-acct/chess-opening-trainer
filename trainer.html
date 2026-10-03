@@ -108,10 +108,6 @@
 
   /* Positions and Lines pages: a table with drop-downs under its headings */
   .cards .table-card { max-width: 960px; }
-  .table-with-actions { display: flex; gap: 16px; align-items: flex-start; }
-  .table-with-actions .report-table { flex: 1; min-width: 0; }
-  .table-actions { margin-top: 8px; flex: none; display: flex; flex-direction: column; gap: 8px; }
-  @media (max-width: 800px) { .table-with-actions { flex-direction: column; } .table-actions { align-self: flex-end; } }
   .table-filters th { border-bottom: 1px solid var(--border); padding-top: 0; }
   .table-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; }
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
@@ -248,6 +244,7 @@
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status.bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
   .practice-chooser fieldset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0; padding: 6px 12px 10px; border: 1px solid var(--muted); border-radius: 4px; }
   .practice-chooser legend { padding: 0 4px; font-size: 13px; color: var(--muted); }
@@ -411,6 +408,7 @@
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
           <button id="end-btn" class="hidden" title="Stop this line here and see the summary. The moves you've played count; the rest of the line isn't played. Next time the line is played in full.">End line here</button>
+          <button id="end-practice-btn" class="end-practice hidden" title="Stop practising and choose what to practise next. A line you're in the middle of isn't counted.">End practice</button>
         </div>
       </div>
     </div>
@@ -424,7 +422,6 @@
         <div class="table-options">
           <label title="Only lines where the opponent always plays the study's main move"><input type="checkbox" id="lines-main-lines"> Main lines only</label>
         </div>
-        <div class="table-with-actions">
         <table class="report-table">
           <thead>
             <tr><th>Line</th><th class="num">End position reached (times)</th><th class="num">Line accuracy</th><th class="num">Last tested</th></tr>
@@ -443,9 +440,6 @@
           </thead>
           <tbody id="lines-rows"></tbody>
         </table>
-        <div class="table-actions"><button id="practice-lines-btn" class="primary" title="Practise the lines in this table, one at a time, picked at random, each from move 1">Practice these lines</button>
-          <button id="practice-all-lines-btn" class="primary" title="Practise all the lines of the chapters ticked on the Studies page (main lines only if ticked above), each from move 1. New lines, lines with low line accuracy and lines not tested for a while come up more, frequent lines most of all.">Practice all lines</button></div>
-        </div>
         <p id="lines-note" class="muted"></p>
       </div>
     </div>
@@ -458,7 +452,6 @@
         <div class="table-options">
           <label title="Only positions reached by the study's main moves for the opponent"><input type="checkbox" id="positions-main-lines"> Positions from main lines only</label>
         </div>
-        <div class="table-with-actions">
         <table class="report-table">
           <thead>
             <tr><th>Position</th><th class="num">Position reached (times)</th><th class="num">Move accuracy</th><th class="num">Last tested</th></tr>
@@ -477,9 +470,6 @@
           </thead>
           <tbody id="positions-rows"></tbody>
         </table>
-        <div class="table-actions"><button id="practice-positions-btn" class="primary" title="Practise the positions in this table, one at a time, picked at random">Practice these positions</button>
-          <button id="practice-all-positions-btn" class="primary" title="Practise all your positions in the chapters ticked on the Studies page (from main lines only if ticked above). New positions, positions with low move accuracy and positions not tested for a while come up more, frequent positions most of all.">Practice all positions</button></div>
-        </div>
         <p id="positions-note" class="muted"></p>
       </div>
     </div>
@@ -517,7 +507,7 @@
       <div class="card">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too). Then press <b>Practice lines</b> or <b>Practice positions</b>. The Lines and Positions pages have the same buttons: <b>Practice these…</b> (the table) and <b>Practice all…</b>.</li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too). Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices; a line you're in the middle of then isn't counted. </li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -556,7 +546,7 @@
         </details>
         <details>
           <summary>When lines and positions were last practiced</summary>
-          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> on the Lines and Positions pages, and used by <b>Practice all…</b> (spaced repetition).</p>
+          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> on the Lines and Positions pages, and used by the Practice page's <b>All (spaced repetition)</b>.</p>
           <ul>
             <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you stop with <b>End line here</b>, a line you leave unfinished, and single positions don't count for the line; they only count for the moves you played.</li>
             <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press End line here (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
@@ -591,7 +581,7 @@
           <li>The <b>Lines</b> page lists your most frequent weak lines, from the chapters ticked on the Studies page. Under the <b>Line</b> heading, choose how many to show (10 to 50); under <b>Line accuracy</b>, choose the highest line accuracy to include (≤ 90% down to ≤ 10%). Tick <b>Main lines only</b> to show only lines where the opponent always plays the study's main move.</li>
           <li>Each row is one line: the study and chapter, then the line's final position, named the usual way. <b>End position reached (times)</b>: how many times that final position was reached in rated Lichess games; the most frequent come first. <b>Line accuracy</b>: the average move accuracy of your moves in the line (each over its last 10 tries). <b>Last tested</b>: how many days ago you last played the whole line from move 1 to the end ("–" if you haven't since these dates were recorded).</li>
           <li>A line is listed once you've tried every one of its moves. Hover over a row to see the line's final move on the small board.</li>
-          <li>Press <b>Practice these lines</b> (to the right of the table) to practise the lines in the table on the Practice page, one at a time, picked at random, each played from move 1 to the end (so it counts as a play-through for Last tested). Press <b>Practice all lines</b> to practise every line of your ticked chapters (main lines only, if ticked) by spaced repetition, each from move 1; the table's choices don't apply.</li>
+          <li>To practise these lines, choose <b>Lines</b>, <b>Weak and frequent</b> on the Practice page: they come up one at a time, picked at random, each played from move 1 to the end (so it counts as a play-through for Last tested).</li>
         </ul>
       </div>
 
@@ -601,7 +591,7 @@
           <li>The <b>Positions</b> page lists your most frequent weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
           <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; your move accuracy there (over its last 10 tries); and <b>Last tested</b>: how many days ago you last tried that move ("Today" if it was today; "–" if you last tried it before these dates were recorded). The most frequent positions come first.</li>
           <li>Only the chapters ticked on the Studies page are included. Tick <b>Positions from main lines only</b> to show only positions reached through the study's main moves for the opponent.</li>
-          <li>Press <b>Practice these positions</b> (to the right of the table) to practise the positions in the table on the Practice page, one at a time, each as a single position, picked at random. Press <b>Practice all positions</b> to practise every one of your moves in your ticked chapters (from main lines only, if ticked) by spaced repetition, including moves you haven't tried yet; the table's choices don't apply.</li>
+          <li>To practise these positions, choose <b>Positions</b>, <b>Weak and frequent</b> on the Practice page: they come up one at a time, each as a single position, picked at random.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the errors you've played.</li>
         </ul>
@@ -610,8 +600,8 @@
       <div class="card">
         <h2>How practice is chosen</h2>
         <ul>
-          <li><b>Practice these lines</b> and <b>Practice these positions</b> pick from the table at random.</li>
-          <li><b>Practice all lines</b> and <b>Practice all positions</b> use spaced repetition: before each one, every line (or position) gets a priority, and the next is picked at random in proportion to it. New ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
+          <li><b>Weak and frequent</b> picks from the Lines or Positions page's table at random.</li>
+          <li><b>All (spaced repetition)</b> covers every line (or every one of your moves, including ones you haven't tried yet) in your ticked chapters, with the main-lines choice but not the table's other choices. Before each one, every line (or position) gets a priority, and the next is picked at random in proportion to it. New ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
           <li>The same line or position is never given twice in a row when there's another to choose.</li>
         </ul>
         <details>
@@ -1657,8 +1647,8 @@ $('fav-recall-btn').addEventListener('click', () => {
 });
 
 // ---------- Spaced repetition ----------
-// "Practice all lines" / "Practice all positions": all the lines (or positions) of the chapters
-// ticked on the Studies page, with the page's "main lines only" choice. Before each one, every item
+// The Practice page's "All (spaced repetition)": all the lines (or positions) of the chapters
+// ticked on the Studies page, with the "main lines only" choice. Before each one, every item
 // gets a priority, frequency × need, and one is picked at random with chances in proportion to it.
 //   need: 6 for an item never tried. Otherwise weakness × due:
 //     weakness = 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%;
@@ -1810,11 +1800,11 @@ function choosePromotion(color) {
 
 // ---------- Practice: playing lines ----------
 
-// What's being practised, chosen on the Lines or Positions page: { page: 'Lines' or 'Positions',
-// isAll, items: [{ line, i }] }, where i is the move of yours to test as a single position, or null
-// to play the whole line from move 1. "Practice these lines/positions" lists the page's table, and
-// items are picked at random; "Practice all lines/positions" lists all of them, and items are picked
-// by priority (see Spaced repetition). Null when nothing is being practised.
+// What's being practised, chosen on the Practice page: { page: 'Lines' or 'Positions', isAll,
+// items: [{ line, i }] }, where i is the move of yours to test as a single position, or null to play
+// the whole line from move 1. "Weak and frequent" lists the Lines or Positions page's table, and items
+// are picked at random; "All (spaced repetition)" lists all of them, and items are picked by priority
+// (see Spaced repetition). Null when nothing is being practised.
 let practiceList = null;
 let previousListItem = null;
 
@@ -1850,11 +1840,11 @@ function showPracticeIdle() {
   hideCommentPopup();
   $('next-btn').classList.add('hidden');
   hideLineButtons();
+  $('end-practice-btn').classList.add('hidden');
 }
 
-// The idle Practice page's chooser: Lines and Positions, each "All (spaced repetition)" (as Practice
-// all lines/positions) or "Weak and frequent" (the Lines or Positions page's table, with the same
-// choices, shared with those pages).
+// The idle Practice page's chooser: Lines and Positions, each "All (spaced repetition)" or "Weak and
+// frequent" (the Lines or Positions page's table, with the same choices, shared with those pages).
 const optionsFor = (values, text) => values.map(v => element('option', { value: String(v) }, text(v)));
 $('chooser-lines-count').replaceChildren(...optionsFor(LINES_COUNTS, String));
 $('chooser-lines-max').replaceChildren(...optionsFor(POSITIONS_ACCURACIES, v => `${v}%`));
@@ -1903,7 +1893,7 @@ for (const [name, c] of Object.entries(CHOOSERS)) {
   $(`chooser-${name}-btn`).addEventListener('click', () => practiceFromList(c.page, chooserItems(c).items, settings[c.mode] === 'all'));
 }
 
-// Practise items from the Lines or Positions page, one at a time (never the same one twice in a row
+// Practise lines or positions, one at a time (never the same one twice in a row
 // when there's another): picked at random, or by priority when isAll.
 function practiceFromList(page, items, isAll = false) {
   if (!items.length) return;
@@ -1932,11 +1922,12 @@ function startLine(line, { singleAt = null } = {}) {
   $('practice-chooser').classList.add('hidden');
   // The board's orientation already shows the user's side; this line says where the item came from.
   const from = !practiceList ? (single ? 'Single position' : '')
-    : practiceList.isAll ? `All ${practiceList.page.toLowerCase()}` : `From the ${practiceList.page} page`;
+    : `${practiceList.isAll ? 'All' : 'Weak and frequent'} ${practiceList.page.toLowerCase()}`;
   $('practice-side').textContent = single ? `${from}: ${positionName(line, singleAt)}` : from;
   $('next-btn').classList.add('hidden');
   $('hint-btn').classList.remove('hidden');
   $('end-btn').classList.toggle('hidden', single);
+  $('end-practice-btn').classList.remove('hidden');
   hideCommentPopup();
   updateNames();
   setShapes([]);
@@ -2116,6 +2107,10 @@ $('end-btn').addEventListener('click', () => {
   setShapes([]);
   endLine();
 });
+
+// "End practice": stop the session (a line in progress records nothing, as when it's left
+// unfinished) and go back to the chooser.
+$('end-practice-btn').addEventListener('click', () => { leavePractice(); showPracticeIdle(); });
 
 // The buttons under the board: Hint and End line here during a line, Next line/position after it.
 function hideLineButtons() { $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden'); }
@@ -2735,8 +2730,6 @@ function mastersShareText(epd, moveSan) {
 // final position's statistics haven't downloaded are left out. Last tested: the last time the line
 // was played through from move 1 to the end.
 
-let shownLines = []; // the lines in the Lines page's table, for "Practice these lines"
-
 function showLines() {
   showScreen('lines');
   $('lines-count').value = String(settings.linesCount);
@@ -2778,9 +2771,6 @@ function linesNote({ rows, waiting, chapters }) {
 function renderLines() {
   const table = frequentWeakLines();
   const { rows } = table;
-  shownLines = rows.map(({ line }) => ({ line, i: null }));
-  $('practice-lines-btn').disabled = !rows.length;
-  $('practice-all-lines-btn').disabled = !allLineItems().length;
   $('lines-rows').replaceChildren(...rows.map(({ line, accuracy, games, lastPlayed }) => {
     const ch = chapterByKey(line.chapterKey);
     const last = line.moves.length - 1;
@@ -2796,8 +2786,6 @@ function renderLines() {
   $('lines-note').textContent = linesNote(table);
 }
 
-$('practice-lines-btn').addEventListener('click', () => practiceFromList('Lines', shownLines));
-$('practice-all-lines-btn').addEventListener('click', () => practiceFromList('Lines', allLineItems(), true));
 $('lines-count').addEventListener('change', e => { settings.linesCount = +e.target.value; saveSettings(); renderLines(); });
 $('lines-max').addEventListener('change', e => { settings.linesMaxAccuracy = +e.target.value; saveSettings(); renderLines(); });
 $('lines-main-lines').addEventListener('change', e => { settings.linesMainLinesOnly = e.target.checked; saveSettings(); renderLines(); });
@@ -2817,8 +2805,6 @@ function daysAgo(time) {
   const days = Math.round((midnight(Date.now()) - midnight(time)) / 86400000);
   return days <= 0 ? 'Today' : plural(days, 'day');
 }
-
-let shownPositions = []; // the positions in the Positions page's table, for "Practice these positions"
 
 function showPositions() {
   showScreen('positions');
@@ -2862,9 +2848,6 @@ function positionsNote({ rows, waiting, chapters }) {
 function renderPositions() {
   const table = frequentWeakPositions();
   const { rows } = table;
-  shownPositions = rows.map(({ line, i }) => ({ line, i }));
-  $('practice-positions-btn').disabled = !rows.length;
-  $('practice-all-positions-btn').disabled = !allPositionItems().length;
   $('positions-rows').replaceChildren(...rows.map(({ line, i, score, games, lastTried }) => {
     const ch = chapterByKey(line.chapterKey);
     const tr = element('tr', {},
@@ -2903,8 +2886,6 @@ function positionName(line, i) {
 
 $('positions-count').addEventListener('change', e => { settings.positionsCount = +e.target.value; saveSettings(); renderPositions(); });
 $('positions-main-lines').addEventListener('change', e => { settings.positionsMainLinesOnly = e.target.checked; saveSettings(); renderPositions(); });
-$('practice-positions-btn').addEventListener('click', () => practiceFromList('Positions', shownPositions));
-$('practice-all-positions-btn').addEventListener('click', () => practiceFromList('Positions', allPositionItems(), true));
 $('positions-max').addEventListener('change', e => { settings.positionsMaxAccuracy = +e.target.value; saveSettings(); renderPositions(); });
 
 // ---------- Options page and token ----------
