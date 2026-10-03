@@ -188,6 +188,7 @@
   .quality-mistake { color: #e69d00 !important; }
   .quality-blunder { color: #df5353 !important; }
   .tree-move { cursor: pointer; border-radius: 2px; }
+  .tree-move.line-end { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .tree-move:hover, .tree-move:focus { background: var(--surface-3); outline: none; }
   .move-preview { position: fixed; z-index: 50; width: 216px; padding: 8px; background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 13px; pointer-events: none; }
   .preview-text { margin-bottom: 6px; }
@@ -1466,7 +1467,9 @@ function renderChapterTree(ch) {
     const line = { chapterKey: ch.key, yourColor: parsed.yourColor, root: parsed.root, moves };
     const i = moves.length - 1;
     const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(line, i))) : node.untested ? 'untested-move' : 'opp';
-    const el = element('span', { class: 'tree-move ' + cls + moveQualityClass(node), tabindex: '0' }, withFigurines(node.san));
+    // The last move of a line you practice is underlined.
+    const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
+    const el = element('span', { class: 'tree-move ' + cls + moveQualityClass(node) + lineEnd, tabindex: '0' }, withFigurines(node.san));
     const show = () => showHoverBoard(el, line, i);
     el.addEventListener('mouseenter', show); el.addEventListener('focus', show); el.addEventListener('click', show);
     el.addEventListener('mouseleave', hideHoverBoard); el.addEventListener('blur', hideHoverBoard);
