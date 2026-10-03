@@ -147,7 +147,8 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { startMode: 'start', opponentMode: 'misses', sounds: false,
-    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, weaknessCount: 25, weaknessMaxAccuracy: 70 });
+    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70 });
+  check('settings: older names still read', [app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsCount, app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsMaxAccuracy], [50, 40]);
   check('settings: invalid values fall back', app.checkedSettings({ startMode: 'x', mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
 
   // Masters moves: top N and 10% or more

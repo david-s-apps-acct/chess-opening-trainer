@@ -106,17 +106,19 @@
   .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
   .penalties select { flex: none; width: auto; padding: 3px 6px; }
 
-  /* Weaknesses page */
-  .cards .weak-card { max-width: 760px; }
-  .weak-filters th { border-bottom: 1px solid var(--border); padding-top: 0; }
-  .weak-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; }
-  .weak-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
-  .weak-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
-  .weak-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  .weak-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .weak-table tbody tr { cursor: default; }
-  .weak-table tbody tr:hover { background: var(--surface-2); }
-  .weak-position { font-size: 13px; }
+  /* Positions page */
+  .cards .positions-card { max-width: 760px; }
+  .positions-filters th { border-bottom: 1px solid var(--border); padding-top: 0; }
+  .positions-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; }
+  .positions-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+  .positions-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
+  .positions-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .positions-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .positions-table tbody tr { cursor: default; }
+  .positions-table tbody tr:hover { background: var(--surface-2); }
+  .position-name { font-size: 13px; }
+  /* Move accuracy: every highlight box the same width, wide enough for "100%". */
+  .positions-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
   /* Studies page */
   .toolbar {
@@ -282,7 +284,7 @@
   <nav>
     <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
-    <button id="nav-weaknesses">Weaknesses</button>
+    <button id="nav-positions">Positions</button>
     <button id="nav-options">Options</button>
     <button id="nav-help">Help</button>
   </nav>
@@ -390,28 +392,29 @@
   </section>
 
   <!-- Help -->
-  <section id="weaknesses-screen" class="hidden">
+  <section id="positions-screen" class="hidden">
     <div class="cards">
-      <div class="card weak-card">
+      <div class="card positions-card">
         <h2>Frequent positions with low move accuracy</h2>
-        <table class="weak-table">
+        <table class="positions-table">
           <thead>
-            <tr><th>Position</th><th class="num">Position reached (times)</th><th class="num">Move accuracy</th></tr>
-            <tr class="weak-filters">
-              <th><select id="weak-count" aria-label="How many positions" title="How many positions to show">
+            <tr><th>Position</th><th class="num">Position reached (times)</th><th class="num">Move accuracy</th><th class="num">Last tested</th></tr>
+            <tr class="positions-filters">
+              <th><select id="positions-count" aria-label="How many positions" title="How many positions to show">
                 <option>25</option><option>50</option><option>75</option><option>100</option>
               </select></th>
               <th></th>
-              <th class="num">≤ <select id="weak-max" aria-label="Highest move accuracy" title="Show positions with this move accuracy or lower">
+              <th class="num">≤ <select id="positions-max" aria-label="Highest move accuracy" title="Show positions with this move accuracy or lower">
                 <option value="90">90%</option><option value="80">80%</option><option value="70">70%</option>
                 <option value="60">60%</option><option value="50">50%</option><option value="40">40%</option>
                 <option value="30">30%</option><option value="20">20%</option><option value="10">10%</option>
               </select></th>
+              <th></th>
             </tr>
           </thead>
-          <tbody id="weak-rows"></tbody>
+          <tbody id="positions-rows"></tbody>
         </table>
-        <p id="weak-note" class="muted"></p>
+        <p id="positions-note" class="muted"></p>
       </div>
     </div>
   </section>
@@ -518,12 +521,12 @@
       </div>
 
       <div class="card">
-        <h2>Weaknesses</h2>
+        <h2>Positions</h2>
         <ul>
-          <li>The <b>Weaknesses</b> page lists your most frequent weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
-          <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; and your move accuracy there (over its last 10 tries). The most frequent positions come first.</li>
+          <li>The <b>Positions</b> page lists your most frequent weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
+          <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; your move accuracy there (over its last 10 tries); and <b>Last tested</b>: how many days ago you last tried that move ("Today" if it was today; "–" if you last tried it before these dates were recorded). The most frequent positions come first.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
-          <li>Hover over a row to see the small board, with the correct move and the wrong moves you've played.</li>
+          <li>Hover over a row to see the small board, with the correct move and the errors you've played.</li>
         </ul>
       </div>
 
@@ -716,20 +719,20 @@ const saveHistory = () => store.set('history', history);
 // masters: its master games } (see the Lichess downloads).
 let positions = {};
 
-// Settings (chosen on the Studies, Practice, Weaknesses and Options pages).
+// Settings (chosen on the Studies, Practice, Positions and Options pages).
 // Error penalties are in points: 1 point = 10% of an attempt's score.
 const START_MODES = ['start', 'partway', 'single'];
 const OPPONENT_MODES = ['main', 'common', 'mistakes', 'misses', 'equal'];
 const MASTERS_TOPS = [1, 2, 3, 4, 5];
-const WEAKNESS_COUNTS = [25, 50, 75, 100], WEAKNESS_ACCURACIES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
+const POSITIONS_COUNTS = [25, 50, 75, 100], POSITIONS_ACCURACIES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
 const DEFAULT_SETTINGS = {
   startMode: 'start',          // "Where lines start"
   opponentMode: 'misses',      // "Opponent's moves"
   sounds: false,
   penalties: { alternative: 2, masters: 2, error: 5, hint: 10 },
   mastersTop: 5,               // a masters move is within this many top master moves
-  weaknessCount: 25,           // the Weaknesses page: how many positions
-  weaknessMaxAccuracy: 70,     // … with accuracy at or below this
+  positionsCount: 25,           // the Positions page: how many positions
+  positionsMaxAccuracy: 70,     // … with accuracy at or below this
 };
 const validPenalties = v => !!v && typeof v === 'object'
   && Object.keys(DEFAULT_SETTINGS.penalties).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
@@ -744,8 +747,9 @@ function checkedSettings(saved) {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     penalties: validPenalties(v.penalties) ? { ...v.penalties } : { ...d.penalties },
     mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
-    weaknessCount: WEAKNESS_COUNTS.includes(v.weaknessCount) ? v.weaknessCount : d.weaknessCount,
-    weaknessMaxAccuracy: WEAKNESS_ACCURACIES.includes(v.weaknessMaxAccuracy) ? v.weaknessMaxAccuracy : d.weaknessMaxAccuracy,
+    // (Saved before the Weaknesses page was renamed Positions, these were weaknessCount and weaknessMaxAccuracy.)
+    positionsCount: [v.positionsCount, v.weaknessCount].find(n => POSITIONS_COUNTS.includes(n)) ?? d.positionsCount,
+    positionsMaxAccuracy: [v.positionsMaxAccuracy, v.weaknessMaxAccuracy].find(n => POSITIONS_ACCURACIES.includes(n)) ?? d.positionsMaxAccuracy,
   };
 }
 
@@ -801,10 +805,10 @@ let currentScreen = null;
 function showScreen(name) {
   currentScreen = name;
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
-  for (const s of ['token', 'studies', 'practice', 'weaknesses', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
+  for (const s of ['token', 'studies', 'practice', 'positions', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
   const current = name === 'token' ? 'studies' : name;
-  for (const b of ['practice', 'studies', 'weaknesses', 'options', 'help']) {
+  for (const b of ['practice', 'studies', 'positions', 'options', 'help']) {
     $('nav-' + b).classList.toggle('current', b === current);
     if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
   }
@@ -2203,7 +2207,7 @@ document.addEventListener('keydown', e => {
 
 // ---------- Practice: names and sounds ----------
 
-// The practice panel's heading, as on the Weaknesses page: the study and chapter (with the chapter's
+// The practice panel's heading, as on the Positions page: the study and chapter (with the chapter's
 // introductory comment as a bubble), then the position reached, named by its opening and the moves
 // since (see positionName), e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6". The position line
 // follows the board: the line as it's played, or an earlier position being looked at.
@@ -2329,7 +2333,7 @@ function yourAttemptBoard(line, i, attempt) {
     errors.length ? element('div', {}, 'Errors: ' + errors.join(', ')) : null] };
 }
 
-// Your move in the Studies page's move tree (and the Weaknesses page): the position before it,
+// Your move in the Studies page's move tree (and the Positions page): the position before it,
 // a green arrow for the correct move and red arrows for the wrong moves in its last 10 attempts.
 function yourHistoryBoard(line, i) {
   const m = line.moves[i];
@@ -2615,21 +2619,30 @@ function mastersShareText(epd, moveSan) {
   return stats && !totalGames(stats) ? 'Not in master games' : rankAndShareText(stats, moveSan, 'masters', 'Not played by masters');
 }
 
-// ---------- Weaknesses page ----------
+// ---------- Positions page ----------
 // "Frequent positions with low move accuracy": the user's positions (where it's their move)
 // that they've tried, with a score of [y]% or lower, the [x] most common first. How common: the
 // rated Lichess games reaching the position (before the move); positions whose statistics haven't
 // downloaded are left out. History is per chapter, so a position weak in two chapters has two rows.
 
 
-function showWeaknesses() {
-  showScreen('weaknesses');
-  $('weak-count').value = String(settings.weaknessCount);
-  $('weak-max').value = String(settings.weaknessMaxAccuracy);
-  renderWeaknesses();
+// How long ago a move was last tested, in calendar days: "Today", "1 day", "5 days"; "–" when it
+// isn't known (moves last tested before these times were recorded).
+function daysAgo(time) {
+  if (!time) return '–';
+  const midnight = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const days = Math.round((midnight(Date.now()) - midnight(time)) / 86400000);
+  return days <= 0 ? 'Today' : plural(days, 'day');
 }
 
-function renderWeaknesses() {
+function showPositions() {
+  showScreen('positions');
+  $('positions-count').value = String(settings.positionsCount);
+  $('positions-max').value = String(settings.positionsMaxAccuracy);
+  renderPositions();
+}
+
+function renderPositions() {
   const found = new Map(); // position key -> { line, i, score, games }
   let waiting = 0;
   for (const ch of visibleChapters()) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
@@ -2638,27 +2651,28 @@ function renderWeaknesses() {
     const attempts = attemptsAt(line, i);
     if (!attempts.length) continue;
     const score = scoreOf(attempts);
-    if (percent(score) > settings.weaknessMaxAccuracy) continue;
+    if (percent(score) > settings.positionsMaxAccuracy) continue;
     const stats = lichessGamesAt(line.moves[i].epdBefore);
     if (!stats) { waiting++; continue; }
-    found.set(key, { line, i, score, games: totalGames(stats) });
+    found.set(key, { line, i, score, games: totalGames(stats), lastTried: history.moves[key]?.lastTried });
   }
-  const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.weaknessCount);
-  $('weak-rows').replaceChildren(...rows.map(({ line, i, score, games }) => {
+  const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.positionsCount);
+  $('positions-rows').replaceChildren(...rows.map(({ line, i, score, games, lastTried }) => {
     const ch = chapterByKey(line.chapterKey);
     const tr = element('tr', {},
-      element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted weak-position' }, positionName(line, i))),
+      element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, i))),
       element('td', { class: 'num' }, shortCount(games)),
-      element('td', { class: 'num' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)));
+      element('td', { class: 'num accuracy' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)),
+      element('td', { class: 'num' }, daysAgo(lastTried)));
     tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, i));
     tr.addEventListener('mouseleave', hideHoverBoard);
     return tr;
   }));
   const its = waiting === 1 ? 'its' : 'their';
-  $('weak-note').textContent = rows.length
+  $('positions-note').textContent = rows.length
     ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
     : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : `No positions you've tried have move accuracy ${settings.weaknessMaxAccuracy}% or lower.`;
+    : `No positions you've tried have move accuracy ${settings.positionsMaxAccuracy}% or lower.`;
 }
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
@@ -2683,8 +2697,8 @@ function positionName(line, i) {
   return [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ') || 'Starting position';
 }
 
-$('weak-count').addEventListener('change', e => { settings.weaknessCount = +e.target.value; saveSettings(); renderWeaknesses(); });
-$('weak-max').addEventListener('change', e => { settings.weaknessMaxAccuracy = +e.target.value; saveSettings(); renderWeaknesses(); });
+$('positions-count').addEventListener('change', e => { settings.positionsCount = +e.target.value; saveSettings(); renderPositions(); });
+$('positions-max').addEventListener('change', e => { settings.positionsMaxAccuracy = +e.target.value; saveSettings(); renderPositions(); });
 
 // ---------- Options page and token ----------
 
@@ -2869,11 +2883,11 @@ $('nav-studies').addEventListener('click', () => {
 
 $('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); });
 
-// Weaknesses: needs studies (else the Studies page, as Practice does). A line in progress is kept.
-$('nav-weaknesses').addEventListener('click', () => {
+// Positions: needs studies (else the Studies page, as Practice does). A line in progress is kept.
+$('nav-positions').addEventListener('click', () => {
   if (!library) { $('nav-studies').click(); return; }
   hideBanner();
-  showWeaknesses();
+  showPositions();
 });
 
 $('nav-help').addEventListener('click', () => {
