@@ -117,6 +117,8 @@
   .positions-table tbody tr { cursor: default; }
   .positions-table tbody tr:hover { background: var(--surface-2); }
   .position-name { font-size: 13px; }
+  .positions-filters { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 6px; font-size: 14px; }
+  .positions-filters label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .positions-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
@@ -396,6 +398,10 @@
     <div class="cards">
       <div class="card positions-card">
         <h2>Frequent positions with low move accuracy</h2>
+        <div class="positions-filters">
+          <label title="Only positions reached by the study's main moves for the opponent"><input type="checkbox" id="positions-main-lines"> Positions from main lines only</label>
+          <label title="Only positions right after an opponent's move your study marks as a mistake (?, ?? or ?!)"><input type="checkbox" id="positions-punish"> Punish mistakes</label>
+        </div>
         <table class="positions-table">
           <thead>
             <tr><th>Position</th><th class="num">Position reached (times)</th><th class="num">Move accuracy</th><th class="num">Last tested</th></tr>
@@ -472,6 +478,7 @@
         <p>The app measures the <b>move accuracy</b> of each of <b>your</b> moves separately (and a <b>line accuracy</b> each time you complete a line), so you can see exactly which moves you know and which you don't.</p>
         <ul>
           <li>Each attempt at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each <b>error</b> before the right move (any move that isn't the one in your study, or the hint) costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past attempts are re-scored straight away.</li>
+          <li><b>Errors and mistakes</b> mean different things in this app. An <b>error</b> is any move you play that isn't the one in your study, or the hint; errors are what reduce move accuracy. A <b>mistake</b> is a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious), for example in "Prefer opponent's mistakes" and "Punish mistakes".</li>
           <li><b>Alternative move</b>, −20%: one of your study's unmarked alternative moves.</li>
           <li><b>Masters move</b>, −20%: a move among the <b>top 5</b> master moves in that position that masters play <b>10% of the time or more</b> (in Lichess's Masters database). You can change "top 5" to anything from top 1 to top 5 on the Options page. Other moves masters play count as errors. A move that is both an alternative and a masters move costs the alternative's penalty.</li>
           <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
@@ -525,6 +532,7 @@
         <ul>
           <li>The <b>Positions</b> page lists your most frequent weak positions. Under the <b>Position</b> heading, choose how many to show (25, 50, 75 or 100); under <b>Move accuracy</b>, choose the highest move accuracy to include (≤ 90% down to ≤ 10%).</li>
           <li>Each row is one of your moves. Its first line is the study and chapter (e.g. "My repertoire · Italian"); the second, in grey, names the position the way chess books do: the deepest opening name that applies, then the moves played since that named position, up to the position where it's your move (e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"; at most the last 3 moves are shown, after "…"). Then <b>Position reached (times)</b>: how many times the position was reached in rated Lichess games; your move accuracy there (over its last 10 tries); and <b>Last tested</b>: how many days ago you last tried that move ("Today" if it was today; "–" if you last tried it before these dates were recorded). The most frequent positions come first.</li>
+          <li>Only the chapters ticked on the Studies page are included. Tick <b>Positions from main lines only</b> to show only positions reached through the study's main moves for the opponent, and <b>Punish mistakes</b> to show only positions right after an opponent's move your study marks as a mistake (?, ?? or ?!), where you need to know how to take advantage.</li>
           <li>Only moves you've tried are listed. A position in two chapters has a row for each, since each chapter keeps its own statistics. Positions whose Lichess statistics haven't downloaded yet are left out until they have.</li>
           <li>Hover over a row to see the small board, with the correct move and the errors you've played.</li>
         </ul>
@@ -733,6 +741,8 @@ const DEFAULT_SETTINGS = {
   mastersTop: 5,               // a masters move is within this many top master moves
   positionsCount: 25,           // the Positions page: how many positions
   positionsMaxAccuracy: 70,     // … with accuracy at or below this
+  positionsMainLinesOnly: false, // … only positions reached by the opponent's main moves
+  positionsPunishMistakes: false, // … only positions right after an opponent's mistake (?, ?? or ?!)
 };
 const validPenalties = v => !!v && typeof v === 'object'
   && Object.keys(DEFAULT_SETTINGS.penalties).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
@@ -750,6 +760,8 @@ function checkedSettings(saved) {
     // (Saved before the Weaknesses page was renamed Positions, these were weaknessCount and weaknessMaxAccuracy.)
     positionsCount: [v.positionsCount, v.weaknessCount].find(n => POSITIONS_COUNTS.includes(n)) ?? d.positionsCount,
     positionsMaxAccuracy: [v.positionsMaxAccuracy, v.weaknessMaxAccuracy].find(n => POSITIONS_ACCURACIES.includes(n)) ?? d.positionsMaxAccuracy,
+    positionsMainLinesOnly: typeof v.positionsMainLinesOnly === 'boolean' ? v.positionsMainLinesOnly : d.positionsMainLinesOnly,
+    positionsPunishMistakes: typeof v.positionsPunishMistakes === 'boolean' ? v.positionsPunishMistakes : d.positionsPunishMistakes,
   };
 }
 
@@ -1103,8 +1115,10 @@ const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.isYours ? [i] : [
 
 // ---------- Annotations (comments and glyphs) ----------
 
-// The glyphs that mark a move as a mistake: ? (mistake), ?? (blunder) and ?! (dubious).
+// A mistake, everywhere in the app (the user's rule): a move a study marks ? (mistake), ?? (blunder)
+// or ?! (dubious). Not to be confused with an error: any move you play that isn't your study's move.
 const MISTAKE_NAGS = [2, 4, 6];
+const isMistake = node => !!node?.nags?.some(n => MISTAKE_NAGS.includes(n));
 
 // Lichess glyph names, keyed by PGN NAG number.
 const GLYPHS = {
@@ -1215,7 +1229,7 @@ function pointsFor(tried, yourMove) {
     if (step === 'hint' || step === 'show') { points -= settings.penalties.hint; continue; }
     if (withoutCheckMarks(step) === withoutCheckMarks(yourMove.san)) break; // the correct move ends the attempt
     const alt = yourMove.alternatives?.[step];
-    if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) points -= settings.penalties.error; // the study's marking wins
+    if (isMistake(alt)) points -= settings.penalties.error; // the study's marking wins
     else if (alt) points -= settings.penalties.alternative;
     else if (isMasterMove(yourMove.epdBefore, step)) points -= settings.penalties.masters;
     else points -= settings.penalties.error;
@@ -1855,7 +1869,7 @@ const hintStep = () => practice.tried.includes('show') ? 2 : practice.tried.incl
 function lastWrongMove() {
   const expected = practice.line.moves[practice.movesPlayed];
   return practice.tried.filter(x => x !== 'hint' && x !== 'show' && x !== expected.san
-    && !(expected.alternatives?.[x] && !expected.alternatives[x].nags.some(n => MISTAKE_NAGS.includes(n)))).pop();
+    && !(expected.alternatives?.[x] && !isMistake(expected.alternatives[x]))).pop();
 }
 // Under "Line complete.": "5 of 6 moves correct" (or "No errors.") and "83% line accuracy". A
 // move is correct when it was found first time, with no hint; the line accuracy is the average of this
@@ -1909,7 +1923,7 @@ async function onYourMove(orig, dest) {
   }
   // A move that's in the study as an alternative at this point.
   const alt = expected.alternatives?.[played];
-  if (alt && alt.nags.some(n => MISTAKE_NAGS.includes(n))) return showMarkedAlternative(orig, dest, move, played, alt);
+  if (isMistake(alt)) return showMarkedAlternative(orig, dest, move, played, alt);
   if (alt) return rejectMove([`${withFigurines(played)} is one of your alternative moves`]); // a gentle nudge
   // Any other wrong move. There's no limit: the correct move is only shown when you ask for it.
   return rejectMove(wrongMoveStatus(expected, played));
@@ -2350,7 +2364,7 @@ function yourHistoryBoard(line, i) {
 function opponentMoveBoard(line, i, thisTime) {
   const m = line.moves[i];
   const [orig, dest] = arrowSquares(m.parent.position, parseUci(m.uci));
-  const mistake = m.notes?.nags.some(n => MISTAKE_NAGS.includes(n));
+  const mistake = isMistake(m);
   return { position: m.position, lastMove: squaresOf(m), shapes: [{ orig, dest, brush: mistake ? 'red' : 'white' }], rows: [
     ...hoverBoardHeading(m, !!thisTime),
     m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
@@ -2372,7 +2386,7 @@ function errorLabel(m, x) {
 // study marks ?, ?? or ?!) or 'wrong' (the last two cost the error penalty).
 function errorKind(m, x) {
   const alt = m.alternatives?.[x];
-  if (alt) return alt.nags.some(n => MISTAKE_NAGS.includes(n)) ? 'marked' : 'alternative';
+  if (alt) return isMistake(alt) ? 'marked' : 'alternative';
   return isMasterMove(m.epdBefore, x) ? 'masters' : 'wrong';
 }
 
@@ -2639,15 +2653,22 @@ function showPositions() {
   showScreen('positions');
   $('positions-count').value = String(settings.positionsCount);
   $('positions-max').value = String(settings.positionsMaxAccuracy);
+  $('positions-main-lines').checked = settings.positionsMainLinesOnly;
+  $('positions-punish').checked = settings.positionsPunishMistakes;
   renderPositions();
 }
 
 function renderPositions() {
   const found = new Map(); // position key -> { line, i, score, games }
   let waiting = 0;
-  for (const ch of visibleChapters()) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
+  const chapters = visibleChapters().filter(c => selection.has(c.key)); // the chapters ticked on the Studies page
+  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
     const key = moveKey(line, i);
     if (found.has(key)) continue;
+    // Main lines only: every opponent move on the way is the study's main move.
+    if (settings.positionsMainLinesOnly && line.moves.slice(0, i).some(m => !m.isYours && m.variationIndex !== 0)) continue;
+    // Punish mistakes: the opponent's move just before is marked as a mistake.
+    if (settings.positionsPunishMistakes && !(i > 0 && !line.moves[i - 1].isYours && isMistake(line.moves[i - 1]))) continue;
     const attempts = attemptsAt(line, i);
     if (!attempts.length) continue;
     const score = scoreOf(attempts);
@@ -2672,7 +2693,8 @@ function renderPositions() {
   $('positions-note').textContent = rows.length
     ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
     : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : `No positions you've tried have move accuracy ${settings.positionsMaxAccuracy}% or lower.`;
+    : !chapters.length ? 'Tick chapters on the Studies page to see their positions.'
+    : 'No positions match these choices. Try other choices, or tick more chapters on the Studies page.';
 }
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
@@ -2698,6 +2720,8 @@ function positionName(line, i) {
 }
 
 $('positions-count').addEventListener('change', e => { settings.positionsCount = +e.target.value; saveSettings(); renderPositions(); });
+$('positions-main-lines').addEventListener('change', e => { settings.positionsMainLinesOnly = e.target.checked; saveSettings(); renderPositions(); });
+$('positions-punish').addEventListener('change', e => { settings.positionsPunishMistakes = e.target.checked; saveSettings(); renderPositions(); });
 $('positions-max').addEventListener('change', e => { settings.positionsMaxAccuracy = +e.target.value; saveSettings(); renderPositions(); });
 
 // ---------- Options page and token ----------

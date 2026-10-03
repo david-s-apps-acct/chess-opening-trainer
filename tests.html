@@ -47,6 +47,7 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
+  renderPositions,
   onYourMove,
 };`;
 
@@ -147,7 +148,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { startMode: 'start', opponentMode: 'misses', sounds: false,
-    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70 });
+    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70, positionsMainLinesOnly: false, positionsPunishMistakes: false });
   check('settings: older names still read', [app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsCount, app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsMaxAccuracy], [50, 40]);
   check('settings: invalid values fall back', app.checkedSettings({ startMode: 'x', mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
 
@@ -310,11 +311,50 @@ async function runPractice(app) {
   app.setSettings({});
 }
 
+// ---------- The Positions page's filters ----------
+
+// A chapter whose side variation starts with an opponent's mistake: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
+const PUNISH = `[Event "Test Study: Punish"]
+[Site "https://lichess.org/study/AAAAAAAA/DDDDDDDD"]
+[Orientation "white"]
+
+1. e4 e5 ( 1... f6 $2 2. d4 ) 2. Nf3 *`;
+
+function runPositions(app) {
+  const library = structuredClone(LIBRARY);
+  library.studies[0].chapters.push({ key: 'AAAAAAAA/DDDDDDDD', id: 'DDDDDDDD', name: 'Punish', pgn: PUNISH });
+  app.setLibrary(library);
+  const lines = app.chapterLines(app.chapterByKey('AAAAAAAA/DDDDDDDD'));
+  // Every one of your moves tried once, badly; every position has Lichess statistics.
+  const moves = {}, positions = {};
+  for (const line of lines) line.moves.forEach((m, i) => {
+    positions[m.epdBefore] = { lichess: explorer([['e4', 100 - i]]) };
+    if (m.isYours) moves[app.moveKey(line, i)] = { attempts: [{ tried: ['a3', m.san], points: 5 }] };
+  });
+  app.setPositions(positions);
+  app.setHistory({ moves, lines: {} });
+  const rows = settings => {
+    app.setSettings({ positionsMaxAccuracy: 90, ...settings });
+    app.renderPositions();
+    return [...document.querySelectorAll('#positions-rows tr')].map(tr => tr.querySelector('.position-name').textContent);
+  };
+  app.setSelection(['AAAAAAAA/DDDDDDDD']);
+  check('positions: all three moves', rows({}).length, 3);
+  check('positions: main lines only', rows({ positionsMainLinesOnly: true }).length, 2);
+  check('positions: punish mistakes', rows({ positionsPunishMistakes: true }), ['1. e4 f6']);
+  check('positions: both', rows({ positionsMainLinesOnly: true, positionsPunishMistakes: true }).length, 0);
+  app.setSelection(['AAAAAAAA/BBBBBBBB']);
+  check('positions: only ticked chapters', rows({}).length, 0);
+  app.setSettings({});
+  app.setSelection(['AAAAAAAA/BBBBBBBB']);
+}
+
 // ---------- Report ----------
 
 try {
   const app = await loadApp();
   run(app);
+  runPositions(app);
   await runPractice(app);
 } catch (e) {
   results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
