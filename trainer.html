@@ -256,6 +256,15 @@
   .practice-chooser button { margin-top: 4px; }
   .practice-chooser p { margin: 0; font-size: 13px; }
   .practice-chooser p:empty { display: none; }
+  .chooser-option { display: flex; align-items: center; gap: 10px; }
+  .table-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; overflow-y: auto; }
+  .table-overlay .table-card { width: 100%; max-width: 960px; }
+  .overlay-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .overlay-head h2 { margin: 0; }
+  .overlay-close { font-size: 26px; line-height: 1; padding: 0 6px; }
+  .overlay-close:hover:not(:disabled) { background: none; color: var(--text-strong); }
+  #overlay-choices { font-size: 13px; margin-top: 4px; }
+  #overlay-note:empty { display: none; }
 
   /* A short message near the top of the page that fades away (e.g. after Save favorites). */
   .toast {
@@ -388,7 +397,7 @@
           <fieldset>
             <legend>Lines</legend>
             <label title="Every line of the chapters ticked on the Studies page, each from move 1. New lines, lines with low line accuracy and lines not tested for a while come up more, frequent lines most of all."><input type="radio" name="lines-practice-mode" value="all"> All (spaced repetition)</label>
-            <label title="The Lines page's table: your most frequent lines with low line accuracy, picked at random, each from move 1."><input type="radio" name="lines-practice-mode" value="listed"> Weak and frequent</label>
+            <div class="chooser-option"><label title="The Lines page's table: your most frequent lines with low line accuracy, picked at random, each from move 1."><input type="radio" name="lines-practice-mode" value="listed"> Weak and frequent</label> <button id="chooser-lines-show" class="small" title="Show the lines that Weak and frequent practises, as on the Lines page">Show table</button></div>
             <div class="chooser-filters"><select id="chooser-lines-count" aria-label="How many lines"></select> lines, ≤ <select id="chooser-lines-max" aria-label="Highest line accuracy"></select> line accuracy</div>
             <label title="Only lines where the opponent always plays the study's main move"><input type="checkbox" id="chooser-lines-main"> Main lines only</label>
             <button id="chooser-lines-btn" class="primary">Practice lines</button>
@@ -397,7 +406,7 @@
           <fieldset>
             <legend>Positions</legend>
             <label title="Every one of your moves in the chapters ticked on the Studies page, each as a single position. New positions, positions with low move accuracy and positions not tested for a while come up more, frequent positions most of all."><input type="radio" name="positions-practice-mode" value="all"> All (spaced repetition)</label>
-            <label title="The Positions page's table: your most frequent positions with low move accuracy, picked at random."><input type="radio" name="positions-practice-mode" value="listed"> Weak and frequent</label>
+            <div class="chooser-option"><label title="The Positions page's table: your most frequent positions with low move accuracy, picked at random."><input type="radio" name="positions-practice-mode" value="listed"> Weak and frequent</label> <button id="chooser-positions-show" class="small" title="Show the positions that Weak and frequent practises, as on the Positions page">Show table</button></div>
             <div class="chooser-filters"><select id="chooser-positions-count" aria-label="How many positions"></select> positions, ≤ <select id="chooser-positions-max" aria-label="Highest move accuracy"></select> move accuracy</div>
             <label title="Only positions reached by the study's main moves for the opponent"><input type="checkbox" id="chooser-positions-main"> Positions from main lines only</label>
             <button id="chooser-positions-btn" class="primary">Practice positions</button>
@@ -444,6 +453,16 @@
       </div>
     </div>
   </section>
+
+  <!-- A Lines or Positions table shown over the Practice page ("Show table" in the chooser) -->
+  <div id="table-overlay" class="table-overlay hidden">
+    <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+      <div class="overlay-head"><h2 id="overlay-title"></h2><button id="overlay-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
+      <div id="overlay-choices" class="muted"></div>
+      <table class="report-table"><thead><tr id="overlay-columns"></tr></thead><tbody id="overlay-rows"></tbody></table>
+      <p id="overlay-note" class="muted"></p>
+    </div>
+  </div>
 
   <section id="positions-screen" class="hidden">
     <div class="cards">
@@ -499,7 +518,7 @@
           <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
           <li><b>Save favorites</b> remembers the chapters ticked now; <b>Recall favorites</b> ticks exactly those chapters again.</li>
           <li>To hide a study you no longer use, click the eye at the top (next to the favorites buttons): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
-          <li>The Studies page only chooses what you work on: practice starts from the <b>Lines</b> and <b>Positions</b> pages, using the chapters ticked here.</li>
+          <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
           <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
         </ul>
       </div>
@@ -507,7 +526,7 @@
       <div class="card">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too). Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices; in a line you're in the middle of, the moves you've answered still count (and the move you're on, if you'd already tried something there), as with End line here, but the line doesn't count as played through. </li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too); <b>Show table</b> shows that table over the page, and × (or Esc) closes it. Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices; in a line you're in the middle of, the moves you've answered still count (and the move you're on, if you'd already tried something there), as with End line here, but the line doesn't count as played through. </li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -1855,9 +1874,13 @@ $('chooser-positions-max').replaceChildren(...optionsFor(POSITIONS_ACCURACIES, v
 // Lines or Positions: the chooser's ids, settings, items and notes.
 const CHOOSERS = {
   lines: { page: 'Lines', mode: 'linesPracticeMode', count: 'linesCount', max: 'linesMaxAccuracy', main: 'linesMainLinesOnly',
-    all: () => allLineItems(), table: () => frequentWeakLines(), note: t => linesNote(t), item: ({ line }) => ({ line, i: null }), noun: 'line' },
+    all: () => allLineItems(), table: () => frequentWeakLines(), note: t => linesNote(t), item: ({ line }) => ({ line, i: null }), noun: 'line',
+    title: 'Frequent lines with low move accuracy', columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested'], rows: rows => lineRows(rows),
+    choices: () => `${plural(settings.linesCount, 'line')}, line accuracy ≤ ${settings.linesMaxAccuracy}%${settings.linesMainLinesOnly ? ', main lines only' : ''}` },
   positions: { page: 'Positions', mode: 'positionsPracticeMode', count: 'positionsCount', max: 'positionsMaxAccuracy', main: 'positionsMainLinesOnly',
-    all: () => allPositionItems(), table: () => frequentWeakPositions(), note: t => positionsNote(t), item: ({ line, i }) => ({ line, i }), noun: 'position' },
+    all: () => allPositionItems(), table: () => frequentWeakPositions(), note: t => positionsNote(t), item: ({ line, i }) => ({ line, i }), noun: 'position',
+    title: 'Frequent positions with low move accuracy', columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested'], rows: rows => positionRows(rows),
+    choices: () => `${plural(settings.positionsCount, 'position')}, move accuracy ≤ ${settings.positionsMaxAccuracy}%${settings.positionsMainLinesOnly ? ', positions from main lines only' : ''}` },
 };
 
 // The items a chooser would practise now, and a note when there are none (or some are left out).
@@ -1892,7 +1915,30 @@ for (const [name, c] of Object.entries(CHOOSERS)) {
   $(`chooser-${name}-max`).addEventListener('change', e => changed(c.max, +e.target.value));
   $(`chooser-${name}-main`).addEventListener('change', e => changed(c.main, e.target.checked));
   $(`chooser-${name}-btn`).addEventListener('click', () => practiceFromList(c.page, chooserItems(c).items, settings[c.mode] === 'all'));
+  $(`chooser-${name}-show`).addEventListener('click', () => showTableOverlay(c));
 }
+
+// "Show table": the Lines or Positions page's table, by the chooser's choices, over the Practice
+// page, closed with ×, Esc or a click outside it.
+function showTableOverlay(c) {
+  const table = c.table();
+  $('overlay-title').textContent = c.title;
+  $('overlay-choices').textContent = c.choices();
+  $('overlay-columns').replaceChildren(...c.columns.map((text, k) => element('th', k ? { class: 'num' } : {}, text)));
+  $('overlay-rows').replaceChildren(...c.rows(table.rows));
+  $('overlay-note').textContent = c.note(table);
+  $('table-overlay').classList.remove('hidden');
+  $('overlay-close').focus();
+}
+
+function hideTableOverlay() {
+  hideHoverBoard();
+  $('table-overlay').classList.add('hidden');
+}
+
+$('overlay-close').addEventListener('click', hideTableOverlay);
+$('table-overlay').addEventListener('click', e => { if (e.target === $('table-overlay')) hideTableOverlay(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('table-overlay').classList.contains('hidden')) hideTableOverlay(); });
 
 // Practise lines or positions, one at a time (never the same one twice in a row
 // when there's another): picked at random, or by priority when isAll.
@@ -2787,7 +2833,13 @@ function linesNote({ rows, waiting, chapters }) {
 function renderLines() {
   const table = frequentWeakLines();
   const { rows } = table;
-  $('lines-rows').replaceChildren(...rows.map(({ line, accuracy, games, lastPlayed }) => {
+  $('lines-rows').replaceChildren(...lineRows(rows));
+  $('lines-note').textContent = linesNote(table);
+}
+
+// The Lines table's rows (the Lines page, and Show table on the Practice page).
+function lineRows(rows) {
+  return rows.map(({ line, accuracy, games, lastPlayed }) => {
     const ch = chapterByKey(line.chapterKey);
     const last = line.moves.length - 1;
     const tr = element('tr', {},
@@ -2798,8 +2850,7 @@ function renderLines() {
     tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, last));
     tr.addEventListener('mouseleave', hideHoverBoard);
     return tr;
-  }));
-  $('lines-note').textContent = linesNote(table);
+  });
 }
 
 $('lines-count').addEventListener('change', e => { settings.linesCount = +e.target.value; saveSettings(); renderLines(); });
@@ -2864,7 +2915,13 @@ function positionsNote({ rows, waiting, chapters }) {
 function renderPositions() {
   const table = frequentWeakPositions();
   const { rows } = table;
-  $('positions-rows').replaceChildren(...rows.map(({ line, i, score, games, lastTried }) => {
+  $('positions-rows').replaceChildren(...positionRows(rows));
+  $('positions-note').textContent = positionsNote(table);
+}
+
+// The Positions table's rows (the Positions page, and Show table on the Practice page).
+function positionRows(rows) {
+  return rows.map(({ line, i, score, games, lastTried }) => {
     const ch = chapterByKey(line.chapterKey);
     const tr = element('tr', {},
       element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, i))),
@@ -2874,8 +2931,7 @@ function renderPositions() {
     tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, i));
     tr.addEventListener('mouseleave', hideHoverBoard);
     return tr;
-  }));
-  $('positions-note').textContent = positionsNote(table);
+  });
 }
 
 // A position's name, following the usual convention in chess books: the deepest opening name that

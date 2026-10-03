@@ -386,6 +386,11 @@ function runPositions(app) {
   check('chooser: Weak and frequent', chooser({ linesPracticeMode: 'listed', positionsPracticeMode: 'listed' }), [[false, false], [false, false]]);
   check('chooser: Weak and frequent, none at this accuracy', chooser({ linesPracticeMode: 'listed', positionsPracticeMode: 'listed', linesMaxAccuracy: 40, positionsMaxAccuracy: 40 }), [[true, false], [true, false]]);
   chooser({ positionsPracticeMode: 'listed' });
+  document.getElementById('chooser-positions-show').click();
+  check('chooser: Show table', [document.getElementById('table-overlay').classList.contains('hidden'), document.querySelectorAll('#overlay-rows tr').length,
+    document.getElementById('overlay-title').textContent], [false, 3, 'Frequent positions with low move accuracy']);
+  document.getElementById('overlay-close').click();
+  check('chooser: × closes the table', document.getElementById('table-overlay').classList.contains('hidden'), true);
   document.getElementById('chooser-positions-btn').click();
   check('chooser: practising weak and frequent positions', [app.practice.isSinglePosition, document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: '),
     document.getElementById('practice-chooser').classList.contains('hidden'), !document.getElementById('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
