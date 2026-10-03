@@ -336,7 +336,16 @@ Lines are shown with the user's moves highlighted by score (see Progress trackin
 
 ## Lines page
 
-- A page named **Lines**, opened from its header button (between Studies and Positions). For now it's **blank**, at the user's request; what it shows is to be decided. Opening it during a line keeps the line, like the other pages.
+- A page named **Lines** (header button between Studies and Positions; first added blank), laid out like the Positions page, with a table titled "**Frequent lines with low move accuracy**" (the user's request).
+- **Rows:** the lines of the chapters ticked on the Studies page. Each row is described like the Positions page: "Study · Chapter" on the first line, then the line's **final position** named by the usual convention (see Naming positions), in smaller grey text. Hovering over a row shows the hover board of the line's last move.
+- **Columns:**
+  - **Line**, with a drop-down underneath: how many lines to show, **10, 20, 30, 40 or 50**.
+  - **End position reached (times):** the rated Lichess games reaching the line's final position, with the usual short counts. **Rows are ordered by this**, most frequent first.
+  - **Line accuracy**, with a drop-down underneath, "≤ 90%" … "≤ 10%": only lines at or below it. Here a line's accuracy is the **average move accuracy of your moves in the line**, each over its last 10 attempts (the app doesn't keep a history of whole play-throughs, only their dates). **A line is listed only once every one of its moves has been tried**, so the number is reliable (both the user's choice, on Claude's suggestion).
+  - **Last tested:** how many calendar days since the line was last **played through from move 1 to the end** ("Today", "1 day", "5 days"; "–" if never since these times were recorded), the user's choice, on Claude's suggestion.
+- **Main lines only** checkbox: only lines where the opponent always plays the study's main move (the same rule as "Main line only" for Opponent's moves).
+- The choices are remembered between visits and included in backups. Lines whose final position's Lichess statistics haven't downloaded yet are left out, with a note saying how many. With nothing ticked: "Tick chapters on the Studies page to see their lines."
+- *Claude's choices, for the user to accept or reject:* the drop-downs start at **20 lines** and **≤ 70%**; the title is capitalised like the Positions page's ("Frequent lines …"); the page needs studies (without them its button goes to the Studies page, like Practice and Positions).
 
 ## Positions page
 
