@@ -47,7 +47,7 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
-  renderPositions, renderLines, practiceFromList, renderPracticeChooser, need, priorities, allLineItems, allPositionItems,
+  practiceFromList, renderPracticeChooser, need, priorities, allLineItems, allPositionItems,
   stopPracticingFromList() { practiceList = null; },
   onYourMove,
 };`;
@@ -317,7 +317,7 @@ async function runPractice(app) {
   app.setSettings({});
 }
 
-// ---------- The Positions page's filters ----------
+// ---------- The weak and frequent tables, the chooser and spaced repetition ----------
 
 // A chapter with a side variation for the opponent: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
 const SIDE_LINE = `[Event "Test Study: Side line"]
@@ -342,17 +342,19 @@ function runPositions(app) {
   app.setHistory({ moves, lines: { [lines[0].key]: { played: [Date.now()] } } });
   const rows = settings => {
     app.setSettings({ positionsMaxAccuracy: 90, ...settings });
-    app.renderPositions();
-    return [...document.querySelectorAll('#positions-rows tr')].map(tr => tr.querySelector('.position-name').textContent);
+    document.getElementById('chooser-positions-show').click();
+    document.getElementById('overlay-close').click();
+    return [...document.querySelectorAll('#overlay-rows tr')].map(tr => tr.querySelector('.position-name').textContent);
   };
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   check('positions: all three moves', rows({}).length, 3);
   check('positions: main lines only', rows({ positionsMainLinesOnly: true }).length, 2);
-  // The Lines page: both lines, all moves tried at 50%.
+  // The lines table: both lines, all moves tried at 50%.
   const lineRows = settings => {
     app.setSettings({ linesMaxAccuracy: 90, ...settings });
-    app.renderLines();
-    return [...document.querySelectorAll('#lines-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
+    document.getElementById('chooser-lines-show').click();
+    document.getElementById('overlay-close').click();
+    return [...document.querySelectorAll('#overlay-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
   };
   check('lines: both lines, most frequent end first', lineRows({}).map(r => [r[0], r[2], r[3]]),
     [['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Side line1. e4 f6 2. d4', '50%', '–']]);
