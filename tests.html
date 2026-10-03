@@ -303,6 +303,17 @@ async function runPractice(app) {
   check('practice: the next position is the other one', [p().isSinglePosition, p().startIndex !== first.startIndex], [true, true]);
   check('practice: a single position is not a play-through', app.history.lines[main.key]?.played.length, 2);
   app.stopPracticingFromList();
+
+  // 5. End practice part way through a line: the moves answered count, the line isn't a play-through.
+  app.practiceFromList('Lines', [{ line: main, i: null }]);
+  const before = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.length;
+  await play('e2e4');
+  await play('a2a3'); // an error on the move you're on
+  await until(yourTurn, 'the error to be taken back');
+  document.getElementById('end-practice-btn').click();
+  check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.length - before,
+    app.history.moves['AAAAAAAA/BBBBBBBB|e4 e5 Nf3'].attempts.at(-1).tried], [1, ['a3']]);
+  check('practice: a line stopped with End practice is not a play-through', [app.history.lines[main.key]?.played.length, app.practice], [2, null]);
   app.setSettings({});
 }
 

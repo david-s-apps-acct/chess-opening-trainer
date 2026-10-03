@@ -408,7 +408,7 @@
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
           <button id="end-btn" class="hidden" title="Stop this line here and see the summary. The moves you've played count; the rest of the line isn't played. Next time the line is played in full.">End line here</button>
-          <button id="end-practice-btn" class="end-practice hidden" title="Stop practising and choose what to practise next. A line you're in the middle of isn't counted.">End practice</button>
+          <button id="end-practice-btn" class="end-practice hidden" title="Stop practising and choose what to practise next. In a line you're in the middle of, the moves you've answered still count.">End practice</button>
         </div>
       </div>
     </div>
@@ -507,7 +507,7 @@
       <div class="card">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too). Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices; a line you're in the middle of then isn't counted. </li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, the same as the Lines or Positions page's table, with the same choices (changing them here changes them there too). Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices; in a line you're in the middle of, the moves you've answered still count (and the move you're on, if you'd already tried something there), as with End line here, but the line doesn't count as played through. </li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -533,7 +533,7 @@
           <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
           <li><b>Hint</b>, −100%: the Hint, and Show correct move. Move accuracy never goes below 0%.</li>
           <li>Each move keeps its <b>last 10 attempts</b>, including everything you tried. Its <b>move accuracy</b> is their average, as a percentage, with recent attempts counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. attempts of 0%, 80%, 100%, 100% (oldest to newest) give 74%. Move accuracies are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
-          <li><b>Not counted</b>: a line you leave unfinished.</li>
+          <li><b>Not counted</b>: a line dropped because you refreshed your studies in the middle of it.</li>
           <li>Highlighting: moves you know (<span class="score-100">100%</span>) look plain. Moves that need work get a violet background, stronger the weaker they are: <span class="score-90">90–99%</span> faint, <span class="score-70">70–89%</span> medium, <span class="score-0">69% or less</span> strong. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
         </ul>
         <details>
@@ -541,14 +541,15 @@
           <ul>
             <li>Playing a line: one try for each of your moves in it.</li>
             <li>A single position (from the Positions page): one try of the move tested.</li>
-            <li>Leaving a line before it ends (for example when the line is dropped after you refresh your studies) records nothing.</li>
+            <li>Stopping a line part way, with <b>End line here</b> or <b>End practice</b>: one try for each of your moves answered so far, and for the move you're on if you'd already tried a move or used Hint there.</li>
+            <li>A line dropped because you refreshed your studies in the middle of it records nothing.</li>
           </ul>
         </details>
         <details>
           <summary>When lines and positions were last practiced</summary>
           <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> on the Lines and Positions pages, and used by the Practice page's <b>All (spaced repetition)</b>.</p>
           <ul>
-            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you stop with <b>End line here</b>, a line you leave unfinished, and single positions don't count for the line; they only count for the moves you played.</li>
+            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you stop with <b>End line here</b> or <b>End practice</b>, and single positions don't count for the line; they only count for the moves you played.</li>
             <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press End line here (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
             <li>Times are kept only from now on, are included in backups, and are dropped for lines and moves that are no longer in your studies after Update studies.</li>
           </ul>
@@ -2102,15 +2103,30 @@ $('end-btn').addEventListener('click', () => {
   if (!practice || practice.busy || practice.isSinglePosition || practice.viewing != null) return;
   const expected = practice.line.moves[practice.movesPlayed];
   if (!expected?.isYours) return;
-  if (practice.tried.length) practice.attempts.push(newAttempt(expected, practice.movesPlayed)); // counts only if something was tried
+  addAttemptOnCurrentMove();
   practice.endedEarly = true;
   setShapes([]);
   endLine();
 });
 
-// "End practice": stop the session (a line in progress records nothing, as when it's left
-// unfinished) and go back to the chooser.
-$('end-practice-btn').addEventListener('click', () => { leavePractice(); showPracticeIdle(); });
+// The move you're on, when a line is stopped on it: it counts (as an error) only if you'd already
+// tried a move or used the hint on it.
+function addAttemptOnCurrentMove() {
+  const expected = practice.line.moves[practice.movesPlayed];
+  if (expected?.isYours && practice.tried.length) practice.attempts.push(newAttempt(expected, practice.movesPlayed));
+}
+
+// "End practice": stop the session and go back to the chooser. A line (or single position) stopped
+// part way records the moves answered so far, and the move you're on as for End line here; it isn't
+// a play-through.
+$('end-practice-btn').addEventListener('click', () => {
+  if (practice && !practice.isOver) {
+    addAttemptOnCurrentMove();
+    saveAttempts();
+  }
+  leavePractice();
+  showPracticeIdle();
+});
 
 // The buttons under the board: Hint and End line here during a line, Next line/position after it.
 function hideLineButtons() { $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden'); }
