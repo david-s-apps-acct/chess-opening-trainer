@@ -98,6 +98,9 @@
   .help-contents { line-height: 1.8; }
   .help-contents a { color: var(--accent); white-space: nowrap; }
   .help details[open] summary { margin-bottom: 4px; }
+  .help-table { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
+  .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
+  .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
 
   /* Options and Help pages: a column of cards */
   .cards { display: flex; flex-direction: column; gap: 16px; }
@@ -565,12 +568,33 @@
           <li>The same line or position is never given twice in a row when there's another to choose.</li>
         </ul>
         <details>
-          <summary>How the priority works</summary>
+          <summary>How All (spaced repetition) chooses</summary>
+          <p>There's no fixed schedule. Before each line or position, every one gets a <b>priority</b>, and the next is picked at random, with higher priorities more likely.</p>
+          <p><b>What's included.</b> <b>Lines</b>: every line of the chapters ticked on the Studies page, played from move 1 (only main lines if <b>Main lines only</b> is ticked). <b>Positions</b>: every one of your moves in those chapters, once each, as single positions (only those reached through the opponent's main moves if <b>Positions from main lines only</b> is ticked). Both include ones you've never tried. Hidden studies are left out, and the Weak and frequent drop-downs don't apply.</p>
+          <p><b>Priority = frequency × need.</b></p>
           <ul>
-            <li><b>Priority</b> = frequency × need.</li>
-            <li><b>Need</b> is 6 for one you've never tried (for a line: none of its moves tried). Otherwise it's weakness × due. <b>Weakness</b> is 1 at 100% accuracy, rising to 3 at 0%. <b>Due</b> compares the days since you last tested it with a review interval that grows with accuracy: 1 day at 0%, about 11 days at 50%, 128 days at 100%. Due is the days since divided by the interval, between 0.1 and 3 (3 if the last test time isn't known). So a 100% position tested yesterday has need 0.1, and a 50% position untested for a month has need 2 × 2.65 = 5.3.</li>
-            <li>Accuracy is the move accuracy for a position, and the line accuracy for a line, with moves you haven't tried counting as 0%. Last tested is when you last tried the move, or when you last played the line through from move 1 to the end.</li>
-            <li><b>Frequency</b> runs from 0.2 to 1, by how many times the position (for a line, its final position) was reached in rated Lichess games, on a logarithmic scale up to the most frequent one; 0.6 until its statistics have downloaded.</li>
+            <li><b>Need</b> is how much it needs practice. It's <b>6</b> for one you've never tried (for a line: none of its moves tried). Otherwise it's <b>weakness × due</b>.</li>
+            <li><b>Weakness</b> = 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%.</li>
+            <li><b>Due</b> = the days since it was last tested ÷ its review interval, kept between 0.1 and 3 (3 if the last test time isn't known). The <b>review interval</b> grows with accuracy, 2<sup>7 × accuracy</sup> days, so a well-known one isn't due again for weeks and a weak one is due the next day:
+              <table class="help-table"><tr><th>Accuracy</th><th>Interval</th></tr>
+                <tr><td>0%</td><td>1 day</td></tr><tr><td>50%</td><td>about 11 days</td></tr><tr><td>70%</td><td>about 30 days</td></tr><tr><td>100%</td><td>128 days</td></tr></table></li>
+            <li><b>Accuracy and last tested.</b> A position uses its move accuracy and when you last tried that move: in a line, as a single position, or when you skipped or ended practice on it. A line uses its line accuracy, with moves you haven't tried counting as 0%, and when you last played it through from move 1 to the end (skipped lines don't count).</li>
+            <li><b>Frequency</b> runs from 0.2 to 1, by how many times the position was reached in rated Lichess games (for a line, the position at its end), on a logarithmic scale up to the most frequent one; 0.6 until its statistics have downloaded. So an equally weak but much more common position comes up up to five times as often as a rare one.</li>
+          </ul>
+          <p><b>Examples of need:</b></p>
+          <table class="help-table">
+            <tr><th>Line or position</th><th>Need</th></tr>
+            <tr><td>100% accuracy, tested yesterday</td><td>1 × 0.1 = 0.1</td></tr>
+            <tr><td>50%, tested a month ago</td><td>2 × 2.65 = 5.3</td></tr>
+            <tr><td>Never tried</td><td>6</td></tr>
+            <tr><td>0%, last test time unknown</td><td>3 × 3 = 9</td></tr>
+          </table>
+          <p><b>The pick.</b> Priorities are worked out afresh before every pick, so as soon as you answer one, its priority changes. The pick is random but weighted: the order is never predictable, and low-priority ones still come up now and then. The same one is never given twice in a row when there's another to choose.</p>
+          <p><b>Worth knowing:</b></p>
+          <ul>
+            <li>Attempts from before each attempt got its own time count as "last tested unknown", so they're treated as fully due; this fades as you practise.</li>
+            <li>New ones are favoured: with many you haven't tried, they'll fill early sessions, since 6 is more than most tried ones' need.</li>
+            <li>Lines and positions are chosen separately: a position you've just answered in a line can still come up soon under Positions, since only that move's last-tried time changed.</li>
           </ul>
         </details>
       </div>
