@@ -30,29 +30,29 @@ in this folder); the page loads <code>trainer.html</code> without starting the a
 const TEST_HOOK = `
 export const app = {
   setLibrary(l) { library = l; forgetParsedChapters(); },
-  setPositions(p) { positions = p; },
+  setMoveStats(m) { moveStats = m; },
   setSettings(s) { settings = checkedSettings(s); },
   setHistory(h) { history = h; },
-  checkedSavedSelections, fromFavorites, renderSavedSelections,
-  get savedSelections() { return savedSelections; },
-  setSavedSelections(v) { savedSelections = v; chosenSelectionName = null; },
+  checkedPresets, renderPresets, storedHistory, lastTriedAt, lastPlayedAt, convertedHistory, convertedSettings,
+  get presets() { return presets; },
+  setPresets(v) { presets = v; chosenPresetName = null; },
   get selection() { return [...selection]; },
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
   renderChapterTree,
   positionName, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
   parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
-  // Practice: saving and network requests are switched off, so stored data is never touched.
+  // Saving and network requests switched off, so stored data is never touched.
   isolate() {
     store.set = () => {}; store.remove = () => {};
-    savePositions = async () => {}; saveLibrary = async () => {};
+    saveMoveStats = async () => {}; saveLibrary = async () => {};
     window.fetch = async () => new Response('', { status: 404 });
   },
   setSelection(keys) { selection = new Set(keys); },
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
-  practiceFromList, renderPracticeChooser, need, priorities, allLineItems, allPositionItems,
-  stopPracticingFromList() { practiceList = null; },
+  startSession, renderPracticeChooser, need, priorities, allLineItems, allPositionItems,
+  endSession() { session = null; },
   onYourMove,
 };`;
 
@@ -146,16 +146,21 @@ function snapshot(app) {
 // ---------- The tests ----------
 
 function run(app) {
+  app.isolate(); // nothing the tests do is saved, and nothing is fetched
   app.setLibrary(structuredClone(LIBRARY));
-  app.setPositions(structuredClone(POSITIONS));
+  app.setMoveStats(structuredClone(POSITIONS));
   app.setHistory({ moves: {}, lines: {} });
   app.setSettings({});
 
   // Settings
-  check('settings: defaults', app.checkedSettings({}), { sounds: false,
-    penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5, positionsCount: 25, positionsMaxAccuracy: 70, positionsMainLinesOnly: false, linesCount: 20, linesMaxAccuracy: 70, linesMainLinesOnly: false, linesPracticeMode: 'all', positionsPracticeMode: 'all' });
-  check('settings: older names still read', [app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsCount, app.checkedSettings({ weaknessCount: 50, weaknessMaxAccuracy: 40 }).positionsMaxAccuracy], [50, 40]);
-  check('settings: invalid values fall back', app.checkedSettings({ mastersTop: 9, penalties: { alternative: 11 } }).mastersTop, 5);
+  check('settings: defaults', app.checkedSettings({}), { sounds: false, penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5,
+    practice: { lines: { mode: 'all', count: 20, maxAccuracy: 70, mainLinesOnly: false }, positions: { mode: 'all', count: 25, maxAccuracy: 70, mainLinesOnly: false } } });
+  check('old data: history', app.convertedHistory({ moves: { k: { attempts: [{ tried: ['a3', 'e4'], points: 5 }, { tried: ['e4'], points: 10 }], lastTried: 7 } }, lines: { l: { played: [3, 4] } } }),
+    { moves: { k: [{ tried: ['a3', 'e4'], at: null }, { tried: ['e4'], at: 7 }] }, lines: { l: [3, 4] } });
+  check('old data: settings', app.checkedSettings(app.convertedSettings({ sounds: true, linesCount: 30, linesPracticeMode: 'listed', positionsMaxAccuracy: 50, positionsMainLinesOnly: true })).practice,
+    { lines: { mode: 'weak', count: 30, maxAccuracy: 70, mainLinesOnly: false }, positions: { mode: 'all', count: 25, maxAccuracy: 50, mainLinesOnly: true } });
+  check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9, penalties: { alternative: 11 } }).mastersTop,
+    app.checkedSettings({ practice: { lines: { mode: 'x', count: 7, maxAccuracy: 50 } } }).practice.lines], [5, { mode: 'all', count: 20, maxAccuracy: 50, mainLinesOnly: false }]);
 
   // Masters moves: top N and 10% or more
   const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
@@ -238,9 +243,8 @@ async function until(condition, what, ms = 6000) {
 }
 
 async function runPractice(app) {
-  app.isolate();
   app.setLibrary(structuredClone(LIBRARY));
-  app.setPositions(structuredClone(POSITIONS));
+  app.setMoveStats(structuredClone(POSITIONS));
   app.setHistory({ moves: {}, lines: {} });
   app.setSettings({});
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
@@ -257,7 +261,7 @@ async function runPractice(app) {
       await app.onYourMove(...[p().line.moves[p().movesPlayed].uci].map(u => [u.slice(0, 2), u.slice(2, 4)])[0]);
     }
   };
-  const points = key => app.history.moves['AAAAAAAA/BBBBBBBB|' + key]?.attempts.map(a => a.points);
+  const points = key => app.history.moves['AAAAAAAA/BBBBBBBB|' + key]?.map(a => a.points);
 
   // 1. The main line, with a masters move, an alternative, a marked alternative and a hint.
   app.startLine(main);
@@ -276,14 +280,14 @@ async function runPractice(app) {
   const summary = () => [...document.getElementById('practice-status').querySelectorAll('div')].map(d => d.textContent);
   check('practice: line summary', summary(), ['3 of 6 moves correct', '77% line accuracy']);
   check('practice: points', [points('e4'), points('e4 e5 Nf3'), points('e4 e5 Nf3 Nc6 Bc4'), points('e4 e5 Nf3 Nc6 Bc4 Bc5 c3')], [[8], [8], [0], [10]]);
-  check('practice: the play-through is recorded', app.history.lines[main.key]?.played.length, 1);
+  check('practice: the play-through is recorded', app.history.lines[main.key]?.length, 1);
 
   // 2. A clean line.
   app.startLine(main);
   await playRest();
   check('practice: clean line summary', summary(), ['No errors.', '100% line accuracy']);
   check('practice: the end-of-line panel over the board', document.getElementById('board-notice').textContent, 'Line completeNo errors.100% line accuracyNext line');
-  check('practice: second play-through recorded', app.history.lines[main.key]?.played.length, 2);
+  check('practice: second play-through recorded', app.history.lines[main.key]?.length, 2);
 
   // 3. Hint, Show correct move, then End line here.
   app.startLine(main);
@@ -293,31 +297,34 @@ async function runPractice(app) {
   check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
   document.getElementById('end-btn').click();
   check('practice: ended early', status(), 'Line ended early.');
-  check('practice: the move on was recorded', app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.at(-1), { tried: ['hint', 'show'], points: 0 });
-  check('practice: an ended line is not a play-through', app.history.lines[main.key]?.played.length, 2);
+  const lastE4 = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].at(-1);
+  check('practice: the move on was recorded', [lastE4.tried, lastE4.points, typeof lastE4.at], [['hint', 'show'], 0, 'number']);
+  check('practice: points and the line\'s times', [app.lastTriedAt('AAAAAAAA/BBBBBBBB|e4') === lastE4.at, typeof app.lastPlayedAt(main.key)], [true, 'number']);
+  check('practice: points aren\'t stored', Object.keys(app.storedHistory().moves['AAAAAAAA/BBBBBBBB|e4'].at(-1)).sort(), ['at', 'tried']);
+  check('practice: an ended line is not a play-through', app.history.lines[main.key]?.length, 2);
 
   // 4. Single positions from a list: a right answer moves on to the next position by itself.
-  app.practiceFromList('Positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
+  app.startSession('positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
-  check('practice: single position from the list', [p().isSinglePosition, [8, 10].includes(p().startIndex), p().movesPlayed === p().startIndex,
+  check('practice: single position from the list', [p().singleAt != null, [8, 10].includes(p().singleAt), p().movesPlayed === p().singleAt,
     document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: ')], [true, true, true, true]);
   await playRest();
   check('practice: single position answered', status(), 'Correct. Next position…');
   await until(() => p() !== first, 'the next position', 3000);
-  check('practice: the next position is the other one', [p().isSinglePosition, p().startIndex !== first.startIndex], [true, true]);
-  check('practice: a single position is not a play-through', app.history.lines[main.key]?.played.length, 2);
-  app.stopPracticingFromList();
+  check('practice: the next position is the other one', [p().singleAt != null, p().singleAt !== first.singleAt], [true, true]);
+  check('practice: a single position is not a play-through', app.history.lines[main.key]?.length, 2);
+  app.endSession();
 
   // 5. End practice part way through a line: the moves answered count, the line isn't a play-through.
-  app.practiceFromList('Lines', [{ line: main, i: null }]);
-  const before = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.length;
+  app.startSession('lines', [{ line: main, i: null }]);
+  const before = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length;
   await play('e2e4');
   await play('a2a3'); // an error on the move you're on
   await until(yourTurn, 'the error to be taken back');
   document.getElementById('end-practice-btn').click();
-  check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].attempts.length - before,
-    app.history.moves['AAAAAAAA/BBBBBBBB|e4 e5 Nf3'].attempts.at(-1).tried], [1, ['a3']]);
-  check('practice: a line stopped with End practice is not a play-through', [app.history.lines[main.key]?.played.length, app.practice], [2, null]);
+  check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length - before,
+    app.history.moves['AAAAAAAA/BBBBBBBB|e4 e5 Nf3'].at(-1).tried], [1, ['a3']]);
+  check('practice: a line stopped with End practice is not a play-through', [app.history.lines[main.key]?.length, app.practice], [2, null]);
   app.setSettings({});
 }
 
@@ -340,76 +347,78 @@ function runPositions(app) {
   for (const line of lines) line.moves.forEach((m, i) => {
     positions[m.epdBefore] = { lichess: explorer([['e4', 100 - i]]) };
     positions[m.epd] ||= { lichess: explorer([['e4', 50 - i]]) };
-    if (m.isYours) moves[app.moveKey(line, i)] = { attempts: [{ tried: ['a3', m.san], points: 5 }] };
+    if (m.isYours) moves[app.moveKey(line, i)] = [{ tried: ['a3', m.san], points: 5, at: null }];
   });
-  app.setPositions(positions);
-  app.setHistory({ moves, lines: { [lines[0].key]: { played: [Date.now()] } } });
-  const rows = settings => {
-    app.setSettings({ positionsMaxAccuracy: 90, ...settings });
+  app.setMoveStats(positions);
+  app.setHistory({ moves, lines: { [lines[0].key]: [Date.now()] } });
+  // Practice settings for lines and positions (Weak and frequent tables at ≤ 90% unless given).
+  const practiceSettings = ({ lines = {}, positions = {} } = {}) => app.setSettings({ practice: { lines: { maxAccuracy: 90, ...lines }, positions: { maxAccuracy: 90, ...positions } } });
+  const rows = (positions = {}) => {
+    practiceSettings({ positions });
     document.getElementById('chooser-positions-show').click();
     document.getElementById('overlay-close').click();
     return [...document.querySelectorAll('#overlay-rows tr')].map(tr => tr.querySelector('.position-name').textContent);
   };
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   check('positions: all three moves', rows({}).length, 3);
-  check('positions: main lines only', rows({ positionsMainLinesOnly: true }).length, 2);
+  check('positions: main lines only', rows({ mainLinesOnly: true }).length, 2);
   // The lines table: both lines, all moves tried at 50%.
-  const lineRows = settings => {
-    app.setSettings({ linesMaxAccuracy: 90, ...settings });
+  const lineRows = (lines = {}) => {
+    practiceSettings({ lines });
     document.getElementById('chooser-lines-show').click();
     document.getElementById('overlay-close').click();
     return [...document.querySelectorAll('#overlay-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
   };
   check('lines: both lines, most frequent end first', lineRows({}).map(r => [r[0], r[2], r[3]]),
     [['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Side line1. e4 f6 2. d4', '50%', '–']]);
-  check('lines: main lines only', lineRows({ linesMainLinesOnly: true }).length, 1);
-  check('lines: accuracy limit', lineRows({ linesMaxAccuracy: 40 }).length, 0);
+  check('lines: main lines only', lineRows({ mainLinesOnly: true }).length, 1);
+  check('lines: accuracy limit', lineRows({ maxAccuracy: 40 }).length, 0);
   // Spaced repetition ("All (spaced repetition)").
   const DAY = 86400000, now = Date.now();
   check('spaced repetition: need', [app.need(null, null), app.need(1, now - DAY, now), app.need(0.5, now - 30 * DAY, now).toFixed(2), app.need(0, null)],
     [6, 0.1, (2 * 30 / 2 ** 3.5).toFixed(2), 9]);
-  check('spaced repetition: all positions, including untried ones', [app.allPositionItems().length, (app.setSettings({ positionsMainLinesOnly: true }), app.allPositionItems().length)], [3, 2]);
-  check('spaced repetition: all lines', [(app.setSettings({}), app.allLineItems().length), (app.setSettings({ linesMainLinesOnly: true }), app.allLineItems().length)], [2, 1]);
+  check('spaced repetition: all positions, including untried ones', [app.allPositionItems().length, (practiceSettings({ positions: { mainLinesOnly: true } }), app.allPositionItems().length)], [3, 2]);
+  check('spaced repetition: all lines', [(app.setSettings({}), app.allLineItems().length), (practiceSettings({ lines: { mainLinesOnly: true } }), app.allLineItems().length)], [2, 1]);
   app.setSettings({});
   const linePriorities = app.priorities(app.allLineItems());
   check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
   const positionItems = app.allPositionItems();
   const positionPriorities = app.priorities(positionItems);
   check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === 0));
-  app.practiceFromList('Positions', positionItems, true);
-  check('spaced repetition: practising all positions', [app.practice.isSinglePosition, document.getElementById('practice-side').textContent.startsWith('All positions: ')], [true, true]);
-  app.stopPracticingFromList();
-  app.practiceFromList('Lines', app.allLineItems(), true);
-  check('spaced repetition: practising all lines, from move 1', [app.practice.isSinglePosition, app.practice.movesPlayed <= 1, document.getElementById('practice-side').textContent], [false, true, 'All lines']);
-  app.stopPracticingFromList();
+  app.startSession('positions', positionItems, true);
+  check('spaced repetition: practising all positions', [app.practice.singleAt != null, document.getElementById('practice-side').textContent.startsWith('All positions: ')], [true, true]);
+  app.endSession();
+  app.startSession('lines', app.allLineItems(), true);
+  check('spaced repetition: practising all lines, from move 1', [app.practice.singleAt, app.practice.movesPlayed <= 1, document.getElementById('practice-side').textContent], [null, true, 'All lines']);
+  app.endSession();
   // The idle Practice page's chooser: All, or the tables' Weak and frequent.
   const chooser = settings => {
-    app.setSettings({ positionsMaxAccuracy: 90, linesMaxAccuracy: 90, ...settings });
+    practiceSettings(settings);
     app.renderPracticeChooser();
     return ['lines', 'positions'].map(n => [document.getElementById(`chooser-${n}-btn`).disabled, document.getElementById(`chooser-${n}-count`).disabled]);
   };
   check('chooser: All', chooser({}), [[false, true], [false, true]]);
-  check('chooser: Weak and frequent', chooser({ linesPracticeMode: 'listed', positionsPracticeMode: 'listed' }), [[false, false], [false, false]]);
-  check('chooser: Weak and frequent, none at this accuracy', chooser({ linesPracticeMode: 'listed', positionsPracticeMode: 'listed', linesMaxAccuracy: 40, positionsMaxAccuracy: 40 }), [[true, false], [true, false]]);
-  chooser({ positionsPracticeMode: 'listed' });
+  check('chooser: Weak and frequent', chooser({ lines: { mode: 'weak' }, positions: { mode: 'weak' } }), [[false, false], [false, false]]);
+  check('chooser: Weak and frequent, none at this accuracy', chooser({ lines: { mode: 'weak', maxAccuracy: 40 }, positions: { mode: 'weak', maxAccuracy: 40 } }), [[true, false], [true, false]]);
+  chooser({ positions: { mode: 'weak' } });
   document.getElementById('chooser-positions-show').click();
   check('chooser: Show table', [document.getElementById('table-overlay').classList.contains('hidden'), document.querySelectorAll('#overlay-rows tr').length,
     document.getElementById('overlay-title').textContent], [false, 3, 'Frequent positions with low move accuracy']);
   document.getElementById('overlay-close').click();
   check('chooser: × closes the table', document.getElementById('table-overlay').classList.contains('hidden'), true);
   document.getElementById('chooser-positions-btn').click();
-  check('chooser: practising weak and frequent positions', [app.practice.isSinglePosition, document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: '),
+  check('chooser: practising weak and frequent positions', [app.practice.singleAt != null, document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: '),
     document.getElementById('practice-chooser').classList.contains('hidden'), !document.getElementById('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
   document.getElementById('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, document.getElementById('practice-chooser').classList.contains('hidden'), document.getElementById('end-practice-btn').classList.contains('hidden')], [null, false, true]);
-  chooser({ linesPracticeMode: 'listed' });
+  chooser({ lines: { mode: 'weak' } });
   document.getElementById('chooser-lines-btn').click();
-  check('chooser: practising weak and frequent lines, from move 1', [app.practice.isSinglePosition, app.practice.startIndex, document.getElementById('practice-side').textContent], [false, 0, 'Weak and frequent lines']);
-  app.stopPracticingFromList();
+  check('chooser: practising weak and frequent lines, from move 1', [app.practice.singleAt, document.getElementById('practice-side').textContent], [null, 'Weak and frequent lines']);
+  app.endSession();
   chooser({});
   document.getElementById('chooser-lines-btn').click();
   check('chooser: practising all lines', document.getElementById('practice-side').textContent, 'All lines');
-  app.stopPracticingFromList();
+  app.endSession();
   app.setSettings({});
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   check('positions: only ticked chapters', rows({}).length, 0);
@@ -418,52 +427,50 @@ function runPositions(app) {
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
 }
 
-// ---------- Saved selections ----------
+// ---------- Presets ----------
 
-function runSavedSelections(app) {
-  app.isolate();
+function runPresets(app) {
   app.setLibrary(structuredClone(LIBRARY));
-  check('saved selections: invalid and duplicate names dropped', app.checkedSavedSelections([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null]),
+  check('presets: invalid and duplicate names dropped', app.checkedPresets([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null]),
     [{ name: 'A', chapters: ['x'] }]);
-  check('saved selections: favorites become "Favorites"', [app.fromFavorites(['x']), app.fromFavorites([])], [[{ name: 'Favorites', chapters: ['x'] }], []]);
   const $ = id => document.getElementById(id);
   const realConfirm = window.confirm;
   window.confirm = () => true;
-  const nameIt = name => { $('saved-name').value = name; $('saved-name-form').requestSubmit(); };
-  const options = () => [...$('saved-select').options].filter(o => !o.hidden).map(o => o.textContent);
-  app.setSavedSelections([]);
+  const nameIt = name => { $('preset-name').value = name; $('preset-name-form').requestSubmit(); };
+  const options = () => [...$('preset-select').options].filter(o => !o.hidden).map(o => o.textContent);
+  app.setPresets([]);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
-  app.renderSavedSelections();
-  $('saved-edit-btn').click();
-  check('saved selections: ✎ opens the edit panel', [$('saved-edit').classList.contains('hidden'), $('saved-edit-btn').getAttribute('aria-expanded')], [false, 'true']);
-  $('saved-new-btn').click();
+  app.renderPresets();
+  $('preset-edit-btn').click();
+  check('presets: ✎ opens the edit panel', [$('preset-edit').classList.contains('hidden'), $('preset-edit-btn').getAttribute('aria-expanded')], [false, 'true']);
+  $('preset-new-btn').click();
   nameIt('Italian');
-  check('saved selections: Save as new', [app.savedSelections, $('saved-select').value], [[{ name: 'Italian', chapters: ['AAAAAAAA/BBBBBBBB'] }], 'Italian']);
-  $('saved-new-btn').click();
+  check('presets: Save as new', [app.presets, $('preset-select').value], [[{ name: 'Italian', chapters: ['AAAAAAAA/BBBBBBBB'] }], 'Italian']);
+  $('preset-new-btn').click();
   nameIt('italian');
-  check('saved selections: names must differ', [$('saved-name-error').textContent, app.savedSelections.length], ["There's already a preset called italian.", 1]);
-  $('saved-name-cancel').click();
+  check('presets: names must differ', [$('preset-name-error').textContent, app.presets.length], ["There's already a preset called italian.", 1]);
+  $('preset-name-cancel').click();
   app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
-  app.renderSavedSelections();
-  check('saved selections: changed ticks grey the name out', [options(), $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled], [['Italian'], true, false]);
-  $('saved-update-btn').click();
-  check('saved selections: Update, then the edit buttons close', [app.savedSelections[0].chapters.length, $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled, $('saved-edit').classList.contains('hidden')], [2, false, true, true]);
-  $('saved-edit-btn').click();
-  $('saved-rename-btn').click();
+  app.renderPresets();
+  check('presets: changed ticks grey the name out', [options(), $('preset-select').classList.contains('changed'), $('preset-update-btn').disabled], [['Italian'], true, false]);
+  $('preset-update-btn').click();
+  check('presets: Update, then the edit buttons close', [app.presets[0].chapters.length, $('preset-select').classList.contains('changed'), $('preset-update-btn').disabled, $('preset-edit').classList.contains('hidden')], [2, false, true, true]);
+  $('preset-edit-btn').click();
+  $('preset-rename-btn').click();
   nameIt('Both and a much longer name than sixty characters, which is now allowed without any limit');
-  check('saved selections: long names', app.savedSelections[0].name.length > 60, true);
-  $('saved-rename-btn').click();
+  check('presets: long names', app.presets[0].name.length > 60, true);
+  $('preset-rename-btn').click();
   nameIt('Both');
-  check('saved selections: Rename', [app.savedSelections[0].name, $('saved-select').value], ['Both', 'Both']);
+  check('presets: Rename', [app.presets[0].name, $('preset-select').value], ['Both', 'Both']);
   app.setSelection([]);
-  $('saved-select').value = 'Both';
-  $('saved-select').dispatchEvent(new Event('change'));
-  check('saved selections: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
-  $('saved-delete-btn').click();
-  check('saved selections: Delete keeps the ticks; "No presets yet" in grey', [app.savedSelections.length, app.selection.length, options(), $('saved-select').classList.contains('changed'), $('saved-edit').classList.contains('hidden')], [0, 2, [], true, true]);
-  $('saved-edit-btn').click();
-  $('saved-edit-close').click();
-  check('saved selections: × closes the edit panel', $('saved-edit').classList.contains('hidden'), true);
+  $('preset-select').value = 'Both';
+  $('preset-select').dispatchEvent(new Event('change'));
+  check('presets: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
+  $('preset-delete-btn').click();
+  check('presets: Delete keeps the ticks; "No presets yet" in grey', [app.presets.length, app.selection.length, options(), $('preset-select').classList.contains('changed'), $('preset-edit').classList.contains('hidden')], [0, 2, [], true, true]);
+  $('preset-edit-btn').click();
+  $('preset-edit-close').click();
+  check('presets: × closes the edit panel', $('preset-edit').classList.contains('hidden'), true);
   window.confirm = realConfirm;
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
 }
@@ -475,7 +482,7 @@ try {
   run(app);
   runPositions(app);
   await runPractice(app);
-  runSavedSelections(app);
+  runPresets(app);
 } catch (e) {
   results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
 }

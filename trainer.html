@@ -117,22 +117,22 @@
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* Studies page: the saved-selection bar above the list, and its edit panel. */
+  /* Studies page: the presets bar above the list, and its edit panel. */
   .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
   .selection-bar label { font-weight: 600; }
   .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
   .selection-bar select.changed { color: #6b6965; } /* fainter than --muted: the ticks differ from the chosen preset, or "None chosen" */
   .selection-bar select option { color: var(--text); }
   .selection-bar #sel-summary { margin-left: auto; }
-  #saved-edit-btn[aria-expanded=true] { color: var(--text-strong); }
-  .saved-edit { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
-  .saved-edit-row { display: flex; align-items: center; gap: 6px; }
-  .saved-edit-row #saved-edit-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; }
-  .saved-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
-  .saved-name-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .saved-name-form input { flex: 1 1 240px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
-  .saved-name-form .form-error { flex-basis: 100%; margin-top: 0; min-height: 0; font-size: 13px; }
-  .saved-name-form .form-error:empty { display: none; }
+  #preset-edit-btn[aria-expanded=true] { color: var(--text-strong); }
+  .preset-edit { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
+  .preset-edit-row { display: flex; align-items: center; gap: 6px; }
+  .preset-edit-row #preset-edit-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; }
+  .preset-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preset-name-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .preset-name-form input { flex: 1 1 240px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
+  .preset-name-form .form-error { flex-basis: 100%; margin-top: 0; min-height: 0; font-size: 13px; }
+  .preset-name-form .form-error:empty { display: none; }
   .all-row { border-bottom: 1px solid var(--border); }
   .all-row #show-hidden-btn { margin-left: 2px; }
   .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
@@ -326,27 +326,27 @@
   <!-- Choose chapters -->
   <section id="studies-screen" class="hidden">
     <div class="selection-bar">
-      <label for="saved-select">Presets:</label>
-      <select id="saved-select" title="Tick exactly the chapters of a preset"></select>
-      <button id="saved-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="saved-edit" aria-label="Edit presets" title="Edit presets">
+      <label for="preset-select">Presets:</label>
+      <select id="preset-select" title="Tick exactly the chapters of a preset"></select>
+      <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
       </button>
       <span id="sel-summary" class="muted"></span>
     </div>
-    <div id="saved-edit" class="saved-edit hidden" aria-label="Edit presets">
-      <div class="saved-edit-row">
-        <div class="saved-buttons">
-          <button id="saved-new-btn" class="small" title="Save the chapters ticked now as a new preset, with a name">Save as new</button>
-          <button id="saved-update-btn" class="small" title="Save the chapters ticked now in the chosen preset">Update</button>
-          <button id="saved-rename-btn" class="small" title="Change the chosen preset's name">Rename</button>
-          <button id="saved-delete-btn" class="small" title="Delete the chosen preset (the ticks stay as they are)">Delete</button>
+    <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
+      <div class="preset-edit-row">
+        <div class="preset-buttons">
+          <button id="preset-new-btn" class="small" title="Save the chapters ticked now as a new preset, with a name">Save as new</button>
+          <button id="preset-update-btn" class="small" title="Save the chapters ticked now in the chosen preset">Update</button>
+          <button id="preset-rename-btn" class="small" title="Change the chosen preset's name">Rename</button>
+          <button id="preset-delete-btn" class="small" title="Delete the chosen preset (the ticks stay as they are)">Delete</button>
         </div>
-        <button id="saved-edit-close" class="icon-btn" aria-label="Close" title="Close">×</button>
+        <button id="preset-edit-close" class="icon-btn" aria-label="Close" title="Close">×</button>
       </div>
-      <form id="saved-name-form" class="saved-name-form hidden">
-        <input type="text" id="saved-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
-        <button id="saved-name-ok" class="small primary" type="submit">Save</button><button id="saved-name-cancel" class="small" type="button">Cancel</button>
-        <div id="saved-name-error" class="form-error"></div>
+      <form id="preset-name-form" class="preset-name-form hidden">
+        <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
+        <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
+        <div id="preset-name-error" class="form-error"></div>
       </form>
     </div>
     <div class="studies">
@@ -399,7 +399,7 @@
           <fieldset>
             <legend>Lines</legend>
             <label title="Every line of the chapters ticked on the Studies page, each from move 1. New lines, lines with low line accuracy and lines not tested for a while come up more, frequent lines most of all."><input type="radio" name="lines-practice-mode" value="all"> All (spaced repetition)</label>
-            <div class="chooser-option"><label title="Your most frequent lines with low line accuracy (Show table lists them), picked at random, each from move 1."><input type="radio" name="lines-practice-mode" value="listed"> Weak and frequent</label> <button id="chooser-lines-show" class="small" title="Show the lines that Weak and frequent practises">Show table</button></div>
+            <div class="chooser-option"><label title="Your most frequent lines with low line accuracy (Show table lists them), picked at random, each from move 1."><input type="radio" name="lines-practice-mode" value="weak"> Weak and frequent</label> <button id="chooser-lines-show" class="small" title="Show the lines that Weak and frequent practises">Show table</button></div>
             <div class="chooser-filters"><select id="chooser-lines-count" aria-label="How many lines"></select> lines, ≤ <select id="chooser-lines-max" aria-label="Highest line accuracy"></select> line accuracy</div>
             <label title="Only lines where the opponent always plays the study's main move"><input type="checkbox" id="chooser-lines-main"> Main lines only</label>
             <button id="chooser-lines-btn" class="primary">Practice lines</button>
@@ -408,7 +408,7 @@
           <fieldset>
             <legend>Positions</legend>
             <label title="Every one of your moves in the chapters ticked on the Studies page, each as a single position. New positions, positions with low move accuracy and positions not tested for a while come up more, frequent positions most of all."><input type="radio" name="positions-practice-mode" value="all"> All (spaced repetition)</label>
-            <div class="chooser-option"><label title="Your most frequent positions with low move accuracy (Show table lists them), picked at random."><input type="radio" name="positions-practice-mode" value="listed"> Weak and frequent</label> <button id="chooser-positions-show" class="small" title="Show the positions that Weak and frequent practises">Show table</button></div>
+            <div class="chooser-option"><label title="Your most frequent positions with low move accuracy (Show table lists them), picked at random."><input type="radio" name="positions-practice-mode" value="weak"> Weak and frequent</label> <button id="chooser-positions-show" class="small" title="Show the positions that Weak and frequent practises">Show table</button></div>
             <div class="chooser-filters"><select id="chooser-positions-count" aria-label="How many positions"></select> positions, ≤ <select id="chooser-positions-max" aria-label="Highest move accuracy"></select> move accuracy</div>
             <label title="Only positions reached by the study's main moves for the opponent"><input type="checkbox" id="chooser-positions-main"> Positions from main lines only</label>
             <button id="chooser-positions-btn" class="primary">Practice positions</button>
@@ -650,10 +650,10 @@ const MAX_LINES_PER_CHAPTER = 5000;
 
 // ---------- Storage ----------
 
-// localStorage (names start "cot."): the Lichess token, settings, selection, saved selections, hidden
-// studies and your history. IndexedDB (database "chess-opening-trainer"): the studies fetched from
-// Lichess (store "library") and what Lichess says about each board position (store "positions",
-// keyed by EPD). Both can be large.
+// localStorage (names start "cot."): the Lichess token, settings, selection, presets, the chosen
+// preset, hidden studies and your history. IndexedDB (database "chess-opening-trainer"): the studies
+// fetched from Lichess (store "library") and the move statistics for each board position (store
+// "moveStats", keyed by EPD). Both can be large.
 const store = {
   get(key, fallback) {
     try {
@@ -669,15 +669,56 @@ const store = {
   },
 };
 
+// Data saved before 4 October 2026 is converted once to the layout described in State. (This can be
+// removed once it has run.)
+// History: attempts were { tried, points } with one lastTried time per move, and lines { played }.
+// Only the last attempt's time was known; the earlier ones get none.
+const convertedHistory = old => ({
+  moves: Object.fromEntries(Object.entries(old.moves || {}).map(([key, r]) => [key,
+    (r?.attempts || []).map((a, k, all) => ({ tried: a.tried, at: k === all.length - 1 ? r.lastTried ?? null : null }))])),
+  lines: Object.fromEntries(Object.entries(old.lines || {}).map(([key, r]) => [key, r?.played || []])),
+});
+// Settings: the Practice page's choices were flat (linesCount, positionsPracticeMode: 'listed', …).
+const convertedSettings = old => {
+  const kind = k => ({ mode: old[k + 'PracticeMode'] === 'listed' ? 'weak' : 'all', count: old[k + 'Count'], maxAccuracy: old[k + 'MaxAccuracy'], mainLinesOnly: old[k + 'MainLinesOnly'] });
+  return { sounds: old.sounds, penalties: old.penalties, mastersTop: old.mastersTop, practice: { lines: kind('lines'), positions: kind('positions') } };
+};
+(function convertOldData() {
+  if (store.get('dataVersion', 0) >= 5) return;
+  const history = store.get('history', null);
+  if (history?.moves && !Object.values(history.moves).every(Array.isArray)) store.set('history', convertedHistory(history));
+  const settings = store.get('settings', null);
+  if (settings && !settings.practice) store.set('settings', convertedSettings(settings));
+  // Presets were "saved selections", and before that a single "favorites".
+  const favorites = store.get('favorites', null);
+  const presets = store.get('savedSelections', null) ?? (Array.isArray(favorites) && favorites.length ? [{ name: 'Favorites', chapters: favorites }] : null);
+  if (presets) store.set('presets', presets);
+  const chosen = store.get('chosenSelection', null);
+  if (chosen) store.set('chosenPreset', chosen);
+  for (const key of ['savedSelections', 'chosenSelection', 'favorites']) store.remove(key);
+  store.set('dataVersion', 5);
+})();
+
 let database = null;
 
 function openDatabase() {
   return database ||= new Promise((resolve, reject) => {
-    const req = indexedDB.open('chess-opening-trainer', 3);
+    const req = indexedDB.open('chess-opening-trainer', 4);
     req.onupgradeneeded = () => {
       const db = req.result;
-      for (const name of ['library', 'positions']) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
-      if (db.objectStoreNames.contains('kv')) db.deleteObjectStore('kv'); // used by versions before 30 September 2026
+      if (!db.objectStoreNames.contains('library')) db.createObjectStore('library');
+      if (db.objectStoreNames.contains('moveStats')) return;
+      const moveStats = db.createObjectStore('moveStats');
+      // Before version 4 the move statistics were in the store "positions" (with old evaluations
+      // alongside): copied over once, then that store is deleted.
+      if (!db.objectStoreNames.contains('positions')) return;
+      req.transaction.objectStore('positions').openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (!cursor) { db.deleteObjectStore('positions'); return; }
+        const { lichess, masters } = cursor.value;
+        if (lichess || masters) moveStats.put({ ...lichess && { lichess }, ...masters && { masters } }, cursor.key);
+        cursor.continue();
+      };
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -705,16 +746,15 @@ async function saveLibrary() {
   catch (e) { console.warn('IndexedDB write failed', e); }
 }
 
-async function loadPositions() {
-  const [keys, values] = await inDatabase('positions', 'readonly', s => [s.getAllKeys(), s.getAll()]);
-  // ({ eval, … } parts saved before evaluations were removed are left out.)
-  const found = keys.result.map((epd, k) => { const { eval: _, ...rest } = values.result[k]; return [epd, rest]; });
-  return Object.fromEntries(found.filter(([, parts]) => Object.keys(parts).length));
+async function loadMoveStats() {
+  const [keys, values] = await inDatabase('moveStats', 'readonly', s => [s.getAllKeys(), s.getAll()]);
+  return Object.fromEntries(keys.result.map((epd, k) => [epd, values.result[k]]));
 }
 
-// Saves these positions (all of them if none are given). A failure (e.g. storage full) is only logged.
-async function savePositions(epds = Object.keys(positions)) {
-  try { await inDatabase('positions', 'readwrite', s => { for (const epd of epds) if (positions[epd]) s.put(positions[epd], epd); }); }
+// Saves the move statistics of these positions (all of them if none are given). A failure (e.g.
+// storage full) is only logged.
+async function saveMoveStats(epds = Object.keys(moveStats)) {
+  try { await inDatabase('moveStats', 'readwrite', s => { for (const epd of epds) if (moveStats[epd]) s.put(moveStats[epd], epd); }); }
   catch (e) { console.warn('IndexedDB write failed', e); }
 }
 
@@ -723,22 +763,16 @@ async function savePositions(epds = Object.keys(positions)) {
 let token = store.get('token', null);
 let library = null; // the studies fetched from Lichess: { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
 let selection = new Set(store.get('selection', [])); // the ticked chapters' keys, "studyId/chapterId"
-// Saved selections: [{ name, chapters: [chapter keys] }], and the name of the one chosen in the drop-down.
-// (Before there could be several, there was one, "favorites": its chapters become "Favorites".)
-const checkedSavedSelections = v => {
+// Presets: saved chapter selections, [{ name, chapters: [chapter keys] }], and the name of the one
+// chosen in the drop-down.
+const checkedPresets = v => {
   const names = new Set();
-  return (Array.isArray(v) ? v : []).filter(s => s && typeof s.name === 'string' && s.name.trim() && Array.isArray(s.chapters)
-    && !names.has(s.name.toLowerCase()) && names.add(s.name.toLowerCase()))
-    .map(s => ({ name: s.name.trim(), chapters: s.chapters.filter(k => typeof k === 'string') }));
+  return (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.name.trim() && Array.isArray(p.chapters)
+    && !names.has(p.name.toLowerCase()) && names.add(p.name.toLowerCase()))
+    .map(p => ({ name: p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string') }));
 };
-const fromFavorites = favorites => Array.isArray(favorites) && favorites.length ? [{ name: 'Favorites', chapters: favorites.filter(k => typeof k === 'string') }] : [];
-let savedSelections = checkedSavedSelections(store.get('savedSelections', null));
-let chosenSelectionName = store.get('chosenSelection', null);
-if (store.get('favorites', null)) { // the first time after the change
-  savedSelections = fromFavorites(store.get('favorites', null));
-  store.set('savedSelections', savedSelections);
-  store.remove('favorites');
-}
+let presets = checkedPresets(store.get('presets', []));
+let chosenPresetName = store.get('chosenPreset', null);
 let hiddenStudies = new Set(store.get('hiddenStudies', [])); // studies hidden from the list and from practice
 const saveSelection = () => store.set('selection', [...selection]);
 const saveHidden = () => store.set('hiddenStudies', [...hiddenStudies]);
@@ -746,37 +780,42 @@ const isHiddenChapter = key => hiddenStudies.has(key.slice(0, key.indexOf('/')))
 const visibleChapters = () => allChapters().filter(c => !isHiddenChapter(c.key));
 
 // Your history (see Move results and grading):
-//   moves: move key (a move of yours in a chapter) -> { attempts: the last 10, oldest first, each
-//          { tried: what you did, in order (moves as SAN, "hint", "show"), points: 0–10 }, lastTried: time }
-//   lines: line key -> { played: the last 10 times it was played from move 1 to the end, oldest first }
+//   moves: move key (a move of yours in a chapter) -> its last 10 attempts, oldest first, each
+//          { tried: what you did, in order (moves as SAN, "hint", "show"), at: when (null if unknown) }
+//   lines: line key -> the last 10 times it was played from move 1 to the end, oldest first
+// Only these facts are stored. In memory each attempt also has its points (0–10), worked out from
+// what was tried with the current penalties and data (see rescoreHistory).
 const emptyHistory = () => ({ moves: {}, lines: {} });
-const validHistory = h => !!h && typeof h === 'object' && !!h.moves && typeof h.moves === 'object' && !!h.lines && typeof h.lines === 'object';
+const validHistory = h => !!h && typeof h === 'object' && !!h.moves && typeof h.moves === 'object' && !!h.lines && typeof h.lines === 'object'
+  && Object.values(h.moves).every(Array.isArray) && Object.values(h.lines).every(Array.isArray);
 let history = validHistory(store.get('history')) ? store.get('history') : emptyHistory();
-const saveHistory = () => store.set('history', history);
+const storedHistory = () => ({
+  moves: Object.fromEntries(Object.entries(history.moves).map(([key, attempts]) => [key, attempts.map(({ tried, at }) => ({ tried, at }))])),
+  lines: history.lines,
+});
+const saveHistory = () => store.set('history', storedHistory());
 
-// What Lichess says about each board position, by EPD: { lichess: its rated Lichess games,
+// The move statistics for each board position, by EPD: { lichess: its rated Lichess games,
 // masters: its master games } (see the Lichess downloads).
-let positions = {};
+let moveStats = {};
 
 // Settings (chosen on the Practice and Options pages).
 // Error penalties are in points: 1 point = 10% of an attempt's score.
 const MASTERS_TOPS = [1, 2, 3, 4, 5];
-const POSITIONS_COUNTS = [25, 50, 75, 100], POSITIONS_ACCURACIES = [90, 80, 70, 60, 50, 40, 30, 20, 10];
-const LINES_COUNTS = [10, 20, 30, 40, 50];
+const COUNTS = { lines: [10, 20, 30, 40, 50], positions: [25, 50, 75, 100] };
+const ACCURACY_LIMITS = [90, 80, 70, 60, 50, 40, 30, 20, 10];
+const PRACTICE_MODES = ['all', 'weak']; // All (spaced repetition), Weak and frequent
 const DEFAULT_SETTINGS = {
   sounds: false,
   penalties: { alternative: 2, masters: 2, error: 5, hint: 10 },
-  mastersTop: 5,               // a masters move is within this many top master moves
-  positionsCount: 25,           // the weak and frequent positions: how many
-  positionsMaxAccuracy: 70,     // … with accuracy at or below this
-  positionsMainLinesOnly: false, // … only positions reached by the opponent's main moves
-  linesCount: 20,              // the weak and frequent lines: how many
-  linesMaxAccuracy: 70,        // … with line accuracy at or below this
-  linesMainLinesOnly: false,   // … main lines only
-  linesPracticeMode: 'all',    // the Practice page's Lines choice: 'all' (spaced repetition) or 'listed' (weak and frequent)
-  positionsPracticeMode: 'all', // … and its Positions choice
+  mastersTop: 5, // a masters move is within this many top master moves
+  // The Practice page's Lines and Positions choices: the mode, and for Weak and frequent how many,
+  // with accuracy at or below maxAccuracy; mainLinesOnly applies to both modes.
+  practice: {
+    lines: { mode: 'all', count: 20, maxAccuracy: 70, mainLinesOnly: false },
+    positions: { mode: 'all', count: 25, maxAccuracy: 70, mainLinesOnly: false },
+  },
 };
-const PRACTICE_MODES = ['all', 'listed'];
 const validPenalties = v => !!v && typeof v === 'object'
   && Object.keys(DEFAULT_SETTINGS.penalties).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
 
@@ -788,15 +827,15 @@ function checkedSettings(saved) {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     penalties: validPenalties(v.penalties) ? { ...v.penalties } : { ...d.penalties },
     mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
-    // (Saved before the Weaknesses page was renamed Positions, these were weaknessCount and weaknessMaxAccuracy.)
-    positionsCount: [v.positionsCount, v.weaknessCount].find(n => POSITIONS_COUNTS.includes(n)) ?? d.positionsCount,
-    positionsMaxAccuracy: [v.positionsMaxAccuracy, v.weaknessMaxAccuracy].find(n => POSITIONS_ACCURACIES.includes(n)) ?? d.positionsMaxAccuracy,
-    positionsMainLinesOnly: typeof v.positionsMainLinesOnly === 'boolean' ? v.positionsMainLinesOnly : d.positionsMainLinesOnly,
-    linesCount: LINES_COUNTS.includes(v.linesCount) ? v.linesCount : d.linesCount,
-    linesMaxAccuracy: POSITIONS_ACCURACIES.includes(v.linesMaxAccuracy) ? v.linesMaxAccuracy : d.linesMaxAccuracy,
-    linesMainLinesOnly: typeof v.linesMainLinesOnly === 'boolean' ? v.linesMainLinesOnly : d.linesMainLinesOnly,
-    linesPracticeMode: PRACTICE_MODES.includes(v.linesPracticeMode) ? v.linesPracticeMode : d.linesPracticeMode,
-    positionsPracticeMode: PRACTICE_MODES.includes(v.positionsPracticeMode) ? v.positionsPracticeMode : d.positionsPracticeMode,
+    practice: Object.fromEntries(['lines', 'positions'].map(kind => {
+      const p = v.practice?.[kind] || {}, dp = d.practice[kind];
+      return [kind, {
+        mode: PRACTICE_MODES.includes(p.mode) ? p.mode : dp.mode,
+        count: COUNTS[kind].includes(p.count) ? p.count : dp.count,
+        maxAccuracy: ACCURACY_LIMITS.includes(p.maxAccuracy) ? p.maxAccuracy : dp.maxAccuracy,
+        mainLinesOnly: typeof p.mainLinesOnly === 'boolean' ? p.mainLinesOnly : dp.mainLinesOnly,
+      }];
+    })),
   };
 }
 
@@ -983,7 +1022,7 @@ async function fetchStudies() {
     await saveLibrary();
     forgetParsedChapters();
     pruneAfterRefresh();
-    // Lichess's cloud grows over time, so positions it didn't have are asked about again.
+    if (practice) { leavePractice(); session = null; } // its lines may have changed: practice starts afresh
     startDownloads(); // missing Lichess data, quietly in the background
     const n = library.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = library.studies.length;
@@ -1231,7 +1270,11 @@ function moveKey(line, i) {
   return keys[i] ||= line.chapterKey + '|' + line.moves.slice(0, i + 1).map(m => m.san).join(' ');
 }
 
-const attemptsAt = (line, i) => history.moves[moveKey(line, i)]?.attempts || [];
+const attemptsAt = (line, i) => history.moves[moveKey(line, i)] || [];
+
+// When a move was last tried, and when a line was last played through (null if unknown or never).
+const lastTriedAt = key => history.moves[key]?.at(-1)?.at ?? null;
+const lastPlayedAt = key => history.lines[key]?.at(-1) ?? null;
 
 // A move's score: the weighted average points of its last 10 attempts, as a fraction of 10 (0–1).
 // The most recent attempt counts 100%, the one before 90%, then 80% … down to 10% for the 10th.
@@ -1272,26 +1315,24 @@ function pointsFor(tried, yourMove) {
   return Math.max(0, points);
 }
 
-// When the app opens (and after a restore or a change of penalties), every saved attempt is scored
-// again from what was done, with the current rules and data (e.g. masters statistics downloaded
-// since), and saved.
+// When the app opens (and after a restore or a change of penalties), every attempt's points are
+// worked out from what was tried, with the current rules and data (e.g. masters statistics
+// downloaded since). Points aren't stored.
 function rescoreHistory() {
   if (!library) return;
   const moves = new Map();
   for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) moves.set(moveKey(line, i), line.moves[i]);
-  for (const [key, record] of Object.entries(history.moves)) {
+  for (const [key, attempts] of Object.entries(history.moves)) {
     const move = moves.get(key);
-    if (move) for (const a of record.attempts) a.points = pointsFor(a.tried, move);
+    if (move) for (const a of attempts) a.points = pointsFor(a.tried, move);
   }
-  saveHistory();
 }
 
 // Saves this line's attempts into your history.
 function saveAttempts() {
-  for (const attempt of practice.attempts) {
-    const record = history.moves[moveKey(practice.line, attempt.index)] ||= { attempts: [] };
-    record.attempts = [...record.attempts, { tried: attempt.tried, points: attempt.points }].slice(-HISTORY_LENGTH);
-    record.lastTried = attempt.at;
+  for (const { index, tried, points, at } of practice.attempts) {
+    const key = moveKey(practice.line, index);
+    history.moves[key] = [...history.moves[key] || [], { tried, points, at }].slice(-HISTORY_LENGTH);
   }
   saveHistory();
 }
@@ -1324,7 +1365,7 @@ function averageScore(chapters) {
       const k = moveKey(line, i);
       if (seen.has(k)) continue;
       seen.add(k);
-      const s = scoreOf(history.moves[k]?.attempts || []);
+      const s = scoreOf(history.moves[k] || []);
       if (s != null) { tried++; sum += s; }
     }
   }
@@ -1553,7 +1594,7 @@ function updateSelectionPanel() {
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
   $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · ${plural(selected.flatMap(chapterLines).length, 'line')}`;
-  renderSavedSelections();
+  renderPresets();
   // The top eye: a line through it while hidden studies are out of sight.
   const sh = $('show-hidden-btn');
   sh.classList.toggle('off', !showHiddenStudies);
@@ -1566,77 +1607,76 @@ $('all-box').addEventListener('change', e => {
   saveSelection(); renderStudies();
 });
 
-// Saved selections: named sets of chapters, chosen from the drop-down to tick exactly those chapters.
+// Presets: named sets of chapters, chosen from the drop-down to tick exactly those chapters.
 // The chosen one is edited by changing the ticks and pressing Update (its name is greyed out until then).
-// On screen they're called presets.
 
-// The chapters a saved selection ticks now: those still on Lichess and not in hidden studies.
-function chaptersOf(saved) {
+// The chapters a preset ticks now: those still on Lichess and not in hidden studies.
+function chaptersOf(preset) {
   const existing = new Set(allChapters().map(c => c.key));
-  return saved.chapters.filter(k => existing.has(k) && !isHiddenChapter(k));
+  return preset.chapters.filter(k => existing.has(k) && !isHiddenChapter(k));
 }
 
-const chosenSaved = () => savedSelections.find(s => s.name === chosenSelectionName) || null;
+const chosenPreset = () => presets.find(p => p.name === chosenPresetName) || null;
 
-// Whether the ticks differ from the chosen selection's chapters.
+// Whether the ticks differ from the chosen preset's chapters.
 function chosenChanged() {
-  const saved = chosenSaved();
-  if (!saved) return false;
-  const keys = chaptersOf(saved);
+  const preset = chosenPreset();
+  if (!preset) return false;
+  const keys = chaptersOf(preset);
   return keys.length !== selection.size || keys.some(k => !selection.has(k));
 }
 
-function renderSavedSelections() {
-  const saved = chosenSaved();
+function renderPresets() {
+  const preset = chosenPreset();
   const changed = chosenChanged();
-  // The open list shows only the selections. With none chosen, the closed drop-down shows a hint that
+  // The open list shows only the presets. With none chosen, the closed drop-down shows a hint that
   // isn't in the list.
-  $('saved-select').replaceChildren(
-    ...saved ? [] : [element('option', { value: '', hidden: true, disabled: true }, savedSelections.length ? 'None chosen' : 'No presets yet')],
-    ...[...savedSelections].sort((a, b) => a.name.localeCompare(b.name)).map(s =>
-      element('option', { value: s.name }, s.name)));
-  $('saved-select').classList.toggle('changed', changed || !saved); // greyed out while the ticks differ, and "None chosen"
-  $('saved-select').value = saved ? saved.name : '';
-  $('saved-select').disabled = !savedSelections.length;
-  $('saved-new-btn').disabled = selection.size === 0;
-  $('saved-update-btn').disabled = !saved || !changed || selection.size === 0;
-  $('saved-rename-btn').disabled = !saved;
-  $('saved-delete-btn').disabled = !saved;
+  $('preset-select').replaceChildren(
+    ...preset ? [] : [element('option', { value: '', hidden: true, disabled: true }, presets.length ? 'None chosen' : 'No presets yet')],
+    ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p =>
+      element('option', { value: p.name }, p.name)));
+  $('preset-select').classList.toggle('changed', changed || !preset); // greyed out while the ticks differ, and "None chosen"
+  $('preset-select').value = preset ? preset.name : '';
+  $('preset-select').disabled = !presets.length;
+  $('preset-new-btn').disabled = selection.size === 0;
+  $('preset-update-btn').disabled = !preset || !changed || selection.size === 0;
+  $('preset-rename-btn').disabled = !preset;
+  $('preset-delete-btn').disabled = !preset;
 }
 
-function saveSavedSelections() {
-  store.set('savedSelections', savedSelections);
-  store.set('chosenSelection', chosenSelectionName);
+function savePresets() {
+  store.set('presets', presets);
+  store.set('chosenPreset', chosenPresetName);
 }
 
-$('saved-select').addEventListener('change', e => {
-  const saved = savedSelections.find(s => s.name === e.target.value);
-  chosenSelectionName = saved ? saved.name : null;
-  saveSavedSelections();
+$('preset-select').addEventListener('change', e => {
+  const preset = presets.find(p => p.name === e.target.value);
+  chosenPresetName = preset ? preset.name : null;
+  savePresets();
   hideNameForm(); // the edit panel stays open
-  if (!saved) { renderSavedSelections(); return; }
-  selection = new Set(chaptersOf(saved)); // no message: the ticks and the count show it
+  if (!preset) { renderPresets(); return; }
+  selection = new Set(chaptersOf(preset)); // no message: the ticks and the count show it
   saveSelection();
   renderStudies(); // open and closed studies stay as they were
 });
 
-$('saved-update-btn').addEventListener('click', () => {
-  const saved = chosenSaved();
-  if (!saved) return;
-  saved.chapters = [...selection];
-  saveSavedSelections();
-  showSavedEdit(false); // done: the edit buttons go away again
-  renderSavedSelections();
+$('preset-update-btn').addEventListener('click', () => {
+  const preset = chosenPreset();
+  if (!preset) return;
+  preset.chapters = [...selection];
+  savePresets();
+  showPresetEdit(false); // done: the edit buttons go away again
+  renderPresets();
 });
 
-$('saved-delete-btn').addEventListener('click', () => {
-  const saved = chosenSaved();
-  if (!saved || !confirm(`Delete the preset "${saved.name}"? The chapters ticked now stay ticked.`)) return;
-  savedSelections = savedSelections.filter(s => s !== saved);
-  chosenSelectionName = null;
-  saveSavedSelections();
-  showSavedEdit(false);
-  renderSavedSelections();
+$('preset-delete-btn').addEventListener('click', () => {
+  const preset = chosenPreset();
+  if (!preset || !confirm(`Delete the preset "${preset.name}"? The chapters ticked now stay ticked.`)) return;
+  presets = presets.filter(p => p !== preset);
+  chosenPresetName = null;
+  savePresets();
+  showPresetEdit(false);
+  renderPresets();
 });
 
 // The name box, for Save as new and Rename.
@@ -1644,50 +1684,50 @@ let namingMode = null; // 'new' or 'rename'
 
 function showNameForm(mode) {
   namingMode = mode;
-  $('saved-name').value = mode === 'rename' ? chosenSaved().name : '';
-  $('saved-name-ok').textContent = mode === 'rename' ? 'Rename' : 'Save';
-  $('saved-name-error').textContent = '';
-  $('saved-name-form').classList.remove('hidden');
-  $('saved-name').focus();
-  $('saved-name').select();
+  $('preset-name').value = mode === 'rename' ? chosenPreset().name : '';
+  $('preset-name-ok').textContent = mode === 'rename' ? 'Rename' : 'Save';
+  $('preset-name-error').textContent = '';
+  $('preset-name-form').classList.remove('hidden');
+  $('preset-name').focus();
+  $('preset-name').select();
 }
 
 function hideNameForm() {
   namingMode = null;
-  $('saved-name-form').classList.add('hidden');
-  $('saved-name-error').textContent = '';
+  $('preset-name-form').classList.add('hidden');
+  $('preset-name-error').textContent = '';
 }
 
 // The ✎ button opens the edit panel under the bar; × (or ✎ again) closes it.
-function showSavedEdit(open) {
-  $('saved-edit').classList.toggle('hidden', !open);
-  $('saved-edit-btn').setAttribute('aria-expanded', String(open));
+function showPresetEdit(open) {
+  $('preset-edit').classList.toggle('hidden', !open);
+  $('preset-edit-btn').setAttribute('aria-expanded', String(open));
   if (!open) hideNameForm();
 }
 
-$('saved-edit-btn').addEventListener('click', () => showSavedEdit($('saved-edit').classList.contains('hidden')));
-$('saved-edit-close').addEventListener('click', () => showSavedEdit(false));
+$('preset-edit-btn').addEventListener('click', () => showPresetEdit($('preset-edit').classList.contains('hidden')));
+$('preset-edit-close').addEventListener('click', () => showPresetEdit(false));
 
-$('saved-new-btn').addEventListener('click', () => showNameForm('new'));
-$('saved-rename-btn').addEventListener('click', () => { if (chosenSaved()) showNameForm('rename'); });
-$('saved-name-cancel').addEventListener('click', hideNameForm);
-$('saved-name').addEventListener('keydown', e => { if (e.key === 'Escape') hideNameForm(); });
+$('preset-new-btn').addEventListener('click', () => showNameForm('new'));
+$('preset-rename-btn').addEventListener('click', () => { if (chosenPreset()) showNameForm('rename'); });
+$('preset-name-cancel').addEventListener('click', hideNameForm);
+$('preset-name').addEventListener('keydown', e => { if (e.key === 'Escape') hideNameForm(); });
 
-$('saved-name-form').addEventListener('submit', e => {
+$('preset-name-form').addEventListener('submit', e => {
   e.preventDefault();
-  const name = $('saved-name').value.trim().replace(/\s+/g, ' ');
-  const renaming = namingMode === 'rename' ? chosenSaved() : null;
-  if (!name) { $('saved-name-error').textContent = 'Type a name.'; return; }
-  if (savedSelections.some(s => s !== renaming && s.name.toLowerCase() === name.toLowerCase())) {
-    $('saved-name-error').textContent = `There's already a preset called ${name}.`;
+  const name = $('preset-name').value.trim().replace(/\s+/g, ' ');
+  const renaming = namingMode === 'rename' ? chosenPreset() : null;
+  if (!name) { $('preset-name-error').textContent = 'Type a name.'; return; }
+  if (presets.some(p => p !== renaming && p.name.toLowerCase() === name.toLowerCase())) {
+    $('preset-name-error').textContent = `There's already a preset called ${name}.`;
     return;
   }
   if (renaming) renaming.name = name;
-  else savedSelections.push({ name, chapters: [...selection] });
-  chosenSelectionName = name;
-  saveSavedSelections();
-  showSavedEdit(false);
-  renderSavedSelections();
+  else presets.push({ name, chapters: [...selection] });
+  chosenPresetName = name;
+  savePresets();
+  showPresetEdit(false);
+  renderPresets();
 });
 
 // ---------- Spaced repetition ----------
@@ -1725,7 +1765,7 @@ const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours &&
 
 // Every line of the ticked chapters with a move of yours, as practice items (whole lines).
 const allLineItems = () => tickedChapters().flatMap(chapterLines)
-  .filter(line => (!settings.linesMainLinesOnly || line.isMainLine) && yourMoveIndexes(line).length)
+  .filter(line => (!settings.practice.lines.mainLinesOnly || line.isMainLine) && yourMoveIndexes(line).length)
   .map(line => ({ line, i: null }));
 
 // Every move of yours in the ticked chapters, once each, as practice items (single positions).
@@ -1733,7 +1773,7 @@ function allPositionItems() {
   const items = new Map();
   for (const line of tickedChapters().flatMap(chapterLines)) for (const i of yourMoveIndexes(line)) {
     const key = moveKey(line, i);
-    if (!items.has(key) && (!settings.positionsMainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
+    if (!items.has(key) && (!settings.practice.positions.mainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
   }
   return [...items.values()];
 }
@@ -1744,7 +1784,7 @@ function itemAccuracy({ line, i }) {
   return scores.every(s => s == null) ? null : scores.reduce((sum, s) => sum + (s ?? 0), 0) / scores.length;
 }
 
-const itemLastTested = ({ line, i }) => i != null ? history.moves[moveKey(line, i)]?.lastTried : history.lines[line.key]?.played.at(-1);
+const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(moveKey(line, i)) : lastPlayedAt(line.key);
 
 const itemEpd = ({ line, i }) => i != null ? line.moves[i].epdBefore : line.moves[line.moves.length - 1].epd;
 
@@ -1844,24 +1884,33 @@ function choosePromotion(color) {
 
 // ---------- Practice: playing lines ----------
 
-// What's being practised, chosen on the Practice page: { page: 'Lines' or 'Positions', isAll,
-// items: [{ line, i }] }, where i is the move of yours to test as a single position, or null to play
-// the whole line from move 1. "Weak and frequent" lists its table (see Weak and frequent tables), and items
-// are picked at random; "All (spaced repetition)" lists all of them, and items are picked by priority
-// (see Spaced repetition). Null when nothing is being practised.
-let practiceList = null;
-let previousListItem = null;
+// What's being practised, chosen on the Practice page: { kind: 'lines' or 'positions', isAll,
+// items: [{ line, i }], previous (the item practised last) }, where i is the move of yours to test
+// as a single position, or null to play the whole line from move 1. "Weak and frequent" lists its
+// table and picks at random; "All (spaced repetition)" lists everything and picks by priority (see
+// Spaced repetition). Null when nothing is being practised.
+let session = null;
 
-// What decides what's practised. If any of it changes, a line in progress is dropped.
-const practiceSignature = () => JSON.stringify({
-  fetchedAt: library?.fetchedAt,
-  list: practiceList && [practiceList.page, practiceList.isAll, ...practiceList.items.map(item => item.i == null ? item.line.key : moveKey(item.line, item.i))],
-});
+// Lines and positions, the two kinds of practice: their words, columns and items.
+const KINDS = {
+  lines: {
+    noun: 'line', title: 'Frequent lines with low move accuracy', accuracy: 'line accuracy', mainLines: 'main lines only',
+    columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested'],
+    listedWhen: " Lines are listed once you've tried all their moves.",
+    all: () => allLineItems(), weak: p => weakLines(p),
+  },
+  positions: {
+    noun: 'position', title: 'Frequent positions with low move accuracy', accuracy: 'move accuracy', mainLines: 'positions from main lines only',
+    columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested'],
+    listedWhen: '',
+    all: () => allPositionItems(), weak: p => weakPositions(p),
+  },
+};
 
 // The Practice page before anything is practised: the chooser.
 function showPracticeIdle() {
   practice = null;
-  practiceList = null;
+  session = null;
   hideBoardNotice(true);
   showScreen('practice');
   ensureBoard();
@@ -1888,69 +1937,61 @@ function showPracticeIdle() {
 }
 
 // The idle Practice page's chooser: Lines and Positions, each "All (spaced repetition)" or "Weak and
-// frequent" (see Weak and frequent tables), with the tables' choices.
+// frequent" (see Weak and frequent tables), with the tables' choices (settings.practice).
 const optionsFor = (values, text) => values.map(v => element('option', { value: String(v) }, text(v)));
-$('chooser-lines-count').replaceChildren(...optionsFor(LINES_COUNTS, String));
-$('chooser-lines-max').replaceChildren(...optionsFor(POSITIONS_ACCURACIES, v => `${v}%`));
-$('chooser-positions-count').replaceChildren(...optionsFor(POSITIONS_COUNTS, String));
-$('chooser-positions-max').replaceChildren(...optionsFor(POSITIONS_ACCURACIES, v => `${v}%`));
+for (const kind of Object.keys(KINDS)) {
+  $(`chooser-${kind}-count`).replaceChildren(...optionsFor(COUNTS[kind], String));
+  $(`chooser-${kind}-max`).replaceChildren(...optionsFor(ACCURACY_LIMITS, v => `${v}%`));
+}
 
-// Lines or Positions: the chooser's ids, settings, items and notes.
-const CHOOSERS = {
-  lines: { page: 'Lines', mode: 'linesPracticeMode', count: 'linesCount', max: 'linesMaxAccuracy', main: 'linesMainLinesOnly',
-    all: () => allLineItems(), table: () => frequentWeakLines(), note: t => linesNote(t), item: ({ line }) => ({ line, i: null }), noun: 'line',
-    title: 'Frequent lines with low move accuracy', columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested'], rows: rows => lineRows(rows),
-    choices: () => `${plural(settings.linesCount, 'line')}, line accuracy ≤ ${settings.linesMaxAccuracy}%${settings.linesMainLinesOnly ? ', main lines only' : ''}` },
-  positions: { page: 'Positions', mode: 'positionsPracticeMode', count: 'positionsCount', max: 'positionsMaxAccuracy', main: 'positionsMainLinesOnly',
-    all: () => allPositionItems(), table: () => frequentWeakPositions(), note: t => positionsNote(t), item: ({ line, i }) => ({ line, i }), noun: 'position',
-    title: 'Frequent positions with low move accuracy', columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested'], rows: rows => positionRows(rows),
-    choices: () => `${plural(settings.positionsCount, 'position')}, move accuracy ≤ ${settings.positionsMaxAccuracy}%${settings.positionsMainLinesOnly ? ', positions from main lines only' : ''}` },
-};
-
-// The items a chooser would practise now, and a note when there are none (or some are left out).
-function chooserItems(c) {
-  if (settings[c.mode] === 'all') {
-    const items = c.all();
-    return { items, note: items.length ? '' : `No ${c.noun}s to practise: tick chapters on the Studies page.` };
+// The items a kind of practice would use now, and a note when there are none (or some are left out).
+function chooserItems(kind) {
+  const p = settings.practice[kind];
+  if (p.mode === 'all') {
+    const items = KINDS[kind].all();
+    return { items, note: items.length ? '' : `No ${KINDS[kind].noun}s to practise: tick chapters on the Studies page.` };
   }
-  const table = c.table();
-  return { items: table.rows.map(c.item), note: c.note(table) };
+  const table = KINDS[kind].weak(p);
+  return { items: table.rows.map(row => row.item), note: tableNote(kind, table) };
 }
 
 function renderPracticeChooser() {
-  for (const [name, c] of Object.entries(CHOOSERS)) {
-    for (const r of document.querySelectorAll(`input[name=${name}-practice-mode]`)) r.checked = r.value === settings[c.mode];
-    const listed = settings[c.mode] === 'listed';
-    $(`chooser-${name}-count`).value = String(settings[c.count]);
-    $(`chooser-${name}-max`).value = String(settings[c.max]);
-    $(`chooser-${name}-count`).disabled = $(`chooser-${name}-max`).disabled = !listed;
-    $(`chooser-${name}-count`).parentElement.classList.toggle('disabled', !listed);
-    $(`chooser-${name}-main`).checked = settings[c.main];
-    const { items, note } = chooserItems(c);
-    $(`chooser-${name}-btn`).disabled = !items.length;
-    $(`chooser-${name}-note`).textContent = note;
+  for (const kind of Object.keys(KINDS)) {
+    const p = settings.practice[kind];
+    for (const r of document.querySelectorAll(`input[name=${kind}-practice-mode]`)) r.checked = r.value === p.mode;
+    const weak = p.mode === 'weak';
+    $(`chooser-${kind}-count`).value = String(p.count);
+    $(`chooser-${kind}-max`).value = String(p.maxAccuracy);
+    $(`chooser-${kind}-count`).disabled = $(`chooser-${kind}-max`).disabled = !weak;
+    $(`chooser-${kind}-count`).parentElement.classList.toggle('disabled', !weak);
+    $(`chooser-${kind}-main`).checked = p.mainLinesOnly;
+    const { items, note } = chooserItems(kind);
+    $(`chooser-${kind}-btn`).disabled = !items.length;
+    $(`chooser-${kind}-note`).textContent = note;
   }
 }
 
-for (const [name, c] of Object.entries(CHOOSERS)) {
-  const changed = (key, value) => { settings[key] = value; saveSettings(); renderPracticeChooser(); };
-  for (const r of document.querySelectorAll(`input[name=${name}-practice-mode]`)) r.addEventListener('change', () => changed(c.mode, r.value));
-  $(`chooser-${name}-count`).addEventListener('change', e => changed(c.count, +e.target.value));
-  $(`chooser-${name}-max`).addEventListener('change', e => changed(c.max, +e.target.value));
-  $(`chooser-${name}-main`).addEventListener('change', e => changed(c.main, e.target.checked));
-  $(`chooser-${name}-btn`).addEventListener('click', () => practiceFromList(c.page, chooserItems(c).items, settings[c.mode] === 'all'));
-  $(`chooser-${name}-show`).addEventListener('click', () => showTableOverlay(c));
+for (const kind of Object.keys(KINDS)) {
+  const p = () => settings.practice[kind];
+  const changed = (key, value) => { p()[key] = value; saveSettings(); renderPracticeChooser(); };
+  for (const r of document.querySelectorAll(`input[name=${kind}-practice-mode]`)) r.addEventListener('change', () => changed('mode', r.value));
+  $(`chooser-${kind}-count`).addEventListener('change', e => changed('count', +e.target.value));
+  $(`chooser-${kind}-max`).addEventListener('change', e => changed('maxAccuracy', +e.target.value));
+  $(`chooser-${kind}-main`).addEventListener('change', e => changed('mainLinesOnly', e.target.checked));
+  $(`chooser-${kind}-btn`).addEventListener('click', () => startSession(kind, chooserItems(kind).items, p().mode === 'all'));
+  $(`chooser-${kind}-show`).addEventListener('click', () => showTableOverlay(kind));
 }
 
 // "Show table": the weak and frequent lines or positions, by the chooser's choices, over the Practice
 // page, closed with ×, Esc or a click outside it.
-function showTableOverlay(c) {
-  const table = c.table();
-  $('overlay-title').textContent = c.title;
-  $('overlay-choices').textContent = c.choices();
-  $('overlay-columns').replaceChildren(...c.columns.map((text, k) => element('th', k ? { class: 'num' } : {}, text)));
-  $('overlay-rows').replaceChildren(...c.rows(table.rows));
-  $('overlay-note').textContent = c.note(table);
+function showTableOverlay(kind) {
+  const k = KINDS[kind], p = settings.practice[kind];
+  const table = k.weak(p);
+  $('overlay-title').textContent = k.title;
+  $('overlay-choices').textContent = `${plural(p.count, k.noun)}, ${k.accuracy} ≤ ${p.maxAccuracy}%${p.mainLinesOnly ? ', ' + k.mainLines : ''}`;
+  $('overlay-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
+  $('overlay-rows').replaceChildren(...table.rows.map(tableRow));
+  $('overlay-note').textContent = tableNote(kind, table);
   $('table-overlay').classList.remove('hidden');
   $('overlay-close').focus();
 }
@@ -1964,36 +2005,35 @@ $('overlay-close').addEventListener('click', hideTableOverlay);
 $('table-overlay').addEventListener('click', e => { if (e.target === $('table-overlay')) hideTableOverlay(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('table-overlay').classList.contains('hidden')) hideTableOverlay(); });
 
-// Practise lines or positions, one at a time (never the same one twice in a row
-// when there's another): picked at random, or by priority when isAll.
-function practiceFromList(page, items, isAll = false) {
+// Practise lines or positions, one at a time (never the same one twice in a row when there's
+// another): picked at random, or by priority when isAll.
+function startSession(kind, items, isAll = false) {
   if (!items.length) return;
-  practiceList = { page, items, isAll };
+  session = { kind, items, isAll, previous: null };
   hideBanner();
   showScreen('practice');
   ensureBoard();
   board.redrawAll();
-  nextFromList();
+  nextFromSession();
 }
 
-function nextFromList() {
-  const { items, isAll } = practiceList;
+function nextFromSession() {
+  const { items, isAll, previous } = session;
   const weights = isAll ? priorities(items) : items.map(() => 1);
-  const choices = items.map((item, k) => ({ item, weight: weights[k] })).filter(c => c.item !== previousListItem);
-  const pick = previousListItem = choices.length ? weightedPick(choices, c => c.weight).item : items[0];
-  startLine(pick.line, { singleAt: pick.i });
+  const choices = items.map((item, k) => ({ item, weight: weights[k] })).filter(c => c.item !== previous);
+  const pick = session.previous = choices.length ? weightedPick(choices, c => c.weight).item : items[0];
+  startLine(pick.line, pick.i);
 }
 
-// Starts a line from move 1, or with singleAt, tests just that move of yours as a single position.
-function startLine(line, { singleAt = null } = {}) {
+// Starts a line from move 1, or with singleAt (the index of one of your moves), tests just that move
+// as a single position.
+function startLine(line, singleAt = null) {
   const single = singleAt != null;
-  practice = { line, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null, startIndex: singleAt ?? 0, isSinglePosition: single };
-  practice.signature = practiceSignature();
+  practice = { line, singleAt, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null };
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
-  // The board's orientation already shows the user's side; this line says where the item came from.
-  const from = !practiceList ? (single ? 'Single position' : '')
-    : `${practiceList.isAll ? 'All' : 'Weak and frequent'} ${practiceList.page.toLowerCase()}`;
+  // The board's orientation already shows the user's side; this line says what's being practised.
+  const from = session ? `${session.isAll ? 'All' : 'Weak and frequent'} ${session.kind}` : single ? 'Single position' : '';
   $('practice-side').textContent = single ? `${from}: ${positionName(line, singleAt)}` : from;
   $('next-btn').classList.add('hidden');
   $('hint-btn').classList.remove('hidden');
@@ -2002,7 +2042,7 @@ function startLine(line, { singleAt = null } = {}) {
   hideCommentPopup();
   updateNames();
   setShapes([]);
-  if (single && singleAt) {
+  if (singleAt) {
     // Set up the position before the move instantly (no sounds); the earlier moves appear in
     // the move list, with bubbles for their comments.
     practice.position = line.moves[singleAt - 1].position.clone();
@@ -2013,7 +2053,8 @@ function startLine(line, { singleAt = null } = {}) {
   advance();
 }
 
-// The line in progress (practice) holds: the line, the position on the board, movesPlayed, tried
+// The line in progress (practice) holds: the line, singleAt (for a single position: the move tested;
+// null for a whole line), the position on the board, movesPlayed, tried
 // (what you've done at the move you're on, in order: moves as SAN, "hint", "show"), attempts (one
 // per move of yours finished in this line), and the board's state. Things that take time (the
 // opponent's moves, messages shown for a moment) check afterwards that the same line is still
@@ -2047,7 +2088,7 @@ function lineSummary() {
 
 // Play opponent moves until it's your turn or the line ends.
 async function advance() {
-  if (practice.isSinglePosition && practice.movesPlayed > practice.startIndex) return endSinglePosition();
+  if (practice.singleAt != null && practice.movesPlayed > practice.singleAt) return endSinglePosition();
   while (practice.movesPlayed < practice.line.moves.length && !practice.line.moves[practice.movesPlayed].isYours) {
     practice.busy = true;
     updateBoard();
@@ -2170,7 +2211,7 @@ $('hint-btn').addEventListener('click', () => {
 // The moves played so far count; the move you're on counts as wrong only if you already had
 // a wrong try or a hint on it.
 $('end-btn').addEventListener('click', () => {
-  if (!practice || practice.busy || practice.isSinglePosition || practice.viewing != null) return;
+  if (!practice || practice.busy || practice.singleAt != null || practice.viewing != null) return;
   const expected = practice.line.moves[practice.movesPlayed];
   if (!expected?.isYours) return;
   addAttemptOnCurrentMove();
@@ -2214,8 +2255,7 @@ function endLine() {
   if (!practice.endedEarly) { // played all the way through, from move 1 to the end
     // The line's time is when its last move was attempted.
     const at = practice.attempts[practice.attempts.length - 1]?.at ?? Date.now();
-    const record = history.lines[line.key] ||= { played: [] };
-    record.played = [...record.played, at].slice(-HISTORY_LENGTH);
+    history.lines[line.key] = [...history.lines[line.key] || [], at].slice(-HISTORY_LENGTH);
     saveHistory();
   }
   practice.isOver = true; // the move list gets hover boards
@@ -2259,12 +2299,12 @@ function onBoardTouched() {
   if (!practice?.isOver || $('next-btn').classList.contains('hidden')) return;
   const box = $('board-notice');
   if (!box.classList.contains('hidden') && !box.classList.contains('fading')) return; // the end panel already says so
-  const over = practice.isSinglePosition ? 'This position is done.' : 'The line is over.';
+  const over = practice.singleAt != null ? 'This position is done.' : 'The line is over.';
   showBoardNotice([`${over} Press ${$('next-btn').textContent} (or Enter).`], 2500);
 }
 
 function nextLine() {
-  if (practiceList) return nextFromList();
+  if (session) return nextFromSession();
   showPracticeIdle();
 }
 
@@ -2664,13 +2704,13 @@ const EXPLORER_DATABASES = {
 };
 
 // What Lichess says about a position (by EPD); undefined until downloaded.
-const lichessGamesAt = epd => positions[epd]?.lichess;
-const masterGamesAt = epd => positions[epd]?.masters;
+const lichessGamesAt = epd => moveStats[epd]?.lichess;
+const masterGamesAt = epd => moveStats[epd]?.masters;
 
 // Saves one part of what Lichess says about a position ('lichess' or 'masters').
 function setPositionData(epd, part, value) {
-  (positions[epd] ||= {})[part] = value;
-  savePositions([epd]);
+  (moveStats[epd] ||= {})[part] = value;
+  saveMoveStats([epd]);
 }
 
 const explorerDownloads = { lichess: null, masters: null };
@@ -2693,7 +2733,7 @@ async function downloadExplorer(kind) {
 
 async function downloadExplorerPositions(kind, run) {
   const explorer = EXPLORER_DATABASES[kind];
-  const saved = epd => positions[epd]?.[kind];
+  const saved = epd => moveStats[epd]?.[kind];
   const status = text => setExplorerStatus(kind, text);
   // The same order whatever is ticked: branch points (the opponent has several replies), then the
   // rest of the chapters' main lines, then everything else; by move number within each group, so a
@@ -2752,7 +2792,7 @@ function updateStatisticsInfo() {
   for (const kind of ['lichess', 'masters']) {
     const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
     if (!library) { el.textContent = ''; continue; }
-    const done = studied.filter(epd => positions[epd]?.[kind]).length;
+    const done = studied.filter(epd => moveStats[epd]?.[kind]).length;
     el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')} downloaded`
       + (explorerDownloads[kind] && done < studied.length ? ' (downloading now…)' : '')
       + (!explorerDownloads[kind] && done < studied.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
@@ -2809,66 +2849,73 @@ function mastersShareText(epd, moveSan) {
 }
 
 // ---------- Weak and frequent tables ----------
-// The Practice page's "Weak and frequent" practises these, and "Show table" shows them.
+// The Practice page's "Weak and frequent" practises these, and "Show table" shows them. For lines
+// and positions alike, a table is { rows, waiting (left out until their Lichess statistics
+// download), chapters (the ticked ones) }, and each row is { item (what to practise), nameAt and
+// hoverAt (the move index to name and to show on the hover board), accuracy, games, lastTested }.
+// The most frequent come first.
 //
-// "Frequent lines with low move accuracy": the lines of the chapters ticked on the Studies page whose
-// moves you've all tried, with a line accuracy at or below the chosen limit, the most frequent first.
-// A line's accuracy here is the average move accuracy of your moves in it (each over its last 10
-// attempts). How frequent: the rated Lichess games reaching the line's final position; lines whose
-// final position's statistics haven't downloaded are left out. Last tested: the last time the line
-// was played through from move 1 to the end.
-
-// The lines table, by the chooser's choices: { rows, waiting (lines left out until their
-// statistics download), chapters (the ticked ones) }.
-function frequentWeakLines() {
+// Lines: the lines of the ticked chapters whose moves you've all tried, with a line accuracy (the
+// average move accuracy of your moves in it) at or below the limit. How frequent: the rated Lichess
+// games reaching the line's final position. Last tested: its last play-through from move 1.
+function weakLines(p) {
   const chapters = tickedChapters();
-  const found = [];
+  const rows = [];
   let waiting = 0;
   for (const ch of chapters) for (const line of chapterLines(ch)) {
-    if (settings.linesMainLinesOnly && !line.isMainLine) continue;
+    if (p.mainLinesOnly && !line.isMainLine) continue;
     const scores = yourMoveIndexes(line).map(i => scoreOf(attemptsAt(line, i)));
     if (scores.some(score => score == null)) continue; // only lines whose moves you've all tried
     const accuracy = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    if (percent(accuracy) > settings.linesMaxAccuracy) continue;
+    if (percent(accuracy) > p.maxAccuracy) continue;
     const stats = lichessGamesAt(line.moves[line.moves.length - 1].epd);
     if (!stats) { waiting++; continue; }
-    found.push({ line, accuracy, games: totalGames(stats), lastPlayed: history.lines[line.key]?.played.at(-1) });
+    rows.push({ item: { line, i: null }, nameAt: line.moves.length, hoverAt: line.moves.length - 1, accuracy, games: totalGames(stats), lastTested: lastPlayedAt(line.key) });
   }
-  const rows = found.sort((a, b) => b.games - a.games).slice(0, settings.linesCount);
-  return { rows, waiting, chapters };
+  return { rows: rows.sort((a, b) => b.games - a.games).slice(0, p.count), waiting, chapters };
 }
 
-// What to say when the table is empty, or leaves lines out.
-function linesNote({ rows, waiting, chapters }) {
+// Positions: your moves in the ticked chapters that you've tried, with a move accuracy at or below
+// the limit. How frequent: the rated Lichess games reaching the position (before the move). History
+// is per chapter, so a position weak in two chapters has two rows.
+function weakPositions(p) {
+  const chapters = tickedChapters();
+  const rows = new Map(); // move key -> row
+  let waiting = 0;
+  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
+    const key = moveKey(line, i);
+    if (rows.has(key) || (p.mainLinesOnly && !onMainLines(line, i))) continue;
+    const accuracy = scoreOf(attemptsAt(line, i));
+    if (accuracy == null || percent(accuracy) > p.maxAccuracy) continue;
+    const stats = lichessGamesAt(line.moves[i].epdBefore);
+    if (!stats) { waiting++; continue; }
+    rows.set(key, { item: { line, i }, nameAt: i, hoverAt: i, accuracy, games: totalGames(stats), lastTested: lastTriedAt(key) });
+  }
+  return { rows: [...rows.values()].sort((a, b) => b.games - a.games).slice(0, p.count), waiting, chapters };
+}
+
+// What to say when a table is empty, or leaves some out.
+function tableNote(kind, { rows, waiting, chapters }) {
+  const { noun } = KINDS[kind];
   const its = waiting === 1 ? 'its' : 'their';
   return rows.length
-    ? (waiting ? `${plural(waiting, 'line')} left out until ${its} Lichess statistics download.` : '')
-    : waiting ? `No lines to show yet: ${plural(waiting, 'line')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : !chapters.length ? 'Tick chapters on the Studies page to see their lines.'
-    : 'No lines match these choices. Try other choices, or tick more chapters on the Studies page. Lines are listed once you\'ve tried all their moves.';
+    ? (waiting ? `${plural(waiting, noun)} left out until ${its} Lichess statistics download.` : '')
+    : waiting ? `No ${noun}s to show yet: ${plural(waiting, noun)} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
+    : !chapters.length ? `Tick chapters on the Studies page to see their ${noun}s.`
+    : `No ${noun}s match these choices. Try other choices, or tick more chapters on the Studies page.${KINDS[kind].listedWhen}`;
 }
 
-// The lines table's rows.
-function lineRows(rows) {
-  return rows.map(({ line, accuracy, games, lastPlayed }) => {
-    const ch = chapterByKey(line.chapterKey);
-    const last = line.moves.length - 1;
-    const tr = element('tr', {},
-      element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, line.moves.length))),
-      element('td', { class: 'num' }, shortCount(games)),
-      element('td', { class: 'num accuracy' }, element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
-      element('td', { class: 'num' }, daysAgo(lastPlayed)));
-    tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, last));
-    tr.addEventListener('mouseleave', hideHoverBoard);
-    return tr;
-  });
+function tableRow({ item: { line }, nameAt, hoverAt, accuracy, games, lastTested }) {
+  const ch = chapterByKey(line.chapterKey);
+  const tr = element('tr', {},
+    element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, nameAt))),
+    element('td', { class: 'num' }, shortCount(games)),
+    element('td', { class: 'num accuracy' }, element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
+    element('td', { class: 'num' }, daysAgo(lastTested)));
+  tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, hoverAt));
+  tr.addEventListener('mouseleave', hideHoverBoard);
+  return tr;
 }
-
-// "Frequent positions with low move accuracy": the user's positions (where it's their move)
-// that they've tried, with a score of [y]% or lower, the [x] most common first. How common: the
-// rated Lichess games reaching the position (before the move); positions whose statistics haven't
-// downloaded are left out. History is per chapter, so a position weak in two chapters has two rows.
-
 
 // How long ago a move was last tested, in calendar days: "Today", "1 day", "5 days"; "–" when it
 // isn't known (moves last tested before these times were recorded).
@@ -2877,52 +2924,6 @@ function daysAgo(time) {
   const midnight = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
   const days = Math.round((midnight(Date.now()) - midnight(time)) / 86400000);
   return days <= 0 ? 'Today' : plural(days, 'day');
-}
-
-// The positions table, by the chooser's choices: { rows, waiting, chapters }, as for lines.
-function frequentWeakPositions() {
-  const found = new Map(); // position key -> { line, i, score, games }
-  let waiting = 0;
-  const chapters = tickedChapters();
-  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) {
-    const key = moveKey(line, i);
-    if (found.has(key)) continue;
-    // Main lines only: every opponent move on the way is the study's main move.
-    if (settings.positionsMainLinesOnly && !onMainLines(line, i)) continue;
-    const attempts = attemptsAt(line, i);
-    if (!attempts.length) continue;
-    const score = scoreOf(attempts);
-    if (percent(score) > settings.positionsMaxAccuracy) continue;
-    const stats = lichessGamesAt(line.moves[i].epdBefore);
-    if (!stats) { waiting++; continue; }
-    found.set(key, { line, i, score, games: totalGames(stats), lastTried: history.moves[key]?.lastTried });
-  }
-  const rows = [...found.values()].sort((a, b) => b.games - a.games).slice(0, settings.positionsCount);
-  return { rows, waiting, chapters };
-}
-
-function positionsNote({ rows, waiting, chapters }) {
-  const its = waiting === 1 ? 'its' : 'their';
-  return rows.length
-    ? (waiting ? `${plural(waiting, 'position')} left out until ${its} Lichess statistics download.` : '')
-    : waiting ? `No positions to show yet: ${plural(waiting, 'position')} ${waiting === 1 ? 'waits' : 'wait'} for ${its} Lichess statistics to download.`
-    : !chapters.length ? 'Tick chapters on the Studies page to see their positions.'
-    : 'No positions match these choices. Try other choices, or tick more chapters on the Studies page.';
-}
-
-// The positions table's rows.
-function positionRows(rows) {
-  return rows.map(({ line, i, score, games, lastTried }) => {
-    const ch = chapterByKey(line.chapterKey);
-    const tr = element('tr', {},
-      element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, i))),
-      element('td', { class: 'num' }, shortCount(games)),
-      element('td', { class: 'num accuracy' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)),
-      element('td', { class: 'num' }, daysAgo(lastTried)));
-    tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, i));
-    tr.addEventListener('mouseleave', hideHoverBoard);
-    return tr;
-  });
 }
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
@@ -3024,15 +3025,15 @@ $('token-clear-btn').addEventListener('click', () => {
 // ---------- Backup ----------
 
 const BACKUP_APP = 'chess-opening-trainer';
-const BACKUP_VERSION = 4; // backups from earlier versions can't be restored
+const BACKUP_VERSION = 5; // backups from earlier versions can't be restored
 
 $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
-    settings, selection: [...selection], savedSelections, hiddenStudies: [...hiddenStudies],
-    history,
-    positions, // what Lichess says about each position: it takes a long time to download, so it's included
+    settings, selection: [...selection], presets, hiddenStudies: [...hiddenStudies],
+    history: storedHistory(),
+    moveStats, // they take a long time to download, so they're included
   };
   const blob = new Blob([JSON.stringify(backup, null, 1)], { type: 'application/json' });
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -3081,23 +3082,23 @@ $('restore-file').addEventListener('change', async e => {
 
   history = b.history;
   settings = checkedSettings(b.settings);
+  rescoreHistory(); // points worked out with the current rules and data
   const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
   selection = new Set(strings(b.selection));
-  savedSelections = checkedSavedSelections(b.savedSelections ?? fromFavorites(b.favorites)); // older backups have favorites
-  chosenSelectionName = null;
+  presets = checkedPresets(b.presets);
+  chosenPresetName = null;
   hiddenStudies = new Set(strings(b.hiddenStudies));
-  // What Lichess says about each position is merged, not replaced: each part keeps whichever copy
-  // is newer, so downloads made since the backup aren't lost.
-  for (const [epd, saved] of Object.entries(b.positions && typeof b.positions === 'object' ? b.positions : {})) {
+  // The move statistics are merged, not replaced: each part keeps whichever copy is newer, so
+  // downloads made since the backup aren't lost.
+  for (const [epd, saved] of Object.entries(b.moveStats && typeof b.moveStats === 'object' ? b.moveStats : {})) {
     if (!saved || typeof saved !== 'object') continue;
-    const current = positions[epd] ||= {};
+    const current = moveStats[epd] ||= {};
     for (const part of ['lichess', 'masters']) {
       if (saved[part] && (!current[part] || (saved[part].at || 0) > (current[part].at || 0))) current[part] = saved[part];
     }
   }
-  await savePositions();
-  saveHistory(); saveSettings(); saveSelection(); saveHidden(); saveSavedSelections();
-  rescoreHistory(); // restored attempts scored with the current rules and data
+  await saveMoveStats();
+  saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
   updateSoundButton();
   renderOptions();
   showBanner(`Restored your history for ${plural(n, 'move')} and your settings from the backup.`);
@@ -3110,17 +3111,16 @@ $('nav-practice').addEventListener('click', () => {
   if (currentScreen === 'practice') return; // already on the practice page
   if (!library) { $('nav-studies').click(); return; }
   hideBanner();
-  if (practice && practice.signature === practiceSignature()) { // back to the line in progress (or its summary), exactly as it was
+  if (practice) { // back to the line in progress (or its summary), exactly as it was
     showScreen('practice');
     board.redrawAll();
     return;
   }
-  if (practice) leavePractice(); // something that affects the lines changed: start afresh
   showPracticeIdle();
 });
 
 // Studies: the selection page (or the token screen before any studies are fetched).
-// A line in progress is kept; Practice returns to it if nothing that affects it changed.
+// A line in progress is kept; Practice returns to it.
 $('nav-studies').addEventListener('click', () => {
   hideBanner();
   if (library) showStudies();
@@ -3141,7 +3141,7 @@ $('nav-help').addEventListener('click', () => {
 async function init() {
   try {
     library = await loadLibrary();
-    positions = await loadPositions();
+    moveStats = await loadMoveStats();
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting
