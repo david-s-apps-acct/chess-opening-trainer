@@ -669,36 +669,6 @@ const store = {
   },
 };
 
-// Data saved before 4 October 2026 is converted once to the layout described in State. (This can be
-// removed once it has run.)
-// History: attempts were { tried, points } with one lastTried time per move, and lines { played }.
-// Only the last attempt's time was known; the earlier ones get none.
-const convertedHistory = old => ({
-  moves: Object.fromEntries(Object.entries(old.moves || {}).map(([key, r]) => [key,
-    (r?.attempts || []).map((a, k, all) => ({ tried: a.tried, at: k === all.length - 1 ? r.lastTried ?? null : null }))])),
-  lines: Object.fromEntries(Object.entries(old.lines || {}).map(([key, r]) => [key, r?.played || []])),
-});
-// Settings: the Practice page's choices were flat (linesCount, positionsPracticeMode: 'listed', …).
-const convertedSettings = old => {
-  const kind = k => ({ mode: old[k + 'PracticeMode'] === 'listed' ? 'weak' : 'all', count: old[k + 'Count'], maxAccuracy: old[k + 'MaxAccuracy'], mainLinesOnly: old[k + 'MainLinesOnly'] });
-  return { sounds: old.sounds, penalties: old.penalties, mastersTop: old.mastersTop, practice: { lines: kind('lines'), positions: kind('positions') } };
-};
-(function convertOldData() {
-  if (store.get('dataVersion', 0) >= 5) return;
-  const history = store.get('history', null);
-  if (history?.moves && !Object.values(history.moves).every(Array.isArray)) store.set('history', convertedHistory(history));
-  const settings = store.get('settings', null);
-  if (settings && !settings.practice) store.set('settings', convertedSettings(settings));
-  // Presets were "saved selections", and before that a single "favorites".
-  const favorites = store.get('favorites', null);
-  const presets = store.get('savedSelections', null) ?? (Array.isArray(favorites) && favorites.length ? [{ name: 'Favorites', chapters: favorites }] : null);
-  if (presets) store.set('presets', presets);
-  const chosen = store.get('chosenSelection', null);
-  if (chosen) store.set('chosenPreset', chosen);
-  for (const key of ['savedSelections', 'chosenSelection', 'favorites']) store.remove(key);
-  store.set('dataVersion', 5);
-})();
-
 let database = null;
 
 function openDatabase() {
@@ -706,19 +676,7 @@ function openDatabase() {
     const req = indexedDB.open('chess-opening-trainer', 4);
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains('library')) db.createObjectStore('library');
-      if (db.objectStoreNames.contains('moveStats')) return;
-      const moveStats = db.createObjectStore('moveStats');
-      // Before version 4 the move statistics were in the store "positions" (with old evaluations
-      // alongside): copied over once, then that store is deleted.
-      if (!db.objectStoreNames.contains('positions')) return;
-      req.transaction.objectStore('positions').openCursor().onsuccess = e => {
-        const cursor = e.target.result;
-        if (!cursor) { db.deleteObjectStore('positions'); return; }
-        const { lichess, masters } = cursor.value;
-        if (lichess || masters) moveStats.put({ ...lichess && { lichess }, ...masters && { masters } }, cursor.key);
-        cursor.continue();
-      };
+      for (const name of ['library', 'moveStats']) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);

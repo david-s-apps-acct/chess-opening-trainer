@@ -33,7 +33,7 @@ export const app = {
   setMoveStats(m) { moveStats = m; },
   setSettings(s) { settings = checkedSettings(s); },
   setHistory(h) { history = h; },
-  checkedPresets, renderPresets, storedHistory, lastTriedAt, lastPlayedAt, convertedHistory, convertedSettings,
+  checkedPresets, renderPresets, storedHistory, lastTriedAt, lastPlayedAt,
   get presets() { return presets; },
   setPresets(v) { presets = v; chosenPresetName = null; },
   get selection() { return [...selection]; },
@@ -155,10 +155,6 @@ function run(app) {
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5,
     practice: { lines: { mode: 'all', count: 20, maxAccuracy: 70, mainLinesOnly: false }, positions: { mode: 'all', count: 25, maxAccuracy: 70, mainLinesOnly: false } } });
-  check('old data: history', app.convertedHistory({ moves: { k: { attempts: [{ tried: ['a3', 'e4'], points: 5 }, { tried: ['e4'], points: 10 }], lastTried: 7 } }, lines: { l: { played: [3, 4] } } }),
-    { moves: { k: [{ tried: ['a3', 'e4'], at: null }, { tried: ['e4'], at: 7 }] }, lines: { l: [3, 4] } });
-  check('old data: settings', app.checkedSettings(app.convertedSettings({ sounds: true, linesCount: 30, linesPracticeMode: 'listed', positionsMaxAccuracy: 50, positionsMainLinesOnly: true })).practice,
-    { lines: { mode: 'weak', count: 30, maxAccuracy: 70, mainLinesOnly: false }, positions: { mode: 'all', count: 25, maxAccuracy: 50, mainLinesOnly: true } });
   check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9, penalties: { alternative: 11 } }).mastersTop,
     app.checkedSettings({ practice: { lines: { mode: 'x', count: 7, maxAccuracy: 50 } } }).practice.lines], [5, { mode: 'all', count: 20, maxAccuracy: 50, mainLinesOnly: false }]);
 
