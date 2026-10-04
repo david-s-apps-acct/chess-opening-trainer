@@ -441,13 +441,13 @@ function runSavedSelections(app) {
   check('saved selections: Save as new', [app.savedSelections, $('saved-select').value], [[{ name: 'Italian', chapters: ['AAAAAAAA/BBBBBBBB'] }], 'Italian']);
   $('saved-new-btn').click();
   nameIt('italian');
-  check('saved selections: names must differ', [$('saved-name-error').textContent, app.savedSelections.length], ["There's already a saved selection called italian.", 1]);
+  check('saved selections: names must differ', [$('saved-name-error').textContent, app.savedSelections.length], ["There's already a preset called italian.", 1]);
   $('saved-name-cancel').click();
   app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
   app.renderSavedSelections();
-  check('saved selections: changed ticks', [options(), $('saved-update-btn').disabled], [['Italian (changed)'], false]);
+  check('saved selections: changed ticks grey the name out', [options(), $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled], [['Italian'], true, false]);
   $('saved-update-btn').click();
-  check('saved selections: Update', [app.savedSelections[0].chapters.length, options()[0], $('saved-update-btn').disabled], [2, 'Italian', true]);
+  check('saved selections: Update', [app.savedSelections[0].chapters.length, $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled], [2, false, true]);
   $('saved-rename-btn').click();
   nameIt('Both and a much longer name than sixty characters, which is now allowed without any limit');
   check('saved selections: long names', app.savedSelections[0].name.length > 60, true);

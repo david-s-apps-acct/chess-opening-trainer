@@ -121,6 +121,8 @@
   .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
   .selection-bar label { font-weight: 600; }
   .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
+  .selection-bar select.changed { color: var(--muted); } /* the ticks differ from the chosen preset */
+  .selection-bar select option { color: var(--text); }
   .selection-bar #sel-summary { margin-left: auto; }
   #saved-edit-btn[aria-expanded=true] { color: var(--text-strong); }
   .saved-edit { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
@@ -332,25 +334,25 @@
   <!-- Choose chapters -->
   <section id="studies-screen" class="hidden">
     <div class="selection-bar">
-      <label for="saved-select">Selection:</label>
-      <select id="saved-select" title="Tick exactly the chapters of a saved selection"></select>
-      <button id="saved-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="saved-edit" aria-label="Edit saved selections" title="Edit saved selections">
+      <label for="saved-select">Presets:</label>
+      <select id="saved-select" title="Tick exactly the chapters of a preset"></select>
+      <button id="saved-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="saved-edit" aria-label="Edit presets" title="Edit presets">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
       </button>
       <span id="sel-summary" class="muted"></span>
     </div>
-    <div id="saved-edit" class="saved-edit hidden" aria-label="Edit saved selections">
+    <div id="saved-edit" class="saved-edit hidden" aria-label="Edit presets">
       <div class="saved-edit-row">
         <div class="saved-buttons">
-          <button id="saved-new-btn" class="small" title="Save the chapters ticked now as a new selection, with a name">Save as new</button>
-          <button id="saved-update-btn" class="small" title="Save the chapters ticked now in the chosen selection">Update</button>
-          <button id="saved-rename-btn" class="small" title="Change the chosen selection's name">Rename</button>
-          <button id="saved-delete-btn" class="small" title="Delete the chosen selection (the ticks stay as they are)">Delete</button>
+          <button id="saved-new-btn" class="small" title="Save the chapters ticked now as a new preset, with a name">Save as new</button>
+          <button id="saved-update-btn" class="small" title="Save the chapters ticked now in the chosen preset">Update</button>
+          <button id="saved-rename-btn" class="small" title="Change the chosen preset's name">Rename</button>
+          <button id="saved-delete-btn" class="small" title="Delete the chosen preset (the ticks stay as they are)">Delete</button>
         </div>
         <button id="saved-edit-close" class="icon-btn" aria-label="Close" title="Close">×</button>
       </div>
       <form id="saved-name-form" class="saved-name-form hidden">
-        <input type="text" id="saved-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the saved selection" autocomplete="off">
+        <input type="text" id="saved-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
         <button id="saved-name-ok" class="small primary" type="submit">Save</button><button id="saved-name-cancel" class="small" type="button">Cancel</button>
         <div id="saved-name-error" class="form-error"></div>
       </form>
@@ -464,7 +466,7 @@
           <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
-          <li><b>Saved selections</b>: choose one from the <b>Selection</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a selection's chapters, choose it, change the ticks, and press <b>Update</b>; until then the drop-down shows "(changed)" after its name. <b>Rename</b> changes the chosen selection's name, and <b>Delete</b> deletes it (the ticks stay as they are). Saved selections are included in backups; your old favorites became one called "Favorites".</li>
+          <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b>; until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
           <li>To hide a study you no longer use, click the eye at the top (next to <b>All</b>): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
           <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
           <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
@@ -1597,7 +1599,8 @@ $('all-box').addEventListener('change', e => {
 });
 
 // Saved selections: named sets of chapters, chosen from the drop-down to tick exactly those chapters.
-// The chosen one is edited by changing the ticks and pressing Update ("(changed)" shows until then).
+// The chosen one is edited by changing the ticks and pressing Update (its name is greyed out until then).
+// On screen they're called presets.
 
 // The chapters a saved selection ticks now: those still on Lichess and not in hidden studies.
 function chaptersOf(saved) {
@@ -1622,9 +1625,10 @@ function renderSavedSelections() {
   // The open list shows only the selections. With none chosen, the closed drop-down shows a hint that
   // isn't in the list.
   $('saved-select').replaceChildren(
-    ...saved ? [] : [element('option', { value: '', hidden: true, disabled: true }, savedSelections.length ? 'None chosen' : 'No saved selections yet')],
+    ...saved ? [] : [element('option', { value: '', hidden: true, disabled: true }, savedSelections.length ? 'None chosen' : 'No presets yet')],
     ...[...savedSelections].sort((a, b) => a.name.localeCompare(b.name)).map(s =>
-      element('option', { value: s.name }, s === saved && changed ? `${s.name} (changed)` : s.name)));
+      element('option', { value: s.name }, s.name)));
+  $('saved-select').classList.toggle('changed', changed); // the chosen name greyed out while the ticks differ
   $('saved-select').value = saved ? saved.name : '';
   $('saved-select').disabled = !savedSelections.length;
   $('saved-new-btn').disabled = selection.size === 0;
@@ -1665,7 +1669,7 @@ $('saved-update-btn').addEventListener('click', () => {
 
 $('saved-delete-btn').addEventListener('click', () => {
   const saved = chosenSaved();
-  if (!saved || !confirm(`Delete the saved selection "${saved.name}"? The chapters ticked now stay ticked.`)) return;
+  if (!saved || !confirm(`Delete the preset "${saved.name}"? The chapters ticked now stay ticked.`)) return;
   savedSelections = savedSelections.filter(s => s !== saved);
   chosenSelectionName = null;
   saveSavedSelections();
@@ -1714,7 +1718,7 @@ $('saved-name-form').addEventListener('submit', e => {
   const renaming = namingMode === 'rename' ? chosenSaved() : null;
   if (!name) { $('saved-name-error').textContent = 'Type a name.'; return; }
   if (savedSelections.some(s => s !== renaming && s.name.toLowerCase() === name.toLowerCase())) {
-    $('saved-name-error').textContent = `There's already a saved selection called ${name}.`;
+    $('saved-name-error').textContent = `There's already a preset called ${name}.`;
     return;
   }
   if (renaming) {
