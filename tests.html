@@ -33,6 +33,10 @@ export const app = {
   setPositions(p) { positions = p; },
   setSettings(s) { settings = checkedSettings(s); },
   setHistory(h) { history = h; },
+  checkedSavedSelections, fromFavorites, renderSavedSelections,
+  get savedSelections() { return savedSelections; },
+  setSavedSelections(v) { savedSelections = v; chosenSelectionName = null; },
+  get selection() { return [...selection]; },
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
   renderChapterTree,
   positionName, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
@@ -414,6 +418,47 @@ function runPositions(app) {
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
 }
 
+// ---------- Saved selections ----------
+
+function runSavedSelections(app) {
+  app.isolate();
+  app.setLibrary(structuredClone(LIBRARY));
+  check('saved selections: invalid and duplicate names dropped', app.checkedSavedSelections([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null]),
+    [{ name: 'A', chapters: ['x'] }]);
+  check('saved selections: favorites become "Favorites"', [app.fromFavorites(['x']), app.fromFavorites([])], [[{ name: 'Favorites', chapters: ['x'] }], []]);
+  const $ = id => document.getElementById(id);
+  const realConfirm = window.confirm;
+  window.confirm = () => true;
+  const nameIt = name => { $('saved-name').value = name; $('saved-name-form').requestSubmit(); };
+  const options = () => [...$('saved-select').options].map(o => o.textContent);
+  app.setSavedSelections([]);
+  app.setSelection(['AAAAAAAA/BBBBBBBB']);
+  app.renderSavedSelections();
+  $('saved-new-btn').click();
+  nameIt('Italian');
+  check('saved selections: Save as new', [app.savedSelections, $('saved-select').value], [[{ name: 'Italian', chapters: ['AAAAAAAA/BBBBBBBB'] }], 'Italian']);
+  $('saved-new-btn').click();
+  nameIt('italian');
+  check('saved selections: names must differ', [$('saved-name-error').textContent, app.savedSelections.length], ["There's already a saved selection called italian.", 1]);
+  $('saved-name-cancel').click();
+  app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
+  app.renderSavedSelections();
+  check('saved selections: changed ticks', [options(), $('saved-update-btn').disabled], [['Choose a saved selection', 'Italian (changed)'], false]);
+  $('saved-update-btn').click();
+  check('saved selections: Update', [app.savedSelections[0].chapters.length, options()[1], $('saved-update-btn').disabled], [2, 'Italian', true]);
+  $('saved-rename-btn').click();
+  nameIt('Both');
+  check('saved selections: Rename', [app.savedSelections[0].name, $('saved-select').value], ['Both', 'Both']);
+  app.setSelection([]);
+  $('saved-select').value = 'Both';
+  $('saved-select').dispatchEvent(new Event('change'));
+  check('saved selections: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
+  $('saved-delete-btn').click();
+  check('saved selections: Delete keeps the ticks', [app.savedSelections.length, app.selection.length, options()], [0, 2, ['No saved selections yet']]);
+  window.confirm = realConfirm;
+  app.setSelection(['AAAAAAAA/BBBBBBBB']);
+}
+
 // ---------- Report ----------
 
 try {
@@ -421,6 +466,7 @@ try {
   run(app);
   runPositions(app);
   await runPractice(app);
+  runSavedSelections(app);
 } catch (e) {
   results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
 }

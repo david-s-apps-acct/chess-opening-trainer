@@ -131,6 +131,12 @@
   .select-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
   .side-panel { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 0; position: sticky; top: 16px; }
   .side-panel .filters { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .saved-selections { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .saved-selections label { font-size: 13px; color: var(--muted); }
+  .saved-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+  .saved-name-form { display: flex; flex-direction: column; gap: 6px; }
+  .saved-name-form input { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
+  .saved-name-form .form-error { margin-top: 0; min-height: 0; font-size: 13px; }
   .all-row { border-bottom: 1px solid var(--border); }
   .all-row #show-hidden-btn { margin-left: 2px; }
   .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
@@ -261,7 +267,7 @@
   #overlay-choices { font-size: 13px; margin-top: 4px; }
   #overlay-note:empty { display: none; }
 
-  /* A short message near the top of the page that fades away (e.g. after Save favorites). */
+  /* A short message near the top of the page that fades away (e.g. after saving a selection). */
   .toast {
     position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 60;
     max-width: min(560px, calc(100vw - 32px)); padding: 10px 18px; border-radius: 8px;
@@ -338,8 +344,6 @@
       <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
       <div class="row study-row all-row"><span class="toggle-space"></span>
         <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
-        <button id="fav-set-btn" class="small" title="Remember the chapters ticked now as your favorites.">Save favorites</button>
-        <button id="fav-recall-btn" class="small" title="Tick exactly your favorite chapters again.">Recall favorites</button>
         <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
@@ -351,6 +355,21 @@
     </div>
     <aside class="toolbar side-panel" aria-label="Selection and filters">
       <span id="sel-summary" class="muted"></span>
+      <div class="saved-selections">
+        <label for="saved-select">Saved selections</label>
+        <select id="saved-select" title="Tick exactly the chapters of a saved selection"></select>
+        <div class="saved-buttons">
+          <button id="saved-new-btn" class="small" title="Save the chapters ticked now as a new selection, with a name">Save as new</button>
+          <button id="saved-update-btn" class="small" title="Save the chapters ticked now in the chosen selection">Update</button>
+          <button id="saved-rename-btn" class="small" title="Change the chosen selection's name">Rename</button>
+          <button id="saved-delete-btn" class="small" title="Delete the chosen selection (the ticks stay as they are)">Delete</button>
+        </div>
+        <form id="saved-name-form" class="saved-name-form hidden">
+          <input type="text" id="saved-name" maxlength="60" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the saved selection" autocomplete="off">
+          <div class="saved-buttons"><button id="saved-name-ok" class="small primary" type="submit">Save</button><button id="saved-name-cancel" class="small" type="button">Cancel</button></div>
+          <div id="saved-name-error" class="form-error"></div>
+        </form>
+      </div>
     </aside>
     </div>
   </section>
@@ -449,8 +468,8 @@
           <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
-          <li><b>Save favorites</b> remembers the chapters ticked now; <b>Recall favorites</b> ticks exactly those chapters again.</li>
-          <li>To hide a study you no longer use, click the eye at the top (next to the favorites buttons): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
+          <li><b>Saved selections</b> (on the right): save the chapters ticked now under a name with <b>Save as new</b>, and choose a saved selection from the drop-down to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped). To change a selection's chapters, choose it, change the ticks, and press <b>Update</b>; until then the drop-down shows "(changed)" after its name. <b>Rename</b> changes the chosen selection's name, and <b>Delete</b> deletes it (the ticks stay as they are). Saved selections are included in backups; your old favorites became one called "Favorites".</li>
+          <li>To hide a study you no longer use, click the eye at the top (next to <b>All</b>): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
           <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
           <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
         </ul>
@@ -641,7 +660,7 @@ const MAX_LINES_PER_CHAPTER = 5000;
 
 // ---------- Storage ----------
 
-// localStorage (names start "cot."): the Lichess token, settings, selection, favorites, hidden
+// localStorage (names start "cot."): the Lichess token, settings, selection, saved selections, hidden
 // studies and your history. IndexedDB (database "chess-opening-trainer"): the studies fetched from
 // Lichess (store "library") and what Lichess says about each board position (store "positions",
 // keyed by EPD). Both can be large.
@@ -714,7 +733,22 @@ async function savePositions(epds = Object.keys(positions)) {
 let token = store.get('token', null);
 let library = null; // the studies fetched from Lichess: { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
 let selection = new Set(store.get('selection', [])); // the ticked chapters' keys, "studyId/chapterId"
-let favorites = store.get('favorites', null);          // chapter keys saved with "Save favorites"
+// Saved selections: [{ name, chapters: [chapter keys] }], and the name of the one chosen in the drop-down.
+// (Before there could be several, there was one, "favorites": its chapters become "Favorites".)
+const checkedSavedSelections = v => {
+  const names = new Set();
+  return (Array.isArray(v) ? v : []).filter(s => s && typeof s.name === 'string' && s.name.trim() && Array.isArray(s.chapters)
+    && !names.has(s.name.toLowerCase()) && names.add(s.name.toLowerCase()))
+    .map(s => ({ name: s.name.trim(), chapters: s.chapters.filter(k => typeof k === 'string') }));
+};
+const fromFavorites = favorites => Array.isArray(favorites) && favorites.length ? [{ name: 'Favorites', chapters: favorites.filter(k => typeof k === 'string') }] : [];
+let savedSelections = checkedSavedSelections(store.get('savedSelections', null));
+let chosenSelectionName = store.get('chosenSelection', null);
+if (store.get('favorites', null)) { // the first time after the change
+  savedSelections = fromFavorites(store.get('favorites', null));
+  store.set('savedSelections', savedSelections);
+  store.remove('favorites');
+}
 let hiddenStudies = new Set(store.get('hiddenStudies', [])); // studies hidden from the list and from practice
 const saveSelection = () => store.set('selection', [...selection]);
 const saveHidden = () => store.set('hiddenStudies', [...hiddenStudies]);
@@ -1553,8 +1587,7 @@ function updateSelectionPanel() {
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
   $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · ${plural(selected.flatMap(chapterLines).length, 'line')}`;
-  $('fav-set-btn').disabled = selection.size === 0;
-  $('fav-recall-btn').disabled = !favorites || !favorites.length;
+  renderSavedSelections();
   // The top eye: a line through it while hidden studies are out of sight.
   const sh = $('show-hidden-btn');
   sh.classList.toggle('off', !showHiddenStudies);
@@ -1567,25 +1600,126 @@ $('all-box').addEventListener('change', e => {
   saveSelection(); renderStudies();
 });
 
-// Favorites: a saved chapter selection that can be recalled later.
-$('fav-set-btn').addEventListener('click', () => {
-  favorites = [...selection];
-  store.set('favorites', favorites);
-  updateSelectionPanel();
-  showToast(`Saved ${plural(favorites.length, 'chapter')} as your favorites.`);
-});
+// Saved selections: named sets of chapters, chosen from the drop-down to tick exactly those chapters.
+// The chosen one is edited by changing the ticks and pressing Update ("(changed)" shows until then).
 
-$('fav-recall-btn').addEventListener('click', () => {
+// The chapters a saved selection ticks now: those still on Lichess and not in hidden studies.
+function chaptersOf(saved) {
   const existing = new Set(allChapters().map(c => c.key));
-  const found = (favorites || []).filter(k => existing.has(k));
-  const keys = found.filter(k => !isHiddenChapter(k)); // chapters in hidden studies are skipped
+  const found = saved.chapters.filter(k => existing.has(k));
+  return { found, keys: found.filter(k => !isHiddenChapter(k)) };
+}
+
+const chosenSaved = () => savedSelections.find(s => s.name === chosenSelectionName) || null;
+
+// Whether the ticks differ from the chosen selection's chapters.
+function chosenChanged() {
+  const saved = chosenSaved();
+  if (!saved) return false;
+  const keys = chaptersOf(saved).keys;
+  return keys.length !== selection.size || keys.some(k => !selection.has(k));
+}
+
+function renderSavedSelections() {
+  const saved = chosenSaved();
+  const changed = chosenChanged();
+  $('saved-select').replaceChildren(
+    element('option', { value: '' }, savedSelections.length ? 'Choose a saved selection' : 'No saved selections yet'),
+    ...[...savedSelections].sort((a, b) => a.name.localeCompare(b.name)).map(s =>
+      element('option', { value: s.name }, s === saved && changed ? `${s.name} (changed)` : s.name)));
+  $('saved-select').value = saved ? saved.name : '';
+  $('saved-select').disabled = !savedSelections.length;
+  $('saved-new-btn').disabled = selection.size === 0;
+  $('saved-update-btn').disabled = !saved || !changed || selection.size === 0;
+  $('saved-rename-btn').disabled = !saved;
+  $('saved-delete-btn').disabled = !saved;
+}
+
+function saveSavedSelections() {
+  store.set('savedSelections', savedSelections);
+  store.set('chosenSelection', chosenSelectionName);
+}
+
+$('saved-select').addEventListener('change', e => {
+  const saved = savedSelections.find(s => s.name === e.target.value);
+  chosenSelectionName = saved ? saved.name : null;
+  saveSavedSelections();
+  hideNameForm();
+  if (!saved) { renderSavedSelections(); return; }
+  const { found, keys } = chaptersOf(saved);
   selection = new Set(keys);
   saveSelection();
   renderStudies(); // open and closed studies stay as they were
-  const missing = (favorites || []).length - found.length, skipped = found.length - keys.length;
-  showToast(`Recalled your favorites: ${plural(keys.length, 'chapter')} selected.`
+  const missing = saved.chapters.length - found.length, skipped = found.length - keys.length;
+  showToast(`${saved.name}: ${plural(keys.length, 'chapter')} selected.`
     + (missing ? ` (${missing} no longer ${missing === 1 ? 'exists' : 'exist'} on Lichess.)` : '')
     + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''), missing || skipped ? 5000 : 3000);
+});
+
+$('saved-update-btn').addEventListener('click', () => {
+  const saved = chosenSaved();
+  if (!saved) return;
+  saved.chapters = [...selection];
+  saveSavedSelections();
+  renderSavedSelections();
+  showToast(`Updated ${saved.name}: ${plural(saved.chapters.length, 'chapter')}.`);
+});
+
+$('saved-delete-btn').addEventListener('click', () => {
+  const saved = chosenSaved();
+  if (!saved || !confirm(`Delete the saved selection "${saved.name}"? The chapters ticked now stay ticked.`)) return;
+  savedSelections = savedSelections.filter(s => s !== saved);
+  chosenSelectionName = null;
+  saveSavedSelections();
+  hideNameForm();
+  renderSavedSelections();
+  showToast(`Deleted ${saved.name}.`);
+});
+
+// The name box, for Save as new and Rename.
+let namingMode = null; // 'new' or 'rename'
+
+function showNameForm(mode) {
+  namingMode = mode;
+  $('saved-name').value = mode === 'rename' ? chosenSaved().name : '';
+  $('saved-name-ok').textContent = mode === 'rename' ? 'Rename' : 'Save';
+  $('saved-name-error').textContent = '';
+  $('saved-name-form').classList.remove('hidden');
+  $('saved-name').focus();
+  $('saved-name').select();
+}
+
+function hideNameForm() {
+  namingMode = null;
+  $('saved-name-form').classList.add('hidden');
+  $('saved-name-error').textContent = '';
+}
+
+$('saved-new-btn').addEventListener('click', () => showNameForm('new'));
+$('saved-rename-btn').addEventListener('click', () => { if (chosenSaved()) showNameForm('rename'); });
+$('saved-name-cancel').addEventListener('click', hideNameForm);
+$('saved-name').addEventListener('keydown', e => { if (e.key === 'Escape') hideNameForm(); });
+
+$('saved-name-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('saved-name').value.trim().replace(/\s+/g, ' ');
+  const renaming = namingMode === 'rename' ? chosenSaved() : null;
+  if (!name) { $('saved-name-error').textContent = 'Type a name.'; return; }
+  if (savedSelections.some(s => s !== renaming && s.name.toLowerCase() === name.toLowerCase())) {
+    $('saved-name-error').textContent = `There's already a saved selection called ${name}.`;
+    return;
+  }
+  if (renaming) {
+    renaming.name = name;
+    showToast(`Renamed to ${name}.`);
+  } else {
+    savedSelections.push({ name, chapters: [...selection] });
+    showToast(`Saved ${plural(selection.size, 'chapter')} as ${name}.`);
+  }
+  chosenSelectionName = name;
+  saveSavedSelections();
+  hideNameForm();
+  renderSavedSelections();
 });
 
 // ---------- Spaced repetition ----------
@@ -2928,7 +3062,7 @@ $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
-    settings, selection: [...selection], favorites, hiddenStudies: [...hiddenStudies],
+    settings, selection: [...selection], savedSelections, hiddenStudies: [...hiddenStudies],
     history,
     positions, // what Lichess says about each position: it takes a long time to download, so it's included
   };
@@ -2981,7 +3115,8 @@ $('restore-file').addEventListener('change', async e => {
   settings = checkedSettings(b.settings);
   const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
   selection = new Set(strings(b.selection));
-  favorites = Array.isArray(b.favorites) ? strings(b.favorites) : null;
+  savedSelections = checkedSavedSelections(b.savedSelections ?? fromFavorites(b.favorites)); // older backups have favorites
+  chosenSelectionName = null;
   hiddenStudies = new Set(strings(b.hiddenStudies));
   // What Lichess says about each position is merged, not replaced: each part keeps whichever copy
   // is newer, so downloads made since the backup aren't lost.
@@ -2993,7 +3128,7 @@ $('restore-file').addEventListener('change', async e => {
     }
   }
   await savePositions();
-  saveHistory(); saveSettings(); saveSelection(); saveHidden(); store.set('favorites', favorites);
+  saveHistory(); saveSettings(); saveSelection(); saveHidden(); saveSavedSelections();
   rescoreHistory(); // restored attempts scored with the current rules and data
   updateSoundButton();
   renderOptions();
