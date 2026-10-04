@@ -433,7 +433,7 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 - **The current page's header button** stays highlighted when hovered.
 - **Options:** "What counts as a masters move" moved to the end of the penalties card under "Masters moves"; "Move frequency" renamed "Lichess move statistics"; a **Sounds** card with a **Move sounds** checkbox, kept in step with the bell under the board.
 - **Help** starts with a list of links to its sections.
-- *Claude's choices, for the user to accept or reject:* Skip's wording and place (between Hint and End practice); "7 done" counts only finished items; the 0.7-second delay is only for the chapter names (other pop-ups still appear immediately); the Sounds card is second on the Options page; Hint's tooltip now says it "Counts as an error" (it said "a miss").
+- *Claude's choices, accepted by the user:* Skip's wording and place (between Hint and End practice); "7 done" counts only finished items; the 0.7-second delay is only for the chapter names (other pop-ups still appear immediately); the Sounds card is second on the Options page; Hint's tooltip now says it "Counts as an error" (it said "a miss").
 
 ### Stored data (the data clean-up of 4 October 2026)
 
