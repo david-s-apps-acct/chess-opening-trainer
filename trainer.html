@@ -121,7 +121,7 @@
   .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
   .selection-bar label { font-weight: 600; }
   .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
-  .selection-bar select.changed { color: var(--muted); } /* the ticks differ from the chosen preset */
+  .selection-bar select.changed { color: var(--muted); } /* the ticks differ from the chosen preset, or "None chosen" */
   .selection-bar select option { color: var(--text); }
   .selection-bar #sel-summary { margin-left: auto; }
   #saved-edit-btn[aria-expanded=true] { color: var(--text-strong); }
@@ -466,7 +466,7 @@
           <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
-          <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b>; until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
+          <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them, and they close by themselves once you've saved, updated, renamed or deleted a preset. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b>; until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
           <li>To hide a study you no longer use, click the eye at the top (next to <b>All</b>): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
           <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
           <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
@@ -1605,8 +1605,7 @@ $('all-box').addEventListener('change', e => {
 // The chapters a saved selection ticks now: those still on Lichess and not in hidden studies.
 function chaptersOf(saved) {
   const existing = new Set(allChapters().map(c => c.key));
-  const found = saved.chapters.filter(k => existing.has(k));
-  return { found, keys: found.filter(k => !isHiddenChapter(k)) };
+  return saved.chapters.filter(k => existing.has(k) && !isHiddenChapter(k));
 }
 
 const chosenSaved = () => savedSelections.find(s => s.name === chosenSelectionName) || null;
@@ -1615,7 +1614,7 @@ const chosenSaved = () => savedSelections.find(s => s.name === chosenSelectionNa
 function chosenChanged() {
   const saved = chosenSaved();
   if (!saved) return false;
-  const keys = chaptersOf(saved).keys;
+  const keys = chaptersOf(saved);
   return keys.length !== selection.size || keys.some(k => !selection.has(k));
 }
 
@@ -1628,7 +1627,7 @@ function renderSavedSelections() {
     ...saved ? [] : [element('option', { value: '', hidden: true, disabled: true }, savedSelections.length ? 'None chosen' : 'No presets yet')],
     ...[...savedSelections].sort((a, b) => a.name.localeCompare(b.name)).map(s =>
       element('option', { value: s.name }, s.name)));
-  $('saved-select').classList.toggle('changed', changed); // the chosen name greyed out while the ticks differ
+  $('saved-select').classList.toggle('changed', changed || !saved); // greyed out while the ticks differ, and "None chosen"
   $('saved-select').value = saved ? saved.name : '';
   $('saved-select').disabled = !savedSelections.length;
   $('saved-new-btn').disabled = selection.size === 0;
@@ -1648,14 +1647,9 @@ $('saved-select').addEventListener('change', e => {
   saveSavedSelections();
   hideNameForm(); // the edit panel stays open
   if (!saved) { renderSavedSelections(); return; }
-  const { found, keys } = chaptersOf(saved);
-  selection = new Set(keys);
+  selection = new Set(chaptersOf(saved)); // no message: the ticks and the count show it
   saveSelection();
   renderStudies(); // open and closed studies stay as they were
-  const missing = saved.chapters.length - found.length, skipped = found.length - keys.length;
-  showToast(`${saved.name}: ${plural(keys.length, 'chapter')} selected.`
-    + (missing ? ` (${missing} no longer ${missing === 1 ? 'exists' : 'exist'} on Lichess.)` : '')
-    + (skipped ? ` (${skipped} ${skipped === 1 ? 'is' : 'are'} in hidden studies and ${skipped === 1 ? 'was' : 'were'} skipped.)` : ''), missing || skipped ? 5000 : 3000);
 });
 
 $('saved-update-btn').addEventListener('click', () => {
@@ -1663,6 +1657,7 @@ $('saved-update-btn').addEventListener('click', () => {
   if (!saved) return;
   saved.chapters = [...selection];
   saveSavedSelections();
+  showSavedEdit(false); // done: the edit buttons go away again
   renderSavedSelections();
   showToast(`Updated ${saved.name}: ${plural(saved.chapters.length, 'chapter')}.`);
 });
@@ -1673,7 +1668,7 @@ $('saved-delete-btn').addEventListener('click', () => {
   savedSelections = savedSelections.filter(s => s !== saved);
   chosenSelectionName = null;
   saveSavedSelections();
-  hideNameForm();
+  showSavedEdit(false);
   renderSavedSelections();
   showToast(`Deleted ${saved.name}.`);
 });
@@ -1730,7 +1725,7 @@ $('saved-name-form').addEventListener('submit', e => {
   }
   chosenSelectionName = name;
   saveSavedSelections();
-  hideNameForm();
+  showSavedEdit(false);
   renderSavedSelections();
 });
 

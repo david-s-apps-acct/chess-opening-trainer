@@ -447,7 +447,8 @@ function runSavedSelections(app) {
   app.renderSavedSelections();
   check('saved selections: changed ticks grey the name out', [options(), $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled], [['Italian'], true, false]);
   $('saved-update-btn').click();
-  check('saved selections: Update', [app.savedSelections[0].chapters.length, $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled], [2, false, true]);
+  check('saved selections: Update, then the edit buttons close', [app.savedSelections[0].chapters.length, $('saved-select').classList.contains('changed'), $('saved-update-btn').disabled, $('saved-edit').classList.contains('hidden')], [2, false, true, true]);
+  $('saved-edit-btn').click();
   $('saved-rename-btn').click();
   nameIt('Both and a much longer name than sixty characters, which is now allowed without any limit');
   check('saved selections: long names', app.savedSelections[0].name.length > 60, true);
@@ -459,7 +460,8 @@ function runSavedSelections(app) {
   $('saved-select').dispatchEvent(new Event('change'));
   check('saved selections: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
   $('saved-delete-btn').click();
-  check('saved selections: Delete keeps the ticks', [app.savedSelections.length, app.selection.length, options()], [0, 2, []]);
+  check('saved selections: Delete keeps the ticks; "No presets yet" in grey', [app.savedSelections.length, app.selection.length, options(), $('saved-select').classList.contains('changed'), $('saved-edit').classList.contains('hidden')], [0, 2, [], true, true]);
+  $('saved-edit-btn').click();
   $('saved-edit-close').click();
   check('saved selections: × closes the edit panel', $('saved-edit').classList.contains('hidden'), true);
   window.confirm = realConfirm;
