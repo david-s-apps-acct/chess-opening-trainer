@@ -71,7 +71,7 @@
   }
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
-  header nav button.current { background: var(--accent); color: var(--accent-text); }
+  header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
   .banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); background: var(--surface); }
@@ -95,6 +95,8 @@
   .help li { margin: 3px 0; }
   .help details { margin-top: 8px; background: var(--surface-2); border-radius: 3px; padding: 6px 12px; }
   .help summary { cursor: pointer; color: var(--accent); }
+  .help-contents { line-height: 1.8; }
+  .help-contents a { color: var(--accent); white-space: nowrap; }
   .help details[open] summary { margin-bottom: 4px; }
 
   /* Options and Help pages: a column of cards */
@@ -105,6 +107,9 @@
   /* Options page: error penalties */
   .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
   .penalties select { flex: none; width: auto; padding: 3px 6px; }
+  .card h3 { font-size: 14px; margin: 16px 0 0; }
+  .option-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .option-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
   /* The weak and frequent tables (Show table on the Practice page) */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
@@ -241,14 +246,14 @@
   .status.bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
-  .practice-chooser { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
+  #practice-title:empty, #practice-position:empty, #practice-side:empty { display: none; } /* nothing above the chooser */
   .practice-chooser fieldset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0; padding: 6px 12px 10px; border: 1px solid var(--muted); border-radius: 4px; }
   .practice-chooser legend { padding: 0 4px; font-size: 13px; color: var(--muted); }
   .practice-chooser label { display: flex; align-items: center; gap: 6px; }
   .practice-chooser input[type=radio], .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
   .chooser-filters { margin-left: 22px; font-size: 13px; color: var(--muted); }
   .chooser-filters select { flex: none; width: auto; padding: 2px 6px; font-size: 13px; color: var(--text); }
-  .chooser-filters.disabled { opacity: 0.5; }
   .practice-chooser button { margin-top: 4px; }
   .practice-chooser p { margin: 0; font-size: 13px; }
   .practice-chooser p:empty { display: none; }
@@ -387,12 +392,14 @@
         <h2 id="practice-title"></h2>
         <div id="practice-position" class="muted"></div>
         <div id="practice-side" class="muted"></div>
+        <div id="practice-line">
         <div id="practice-moves" class="moves" aria-label="Moves played"></div>
         <div class="move-nav">
           <button id="view-first" title="Starting position (Home)" aria-label="Starting position">⏮</button>
           <button id="view-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
           <button id="view-next" title="Next move (→)" aria-label="Next move">▶</button>
           <button id="view-last" title="Current position (End)" aria-label="Current position">⏭</button>
+        </div>
         </div>
         <div id="practice-status" class="status"></div>
         <div id="practice-chooser" class="practice-chooser hidden">
@@ -418,7 +425,7 @@
         <div class="actions">
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
-          <button id="end-btn" class="hidden" title="Stop this line here and see the summary. The moves you've played count; the rest of the line isn't played. Next time the line is played in full.">End line here</button>
+          <button id="skip-btn" class="hidden" title="Go on to the next one. The moves you've answered count; this one isn't counted as played through.">Skip</button>
           <button id="end-practice-btn" class="end-practice hidden" title="Stop practising and choose what to practise next. In a line you're in the middle of, the moves you've answered still count.">End practice</button>
         </div>
       </div>
@@ -438,7 +445,9 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <div class="card">
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Choosing studies and chapters</a> · <a href="#help-practicing">Practicing</a> · <a href="#help-statistics">Your statistics</a> · <a href="#help-tables">Weak and frequent tables</a> · <a href="#help-chosen">How practice is chosen</a> · <a href="#help-options">Options and backups</a></nav>
+
+      <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
           <li>On Lichess, <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">create a personal API token</a> with the <b>Read private studies</b> (<code>study:read</code>) permission.</li>
@@ -452,12 +461,12 @@
         </details>
       </div>
 
-      <div class="card">
+      <div class="card" id="help-studies">
         <h2>Choosing studies and chapters</h2>
         <ul>
           <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
-          <li>Click a chapter's name (or the first ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). The second ▸ next to a chapter opens every variation at once (▾ closes them all). Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
+          <li>Click a chapter's name (or the ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). Click the chapter's number of lines (e.g. "3 lines") to open every variation at once, and again to close them. Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
           <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them, and they close by themselves once you've saved, updated, renamed or deleted a preset. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b>; until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
           <li>To hide a study you no longer use, click the eye at the top (next to <b>All</b>): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
           <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
@@ -465,25 +474,25 @@
         </ul>
       </div>
 
-      <div class="card">
+      <div class="card" id="help-practicing">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, your most frequent weak lines or positions, chosen with the drop-downs (see Weak and frequent tables); <b>Show table</b> lists them over the page, and × (or Esc) closes it. Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices; in a line you're in the middle of, the moves you've answered still count (and the move you're on, if you'd already tried something there), as with End line here, but the line doesn't count as played through. </li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time). For each, choose <b>All (spaced repetition)</b>, everything in your ticked chapters (see How practice is chosen), or <b>Weak and frequent</b>, your most frequent weak lines or positions, chosen with the drop-downs (see Weak and frequent tables); <b>Show table</b> lists them over the page, and × (or Esc) closes it. Then press <b>Practice lines</b> or <b>Practice positions</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "All lines · 7 done".</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
-          <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
+          <li>The bell under the board turns move sounds on and off (as does <b>Move sounds</b> on the Options page); a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
           <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs an error's penalty; an unmarked one gets "♗c4 is one of your alternative moves" and costs an alternative's penalty (see Your statistics). Any other wrong move says how popular it is, e.g. "♕d3 is the #3 masters move but not your move" (a masters move, see Your statistics) or "♕d3 is the #4 Lichess move but not your move" (an error), or just "♕d3 is not your move".</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move accuracy is 0% this time).</li>
-          <li>Lines are always played to the end. To stop sooner, press <b>End line here</b> on your move: you get the summary straight away, and the moves you've played count as usual (the move you're on counts only if you'd already tried a move or used Hint on it). It's just for this time; the next time the line comes up it's played in full.</li>
+          <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practising. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue.</li>
+          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a green arrow for the right move, blue arrows for alternatives and masters moves and red arrows for other wrong moves; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue. A single position works the same way: once you've found the move, press <b>Next position</b> (or Enter).</li>
         </ul>
       </div>
 
-      <div class="card">
+      <div class="card" id="help-statistics">
         <h2>Your statistics</h2>
         <p>The app measures the <b>move accuracy</b> of each of <b>your</b> moves separately (and a <b>line accuracy</b> each time you complete a line), so you can see exactly which moves you know and which you don't.</p>
         <ul>
@@ -502,7 +511,7 @@
           <ul>
             <li>Playing a line: one try for each of your moves in it.</li>
             <li>A single position: one try of the move tested.</li>
-            <li>Stopping a line part way, with <b>End line here</b> or <b>End practice</b>: one try for each of your moves answered so far, and for the move you're on if you'd already tried a move or used Hint there.</li>
+            <li>Stopping a line part way, with <b>Skip</b> or <b>End practice</b>: one try for each of your moves answered so far, and for the move you're on if you'd already tried a move or used Hint there.</li>
             <li>A line dropped because you refreshed your studies in the middle of it records nothing.</li>
           </ul>
         </details>
@@ -510,8 +519,8 @@
           <summary>When lines and positions were last practiced</summary>
           <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> in the weak and frequent tables (Show table), and used by the Practice page's <b>All (spaced repetition)</b>.</p>
           <ul>
-            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you stop with <b>End line here</b> or <b>End practice</b>, and single positions don't count for the line; they only count for the moves you played.</li>
-            <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press End line here (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
+            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you skip or stop with <b>End practice</b>, and single positions, don't count for the line; they only count for the moves you played.</li>
+            <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press Skip or End practice (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
             <li>Times are kept only from now on, are included in backups, and are dropped for lines and moves that are no longer in your studies after Update studies.</li>
           </ul>
         </details>
@@ -537,7 +546,7 @@
         </details>
       </div>
 
-      <div class="card">
+      <div class="card" id="help-tables">
         <h2>Weak and frequent tables</h2>
         <p>On the Practice page, <b>Weak and frequent</b> practises your most frequent weak lines or positions, from the chapters ticked on the Studies page; <b>Show table</b> lists them.</p>
         <ul>
@@ -548,7 +557,7 @@
         </ul>
       </div>
 
-      <div class="card">
+      <div class="card" id="help-chosen">
         <h2>How practice is chosen</h2>
         <ul>
           <li><b>Weak and frequent</b> picks from its table at random.</li>
@@ -566,10 +575,10 @@
         </details>
       </div>
 
-      <div class="card">
+      <div class="card" id="help-options">
         <h2>Options and backups</h2>
         <ul>
-          <li><b>Options</b>: error penalties and what counts as a masters move, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
+          <li><b>Options</b>: error penalties and what counts as a masters move, move sounds, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move statistics and masters statistics, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
@@ -588,15 +597,23 @@
           <select id="pen-alternative" class="pen-select"></select>
           <label for="pen-masters">Masters move <span class="muted">(one of the top master moves, played 10% of the time or more)</span></label>
           <select id="pen-masters" class="pen-select"></select>
-          <label for="masters-top">What counts as a masters move</label>
-          <select id="masters-top">
-            <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
-          </select>
           <label for="pen-error">Error <span class="muted">(any other wrong move, or an alternative your study marks ?, ?? or ?!)</span></label>
           <select id="pen-error" class="pen-select"></select>
           <label for="pen-hint">Hint <span class="muted">(and Show correct move)</span></label>
           <select id="pen-hint" class="pen-select"></select>
         </div>
+        <h3>Masters moves</h3>
+        <div class="penalties">
+          <label for="masters-top">What counts as a masters move <span class="muted">(among this many of the most played master moves, and played 10% of the time or more)</span></label>
+          <select id="masters-top">
+            <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Sounds</h2>
+        <label class="option-check"><input type="checkbox" id="sounds-check"> Move sounds <span class="muted">(also the bell under the board)</span></label>
       </div>
 
       <div class="card">
@@ -607,7 +624,7 @@
       </div>
 
       <div class="card">
-        <h2>Move frequency</h2>
+        <h2>Lichess move statistics</h2>
         <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move, and in the Masters database (over-the-board games between players rated 2200+ FIDE), saved for later use. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
         <p id="opt-stats-info" class="muted"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
@@ -804,7 +821,7 @@ const saveSettings = () => store.set('settings', settings);
 const openStudies = new Set();       // studies whose chapters are listed
 const openChapters = new Set();      // chapters whose move tree is shown
 const openBranches = new Set();      // tree branch points whose variations are open ("chapter key|moves before")
-const allVariationsOpen = new Set(); // chapters whose all-variations triangle is down
+const allVariationsOpen = new Set(); // chapters with all their variations shown (by clicking "3 lines")
 let showHiddenStudies = false;       // the top eye: hidden studies are listed (in grey)
 
 // ---------- Page helpers ----------
@@ -866,21 +883,27 @@ function placePopup(pop, el) {
   pop.style.top = (r.bottom + 6 + hgt <= window.innerHeight ? r.bottom + 6 : Math.max(8, r.top - hgt - 6)) + 'px';
 }
 
-// A small hover pop-up that appears immediately, instead of the browser's own tooltip, whose delay
-// can't be set. (All the app's pop-ups appear immediately.) Returns the element, for use inline.
+// A small hover pop-up, instead of the browser's own tooltip, whose delay can't be set. It appears
+// immediately, or after delay ms (for names that are clicked to open things, so it doesn't cover
+// what opens). After a click none appears until the mouse moves away from where it clicked (the
+// page may redraw under the mouse). Returns the element, for use inline.
 let quickTipTimer = null;
+let lastClick = null; // { x, y } of the last click
+document.addEventListener('click', e => { hideQuickTip(); lastClick = { x: e.clientX, y: e.clientY }; }, true);
+document.addEventListener('mousemove', e => { if (lastClick && Math.hypot(e.clientX - lastClick.x, e.clientY - lastClick.y) > 4) lastClick = null; }, { passive: true });
 
-function quickTip(el, text) {
+function quickTip(el, text, delay = 0) {
   if (!text) return el;
   el.addEventListener('mouseenter', () => {
     clearTimeout(quickTipTimer);
+    if (lastClick) return;
     quickTipTimer = setTimeout(() => {
       let tip = $('quick-tip');
       if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
       tip.textContent = text;
       tip.classList.remove('hidden');
       placePopup(tip, el);
-    }, 0);
+    }, delay);
   });
   el.addEventListener('mouseleave', hideQuickTip);
   return el;
@@ -1407,8 +1430,8 @@ function studyRow(study, isHidden) {
     scoreElement(averageScore(study.chapters)));
 }
 
-// A chapter's row: two triangles (its moves as a tree, then all its variations at once), its
-// checkbox, its name (the opening on hover), the side you play, its counts and score.
+// A chapter's row: a triangle (its moves as a tree), its checkbox, its name (the opening on hover),
+// the side you play, its counts (the number of lines shows or hides all its variations) and score.
 function chapterRow(ch, studyHidden) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
@@ -1424,16 +1447,14 @@ function chapterRow(ch, studyHidden) {
     renderStudies();
   };
   return element('div', { class: 'row chapter-row' },
+    element('span', { class: 'toggle-space' }), // indented under its study
     lines.length
       ? element('button', { class: 'toggle', title: movesOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(movesOpen), onclick: toggleMoves }, movesOpen ? '▾' : '▸')
-      : element('span', { class: 'toggle-space' }),
-    branches.length
-      ? element('button', { class: 'toggle', title: allOpen ? 'Hide all variations' : 'Show all variations', 'aria-expanded': String(allOpen), onclick: toggleVariations }, allOpen ? '▾' : '▸')
       : element('span', { class: 'toggle-space' }),
     element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
       onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
     // The side you play: a small white or black circle right after the chapter name.
-    element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed)),
+    element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
       lines.length ? chapterCounts(lines.length, alternativeCount(ch), branches.length ? toggleVariations : null) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
@@ -1817,9 +1838,8 @@ function updateBoard(lastMove) {
   // After "Show correct move" the arrow stays and the button is disabled until the move is played.
   const hinted = hintStep() > 0;
   $('hint-btn').textContent = hinted ? 'Show correct move' : 'Hint';
-  $('hint-btn').title = hinted ? 'Shows the correct move with an arrow; you then play it. Counts as a miss.' : 'Circles the piece to move. Counts as a miss.';
+  $('hint-btn').title = hinted ? 'Shows the correct move with an arrow; you then play it. Counts as an error.' : 'Circles the piece to move. Counts as an error.';
   $('hint-btn').disabled = !yourTurn || hintStep() >= 2;
-  $('end-btn').disabled = !yourTurn;
   renderMoveList();
 }
 
@@ -1843,7 +1863,7 @@ function choosePromotion(color) {
 // ---------- Practice: playing lines ----------
 
 // What's being practised, chosen on the Practice page: { kind: 'lines' or 'positions', isAll,
-// items: [{ line, i }], previous (the item practised last) }, where i is the move of yours to test
+// items: [{ line, i }], previous (the item practised last), done (how many finished, not skipped) }, where i is the move of yours to test
 // as a single position, or null to play the whole line from move 1. "Weak and frequent" lists its
 // table and picks at random; "All (spaced repetition)" lists everything and picks by priority (see
 // Spaced repetition). Null when nothing is being practised.
@@ -1882,8 +1902,7 @@ function showPracticeIdle() {
   $('practice-title').textContent = '';
   $('practice-position').textContent = '';
   $('practice-side').textContent = '';
-  $('practice-moves').replaceChildren(element('span', { class: 'none' }, 'No moves yet.'));
-  for (const id of ['view-first', 'view-prev', 'view-next', 'view-last']) $(id).disabled = true;
+  $('practice-line').classList.add('hidden'); // the move list and its buttons, until a line starts
   setStatus('');
   $('practice-status').classList.add('hidden'); // the chooser says what to do; setStatus shows it again when a line starts
   renderPracticeChooser();
@@ -1920,8 +1939,8 @@ function renderPracticeChooser() {
     const weak = p.mode === 'weak';
     $(`chooser-${kind}-count`).value = String(p.count);
     $(`chooser-${kind}-max`).value = String(p.maxAccuracy);
-    $(`chooser-${kind}-count`).disabled = $(`chooser-${kind}-max`).disabled = !weak;
-    $(`chooser-${kind}-count`).parentElement.classList.toggle('disabled', !weak);
+    $(`chooser-${kind}-count`).parentElement.classList.toggle('hidden', !weak); // the table's choices, and Show table,
+    $(`chooser-${kind}-show`).classList.toggle('hidden', !weak);                // only for Weak and frequent
     $(`chooser-${kind}-main`).checked = p.mainLinesOnly;
     const { items, note } = chooserItems(kind);
     $(`chooser-${kind}-btn`).disabled = !items.length;
@@ -1967,7 +1986,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('table-
 // another): picked at random, or by priority when isAll.
 function startSession(kind, items, isAll = false) {
   if (!items.length) return;
-  session = { kind, items, isAll, previous: null };
+  session = { kind, items, isAll, previous: null, done: 0 };
   hideBanner();
   showScreen('practice');
   ensureBoard();
@@ -1983,20 +2002,25 @@ function nextFromSession() {
   startLine(pick.line, pick.i);
 }
 
+// The line under the chapter name: what's being practised (the board's orientation already shows
+// your side), the position for a single position, and how many are done, e.g. "All lines · 7 done".
+function updatePracticeSide() {
+  const { line, singleAt } = practice;
+  const from = session ? `${session.isAll ? 'All' : 'Weak and frequent'} ${session.kind}` : singleAt != null ? 'Single position' : '';
+  $('practice-side').textContent = (singleAt != null ? `${from}: ${positionName(line, singleAt)}` : from)
+    + (session?.done ? ` · ${session.done} done` : '');
+}
+
 // Starts a line from move 1, or with singleAt (the index of one of your moves), tests just that move
 // as a single position.
 function startLine(line, singleAt = null) {
-  const single = singleAt != null;
   practice = { line, singleAt, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null };
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
-  // The board's orientation already shows the user's side; this line says what's being practised.
-  const from = session ? `${session.isAll ? 'All' : 'Weak and frequent'} ${session.kind}` : single ? 'Single position' : '';
-  $('practice-side').textContent = single ? `${from}: ${positionName(line, singleAt)}` : from;
+  $('practice-line').classList.remove('hidden');
+  updatePracticeSide();
   $('next-btn').classList.add('hidden');
-  $('hint-btn').classList.remove('hidden');
-  $('end-btn').classList.toggle('hidden', single);
-  $('end-practice-btn').classList.remove('hidden');
+  for (const id of ['hint-btn', 'skip-btn', 'end-practice-btn']) $(id).classList.remove('hidden');
   hideCommentPopup();
   updateNames();
   setShapes([]);
@@ -2165,17 +2189,13 @@ $('hint-btn').addEventListener('click', () => {
   updateBoard();
 });
 
-// "End line here": stop this play-through now (one-off; next time the line is played in full).
-// The moves played so far count; the move you're on counts as wrong only if you already had
-// a wrong try or a hint on it.
-$('end-btn').addEventListener('click', () => {
-  if (!practice || practice.busy || practice.singleAt != null || practice.viewing != null) return;
-  const expected = practice.line.moves[practice.movesPlayed];
-  if (!expected?.isYours) return;
+// "Skip": on to the next line or position. The moves answered so far count, and the move you're on
+// as for End practice; the line isn't counted as played through.
+$('skip-btn').addEventListener('click', () => {
+  if (!practice || practice.isOver) return;
   addAttemptOnCurrentMove();
-  practice.endedEarly = true;
-  setShapes([]);
-  endLine();
+  saveAttempts();
+  nextLine();
 });
 
 // The move you're on, when a line is stopped on it: it counts (as an error) only if you'd already
@@ -2186,8 +2206,8 @@ function addAttemptOnCurrentMove() {
 }
 
 // "End practice": stop the session and go back to the chooser. A line (or single position) stopped
-// part way records the moves answered so far, and the move you're on as for End line here; it isn't
-// a play-through.
+// part way records the moves answered so far, and the move you're on (see above); it isn't a
+// play-through.
 $('end-practice-btn').addEventListener('click', () => {
   if (practice && !practice.isOver) {
     addAttemptOnCurrentMove();
@@ -2197,8 +2217,9 @@ $('end-practice-btn').addEventListener('click', () => {
   showPracticeIdle();
 });
 
-// The buttons under the board: Hint and End line here during a line, Next line/position after it.
-function hideLineButtons() { $('hint-btn').classList.add('hidden'); $('end-btn').classList.add('hidden'); }
+// The buttons under the board: Hint and Skip during a line, Next line/position after it; End practice
+// throughout.
+function hideLineButtons() { $('hint-btn').classList.add('hidden'); $('skip-btn').classList.add('hidden'); }
 
 function showNextButton(label) {
   const b = $('next-btn');
@@ -2210,23 +2231,19 @@ function showNextButton(label) {
 function endLine() {
   const { line } = practice;
   saveAttempts();
-  if (!practice.endedEarly) { // played all the way through, from move 1 to the end
-    // The line's time is when its last move was attempted.
-    const at = practice.attempts[practice.attempts.length - 1]?.at ?? Date.now();
-    history.lines[line.key] = [...history.lines[line.key] || [], at].slice(-HISTORY_LENGTH);
-    saveHistory();
-  }
+  // Played all the way through, from move 1 to the end. The line's time is when its last move was attempted.
+  const at = practice.attempts[practice.attempts.length - 1]?.at ?? Date.now();
+  history.lines[line.key] = [...history.lines[line.key] || [], at].slice(-HISTORY_LENGTH);
+  saveHistory();
+  if (session) { session.done++; updatePracticeSide(); }
   practice.isOver = true; // the move list gets hover boards
 
   practice.busy = true;
   updateBoard();
-  if (practice.endedEarly) setStatus('Line ended early.');
-  else {
-    setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
-    // The same, over the board where you're looking, fading away after a few seconds.
-    showBoardNotice([element('div', { class: 'notice-title' }, 'Line complete'), ...lineSummary(),
-      element('button', { class: 'primary', onclick: nextLine }, 'Next line')], 3500);
-  }
+  setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
+  // The same, over the board where you're looking, fading away after a few seconds.
+  showBoardNotice([element('div', { class: 'notice-title' }, 'Line complete'), ...lineSummary(),
+    element('button', { class: 'primary', onclick: nextLine }, 'Next line')], 3500);
   hideLineButtons();
   showNextButton('Next line');
 }
@@ -2268,21 +2285,16 @@ function nextLine() {
 
 $('next-btn').addEventListener('click', nextLine);
 
-// End of a single position: recorded as one try of that move in its line. A right answer
-// moves on after a second; after a reveal, wait for "Next position" so the move can be studied.
+// End of a single position: recorded as one try of that move in its line. As at the end of a line,
+// the app waits for "Next position" (or Enter), so the move can be looked at.
 function endSinglePosition() {
   saveAttempts();
   practice.isOver = true; // the move list gets hover boards
   practice.busy = true;
   updateBoard();
   hideLineButtons();
-  const r = practice.attempts[practice.attempts.length - 1];
-  if (r && !r.tried.includes('show')) { // after Show correct move, wait so the move can be studied
-    setStatus('Correct. Next position…');
-    pause(1000).then(stillHere => { if (stillHere) nextLine(); });
-  } else {
-    showNextButton('Next position');
-  }
+  if (session) { session.done++; updatePracticeSide(); }
+  showNextButton('Next position');
 }
 
 function leavePractice() {
@@ -2368,7 +2380,6 @@ function viewAfterMoves(k) {
   });
   board.setAutoShapes([]);
   $('hint-btn').disabled = true;
-  $('end-btn').disabled = true;
   renderMoveList();
 }
 
@@ -2445,10 +2456,14 @@ function setSounds(on) {
   if (settings.sounds) playSound('Move'); // a quick sample
 }
 
-// The bell under the board shows whether sounds are on.
-const updateSoundButton = () => setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
+// The bell under the board, and the Options page's checkbox, show whether sounds are on.
+function updateSoundButton() {
+  setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
+  $('sounds-check').checked = settings.sounds;
+}
 
 $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
+$('sounds-check').addEventListener('change', e => setSounds(e.target.checked));
 
 // ---------- Hover board (the small board shown when hovering over a move) ----------
 // Your moves: the position before the move, a green arrow for the correct move and red arrows

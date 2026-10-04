@@ -285,28 +285,29 @@ async function runPractice(app) {
   check('practice: the end-of-line panel over the board', document.getElementById('board-notice').textContent, 'Line completeNo errors.100% line accuracyNext line');
   check('practice: second play-through recorded', app.history.lines[main.key]?.length, 2);
 
-  // 3. Hint, Show correct move, then End line here.
+  // 3. Hint, Show correct move, then Skip (with nothing else to practise: back to the chooser).
   app.startLine(main);
   await until(yourTurn, 'your turn');
   document.getElementById('hint-btn').click();
   document.getElementById('hint-btn').click();
   check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
-  document.getElementById('end-btn').click();
-  check('practice: ended early', status(), 'Line ended early.');
+  document.getElementById('skip-btn').click();
+  check('practice: Skip', [app.practice, document.getElementById('practice-chooser').classList.contains('hidden'), document.getElementById('practice-line').classList.contains('hidden')], [null, false, true]);
   const lastE4 = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].at(-1);
   check('practice: the move on was recorded', [lastE4.tried, lastE4.points, typeof lastE4.at], [['hint', 'show'], 0, 'number']);
   check('practice: points and the line\'s times', [app.lastTriedAt('AAAAAAAA/BBBBBBBB|e4') === lastE4.at, typeof app.lastPlayedAt(main.key)], [true, 'number']);
   check('practice: points aren\'t stored', Object.keys(app.storedHistory().moves['AAAAAAAA/BBBBBBBB|e4'].at(-1)).sort(), ['at', 'tried']);
-  check('practice: an ended line is not a play-through', app.history.lines[main.key]?.length, 2);
+  check('practice: a skipped line is not a play-through', app.history.lines[main.key]?.length, 2);
 
-  // 4. Single positions from a list: a right answer moves on to the next position by itself.
+  // 4. Single positions from a list: after the right answer, Next position.
   app.startSession('positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
   check('practice: single position from the list', [p().singleAt != null, [8, 10].includes(p().singleAt), p().movesPlayed === p().singleAt,
     document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: ')], [true, true, true, true]);
   await playRest();
-  check('practice: single position answered', status(), 'Correct. Next position…');
-  await until(() => p() !== first, 'the next position', 3000);
+  check('practice: single position answered', [status(), document.getElementById('next-btn').textContent, p() === first,
+    document.getElementById('practice-side').textContent.endsWith(' · 1 done')], ['Correct.', 'Next position', true, true]);
+  document.getElementById('next-btn').click();
   check('practice: the next position is the other one', [p().singleAt != null, p().singleAt !== first.singleAt], [true, true]);
   check('practice: a single position is not a play-through', app.history.lines[main.key]?.length, 2);
   app.endSession();
@@ -387,11 +388,11 @@ function runPositions(app) {
   app.startSession('lines', app.allLineItems(), true);
   check('spaced repetition: practising all lines, from move 1', [app.practice.singleAt, app.practice.movesPlayed <= 1, document.getElementById('practice-side').textContent], [null, true, 'All lines']);
   app.endSession();
-  // The idle Practice page's chooser: All, or the tables' Weak and frequent.
+  // The idle Practice page's chooser: All, or the tables' Weak and frequent (whose choices only show then).
   const chooser = settings => {
     practiceSettings(settings);
     app.renderPracticeChooser();
-    return ['lines', 'positions'].map(n => [document.getElementById(`chooser-${n}-btn`).disabled, document.getElementById(`chooser-${n}-count`).disabled]);
+    return ['lines', 'positions'].map(n => [document.getElementById(`chooser-${n}-btn`).disabled, document.getElementById(`chooser-${n}-count`).parentElement.classList.contains('hidden')]);
   };
   check('chooser: All', chooser({}), [[false, true], [false, true]]);
   check('chooser: Weak and frequent', chooser({ lines: { mode: 'weak' }, positions: { mode: 'weak' } }), [[false, false], [false, false]]);
