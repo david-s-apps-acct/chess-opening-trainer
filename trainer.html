@@ -1619,8 +1619,10 @@ function chosenChanged() {
 function renderSavedSelections() {
   const saved = chosenSaved();
   const changed = chosenChanged();
+  // The open list shows only the selections. With none chosen, the closed drop-down shows a hint that
+  // isn't in the list.
   $('saved-select').replaceChildren(
-    element('option', { value: '' }, savedSelections.length ? 'Choose a saved selection' : 'No saved selections yet'),
+    ...saved ? [] : [element('option', { value: '', hidden: true, disabled: true }, savedSelections.length ? 'None chosen' : 'No saved selections yet')],
     ...[...savedSelections].sort((a, b) => a.name.localeCompare(b.name)).map(s =>
       element('option', { value: s.name }, s === saved && changed ? `${s.name} (changed)` : s.name)));
   $('saved-select').value = saved ? saved.name : '';

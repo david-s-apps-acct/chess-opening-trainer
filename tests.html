@@ -430,7 +430,7 @@ function runSavedSelections(app) {
   const realConfirm = window.confirm;
   window.confirm = () => true;
   const nameIt = name => { $('saved-name').value = name; $('saved-name-form').requestSubmit(); };
-  const options = () => [...$('saved-select').options].map(o => o.textContent);
+  const options = () => [...$('saved-select').options].filter(o => !o.hidden).map(o => o.textContent);
   app.setSavedSelections([]);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   app.renderSavedSelections();
@@ -445,9 +445,9 @@ function runSavedSelections(app) {
   $('saved-name-cancel').click();
   app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
   app.renderSavedSelections();
-  check('saved selections: changed ticks', [options(), $('saved-update-btn').disabled], [['Choose a saved selection', 'Italian (changed)'], false]);
+  check('saved selections: changed ticks', [options(), $('saved-update-btn').disabled], [['Italian (changed)'], false]);
   $('saved-update-btn').click();
-  check('saved selections: Update', [app.savedSelections[0].chapters.length, options()[1], $('saved-update-btn').disabled], [2, 'Italian', true]);
+  check('saved selections: Update', [app.savedSelections[0].chapters.length, options()[0], $('saved-update-btn').disabled], [2, 'Italian', true]);
   $('saved-rename-btn').click();
   nameIt('Both and a much longer name than sixty characters, which is now allowed without any limit');
   check('saved selections: long names', app.savedSelections[0].name.length > 60, true);
@@ -459,7 +459,7 @@ function runSavedSelections(app) {
   $('saved-select').dispatchEvent(new Event('change'));
   check('saved selections: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
   $('saved-delete-btn').click();
-  check('saved selections: Delete keeps the ticks', [app.savedSelections.length, app.selection.length, options()], [0, 2, ['No saved selections yet']]);
+  check('saved selections: Delete keeps the ticks', [app.savedSelections.length, app.selection.length, options()], [0, 2, []]);
   $('saved-edit-close').click();
   check('saved selections: × closes the edit panel', $('saved-edit').classList.contains('hidden'), true);
   window.confirm = realConfirm;
