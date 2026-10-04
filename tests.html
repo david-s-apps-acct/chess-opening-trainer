@@ -37,6 +37,7 @@ export const app = {
   get presets() { return presets; },
   setPresets(v) { presets = v; chosenPresetName = null; },
   get selection() { return [...selection]; },
+  setHidden(ids) { hiddenStudies = new Set(ids); },
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
   renderChapterTree,
   positionName, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
@@ -466,6 +467,22 @@ function runPresets(app) {
   $('preset-delete-btn').click();
   check('presets: Delete keeps the ticks; "No presets yet" in grey', [app.presets.length, app.selection.length, options(), $('preset-select').classList.contains('changed'), $('preset-edit').classList.contains('hidden')], [0, 2, [], true, true]);
   $('preset-edit-btn').click();
+  // A preset's chapters in a hidden study are kept by Update (they can't be ticked).
+  const library = structuredClone(LIBRARY);
+  library.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: 'EEEEEEEE/FFFFFFFF', id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
+  app.setLibrary(library);
+  app.setPresets([{ name: 'Mixed', chapters: ['AAAAAAAA/BBBBBBBB', 'EEEEEEEE/FFFFFFFF'] }]);
+  app.setSelection([]);
+  app.renderPresets();
+  $('preset-select').value = 'Mixed';
+  $('preset-select').dispatchEvent(new Event('change'));
+  app.setHidden(['EEEEEEEE']);
+  app.setSelection(['AAAAAAAA/CCCCCCCC']);
+  app.renderPresets();
+  $('preset-update-btn').click();
+  check('presets: Update keeps chapters in hidden studies', [...app.presets[0].chapters].sort(), ['AAAAAAAA/CCCCCCCC', 'EEEEEEEE/FFFFFFFF']);
+  app.setHidden([]);
+  app.setLibrary(structuredClone(LIBRARY));
   $('preset-edit-close').click();
   check('presets: × closes the edit panel', $('preset-edit').classList.contains('hidden'), true);
   window.confirm = realConfirm;
