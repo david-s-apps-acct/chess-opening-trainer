@@ -432,7 +432,7 @@ A separate Options page, opened from the "Options" button in the header. (It was
   - **The downloaded Lichess move statistics** are stored as "move statistics" (they were "positions", which now means the user's positions to practise).
   - The data already in the browser is converted once, automatically, when the app opens; the downloaded statistics are carried over, so nothing has to be downloaded again. Backups are version 5.
   - Code that only handled older data (earlier storage layouts, the old evaluations, the Weaknesses page's setting names) was removed, and the Practice page's lines and positions share one set of table and chooser code.
-- *Claude's choice, for the user to accept or reject:* the one-time conversion stays in the code until it has run on the user's browser, and can then be removed.
+- *Claude's choice, accepted by the user:* the one-time conversion stays in the code until it has run on the user's browser, and can then be removed.
 
 ## Technology
 
