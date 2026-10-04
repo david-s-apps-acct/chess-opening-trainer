@@ -434,6 +434,8 @@ function runSavedSelections(app) {
   app.setSavedSelections([]);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   app.renderSavedSelections();
+  $('saved-edit-btn').click();
+  check('saved selections: ✎ opens the edit panel', [$('saved-edit').classList.contains('hidden'), $('saved-edit-btn').getAttribute('aria-expanded')], [false, 'true']);
   $('saved-new-btn').click();
   nameIt('Italian');
   check('saved selections: Save as new', [app.savedSelections, $('saved-select').value], [[{ name: 'Italian', chapters: ['AAAAAAAA/BBBBBBBB'] }], 'Italian']);
@@ -447,6 +449,9 @@ function runSavedSelections(app) {
   $('saved-update-btn').click();
   check('saved selections: Update', [app.savedSelections[0].chapters.length, options()[1], $('saved-update-btn').disabled], [2, 'Italian', true]);
   $('saved-rename-btn').click();
+  nameIt('Both and a much longer name than sixty characters, which is now allowed without any limit');
+  check('saved selections: long names', app.savedSelections[0].name.length > 60, true);
+  $('saved-rename-btn').click();
   nameIt('Both');
   check('saved selections: Rename', [app.savedSelections[0].name, $('saved-select').value], ['Both', 'Both']);
   app.setSelection([]);
@@ -455,6 +460,8 @@ function runSavedSelections(app) {
   check('saved selections: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
   $('saved-delete-btn').click();
   check('saved selections: Delete keeps the ticks', [app.savedSelections.length, app.selection.length, options()], [0, 2, ['No saved selections yet']]);
+  $('saved-edit-close').click();
+  check('saved selections: × closes the edit panel', $('saved-edit').classList.contains('hidden'), true);
   window.confirm = realConfirm;
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
 }
