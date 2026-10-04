@@ -262,14 +262,6 @@
   #overlay-choices { font-size: 13px; margin-top: 4px; }
   #overlay-note:empty { display: none; }
 
-  /* A short message near the top of the page that fades away (e.g. after saving a selection). */
-  .toast {
-    position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 60;
-    max-width: min(560px, calc(100vw - 32px)); padding: 10px 18px; border-radius: 8px;
-    background: rgba(22, 21, 18, .92); color: var(--text-strong); box-shadow: 0 4px 16px rgba(0,0,0,.6);
-    transition: opacity .6s ease;
-  }
-  .toast.fading { opacity: 0; }
   /* A message over the board that fades away: the end-of-line panel, or a short note. */
   .board-notice {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 9;
@@ -867,30 +859,6 @@ function showScreen(name) {
     $('nav-' + b).classList.toggle('current', b === current);
     if (b === current) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
   }
-}
-
-// A short message near the top of the page that fades away after about 3 seconds (or when clicked).
-let toastTimer = null;
-
-function showToast(text, ms = 3000) {
-  let toast = $('toast');
-  if (!toast) {
-    toast = element('div', { id: 'toast', class: 'toast hidden', role: 'status', 'aria-live': 'polite', onclick: () => hideToast() });
-    document.body.append(toast);
-  }
-  hideBanner(); // no older message alongside it
-  clearTimeout(toastTimer);
-  toast.textContent = text;
-  toast.classList.remove('hidden', 'fading');
-  toastTimer = setTimeout(hideToast, ms);
-}
-
-function hideToast() {
-  const toast = $('toast');
-  if (!toast) return;
-  clearTimeout(toastTimer);
-  toast.classList.add('fading');
-  toastTimer = setTimeout(() => toast.classList.add('hidden'), 600); // after the fade
 }
 
 // Places a pop-up below el, or above it if there's no room, kept inside the window.
@@ -1659,7 +1627,6 @@ $('saved-update-btn').addEventListener('click', () => {
   saveSavedSelections();
   showSavedEdit(false); // done: the edit buttons go away again
   renderSavedSelections();
-  showToast(`Updated ${saved.name}: ${plural(saved.chapters.length, 'chapter')}.`);
 });
 
 $('saved-delete-btn').addEventListener('click', () => {
@@ -1670,7 +1637,6 @@ $('saved-delete-btn').addEventListener('click', () => {
   saveSavedSelections();
   showSavedEdit(false);
   renderSavedSelections();
-  showToast(`Deleted ${saved.name}.`);
 });
 
 // The name box, for Save as new and Rename.
@@ -1716,13 +1682,8 @@ $('saved-name-form').addEventListener('submit', e => {
     $('saved-name-error').textContent = `There's already a preset called ${name}.`;
     return;
   }
-  if (renaming) {
-    renaming.name = name;
-    showToast(`Renamed to ${name}.`);
-  } else {
-    savedSelections.push({ name, chapters: [...selection] });
-    showToast(`Saved ${plural(selection.size, 'chapter')} as ${name}.`);
-  }
+  if (renaming) renaming.name = name;
+  else savedSelections.push({ name, chapters: [...selection] });
   chosenSelectionName = name;
   saveSavedSelections();
   showSavedEdit(false);
