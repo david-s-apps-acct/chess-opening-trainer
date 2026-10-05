@@ -262,9 +262,9 @@
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .chooser-frame { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--muted); border-radius: 4px; padding: 10px 12px; }
   .weights h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-  /* A small round "?" that shows an explanation when clicked. */
-  .query-btn { width: 18px; height: 18px; padding: 0; border: 1px solid var(--muted); border-radius: 50%; background: none; box-shadow: none; color: var(--muted); font-size: 11px; font-weight: 600; line-height: 16px; }
-  .query-btn:hover:not(:disabled), .query-btn[aria-expanded=true] { background: none; color: var(--accent); border-color: var(--accent); }
+  /* A small circled "?" icon that shows an explanation when clicked; centred on the heading's text. */
+  .query-btn { display: inline-flex; padding: 0; border: none; background: none; box-shadow: none; color: var(--muted); line-height: 0; }
+  .query-btn:hover:not(:disabled), .query-btn[aria-expanded=true] { background: none; color: var(--accent); }
   .weights p { margin: 0; }
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -423,7 +423,7 @@
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
           </div>
           <div id="weights-panel" class="chooser-frame weights">
-            <h3>Spaced repetition focus <button id="weights-help" class="query-btn" aria-label="What the sliders do" aria-expanded="false">?</button></h3>
+            <h3>Spaced repetition focus <button id="weights-help" class="query-btn" aria-label="What the sliders do" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 17v.01"/><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/></svg></button></h3>
             <div class="weight-rows">
             <label for="weight-frequency">Frequency</label><input type="range" id="weight-frequency" min="0" max="100" step="5"><output id="weight-frequency-value" for="weight-frequency"></output>
             <label for="weight-accuracy">Accuracy</label><input type="range" id="weight-accuracy" min="0" max="100" step="5"><output id="weight-accuracy-value" for="weight-accuracy"></output>
