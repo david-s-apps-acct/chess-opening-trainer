@@ -51,10 +51,10 @@ export const app = {
   setSelection(keys) { selection = new Set(keys); },
   get practice() { return practice; },
   get history() { return history; },
-  startLine(line) { ensureBoard(); return startLine(line); },
-  startSession, renderPracticeChooser, priorities, priorityOf, priorityParts, allLineItems, allPositionItems,
+  startLine(line) { startSession('lines', [{ line, i: null }]); }, // practising just this line
+  startSession, renderChooser, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
-  endSession() { session = null; },
+  endSession() { endPractice(); },
   onYourMove,
 };`;
 
@@ -156,9 +156,10 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5,
-    practice: { kind: 'lines', lines: { mainLinesOnly: false }, positions: { mainLinesOnly: false } }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } });
-  check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9, penalties: { alternative: 11 } }).mastersTop,
-    app.checkedSettings({ weights: { frequency: 150, accuracy: 20, untried: 'x' } }).weights], [5, { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 }]);
+    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
+  check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9 }).mastersTop, app.checkedSettings({ penalties: { alternative: 11, hint: 4 } }).penalties,
+    app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
+    [5, { alternative: 2, masters: 2, error: 5, hint: 4 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
 
   // Masters moves: top N and 10% or more
   const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
@@ -287,14 +288,16 @@ async function runPractice(app) {
   check('practice: the end-of-line panel over the board', document.getElementById('board-notice').textContent, 'Line completeNo errors.100% line accuracyNext line');
   check('practice: second play-through recorded', app.history.lines[main.key]?.length, 2);
 
-  // 3. Hint, Show correct move, then Skip (with nothing else to practise: back to the chooser).
+  // 3. Hint, Show correct move, then Skip (on to the next: the same line, the only one).
   app.startLine(main);
+  const skipped = p();
   await until(yourTurn, 'your turn');
   document.getElementById('hint-btn').click();
   document.getElementById('hint-btn').click();
   check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
   document.getElementById('skip-btn').click();
-  check('practice: Skip', [app.practice, document.getElementById('practice-chooser').classList.contains('hidden'), document.getElementById('practice-line').classList.contains('hidden')], [null, false, true]);
+  check('practice: Skip goes on to the next', [p() !== skipped, p().line === main, document.getElementById('practice-side').textContent], [true, true, 'Lines']);
+  app.endSession();
   const lastE4 = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].at(-1);
   check('practice: the move on was recorded', [lastE4.tried, lastE4.points, typeof lastE4.at], [['hint', 'show'], 0, 'number']);
   check('practice: points and the line\'s times', [app.lastTriedAt('AAAAAAAA/BBBBBBBB|e4') === lastE4.at, typeof app.lastPlayedAt(main.key)], [true, 'number']);
@@ -352,7 +355,7 @@ function runPositions(app) {
   app.setMoveStats(positions);
   app.setHistory({ moves, lines: { [lines[0].key]: [Date.now()] } });
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
-  const mainLinesOnly = (lines, positions) => app.setSettings({ practice: { lines: { mainLinesOnly: lines }, positions: { mainLinesOnly: positions } } });
+  const mainLinesOnly = (lines, positions) => app.setSettings({ practice: { mainLinesOnly: { lines, positions } } });
   // The priority and its sliders.
   const parts = [{ frequency: 1, weakness: 3, due: 3, untried: false }, { frequency: 0.2, weakness: 1, due: 0.1, untried: false }, { frequency: 0.6, untried: true }];
   const weights = w => ({ frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, ...w });
@@ -361,23 +364,23 @@ function runPositions(app) {
   check('spaced repetition: a slider at 0% ignores its part', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 0, lastPlayed: 0 }))), [1, 1, 6]);
   check('spaced repetition: Untried at 0% leaves untried ones out, at 100% they come first', [app.priorityOf(parts, weights({ untried: 0 }))[2], rounded(app.priorityOf(parts, weights({ untried: 100 })))], [0, [0, 0, 0.6]]);
   check('spaced repetition: a slider at 100% dominates', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 100, lastPlayed: 0, untried: 0 }))), [729, 1, 0]);
-  const positionItems = app.allPositionItems();
-  check('spaced repetition: the parts of a position tried once at 50%, time unknown', (({ accuracy, weakness, due, untried }) => [accuracy, weakness, due, untried])(app.priorityParts(positionItems)[0]), [0.5, 2, 3, false]);
-  check('spaced repetition: all positions, including untried ones', [positionItems.length, (mainLinesOnly(false, true), app.allPositionItems().length)], [3, 2]);
-  check('spaced repetition: all lines', [(app.setSettings({}), app.allLineItems().length), (mainLinesOnly(true, false), app.allLineItems().length)], [2, 1]);
+  const positionItems = app.practiceItems('positions');
+  check('spaced repetition: the parts of a position tried once at 50%, time unknown', (({ accuracy, weakness, due, untried }) => [accuracy, weakness, due, untried])(app.itemFacts(positionItems)[0]), [0.5, 2, 3, false]);
+  check('spaced repetition: all positions, including untried ones', [positionItems.length, (mainLinesOnly(false, true), app.practiceItems('positions').length)], [3, 2]);
+  check('spaced repetition: all lines', [(app.setSettings({}), app.practiceItems('lines').length), (mainLinesOnly(true, false), app.practiceItems('lines').length)], [2, 1]);
   app.setSettings({});
-  const linePriorities = app.priorities(app.allLineItems());
+  const linePriorities = app.priorities(app.practiceItems('lines'));
   check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
   const positionPriorities = app.priorities(positionItems);
   check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === 0));
   // Test probabilities.
   const shown = kind => {
     $(`chooser-kind-${kind}`).click();
-    $('chooser-show').click();
-    $('overlay-close').click();
-    return [...document.querySelectorAll('#overlay-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
+    $('probabilities-btn').click();
+    $('probabilities-close').click();
+    return [...document.querySelectorAll('#probabilities-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
   };
-  app.renderPracticeChooser();
+  app.renderChooser();
   check('test probabilities: positions', [shown('positions').length, (mainLinesOnly(false, true), shown('positions').length)], [3, 2]);
   app.setSettings({});
   const lineRows = shown('lines');
@@ -385,17 +388,17 @@ function runPositions(app) {
     [['Test Study · Side line1. e4 f6 2. d4', '50%', '–'], ['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today']]);
   check('test probabilities: chances to one decimal, adding up to 100%', [lineRows.every(r => /^\d+\.\d%$/.test(r[4])), Math.round(lineRows.reduce((sum, r) => sum + parseFloat(r[4]), 0))], [true, 100]);
   $('chooser-kind-positions').click();
-  $('chooser-show').click();
-  check('test probabilities: the title and settings', [$('table-overlay').classList.contains('hidden'), $('overlay-title').textContent, $('overlay-choices').textContent],
+  $('probabilities-btn').click();
+  check('test probabilities: the title and settings', [$('probabilities').classList.contains('hidden'), $('probabilities-title').textContent, $('probabilities-settings').textContent],
     [false, 'Test probabilities', 'Positions · Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%']);
-  $('overlay-close').click();
-  check('test probabilities: × closes it', $('table-overlay').classList.contains('hidden'), true);
+  $('probabilities-close').click();
+  check('test probabilities: × closes it', $('probabilities').classList.contains('hidden'), true);
   // The chooser and its sliders.
   $('weight-accuracy').value = '80';
   $('weight-accuracy').dispatchEvent(new Event('change'));
-  check('chooser: a slider changes its setting', [app.settings.weights.accuracy, $('weight-accuracy-value').textContent], [80, '80%']);
+  check('chooser: a slider changes its setting', [app.settings.practice.weights.accuracy, $('weight-accuracy-value').textContent], [80, '80%']);
   $('weights-reset').click();
-  check('chooser: Reset to defaults', app.settings.weights, { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 });
+  check('chooser: Reset', app.settings.practice.weights, { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 });
   $('chooser-kind-positions').click();
   check('chooser: the switch and the main-lines checkbox', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, app.settings.practice.kind],
     ['true', 'false', 'Positions from main lines only', 'positions']);
@@ -410,12 +413,12 @@ function runPositions(app) {
   app.endSession();
   // Untried at 0% with nothing tried: nothing to practise.
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
-  app.setSettings({ weights: { untried: 0 } });
-  app.renderPracticeChooser();
+  app.setSettings({ practice: { weights: { untried: 0 } } });
+  app.renderChooser();
   check('chooser: nothing to practise when every line is untried and Untried is 0%', [$('chooser-start').disabled, $('chooser-note').textContent], [true, 'Every line is untried, and Untried is at 0%.']);
   app.setSelection([]);
   app.setSettings({});
-  app.renderPracticeChooser();
+  app.renderChooser();
   $('chooser-kind-positions').click();
   check('chooser: only ticked chapters', [$('chooser-start').disabled, $('chooser-note').textContent], [true, 'No positions to practise: tick chapters on the Studies page.']);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);

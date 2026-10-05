@@ -251,7 +251,7 @@
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
   #practice-title:empty, #practice-position:empty, #practice-side:empty { display: none; } /* nothing above the chooser */
   .practice-chooser label { display: flex; align-items: center; gap: 6px; }
-  .practice-chooser input[type=radio], .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
   /* Lines or Positions: two halves of one switch, the chosen one blue. */
   .kind-switch { display: flex; }
   .kind-switch button { flex: 1; padding: 9px 12px; font-size: 15px; font-weight: 600; border-radius: 0; }
@@ -260,11 +260,11 @@
   .kind-switch button[aria-pressed=true], .kind-switch button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .chooser-frame { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--muted); border-radius: 4px; padding: 10px 12px; }
+  .chooser-frame > button { align-self: flex-start; }
   .weights h3 { margin: 0; font-size: 14px; display: flex; align-items: baseline; gap: 6px; } /* the icon's bottom sits on the text's baseline */
   /* A small circled "?" icon that shows an explanation when clicked. */
   .query-btn { display: inline-flex; padding: 0; border: none; background: none; box-shadow: none; color: var(--muted); line-height: 0; }
   .query-btn:hover:not(:disabled), .query-btn[aria-expanded=true] { background: none; color: var(--accent); }
-  .weights p { margin: 0; }
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
   .weight-rows output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -276,8 +276,8 @@
   .overlay-head h2 { margin: 0; }
   .overlay-close { font-size: 26px; line-height: 1; padding: 0 6px; }
   .overlay-close:hover:not(:disabled) { background: none; color: var(--text-strong); }
-  #overlay-choices { font-size: 13px; margin-top: 4px; }
-  #overlay-note:empty { display: none; }
+  #probabilities-settings { font-size: 13px; margin-top: 4px; }
+  #probabilities-note:empty { display: none; }
 
   /* A message over the board that fades away: the end-of-line panel, or a short note. */
   .board-notice {
@@ -422,16 +422,11 @@
             </div>
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
           </div>
-          <div id="weights-panel" class="chooser-frame weights">
+          <div class="chooser-frame weights">
             <h3>Spaced repetition focus <button id="weights-help" class="query-btn" aria-label="What the sliders do" aria-expanded="false"><svg viewBox="2.2 2.2 19.6 19.6" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 17v.01"/><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/></svg></button></h3>
-            <div class="weight-rows">
-            <label for="weight-frequency">Frequency</label><input type="range" id="weight-frequency" min="0" max="100" step="5"><output id="weight-frequency-value" for="weight-frequency"></output>
-            <label for="weight-accuracy">Accuracy</label><input type="range" id="weight-accuracy" min="0" max="100" step="5"><output id="weight-accuracy-value" for="weight-accuracy"></output>
-            <label for="weight-lastPlayed">Last played</label><input type="range" id="weight-lastPlayed" min="0" max="100" step="5"><output id="weight-lastPlayed-value" for="weight-lastPlayed"></output>
-            <label for="weight-untried">Untried</label><input type="range" id="weight-untried" min="0" max="100" step="5"><output id="weight-untried-value" for="weight-untried"></output>
-            </div>
-            <div class="weights-buttons"><button id="chooser-show" class="small" title="The lines or positions most likely to come up next, with these settings">Test probabilities</button></div>
-            <div class="weights-buttons"><button id="weights-reset" class="small" title="Put all four sliders back to 50%">Reset</button></div>
+            <div id="weight-rows" class="weight-rows"></div>
+            <button id="probabilities-btn" class="small" title="The lines or positions most likely to come up next, with these settings">Test probabilities</button>
+            <button id="weights-reset" class="small" title="Put all four sliders back to 50%">Reset</button>
           </div>
           <p id="chooser-note" class="muted"></p>
           <button id="chooser-start" class="primary chooser-start">Start practice</button>
@@ -446,16 +441,17 @@
     </div>
   </section>
 
-  <!-- Help -->
-  <!-- The table shown over the Practice page by "Test probabilities" -->
-  <div id="table-overlay" class="table-overlay hidden">
-    <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
-      <div class="overlay-head"><h2 id="overlay-title"></h2><button id="overlay-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
-      <div id="overlay-choices" class="muted"></div>
-      <table class="report-table"><thead><tr id="overlay-columns"></tr></thead><tbody id="overlay-rows"></tbody></table>
-      <p id="overlay-note" class="muted"></p>
+  <!-- Test probabilities: a table shown over the Practice page -->
+  <div id="probabilities" class="table-overlay hidden">
+    <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="probabilities-title">
+      <div class="overlay-head"><h2 id="probabilities-title">Test probabilities</h2><button id="probabilities-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
+      <div id="probabilities-settings" class="muted"></div>
+      <table class="report-table"><thead><tr id="probabilities-columns"></tr></thead><tbody id="probabilities-rows"></tbody></table>
+      <p id="probabilities-note" class="muted"></p>
     </div>
   </div>
+
+  <!-- Help -->
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
@@ -817,31 +813,29 @@ const DEFAULT_SETTINGS = {
   mastersTop: 5, // a masters move is within this many top master moves
   // The Practice page: lines or positions; main lines only, for each; and the four spaced-repetition
   // sliders (0–100, shared; see Spaced repetition).
-  practice: { kind: 'lines', lines: { mainLinesOnly: false }, positions: { mainLinesOnly: false } },
-  weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
+  practice: {
+    kind: 'lines',
+    mainLinesOnly: { lines: false, positions: false },
+    weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
+  },
 };
-const validPenalties = v => !!v && typeof v === 'object'
-  && Object.keys(DEFAULT_SETTINGS.penalties).every(k => Number.isInteger(v[k]) && v[k] >= 0 && v[k] <= 10);
 
 // Saved settings, with anything missing or invalid replaced by its default.
 function checkedSettings(saved) {
   const v = saved && typeof saved === 'object' ? saved : {};
-  const d = DEFAULT_SETTINGS;
+  const d = DEFAULT_SETTINGS, dp = d.practice, p = v.practice || {};
+  // Each of the defaults' keys, with the saved value where it's valid.
+  const valuesOf = (defaults, values, valid) => Object.fromEntries(Object.entries(defaults).map(([k, dv]) => [k, valid(values?.[k]) ? values[k] : dv]));
+  const isBetween = (lo, hi) => x => Number.isInteger(x) && x >= lo && x <= hi;
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
-    penalties: validPenalties(v.penalties) ? { ...v.penalties } : { ...d.penalties },
+    penalties: valuesOf(d.penalties, v.penalties, isBetween(0, 10)),
     mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
     practice: {
-      kind: ['lines', 'positions'].includes(v.practice?.kind) ? v.practice.kind : d.practice.kind,
-      ...Object.fromEntries(['lines', 'positions'].map(kind => {
-        const m = v.practice?.[kind]?.mainLinesOnly;
-        return [kind, { mainLinesOnly: typeof m === 'boolean' ? m : d.practice[kind].mainLinesOnly }];
-      })),
+      kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
+      mainLinesOnly: valuesOf(dp.mainLinesOnly, p.mainLinesOnly, x => typeof x === 'boolean'),
+      weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
-    weights: Object.fromEntries(Object.entries(d.weights).map(([k, dv]) => {
-      const w = v.weights?.[k];
-      return [k, Number.isInteger(w) && w >= 0 && w <= 100 ? w : dv];
-    })),
   };
 }
 
@@ -951,6 +945,15 @@ function setToggle(id, on, title) {
   btn.setAttribute('aria-pressed', String(on));
 }
 
+// How long ago a move was last tested, in calendar days: "Today", "1 day", "5 days"; "–" when it
+// isn't known (moves last tested before these times were recorded).
+function daysAgo(time) {
+  if (!time) return '–';
+  const midnight = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const days = Math.round((midnight(Date.now()) - midnight(time)) / 86400000);
+  return days <= 0 ? 'Today' : plural(days, 'day');
+}
+
 // ---------- Chess helpers ----------
 
 const fenOf = pos => fen.makeFen(pos.toSetup());
@@ -1034,7 +1037,7 @@ async function fetchStudies() {
     await saveLibrary();
     forgetParsedChapters();
     pruneAfterRefresh();
-    if (practice) { leavePractice(); session = null; } // its lines may have changed: practice starts afresh
+    if (practice) endPractice(); // its lines may have changed: practice starts afresh
     startDownloads(); // missing Lichess data, quietly in the background
     const n = library.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = library.studies.length;
@@ -1198,6 +1201,28 @@ const alternativeCount = ch => allMoveNodes(ch).filter(n => n.isYours).reduce((s
 // history (see History above).
 
 const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.isYours ? [i] : []);
+
+// A position's name, following the usual convention in chess books: the deepest opening name that
+// applies (Lichess's name for the position, or for the last named position before it), then the
+// moves played since that named position, e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"
+// (the position before move i; whose move it is follows from the last move listed). At most the
+// last 3 full moves (6 plies) are shown, with "…" before them when there are more, and at least the
+// last move played, even when the position itself is named ("King's Pawn Game, 1… e5"). Without any
+// named position, the moves from the start; "Starting position" before any move.
+// Used wherever the app names a position.
+const NAME_TAIL_PLIES = 6;
+function positionName(line, i) {
+  let name = lichessGamesAt(line.root.epd)?.opening?.name, since = 0; // since: the first move after it
+  line.moves.slice(0, i).forEach((m, k) => {
+    const n = lichessGamesAt(m.epd)?.opening?.name;
+    if (n) { name = n; since = k + 1; }
+  });
+  since = Math.min(since, Math.max(0, i - 1)); // always list at least the last move played
+  const tail = line.moves.slice(Math.max(since, i - NAME_TAIL_PLIES), i);
+  const cut = i - since > NAME_TAIL_PLIES;
+  const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNumber}. ${withFigurines(m.san)}` : k === 0 ? `${m.moveNumber}… ${withFigurines(m.san)}` : withFigurines(m.san)).join(' ');
+  return [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ') || 'Starting position';
+}
 
 // ---------- Annotations (comments and glyphs) ----------
 
@@ -1741,31 +1766,39 @@ $('preset-name-form').addEventListener('submit', e => {
 });
 
 // ---------- Spaced repetition ----------
-// Practice on the Practice page: all the lines (or positions) of the chapters ticked on the Studies
-// page, with the "main lines only" choice. Before each one, every item gets a priority, and one is
-// picked at random with chances in proportion to it. The priority is made of four parts:
+// What's practised: all the lines (or positions) of the chapters ticked on the Studies page, from
+// main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
+// with chances in proportion to it. The priority is made of four parts, one per slider:
 //   frequency: 0.2 to 1, by the rated Lichess games reaching the position (a line's final position),
 //     on a log scale up to the most frequent item; 0.6 while its statistics haven't downloaded.
-//   weakness (low accuracy): 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%.
-//   due (last played): days since last tested ÷ the item's interval, kept between 0.1 and 3, or 3 when
-//     the last test time isn't known; the interval is 2^(7 × accuracy) days: 1 day at 0%, about 11
-//     days at 50%, 128 days at 100%.
+//   accuracy (weakness): 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%.
+//   last played (due): days since last tested ÷ the item's interval, kept between 0.1 and 3, or 3
+//     when the last test time isn't known; the interval is 2^(7 × accuracy) days: 1 day at 0%, about
+//     11 days at 50%, 128 days at 100%.
 //   untried: an item never tried (a line none of whose moves have been tried) has no accuracy or
 //     due; it gets 6 in their place.
-// A position's accuracy is its move accuracy, last tested is when its move was last tried. A line's
-// accuracy is its line accuracy with untried moves counting as 0%; last tested is when it was last
-// played through from move 1 to the end.
+// A position's accuracy is its move accuracy, and last tested is when its move was last tried. A
+// line's accuracy is its line accuracy, with untried moves counting as 0%, and last tested is when it
+// was last played through from move 1 to the end.
 //
-// Four sliders (settings.weights, 0–100, shared by lines and positions) set how strongly each part
-// counts, as a power: 0 ignores it, 50 (the default) counts it as it is, 100 raises it to the 6th
-// power, so the items highest in it take almost every pick. So by default the priority is
-// frequency × weakness × due (frequency × 6 when untried). Untried at 0 leaves untried items out,
-// and at 100 gives them all the picks until none is left.
-const NEW_ITEM_NEED = 6;
+// Each slider (settings.practice.weights, 0–100, shared by lines and positions) is a power on its
+// part: 0 ignores it, 50 (the default) counts it as it is, 100 raises it to the 6th power, so the
+// items highest in it take almost every pick. So by default the priority is frequency × weakness ×
+// due (frequency × 6 when untried). Untried at 0 leaves untried items out, and at 100 gives them all
+// the picks until none is left.
+const UNTRIED_NEED = 6;
 const UNKNOWN_FREQUENCY = 0.6;
 const DAY_MS = 86400000;
 const STRONGEST = 6; // the power at 100%
 const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
+
+// The four sliders: their names, and what each means (shown when hovering over its name).
+const WEIGHTS = [
+  { key: 'frequency', name: 'Frequency', definition: 'How often the position is reached in rated Lichess games (for a line, its final position). The higher the slider, the more the frequent ones come up.' },
+  { key: 'accuracy', name: 'Accuracy', definition: 'Your move accuracy for a position, or line accuracy for a line. The higher the slider, the more the ones with low accuracy come up.' },
+  { key: 'lastPlayed', name: 'Last played', definition: 'How long since you last tested it, compared with how long you can expect to remember it (longer the better you know it). The higher the slider, the more the overdue ones come up.' },
+  { key: 'untried', name: 'Untried', definition: "Lines and positions you haven't tried yet. At 0% they never come up; at 100% they come first, until none is left." },
+];
 
 function weightedPick(items, weight) {
   const total = items.reduce((s, x) => s + weight(x), 0);
@@ -1782,17 +1815,16 @@ const tickedChapters = () => visibleChapters().filter(c => selection.has(c.key))
 // Whether every opponent move before move i is the study's main move.
 const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours && m.variationIndex !== 0);
 
-// Every line of the ticked chapters with a move of yours, as practice items (whole lines).
-const allLineItems = () => tickedChapters().flatMap(chapterLines)
-  .filter(line => (!settings.practice.lines.mainLinesOnly || line.isMainLine) && yourMoveIndexes(line).length)
-  .map(line => ({ line, i: null }));
-
-// Every move of yours in the ticked chapters, once each, as practice items (single positions).
-function allPositionItems() {
-  const items = new Map();
-  for (const line of tickedChapters().flatMap(chapterLines)) for (const i of yourMoveIndexes(line)) {
+// What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked
+// chapters (i is null: played from move 1); for 'positions', every move of yours in them, once each
+// (i: the move tested as a single position).
+function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind]) {
+  const lines = tickedChapters().flatMap(chapterLines);
+  if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
+  const items = new Map(); // move key -> item
+  for (const line of lines) for (const i of yourMoveIndexes(line)) {
     const key = moveKey(line, i);
-    if (!items.has(key) && (!settings.practice.positions.mainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
+    if (!items.has(key) && (!mainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
   }
   return [...items.values()];
 }
@@ -1809,7 +1841,7 @@ const itemEpd = ({ line, i }) => i != null ? line.moves[i].epdBefore : line.move
 
 // Each item's facts and the parts of its priority: { item, accuracy, lastTested, games (null while
 // its statistics haven't downloaded), frequency, weakness, due, untried }.
-function priorityParts(items, now = Date.now()) {
+function itemFacts(items, now = Date.now()) {
   const games = items.map(item => { const stats = lichessGamesAt(itemEpd(item)); return stats ? totalGames(stats) : null; });
   const top = Math.log1p(Math.max(0, ...games.filter(g => g != null)));
   return items.map((item, k) => {
@@ -1825,23 +1857,33 @@ function priorityParts(items, now = Date.now()) {
   });
 }
 
-// The priority of each part, with the sliders' weights.
-function priorityOf(parts, weights = settings.weights) {
-  const [f, a, l, u] = ['frequency', 'accuracy', 'lastPlayed', 'untried'].map(k => strength(weights[k]));
-  const onlyUntried = weights.untried === 100 && parts.some(p => p.untried);
-  return parts.map(p => {
+// Each item's priority, from its facts and the sliders.
+function priorityOf(facts, weights = settings.practice.weights) {
+  const [f, a, l, u] = WEIGHTS.map(w => strength(weights[w.key]));
+  const onlyUntried = weights.untried === 100 && facts.some(p => p.untried);
+  return facts.map(p => {
     const base = p.frequency ** f;
-    if (p.untried) return weights.untried === 0 ? 0 : onlyUntried ? base : base * NEW_ITEM_NEED ** u;
+    if (p.untried) return weights.untried === 0 ? 0 : onlyUntried ? base : base * UNTRIED_NEED ** u;
     return onlyUntried ? 0 : base * p.weakness ** a * p.due ** l;
   });
 }
 
-const priorities = (items, weights) => priorityOf(priorityParts(items), weights);
+const priorities = items => priorityOf(itemFacts(items));
 
 // ---------- Practice: the board ----------
 
 let board = null;
-let practice = null; // current line state
+// The line in progress (null when none; see startLine):
+//   line, singleAt (for a single position, the index of the move tested; null for a whole line),
+//   position (on the board), movesPlayed, tried (what you've done at the move you're on, in order:
+//   moves as SAN, "hint", "show"), attempts (one per move of yours finished in this line),
+//   busy (the board is waiting for the app), isOver, lastMove, shapes (the arrows and circles drawn),
+//   viewing (the move looked back at, or null for the live position), savedStatus (the status to
+//   put back after looking back), hintComment (what the study says about the wrong move tried),
+//   bubblePopped (the newest comment bubble that has popped), and run (a token: things that take
+//   time, such as the opponent's moves, check afterwards that the same line is still being played,
+//   since the user may have moved on).
+let practice = null;
 
 function ensureBoard() {
   if (board) return;
@@ -1888,7 +1930,7 @@ function updateBoard(lastMove) {
     movable: { color: practice.line.yourColor, dests: yourTurn ? compat.chessgroundDests(practice.position) : new Map() },
   });
   if (lastMove) practice.lastMove = lastMove;
-  board.setAutoShapes(practice.shapes || []);
+  board.setAutoShapes(practice.shapes);
   // One button: "Hint" circles the piece to move; after that it becomes "Show correct move",
   // which draws the arrow (the player then plays the move).
   // After "Show correct move" the arrow stays and the button is disabled until the move is played.
@@ -1916,58 +1958,35 @@ function choosePromotion(color) {
   });
 }
 
-// ---------- Practice: playing lines ----------
+// ---------- Practice: choosing what to practise ----------
+// The Practice page when nothing is in progress: the Lines | Positions switch with its main-lines
+// checkbox, the "Spaced repetition focus" sliders with Test probabilities and Reset, and Start
+// practice. Everything here is kept in settings.practice.
 
-// What's being practised, chosen on the Practice page: { kind: 'lines' or 'positions', items:
-// [{ line, i }], previous (the item practised last), done (how many finished, not skipped) }, where i
-// is the move of yours to test as a single position, or null to play the whole line from move 1.
-// Items are picked by priority (see Spaced repetition). Null when nothing is being practised.
-let session = null;
-
-// Lines and positions, the two kinds of practice: their words, columns and items.
+// Lines and positions, the two kinds of practice: their words.
 const KINDS = {
   lines: {
-    noun: 'line', label: 'Lines', mainLines: 'main lines only', mainLinesLabel: 'Main lines only',
+    noun: 'line', label: 'Lines', mainLines: 'Main lines only',
     mainLinesTitle: "Only lines where the opponent always plays the study's main move",
     columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested', 'Chance next'],
-    all: () => allLineItems(),
   },
   positions: {
-    noun: 'position', label: 'Positions', mainLines: 'positions from main lines only', mainLinesLabel: 'Positions from main lines only',
+    noun: 'position', label: 'Positions', mainLines: 'Positions from main lines only',
     mainLinesTitle: "Only positions reached by the study's main moves for the opponent",
     columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested', 'Chance next'],
-    all: () => allPositionItems(),
   },
 };
-const WEIGHT_NAMES = { frequency: 'Frequency', accuracy: 'Accuracy', lastPlayed: 'Last played', untried: 'Untried' };
-// What each slider means, shown when hovering over its name.
-const WEIGHT_DEFINITIONS = {
-  frequency: 'How often the position is reached in rated Lichess games (for a line, its final position). The higher the slider, the more the frequent ones come up.',
-  accuracy: 'Your move accuracy for a position, or line accuracy for a line. The higher the slider, the more the ones with low accuracy come up.',
-  lastPlayed: 'How long since you last tested it, compared with how long you can expect to remember it (longer the better you know it). The higher the slider, the more the overdue ones come up.',
-  untried: "Lines and positions you haven't tried yet. At 0% they never come up; at 100% they come first, until none is left.",
-};
-for (const [k, text] of Object.entries(WEIGHT_DEFINITIONS)) quickTip(document.querySelector(`label[for=weight-${k}]`), text);
 
-// The "?" next to "Spaced repetition focus": what the sliders do, in a pop-up until the next click
-// (or Esc).
-const WEIGHTS_HELP = 'How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.';
-function showWeightsHelp(open) {
-  let pop = $('weights-help-pop');
-  if (!pop) { pop = element('div', { id: 'weights-help-pop', class: 'note-pop hidden', role: 'note' }, WEIGHTS_HELP); document.body.append(pop); }
-  pop.classList.toggle('hidden', !open);
-  $('weights-help').setAttribute('aria-expanded', String(open));
-  if (open) placePopup(pop, $('weights-help'));
-}
-$('weights-help').addEventListener('click', e => { e.stopPropagation(); showWeightsHelp($('weights-help').getAttribute('aria-expanded') !== 'true'); });
-document.addEventListener('click', () => { if ($('weights-help').getAttribute('aria-expanded') === 'true') showWeightsHelp(false); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('weights-help').getAttribute('aria-expanded') === 'true') showWeightsHelp(false); });
+// The sliders' rows: each slider's name (with its definition on hover), the slider and its value.
+$('weight-rows').replaceChildren(...WEIGHTS.flatMap(({ key, name, definition }) => [
+  quickTip(element('label', { for: `weight-${key}` }, name), definition),
+  element('input', { type: 'range', id: `weight-${key}`, min: '0', max: '100', step: '5' }),
+  element('output', { id: `weight-${key}-value`, for: `weight-${key}` }),
+]));
 
-// The Practice page before anything is practised: the chooser.
-function showPracticeIdle() {
-  practice = null;
-  session = null;
-  hideBoardNotice(true);
+// The Practice page with nothing in progress: the chooser.
+function showChooser() {
+  endPractice();
   showScreen('practice');
   ensureBoard();
   board.set({
@@ -1977,24 +1996,19 @@ function showPracticeIdle() {
   });
   board.setAutoShapes([]);
   board.redrawAll();
-  $('practice-title').textContent = '';
-  $('practice-position').textContent = '';
-  $('practice-side').textContent = '';
+  for (const id of ['practice-title', 'practice-position', 'practice-side']) $(id).textContent = '';
   $('practice-line').classList.add('hidden'); // the move list and its buttons, until a line starts
   setStatus('');
-  $('practice-status').classList.add('hidden'); // the chooser says what to do; setStatus shows it again when a line starts
-  renderPracticeChooser();
-  $('practice-chooser').classList.remove('hidden');
+  $('practice-status').classList.add('hidden'); // setStatus shows it again when a line starts
   hideCommentPopup();
-  $('next-btn').classList.add('hidden');
-  hideLineButtons();
-  $('end-practice-btn').classList.add('hidden');
+  renderChooser();
+  $('practice-chooser').classList.remove('hidden');
 }
 
 // The items a kind of practice would use now (those with any chance of coming up), and a note when
 // there are none.
-function chooserItems(kind) {
-  const all = KINDS[kind].all();
+function practicable(kind) {
+  const all = practiceItems(kind);
   const chances = priorities(all);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
@@ -2002,63 +2016,100 @@ function chooserItems(kind) {
     : !items.length ? `Every ${noun} is untried, and Untried is at 0%.` : '' };
 }
 
-// The chooser shows the chosen kind (settings.practice.kind): the switch, its main-lines checkbox,
-// and a note when there's nothing to practise.
-function renderPracticeChooser() {
-  const kind = settings.practice.kind, k = KINDS[kind];
+function renderChooser() {
+  const { kind, mainLinesOnly, weights } = settings.practice, k = KINDS[kind];
   for (const name of Object.keys(KINDS)) $(`chooser-kind-${name}`).setAttribute('aria-pressed', String(name === kind));
-  $('chooser-main').checked = settings.practice[kind].mainLinesOnly;
-  $('chooser-main-text').textContent = k.mainLinesLabel;
+  $('chooser-main').checked = mainLinesOnly[kind];
+  $('chooser-main-text').textContent = k.mainLines;
   $('chooser-main-label').title = k.mainLinesTitle;
-  const { items, note } = chooserItems(kind);
-  $('chooser-start').disabled = $('chooser-show').disabled = !items.length;
-  $('chooser-note').textContent = note;
-  for (const w of Object.keys(WEIGHT_NAMES)) {
-    $(`weight-${w}`).value = String(settings.weights[w]);
-    $(`weight-${w}-value`).textContent = `${settings.weights[w]}%`;
+  for (const { key } of WEIGHTS) {
+    $(`weight-${key}`).value = String(weights[key]);
+    $(`weight-${key}-value`).textContent = `${weights[key]}%`;
   }
+  const { items, note } = practicable(kind);
+  $('chooser-start').disabled = $('probabilities-btn').disabled = !items.length;
+  $('chooser-note').textContent = note;
 }
 
-for (const kind of Object.keys(KINDS)) {
-  $(`chooser-kind-${kind}`).addEventListener('click', () => { settings.practice.kind = kind; saveSettings(); renderPracticeChooser(); });
-}
-$('chooser-main').addEventListener('change', e => { settings.practice[settings.practice.kind].mainLinesOnly = e.target.checked; saveSettings(); renderPracticeChooser(); });
-$('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, chooserItems(settings.practice.kind).items));
-$('chooser-show').addEventListener('click', () => showTableOverlay(settings.practice.kind));
-for (const k of Object.keys(WEIGHT_NAMES)) {
-  $(`weight-${k}`).addEventListener('input', e => { $(`weight-${k}-value`).textContent = `${e.target.value}%`; });
-  $(`weight-${k}`).addEventListener('change', e => { settings.weights[k] = +e.target.value; saveSettings(); renderPracticeChooser(); });
-}
-$('weights-reset').addEventListener('click', () => { settings.weights = { ...DEFAULT_SETTINGS.weights }; saveSettings(); renderPracticeChooser(); });
+// A change to the practice settings: saved, and the chooser shown again.
+const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); };
 
-// "Test probabilities": the lines or positions most likely to come up next, with the current
-// settings, over the Practice page, closed with ×, Esc or a click outside it.
-const TOP_ROWS = 25;
-function showTableOverlay(kind) {
-  const k = KINDS[kind];
-  const parts = priorityParts(k.all());
-  const chances = priorityOf(parts);
+for (const kind of Object.keys(KINDS)) $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
+$('chooser-main').addEventListener('change', e => changePractice(p => { p.mainLinesOnly[p.kind] = e.target.checked; }));
+for (const { key } of WEIGHTS) {
+  $(`weight-${key}`).addEventListener('input', e => { $(`weight-${key}-value`).textContent = `${e.target.value}%`; });
+  $(`weight-${key}`).addEventListener('change', e => changePractice(p => { p.weights[key] = +e.target.value; }));
+}
+$('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
+$('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items));
+$('probabilities-btn').addEventListener('click', () => showProbabilities(settings.practice.kind));
+
+// The ? next to "Spaced repetition focus": what the sliders do, in a pop-up until the next click (or Esc).
+const WEIGHTS_HELP = 'How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.';
+const weightsHelpOpen = () => $('weights-help').getAttribute('aria-expanded') === 'true';
+function showWeightsHelp(open) {
+  let pop = $('weights-help-pop');
+  if (!pop) { pop = element('div', { id: 'weights-help-pop', class: 'note-pop hidden', role: 'note' }, WEIGHTS_HELP); document.body.append(pop); }
+  pop.classList.toggle('hidden', !open);
+  $('weights-help').setAttribute('aria-expanded', String(open));
+  if (open) placePopup(pop, $('weights-help'));
+}
+$('weights-help').addEventListener('click', e => { e.stopPropagation(); showWeightsHelp(!weightsHelpOpen()); });
+document.addEventListener('click', () => { if (weightsHelpOpen()) showWeightsHelp(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && weightsHelpOpen()) showWeightsHelp(false); });
+
+// "Test probabilities": the lines or positions most likely to come up next with the current
+// settings, the most likely first, over the Practice page; closed with ×, Esc or a click outside it.
+// Each row: the study and chapter, the position's name (a line's final position), how often it's
+// reached, its accuracy, when it was last tested, and its chance of coming up next. Hovering shows
+// the small board (a line's last move).
+const PROBABILITY_ROWS = 25;
+const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
+
+function showProbabilities(kind) {
+  const k = KINDS[kind], { mainLinesOnly, weights } = settings.practice;
+  const facts = itemFacts(practiceItems(kind));
+  const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
-  const rows = parts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
-    .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance).slice(0, TOP_ROWS);
-  $('overlay-title').textContent = 'Test probabilities';
-  $('overlay-choices').textContent = [k.label, ...Object.entries(WEIGHT_NAMES).map(([key, name]) => `${name} ${settings.weights[key]}%`)].join(' · ')
-    + (settings.practice[kind].mainLinesOnly ? ` · ${k.mainLines}` : '');
-  $('overlay-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
-  $('overlay-rows').replaceChildren(...rows.map(tableRow));
-  $('overlay-note').textContent = rows.length ? '' : chooserItems(kind).note;
-  $('table-overlay').classList.remove('hidden');
-  $('overlay-close').focus();
+  const rows = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
+    .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance).slice(0, PROBABILITY_ROWS);
+  $('probabilities-settings').textContent = [k.label, ...WEIGHTS.map(w => `${w.name} ${weights[w.key]}%`), ...mainLinesOnly[kind] ? [k.mainLines.toLowerCase()] : []].join(' · ');
+  $('probabilities-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
+  $('probabilities-rows').replaceChildren(...rows.map(probabilityRow));
+  $('probabilities-note').textContent = rows.length ? '' : practicable(kind).note;
+  $('probabilities').classList.remove('hidden');
+  $('probabilities-close').focus();
 }
 
-function hideTableOverlay() {
+function probabilityRow({ item: { line, i }, accuracy, games, lastTested, chance }) {
+  const ch = chapterByKey(line.chapterKey);
+  const [nameAt, hoverAt] = i == null ? [line.moves.length, line.moves.length - 1] : [i, i];
+  const tr = element('tr', {},
+    element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, nameAt))),
+    element('td', { class: 'num' }, games == null ? '–' : shortCount(games)),
+    element('td', { class: 'num accuracy' }, accuracy == null ? element('span', { class: 'muted' }, 'Untried')
+      : element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
+    element('td', { class: 'num' }, daysAgo(lastTested)),
+    element('td', { class: 'num' }, chanceText(chance)));
+  tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, hoverAt));
+  tr.addEventListener('mouseleave', hideHoverBoard);
+  return tr;
+}
+
+function hideProbabilities() {
   hideHoverBoard();
-  $('table-overlay').classList.add('hidden');
+  $('probabilities').classList.add('hidden');
 }
 
-$('overlay-close').addEventListener('click', hideTableOverlay);
-$('table-overlay').addEventListener('click', e => { if (e.target === $('table-overlay')) hideTableOverlay(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('table-overlay').classList.contains('hidden')) hideTableOverlay(); });
+$('probabilities-close').addEventListener('click', hideProbabilities);
+$('probabilities').addEventListener('click', e => { if (e.target === $('probabilities')) hideProbabilities(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('probabilities').classList.contains('hidden')) hideProbabilities(); });
+
+// ---------- Practice: playing lines ----------
+
+// What's being practised: { kind: 'lines' or 'positions', items (see practiceItems), previous (the
+// item practised last), done (how many finished, not skipped) }. Null when nothing is.
+let session = null;
 
 // Practise lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
@@ -2069,14 +2120,14 @@ function startSession(kind, items) {
   showScreen('practice');
   ensureBoard();
   board.redrawAll();
-  nextFromSession();
+  nextItem();
 }
 
-function nextFromSession() {
+function nextItem() {
   const { items, previous } = session;
-  const weights = priorities(items);
-  const choices = items.map((item, k) => ({ item, weight: weights[k] })).filter(c => c.item !== previous);
-  const pick = session.previous = choices.length ? weightedPick(choices, c => c.weight).item : items[0];
+  const chances = priorities(items);
+  const choices = items.map((item, k) => ({ item, chance: chances[k] })).filter(c => c.item !== previous);
+  const pick = session.previous = choices.length ? weightedPick(choices, c => c.chance).item : items[0];
   startLine(pick.line, pick.i);
 }
 
@@ -2084,15 +2135,17 @@ function nextFromSession() {
 // your side), the position for a single position, and how many are done, e.g. "Lines · 7 done".
 function updatePracticeSide() {
   const { line, singleAt } = practice;
-  const from = session ? KINDS[session.kind].label : singleAt != null ? 'Single position' : '';
-  $('practice-side').textContent = (singleAt != null ? `${from}: ${positionName(line, singleAt)}` : from)
-    + (session?.done ? ` · ${session.done} done` : '');
+  $('practice-side').textContent = KINDS[session.kind].label + (singleAt != null ? `: ${positionName(line, singleAt)}` : '')
+    + (session.done ? ` · ${session.done} done` : '');
 }
 
 // Starts a line from move 1, or with singleAt (the index of one of your moves), tests just that move
 // as a single position.
 function startLine(line, singleAt = null) {
-  practice = { line, singleAt, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, lastMove: undefined, run: {}, shapes: [], viewing: null };
+  practice = {
+    line, singleAt, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, isOver: false,
+    lastMove: undefined, shapes: [], viewing: null, savedStatus: null, hintComment: null, bubblePopped: -1, run: {},
+  };
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
   $('practice-line').classList.remove('hidden');
@@ -2102,7 +2155,7 @@ function startLine(line, singleAt = null) {
   hideCommentPopup();
   updateNames();
   setShapes([]);
-  if (singleAt) {
+  if (singleAt > 0) {
     // Set up the position before the move instantly (no sounds); the earlier moves appear in
     // the move list, with bubbles for their comments.
     practice.position = line.moves[singleAt - 1].position.clone();
@@ -2112,13 +2165,6 @@ function startLine(line, singleAt = null) {
   updateBoard();
   advance();
 }
-
-// The line in progress (practice) holds: the line, singleAt (for a single position: the move tested;
-// null for a whole line), the position on the board, movesPlayed, tried
-// (what you've done at the move you're on, in order: moves as SAN, "hint", "show"), attempts (one
-// per move of yours finished in this line), and the board's state. Things that take time (the
-// opponent's moves, messages shown for a moment) check afterwards that the same line is still
-// being played: the user may have moved on.
 
 // Waits ms; true if the same line is still being played afterwards.
 async function pause(ms) {
@@ -2273,7 +2319,7 @@ $('skip-btn').addEventListener('click', () => {
   if (!practice || practice.isOver) return;
   addAttemptOnCurrentMove();
   saveAttempts();
-  nextLine();
+  nextItem();
 });
 
 // The move you're on, when a line is stopped on it: it counts (as an error) only if you'd already
@@ -2291,9 +2337,20 @@ $('end-practice-btn').addEventListener('click', () => {
     addAttemptOnCurrentMove();
     saveAttempts();
   }
-  leavePractice();
-  showPracticeIdle();
+  showChooser();
 });
+
+// Stops practising: nothing is in progress, and anything waiting (an opponent's move, a message)
+// finds the line gone and stops.
+function endPractice() {
+  practice = null;
+  session = null;
+  hideBoardNotice(true);
+  $('next-btn').classList.add('hidden');
+  hideLineButtons();
+  $('end-practice-btn').classList.add('hidden');
+  $('promo').classList.add('hidden');
+}
 
 // The buttons under the board: Hint and Skip during a line, Next line/position after it; End practice
 // throughout.
@@ -2306,24 +2363,30 @@ function showNextButton(label) {
   b.focus();
 }
 
-function endLine() {
-  const { line } = practice;
+// The end of a line or single position: its attempts are saved, it counts as done, the move list
+// gets hover boards, and the app waits for Next (or Enter) so the moves can be looked at.
+function finish(nextLabel) {
   saveAttempts();
-  // Played all the way through, from move 1 to the end. The line's time is when its last move was attempted.
-  const at = practice.attempts[practice.attempts.length - 1]?.at ?? Date.now();
-  history.lines[line.key] = [...history.lines[line.key] || [], at].slice(-HISTORY_LENGTH);
-  saveHistory();
-  if (session) { session.done++; updatePracticeSide(); }
-  practice.isOver = true; // the move list gets hover boards
-
+  session.done++;
+  updatePracticeSide();
+  practice.isOver = true;
   practice.busy = true;
   updateBoard();
+  hideLineButtons();
+  showNextButton(nextLabel);
+}
+
+// A line played all the way through, from move 1 to the end: recorded as a play-through, whose time
+// is when its last move was attempted, and summed up.
+function endLine() {
+  const { line, attempts } = practice;
+  history.lines[line.key] = [...history.lines[line.key] || [], attempts.at(-1)?.at ?? Date.now()].slice(-HISTORY_LENGTH);
+  saveHistory();
+  finish('Next line');
   setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
   // The same, over the board where you're looking, fading away after a few seconds.
   showBoardNotice([element('div', { class: 'notice-title' }, 'Line complete'), ...lineSummary(),
-    element('button', { class: 'primary', onclick: nextLine }, 'Next line')], 3500);
-  hideLineButtons();
-  showNextButton('Next line');
+    element('button', { class: 'primary', onclick: nextItem }, 'Next line')], 3500);
 }
 
 // A message over the board that fades away after ms (or when clicked).
@@ -2356,32 +2419,10 @@ function onBoardTouched() {
   showBoardNotice([`${over} Press ${$('next-btn').textContent} (or Enter).`], 2500);
 }
 
-function nextLine() {
-  if (session) return nextFromSession();
-  showPracticeIdle();
-}
+$('next-btn').addEventListener('click', nextItem);
 
-$('next-btn').addEventListener('click', nextLine);
-
-// End of a single position: recorded as one try of that move in its line. As at the end of a line,
-// the app waits for "Next position" (or Enter), so the move can be looked at.
-function endSinglePosition() {
-  saveAttempts();
-  practice.isOver = true; // the move list gets hover boards
-  practice.busy = true;
-  updateBoard();
-  hideLineButtons();
-  if (session) { session.done++; updatePracticeSide(); }
-  showNextButton('Next position');
-}
-
-function leavePractice() {
-  practice = null; // pending timers check practice and stop
-  hideBoardNotice(true);
-  $('next-btn').classList.add('hidden');
-  hideLineButtons();
-  $('promo').classList.add('hidden');
-}
+// A single position: recorded as one try of that move in its line.
+const endSinglePosition = () => finish('Next position');
 
 // ---------- Practice: the move list ----------
 
@@ -2407,7 +2448,7 @@ function renderMoveList() {
   // It pops once when it first appears (the list is redrawn often, so remember which popped).
   let newest = -1;
   played.forEach((m, i) => { if (hasComment(m)) newest = i; });
-  const pop = newest > (practice.bubblePopped ?? -1);
+  const pop = newest > practice.bubblePopped;
   if (pop) practice.bubblePopped = newest;
   played.forEach((m, i) => {
     if (m.color === 'white' || i === 0) cells.push(element('span', { class: 'num' }, m.moveNumber));
@@ -2899,58 +2940,6 @@ function mastersShareText(epd, moveSan) {
   return stats && !totalGames(stats) ? 'Not in master games' : rankAndShareText(stats, moveSan, 'masters', 'Not played by masters');
 }
 
-// ---------- Test probabilities ----------
-// A row of the table shown by "Test probabilities": the study and chapter, the position's name
-// (a line's final position), how often it's reached, its accuracy, when it was last tested, and its
-// chance of coming up next. Hovering shows the small board (a line's last move).
-const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
-
-function tableRow({ item: { line, i }, accuracy, games, lastTested, chance }) {
-  const ch = chapterByKey(line.chapterKey);
-  const [nameAt, hoverAt] = i == null ? [line.moves.length, line.moves.length - 1] : [i, i];
-  const tr = element('tr', {},
-    element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, nameAt))),
-    element('td', { class: 'num' }, games == null ? '–' : shortCount(games)),
-    element('td', { class: 'num accuracy' }, accuracy == null ? element('span', { class: 'muted' }, 'Untried')
-      : element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
-    element('td', { class: 'num' }, daysAgo(lastTested)),
-    element('td', { class: 'num' }, chanceText(chance)));
-  tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, hoverAt));
-  tr.addEventListener('mouseleave', hideHoverBoard);
-  return tr;
-}
-
-// How long ago a move was last tested, in calendar days: "Today", "1 day", "5 days"; "–" when it
-// isn't known (moves last tested before these times were recorded).
-function daysAgo(time) {
-  if (!time) return '–';
-  const midnight = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
-  const days = Math.round((midnight(Date.now()) - midnight(time)) / 86400000);
-  return days <= 0 ? 'Today' : plural(days, 'day');
-}
-
-// A position's name, following the usual convention in chess books: the deepest opening name that
-// applies (Lichess's name for the position, or for the last named position before it), then the
-// moves played since that named position, e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6 5. d4 exd4"
-// (the position before move i; whose move it is follows from the last move listed). At most the
-// last 3 full moves (6 plies) are shown, with "…" before them when there are more, and at least the
-// last move played, even when the position itself is named ("King's Pawn Game, 1… e5"). Without any
-// named position, the moves from the start; "Starting position" before any move.
-// Used wherever the app names a position.
-const NAME_TAIL_PLIES = 6;
-function positionName(line, i) {
-  let name = lichessGamesAt(line.root.epd)?.opening?.name, since = 0; // since: the first move after it
-  line.moves.slice(0, i).forEach((m, k) => {
-    const n = lichessGamesAt(m.epd)?.opening?.name;
-    if (n) { name = n; since = k + 1; }
-  });
-  since = Math.min(since, Math.max(0, i - 1)); // always list at least the last move played
-  const tail = line.moves.slice(Math.max(since, i - NAME_TAIL_PLIES), i);
-  const cut = i - since > NAME_TAIL_PLIES;
-  const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNumber}. ${withFigurines(m.san)}` : k === 0 ? `${m.moveNumber}… ${withFigurines(m.san)}` : withFigurines(m.san)).join(' ');
-  return [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ') || 'Starting position';
-}
-
 // ---------- Options page and token ----------
 
 function showOptions() {
@@ -3119,7 +3108,7 @@ $('nav-practice').addEventListener('click', () => {
     board.redrawAll();
     return;
   }
-  showPracticeIdle();
+  showChooser();
 });
 
 // Studies: the selection page (or the token screen before any studies are fetched).
