@@ -304,7 +304,7 @@ async function runPractice(app) {
   app.startSession('positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
   check('practice: single position from the list', [p().singleAt != null, [8, 10].includes(p().singleAt), p().movesPlayed === p().singleAt,
-    document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: ')], [true, true, true, true]);
+    document.getElementById('practice-side').textContent.startsWith('Frequent positions with low accuracy: ')], [true, true, true, true]);
   await playRest();
   check('practice: single position answered', [status(), document.getElementById('next-btn').textContent, p() === first,
     document.getElementById('practice-side').textContent.endsWith(' · 1 done')], ['Correct.', 'Next position', true, true]);
@@ -326,7 +326,7 @@ async function runPractice(app) {
   app.setSettings({});
 }
 
-// ---------- The weak and frequent tables, the chooser and spaced repetition ----------
+// ---------- Frequent lines and positions with low accuracy, the chooser and spaced repetition ----------
 
 // A chapter with a side variation for the opponent: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
 const SIDE_LINE = `[Event "Test Study: Side line"]
@@ -349,7 +349,7 @@ function runPositions(app) {
   });
   app.setMoveStats(positions);
   app.setHistory({ moves, lines: { [lines[0].key]: [Date.now()] } });
-  // Practice settings for lines and positions (Weak and frequent tables at ≤ 90% unless given).
+  // Practice settings for lines and positions (the tables at ≤ 90% unless given).
   const practiceSettings = ({ lines = {}, positions = {} } = {}) => app.setSettings({ practice: { lines: { maxAccuracy: 90, ...lines }, positions: { maxAccuracy: 90, ...positions } } });
   const rows = (positions = {}) => {
     practiceSettings({ positions });
@@ -389,29 +389,29 @@ function runPositions(app) {
   app.startSession('lines', app.allLineItems(), true);
   check('spaced repetition: practising all lines, from move 1', [app.practice.singleAt, app.practice.movesPlayed <= 1, document.getElementById('practice-side').textContent], [null, true, 'All lines']);
   app.endSession();
-  // The idle Practice page's chooser: All, or the tables' Weak and frequent (whose choices only show then).
+  // The idle Practice page's chooser: All, or Frequent … with low accuracy (whose choices only show then).
   const chooser = settings => {
     practiceSettings(settings);
     app.renderPracticeChooser();
     return ['lines', 'positions'].map(n => [document.getElementById(`chooser-${n}-btn`).disabled, document.getElementById(`chooser-${n}-count`).parentElement.classList.contains('hidden')]);
   };
   check('chooser: All', chooser({}), [[false, true], [false, true]]);
-  check('chooser: Weak and frequent', chooser({ lines: { mode: 'weak' }, positions: { mode: 'weak' } }), [[false, false], [false, false]]);
-  check('chooser: Weak and frequent, none at this accuracy', chooser({ lines: { mode: 'weak', maxAccuracy: 40 }, positions: { mode: 'weak', maxAccuracy: 40 } }), [[true, false], [true, false]]);
+  check('chooser: Frequent … with low accuracy', chooser({ lines: { mode: 'weak' }, positions: { mode: 'weak' } }), [[false, false], [false, false]]);
+  check('chooser: Frequent … with low accuracy, none at this accuracy', chooser({ lines: { mode: 'weak', maxAccuracy: 40 }, positions: { mode: 'weak', maxAccuracy: 40 } }), [[true, false], [true, false]]);
   chooser({ positions: { mode: 'weak' } });
   document.getElementById('chooser-positions-show').click();
   check('chooser: Show table', [document.getElementById('table-overlay').classList.contains('hidden'), document.querySelectorAll('#overlay-rows tr').length,
-    document.getElementById('overlay-title').textContent], [false, 3, 'Frequent positions with low move accuracy']);
+    document.getElementById('overlay-title').textContent], [false, 3, 'Frequent positions with low accuracy']);
   document.getElementById('overlay-close').click();
   check('chooser: × closes the table', document.getElementById('table-overlay').classList.contains('hidden'), true);
   document.getElementById('chooser-positions-btn').click();
-  check('chooser: practising weak and frequent positions', [app.practice.singleAt != null, document.getElementById('practice-side').textContent.startsWith('Weak and frequent positions: '),
+  check('chooser: practising frequent positions with low accuracy', [app.practice.singleAt != null, document.getElementById('practice-side').textContent.startsWith('Frequent positions with low accuracy: '),
     document.getElementById('practice-chooser').classList.contains('hidden'), !document.getElementById('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
   document.getElementById('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, document.getElementById('practice-chooser').classList.contains('hidden'), document.getElementById('end-practice-btn').classList.contains('hidden')], [null, false, true]);
   chooser({ lines: { mode: 'weak' } });
   document.getElementById('chooser-lines-btn').click();
-  check('chooser: practising weak and frequent lines, from move 1', [app.practice.singleAt, document.getElementById('practice-side').textContent], [null, 'Weak and frequent lines']);
+  check('chooser: practising frequent lines with low accuracy, from move 1', [app.practice.singleAt, document.getElementById('practice-side').textContent], [null, 'Frequent lines with low accuracy']);
   app.endSession();
   chooser({});
   document.getElementById('chooser-lines-btn').click();
