@@ -142,7 +142,6 @@
   .preset-name-form .form-error { flex-basis: 100%; margin-top: 0; min-height: 0; font-size: 13px; }
   .preset-name-form .form-error:empty { display: none; }
   .all-row { border-bottom: 1px solid var(--border); }
-  .all-row #show-hidden-btn { margin-left: 2px; }
   .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
   .hidden-study { opacity: .5; } /* hidden studies, shown in grey while the top eye is open */
   button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
@@ -349,6 +348,13 @@
       <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
       </button>
+      <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
+          <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+          <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
       <span id="sel-summary" class="muted"></span>
     </div>
     <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
@@ -371,13 +377,7 @@
       <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
       <div class="row study-row all-row"><span class="toggle-space"></span>
         <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
-        <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
-            <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
-            <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button></div>
+      </div>
       <div id="studies"></div>
     </div>
   </section>
@@ -482,7 +482,7 @@
           <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). Click the chapter's number of lines (e.g. "3 lines") to open every variation at once, and again to close them. Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
           <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them, and they close by themselves once you've saved, updated, renamed or deleted a preset. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b> (its chapters in hidden studies are kept); until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
-          <li>To hide a study you no longer use, click the eye at the top (next to <b>All</b>): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
+          <li>To hide a study you no longer use, click the eye at the top (next to the presets' pencil): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
           <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
           <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
         </ul>
