@@ -52,7 +52,8 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { ensureBoard(); return startLine(line); },
-  startSession, renderPracticeChooser, need, priorities, allLineItems, allPositionItems,
+  startSession, renderPracticeChooser, priorities, priorityOf, priorityParts, allLineItems, allPositionItems,
+  get settings() { return settings; },
   endSession() { session = null; },
   onYourMove,
 };`;
@@ -155,9 +156,9 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5,
-    practice: { lines: { mode: 'all', count: 20, maxAccuracy: 70, mainLinesOnly: false }, positions: { mode: 'all', count: 25, maxAccuracy: 70, mainLinesOnly: false } } });
+    practice: { lines: { mainLinesOnly: false }, positions: { mainLinesOnly: false } }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } });
   check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9, penalties: { alternative: 11 } }).mastersTop,
-    app.checkedSettings({ practice: { lines: { mode: 'x', count: 7, maxAccuracy: 50 } } }).practice.lines], [5, { mode: 'all', count: 20, maxAccuracy: 50, mainLinesOnly: false }]);
+    app.checkedSettings({ weights: { frequency: 150, accuracy: 20, untried: 'x' } }).weights], [5, { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 }]);
 
   // Masters moves: top N and 10% or more
   const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
@@ -304,7 +305,7 @@ async function runPractice(app) {
   app.startSession('positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
   check('practice: single position from the list', [p().singleAt != null, [8, 10].includes(p().singleAt), p().movesPlayed === p().singleAt,
-    document.getElementById('practice-side').textContent.startsWith('Frequent positions with low accuracy: ')], [true, true, true, true]);
+    document.getElementById('practice-side').textContent.startsWith('Positions: ')], [true, true, true, true]);
   await playRest();
   check('practice: single position answered', [status(), document.getElementById('next-btn').textContent, p() === first,
     document.getElementById('practice-side').textContent.endsWith(' · 1 done')], ['Correct.', 'Next position', true, true]);
@@ -326,7 +327,7 @@ async function runPractice(app) {
   app.setSettings({});
 }
 
-// ---------- Frequent lines and positions with low accuracy, the chooser and spaced repetition ----------
+// ---------- Spaced repetition, What comes up most and the chooser ----------
 
 // A chapter with a side variation for the opponent: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
 const SIDE_LINE = `[Event "Test Study: Side line"]
@@ -336,6 +337,7 @@ const SIDE_LINE = `[Event "Test Study: Side line"]
 1. e4 e5 ( 1... f6 $2 2. d4 ) 2. Nf3 *`;
 
 function runPositions(app) {
+  const $ = id => document.getElementById(id);
   const library = structuredClone(LIBRARY);
   library.studies[0].chapters.push({ key: 'AAAAAAAA/DDDDDDDD', id: 'DDDDDDDD', name: 'Side line', pgn: SIDE_LINE });
   app.setLibrary(library);
@@ -349,79 +351,66 @@ function runPositions(app) {
   });
   app.setMoveStats(positions);
   app.setHistory({ moves, lines: { [lines[0].key]: [Date.now()] } });
-  // Practice settings for lines and positions (the tables at ≤ 90% unless given).
-  const practiceSettings = ({ lines = {}, positions = {} } = {}) => app.setSettings({ practice: { lines: { maxAccuracy: 90, ...lines }, positions: { maxAccuracy: 90, ...positions } } });
-  const rows = (positions = {}) => {
-    practiceSettings({ positions });
-    document.getElementById('chooser-positions-show').click();
-    document.getElementById('overlay-close').click();
-    return [...document.querySelectorAll('#overlay-rows tr')].map(tr => tr.querySelector('.position-name').textContent);
-  };
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
-  check('positions: all three moves', rows({}).length, 3);
-  check('positions: main lines only', rows({ mainLinesOnly: true }).length, 2);
-  // The lines table: both lines, all moves tried at 50%.
-  const lineRows = (lines = {}) => {
-    practiceSettings({ lines });
-    document.getElementById('chooser-lines-show').click();
-    document.getElementById('overlay-close').click();
-    return [...document.querySelectorAll('#overlay-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
-  };
-  check('lines: both lines, most frequent end first', lineRows({}).map(r => [r[0], r[2], r[3]]),
-    [['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today'], ['Test Study · Side line1. e4 f6 2. d4', '50%', '–']]);
-  check('lines: main lines only', lineRows({ mainLinesOnly: true }).length, 1);
-  check('lines: accuracy limit', lineRows({ maxAccuracy: 40 }).length, 0);
-  // Spaced repetition ("All (spaced repetition)").
-  const DAY = 86400000, now = Date.now();
-  check('spaced repetition: need', [app.need(null, null), app.need(1, now - DAY, now), app.need(0.5, now - 30 * DAY, now).toFixed(2), app.need(0, null)],
-    [6, 0.1, (2 * 30 / 2 ** 3.5).toFixed(2), 9]);
-  check('spaced repetition: all positions, including untried ones', [app.allPositionItems().length, (practiceSettings({ positions: { mainLinesOnly: true } }), app.allPositionItems().length)], [3, 2]);
-  check('spaced repetition: all lines', [(app.setSettings({}), app.allLineItems().length), (practiceSettings({ lines: { mainLinesOnly: true } }), app.allLineItems().length)], [2, 1]);
+  const mainLinesOnly = (lines, positions) => app.setSettings({ practice: { lines: { mainLinesOnly: lines }, positions: { mainLinesOnly: positions } } });
+  // The priority and its sliders.
+  const parts = [{ frequency: 1, weakness: 3, due: 3, untried: false }, { frequency: 0.2, weakness: 1, due: 0.1, untried: false }, { frequency: 0.6, untried: true }];
+  const weights = w => ({ frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, ...w });
+  const rounded = v => v.map(x => Math.round(x * 1000) / 1000);
+  check('spaced repetition: by default, frequency × weakness × due (× 6 when untried)', rounded(app.priorityOf(parts, weights({}))), [9, 0.02, 3.6]);
+  check('spaced repetition: a slider at 0% ignores its part', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 0, lastPlayed: 0 }))), [1, 1, 6]);
+  check('spaced repetition: Untried at 0% leaves untried ones out, at 100% they come first', [app.priorityOf(parts, weights({ untried: 0 }))[2], rounded(app.priorityOf(parts, weights({ untried: 100 })))], [0, [0, 0, 0.6]]);
+  check('spaced repetition: a slider at 100% dominates', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 100, lastPlayed: 0, untried: 0 }))), [729, 1, 0]);
+  const positionItems = app.allPositionItems();
+  check('spaced repetition: the parts of a position tried once at 50%, time unknown', (({ accuracy, weakness, due, untried }) => [accuracy, weakness, due, untried])(app.priorityParts(positionItems)[0]), [0.5, 2, 3, false]);
+  check('spaced repetition: all positions, including untried ones', [positionItems.length, (mainLinesOnly(false, true), app.allPositionItems().length)], [3, 2]);
+  check('spaced repetition: all lines', [(app.setSettings({}), app.allLineItems().length), (mainLinesOnly(true, false), app.allLineItems().length)], [2, 1]);
   app.setSettings({});
   const linePriorities = app.priorities(app.allLineItems());
   check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
-  const positionItems = app.allPositionItems();
   const positionPriorities = app.priorities(positionItems);
   check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === 0));
-  app.startSession('positions', positionItems, true);
-  check('spaced repetition: practising all positions', [app.practice.singleAt != null, document.getElementById('practice-side').textContent.startsWith('All positions: ')], [true, true]);
-  app.endSession();
-  app.startSession('lines', app.allLineItems(), true);
-  check('spaced repetition: practising all lines, from move 1', [app.practice.singleAt, app.practice.movesPlayed <= 1, document.getElementById('practice-side').textContent], [null, true, 'All lines']);
-  app.endSession();
-  // The idle Practice page's chooser: All, or Frequent … with low accuracy (whose choices only show then).
-  const chooser = settings => {
-    practiceSettings(settings);
-    app.renderPracticeChooser();
-    return ['lines', 'positions'].map(n => [document.getElementById(`chooser-${n}-btn`).disabled, document.getElementById(`chooser-${n}-count`).parentElement.classList.contains('hidden')]);
+  // Show what comes up most.
+  const shown = kind => {
+    $(`chooser-${kind}-show`).click();
+    $('overlay-close').click();
+    return [...document.querySelectorAll('#overlay-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
   };
-  check('chooser: All', chooser({}), [[false, true], [false, true]]);
-  check('chooser: Frequent … with low accuracy', chooser({ lines: { mode: 'weak' }, positions: { mode: 'weak' } }), [[false, false], [false, false]]);
-  check('chooser: Frequent … with low accuracy, none at this accuracy', chooser({ lines: { mode: 'weak', maxAccuracy: 40 }, positions: { mode: 'weak', maxAccuracy: 40 } }), [[true, false], [true, false]]);
-  chooser({ positions: { mode: 'weak' } });
-  document.getElementById('chooser-positions-show').click();
-  check('chooser: Show table', [document.getElementById('table-overlay').classList.contains('hidden'), document.querySelectorAll('#overlay-rows tr').length,
-    document.getElementById('overlay-title').textContent], [false, 3, 'Frequent positions with low accuracy']);
-  document.getElementById('overlay-close').click();
-  check('chooser: × closes the table', document.getElementById('table-overlay').classList.contains('hidden'), true);
-  document.getElementById('chooser-positions-btn').click();
-  check('chooser: practising frequent positions with low accuracy', [app.practice.singleAt != null, document.getElementById('practice-side').textContent.startsWith('Frequent positions with low accuracy: '),
-    document.getElementById('practice-chooser').classList.contains('hidden'), !document.getElementById('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
-  document.getElementById('end-practice-btn').click();
-  check('chooser: End practice brings the chooser back', [app.practice, document.getElementById('practice-chooser').classList.contains('hidden'), document.getElementById('end-practice-btn').classList.contains('hidden')], [null, false, true]);
-  chooser({ lines: { mode: 'weak' } });
-  document.getElementById('chooser-lines-btn').click();
-  check('chooser: practising frequent lines with low accuracy, from move 1', [app.practice.singleAt, document.getElementById('practice-side').textContent], [null, 'Frequent lines with low accuracy']);
-  app.endSession();
-  chooser({});
-  document.getElementById('chooser-lines-btn').click();
-  check('chooser: practising all lines', document.getElementById('practice-side').textContent, 'All lines');
-  app.endSession();
+  app.renderPracticeChooser();
+  check('what comes up most: positions', [shown('positions').length, (mainLinesOnly(false, true), shown('positions').length)], [3, 2]);
   app.setSettings({});
+  const lineRows = shown('lines');
+  check('what comes up most: lines, the one never played through first', lineRows.map(r => [r[0], r[2], r[3]]),
+    [['Test Study · Side line1. e4 f6 2. d4', '50%', '–'], ['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today']]);
+  check('what comes up most: chances add up to 100%', lineRows.reduce((sum, r) => sum + parseInt(r[4]), 0), 100);
+  $('chooser-positions-show').click();
+  check('what comes up most: the title and settings', [$('table-overlay').classList.contains('hidden'), $('overlay-title').textContent, $('overlay-choices').textContent],
+    [false, 'Positions that come up most', 'Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%']);
+  $('overlay-close').click();
+  check('what comes up most: × closes it', $('table-overlay').classList.contains('hidden'), true);
+  // The chooser and its sliders.
+  $('weight-accuracy').value = '80';
+  $('weight-accuracy').dispatchEvent(new Event('change'));
+  check('chooser: a slider changes its setting', [app.settings.weights.accuracy, $('weight-accuracy-value').textContent], [80, '80%']);
+  $('weights-reset').click();
+  check('chooser: Reset to defaults', app.settings.weights, { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 });
+  $('chooser-positions-btn').click();
+  check('chooser: practising positions', [app.practice.singleAt != null, $('practice-side').textContent.startsWith('Positions: '),
+    $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
+  $('end-practice-btn').click();
+  check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
+  $('chooser-lines-btn').click();
+  check('chooser: practising lines, from move 1', [app.practice.singleAt, $('practice-side').textContent], [null, 'Lines']);
+  app.endSession();
+  // Untried at 0% with nothing tried: nothing to practise.
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
-  check('positions: only ticked chapters', rows({}).length, 0);
-  check('lines: only ticked chapters, all moves tried', lineRows({}).length, 0);
+  app.setSettings({ weights: { untried: 0 } });
+  app.renderPracticeChooser();
+  check('chooser: nothing to practise when every line is untried and Untried is 0%', [$('chooser-lines-btn').disabled, $('chooser-lines-note').textContent], [true, 'Every line is untried, and Untried is at 0%.']);
+  app.setSelection([]);
   app.setSettings({});
+  app.renderPracticeChooser();
+  check('chooser: only ticked chapters', [$('chooser-positions-btn').disabled, $('chooser-positions-note').textContent], [true, 'No positions to practise: tick chapters on the Studies page.']);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
 }
 
