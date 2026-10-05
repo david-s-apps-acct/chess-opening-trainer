@@ -231,15 +231,13 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Practice page chooser
 
-- When nothing is in progress, the Practice page offers the ways to start practice (the user's request; shown only then, not during or after a line), in **one box** (the user's design, 5 October 2026; it replaced separate Lines and Positions boxes):
-  - a **switch**, **Lines** | **Positions**: two large buttons side by side, the chosen one blue and the other grey;
-  - under it, the chosen kind's checkbox, **Main lines only** or **Positions from main lines only**;
-  - **Show what comes up most** (see What comes up most), for the chosen kind;
-  - the collapsed **Adjust what comes up** panel with the four sliders (see Spaced repetition and its sliders);
-  - under it, a **Start practice** button.
-- *Claude's choices, for the user to accept or reject:* the switch remembers the chosen kind between visits (default Lines) and is included in backups; each kind keeps its own main-lines tick; Show what comes up most sits under the checkbox; Start practice is a larger blue button, left-aligned.
-- *Claude's choices, for the user to accept or reject:* the panel's name and its one-line explanation; the sliders move in steps of 5% and show their value; a **Reset to defaults** button; the buttons are disabled, with a note, when there's nothing to practise ("No lines to practise: tick chapters on the Studies page.", or "Every line is untried, and Untried is at 0%."); the checkboxes and sliders are remembered between visits and included in backups; the panel is closed whenever the page opens.
-- (History: the boxes had radio buttons, "All (spaced repetition)" and "Weak and frequent" — later "Frequent lines/positions with low accuracy" — with drop-downs "Maximum of [20] lines with ≤ [70]% accuracy" and a "Show table" (later "Show selected lines") button. Their settings are no longer kept.)
+- When nothing is in progress, the Practice page offers the ways to start practice (the user's request; shown only then, not during or after a line), in one box (the user's design, 5 October 2026):
+  - **a frame** (with a line around it) holding the **switch**, **Lines** | **Positions** (two large buttons side by side, the chosen one blue and the other grey), and under it the chosen kind's checkbox, **Main lines only** or **Positions from main lines only**;
+  - **a second frame, "Spaced repetition focus"** (first a collapsible panel called "Adjust what comes up"; the user asked for it to be always shown and renamed): a one-line explanation, the four sliders (see Spaced repetition and its sliders), then **Show likely** (first "Show what comes up most") and under it **Reset to defaults**;
+  - under the frames, a **Start practice** button.
+- *Claude's choices, accepted by the user (5 October, before the frames):* the switch remembers the chosen kind between visits (default Lines) and is included in backups; each kind keeps its own main-lines tick; Start practice is a larger blue button, left-aligned.
+- *Claude's choices, for the user to accept or reject:* the sliders move in steps of 5% and show their value; the buttons are disabled, with a note above Start practice, when there's nothing to practise ("No lines to practise: tick chapters on the Studies page.", or "Every line is untried, and Untried is at 0%."); the sliders are remembered between visits and included in backups. (The request named "Restore to defaults"; the button keeps its name, Reset to defaults.)
+- (History: there were separate Lines and Positions boxes, each with radio buttons "All (spaced repetition)" and "Weak and frequent" — later "Frequent lines/positions with low accuracy" — with drop-downs "Maximum of [20] lines with ≤ [70]% accuracy" and a "Show table" (later "Show selected lines") button. Their settings are no longer kept.)
 
 ### End practice
 
@@ -256,7 +254,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Accuracy:** a position's move accuracy; a line's line accuracy, with its untried moves counting as 0%. **Last tested:** a position's last-tried time; a line's last play-through from move 1 to the end.
   - **Frequency:** 0.2 to 1, by the rated Lichess games reaching the position (for a line, its final position), on a log scale up to the most frequent item being practised; 0.6 for an item whose statistics haven't downloaded.
   - E.g. a 100% position tested yesterday has need 0.1; a 50% position untested for a month 5.3; a new one 6; a 0% one never timed 9.
-- **The sliders** (the user's design): four sliders, 0% to 100%, shared by lines and positions, in **Adjust what comes up**: **Frequency**, **Accuracy** (low accuracy), **Last played** (not tested for a while) and **Untried**. The defaults give exactly the priority above. Moving Frequency and Accuracy to 100% and the others to 0% practises (almost) only common positions with low accuracy. *Claude's design, for the user to accept or reject:* each slider is a power on its part of the priority: 0% → power 0 (ignored), 50% (the default) → power 1 (as above), 100% → power 6, so the items highest in it take almost every pick (in between, the power rises evenly: 25% → 0.5, 75% → 3.5). **Untried** works on the 6 that untried items get: at 0% untried items never come up, and at 100% they get every pick until none is left. Sliders change chances, not rules: apart from Untried at 0% or 100%, every item can still come up.
+- **The sliders** (the user's design): four sliders, 0% to 100%, shared by lines and positions, under **Spaced repetition focus**: **Frequency**, **Accuracy** (low accuracy), **Last played** (not tested for a while) and **Untried**. The defaults give exactly the priority above. Moving Frequency and Accuracy to 100% and the others to 0% practises (almost) only common positions with low accuracy. *Claude's design, for the user to accept or reject:* each slider is a power on its part of the priority: 0% → power 0 (ignored), 50% (the default) → power 1 (as above), 100% → power 6, so the items highest in it take almost every pick (in between, the power rises evenly: 25% → 0.5, 75% → 3.5). **Untried** works on the 6 that untried items get: at 0% untried items never come up, and at 100% they get every pick until none is left. Sliders change chances, not rules: apart from Untried at 0% or 100%, every item can still come up.
 - The panel's line under the chapter name says "Lines", or "Positions: <position>" (it said "All lines" / "All positions: …" while there were two options).
 - The Help page's "How practice is chosen" card explains it, with the numbers in a collapsed section.
 
@@ -353,11 +351,12 @@ Lines are shown with the user's moves highlighted by score (see Progress trackin
 
 - "Clear stored token" and "Clear stored key" on the Options page don't ask for confirmation, since the token or key can simply be pasted back in; Restore backup does.
 
-## What comes up most
+## Most likely lines and positions (Show likely)
 
-- **Show what comes up most** (the user's request, with the sliders) lists, over the Practice page, the 20 lines or positions most likely to come up next with the current settings, the most likely first, closed with × (or Esc, or a click outside it). It replaced the "weak and frequent" tables below.
-- Its title is "Lines that come up most" / "Positions that come up most"; under it, the settings, e.g. "Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%" (and "main lines only" when ticked).
-- *Claude's choices, for the user to accept or reject:* 20 rows; the same columns as the old tables (study and chapter with the position's name; End position reached / Position reached, "–" until downloaded; Line accuracy / Move accuracy, "Untried" in grey when untried; Last tested) plus **Chance next**, each one's chance of being the next ("<1%" when tiny); untried lines and positions, and those without statistics, are included (the old tables left them out).
+- **Show likely** (the user's request, with the sliders; first called "Show what comes up most") lists, over the Practice page, the **25** lines or positions (first 20; the user asked for 25) most likely to come up next with the current settings, the most likely first, closed with × (or Esc, or a click outside it). It replaced the "weak and frequent" tables below.
+- Its title is "Most likely lines" / "Most likely positions" (first "Lines that come up most"); under it, the settings, e.g. "Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%" (and "main lines only" when ticked).
+- **Chance next** is shown to one decimal place, e.g. "0.3%" (the user's request; "<0.1%" when smaller).
+- *Claude's choices, for the user to accept or reject:* the same columns as the old tables (study and chapter with the position's name; End position reached / Position reached, "–" until downloaded; Line accuracy / Move accuracy, "Untried" in grey when untried; Last tested) plus **Chance next**, each one's chance of being the next; untried lines and positions, and those without statistics, are included (the old tables left them out).
 
 (The sections below describe the old tables, kept for their details: naming, columns, last tested.)
 

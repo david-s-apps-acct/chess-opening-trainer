@@ -327,7 +327,7 @@ async function runPractice(app) {
   app.setSettings({});
 }
 
-// ---------- Spaced repetition, What comes up most and the chooser ----------
+// ---------- Spaced repetition, Show likely and the chooser ----------
 
 // A chapter with a side variation for the opponent: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
 const SIDE_LINE = `[Event "Test Study: Side line"]
@@ -370,7 +370,7 @@ function runPositions(app) {
   check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
   const positionPriorities = app.priorities(positionItems);
   check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === 0));
-  // Show what comes up most.
+  // Show likely.
   const shown = kind => {
     $(`chooser-kind-${kind}`).click();
     $('chooser-show').click();
@@ -378,18 +378,18 @@ function runPositions(app) {
     return [...document.querySelectorAll('#overlay-rows tr')].map(tr => [...tr.cells].map(c => c.textContent));
   };
   app.renderPracticeChooser();
-  check('what comes up most: positions', [shown('positions').length, (mainLinesOnly(false, true), shown('positions').length)], [3, 2]);
+  check('show likely: positions', [shown('positions').length, (mainLinesOnly(false, true), shown('positions').length)], [3, 2]);
   app.setSettings({});
   const lineRows = shown('lines');
-  check('what comes up most: lines, the one never played through first', lineRows.map(r => [r[0], r[2], r[3]]),
+  check('show likely: lines, the one never played through first', lineRows.map(r => [r[0], r[2], r[3]]),
     [['Test Study · Side line1. e4 f6 2. d4', '50%', '–'], ['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today']]);
-  check('what comes up most: chances add up to 100%', lineRows.reduce((sum, r) => sum + parseInt(r[4]), 0), 100);
+  check('show likely: chances to one decimal, adding up to 100%', [lineRows.every(r => /^\d+\.\d%$/.test(r[4])), Math.round(lineRows.reduce((sum, r) => sum + parseFloat(r[4]), 0))], [true, 100]);
   $('chooser-kind-positions').click();
   $('chooser-show').click();
-  check('what comes up most: the title and settings', [$('table-overlay').classList.contains('hidden'), $('overlay-title').textContent, $('overlay-choices').textContent],
-    [false, 'Positions that come up most', 'Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%']);
+  check('show likely: the title and settings', [$('table-overlay').classList.contains('hidden'), $('overlay-title').textContent, $('overlay-choices').textContent],
+    [false, 'Most likely positions', 'Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%']);
   $('overlay-close').click();
-  check('what comes up most: × closes it', $('table-overlay').classList.contains('hidden'), true);
+  check('show likely: × closes it', $('table-overlay').classList.contains('hidden'), true);
   // The chooser and its sliders.
   $('weight-accuracy').value = '80';
   $('weight-accuracy').dispatchEvent(new Event('change'));
