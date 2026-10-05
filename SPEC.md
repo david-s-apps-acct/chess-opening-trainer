@@ -231,7 +231,13 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Practice page chooser
 
-- When nothing is in progress, the Practice page offers the ways to start practice (the user's request; shown only then, not during or after a line). Two outlined boxes, **Lines** and **Positions**, each with its main-lines checkbox (**Main lines only**, **Positions from main lines only**), a **Practice lines** / **Practice positions** button, and a **Show what comes up most** button (see What comes up most). Under them, a collapsed panel, **Adjust what comes up**, holds the four sliders (see Spaced repetition and its sliders). The user's design: one shared set of sliders, and the table button.
+- When nothing is in progress, the Practice page offers the ways to start practice (the user's request; shown only then, not during or after a line), in **one box** (the user's design, 5 October 2026; it replaced separate Lines and Positions boxes):
+  - a **switch**, **Lines** | **Positions**: two large buttons side by side, the chosen one blue and the other grey;
+  - under it, the chosen kind's checkbox, **Main lines only** or **Positions from main lines only**;
+  - **Show what comes up most** (see What comes up most), for the chosen kind;
+  - the collapsed **Adjust what comes up** panel with the four sliders (see Spaced repetition and its sliders);
+  - under it, a **Start practice** button.
+- *Claude's choices, for the user to accept or reject:* the switch remembers the chosen kind between visits (default Lines) and is included in backups; each kind keeps its own main-lines tick; Show what comes up most sits under the checkbox; Start practice is a larger blue button, left-aligned.
 - *Claude's choices, for the user to accept or reject:* the panel's name and its one-line explanation; the sliders move in steps of 5% and show their value; a **Reset to defaults** button; the buttons are disabled, with a note, when there's nothing to practise ("No lines to practise: tick chapters on the Studies page.", or "Every line is untried, and Untried is at 0%."); the checkboxes and sliders are remembered between visits and included in backups; the panel is closed whenever the page opens.
 - (History: the boxes had radio buttons, "All (spaced repetition)" and "Weak and frequent" — later "Frequent lines/positions with low accuracy" — with drop-downs "Maximum of [20] lines with ≤ [70]% accuracy" and a "Show table" (later "Show selected lines") button. Their settings are no longer kept.)
 

@@ -251,11 +251,15 @@
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
   #practice-title:empty, #practice-position:empty, #practice-side:empty { display: none; } /* nothing above the chooser */
-  .practice-chooser fieldset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0; padding: 6px 12px 10px; border: 1px solid var(--muted); border-radius: 4px; }
-  .practice-chooser legend { padding: 0 4px; font-size: 13px; color: var(--muted); }
   .practice-chooser label { display: flex; align-items: center; gap: 6px; }
   .practice-chooser input[type=radio], .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
-  .chooser-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+  /* Lines or Positions: two halves of one switch, the chosen one blue. */
+  .kind-switch { display: flex; }
+  .kind-switch button { flex: 1; padding: 9px 12px; font-size: 15px; font-weight: 600; border-radius: 0; }
+  .kind-switch button:first-child { border-radius: 4px 0 0 4px; }
+  .kind-switch button:last-child { border-radius: 0 4px 4px 0; }
+  .kind-switch button[aria-pressed=true], .kind-switch button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
+  .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .weights { border: 1px solid var(--muted); border-radius: 4px; padding: 6px 12px; }
   .weights summary { cursor: pointer; color: var(--accent); font-size: 14px; }
   .weights p { margin: 6px 0; }
@@ -409,18 +413,12 @@
         </div>
         <div id="practice-status" class="status"></div>
         <div id="practice-chooser" class="practice-chooser hidden">
-          <fieldset>
-            <legend>Lines</legend>
-            <label title="Only lines where the opponent always plays the study's main move"><input type="checkbox" id="chooser-lines-main"> Main lines only</label>
-            <div class="chooser-buttons"><button id="chooser-lines-btn" class="primary">Practice lines</button><button id="chooser-lines-show" class="small" title="The lines most likely to come up next, with the settings below">Show what comes up most</button></div>
-            <p id="chooser-lines-note" class="muted"></p>
-          </fieldset>
-          <fieldset>
-            <legend>Positions</legend>
-            <label title="Only positions reached by the study's main moves for the opponent"><input type="checkbox" id="chooser-positions-main"> Positions from main lines only</label>
-            <div class="chooser-buttons"><button id="chooser-positions-btn" class="primary">Practice positions</button><button id="chooser-positions-show" class="small" title="The positions most likely to come up next, with the settings below">Show what comes up most</button></div>
-            <p id="chooser-positions-note" class="muted"></p>
-          </fieldset>
+          <div class="kind-switch" role="group" aria-label="What to practise">
+            <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, each played from move 1 to the end">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="Single positions: one of your moves at a time">Positions</button>
+          </div>
+          <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
+          <div><button id="chooser-show" class="small" title="The ones most likely to come up next, with the settings below">Show what comes up most</button></div>
+          <p id="chooser-note" class="muted"></p>
           <details id="weights-panel" class="weights">
             <summary>Adjust what comes up</summary>
             <p class="muted">How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.</p>
@@ -432,6 +430,7 @@
             </div>
             <button id="weights-reset" class="small">Reset to defaults</button>
           </details>
+          <button id="chooser-start" class="primary chooser-start">Start practice</button>
         </div>
         <div class="actions">
           <button id="next-btn" class="primary hidden">Next line</button>
@@ -488,7 +487,7 @@
       <div class="card" id="help-practicing">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page offers <b>Lines</b> (whole lines, always from move 1 to the end) and <b>Positions</b> (single positions: just one of your moves at a time), from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Press <b>Practice lines</b> or <b>Practice positions</b>. Which comes up next is chosen by spaced repetition, and <b>Adjust what comes up</b> changes how (see How practice is chosen); <b>Show what comes up most</b> lists the ones most likely to come up next (see What comes up most). Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and <b>Adjust what comes up</b> changes how (see How practice is chosen); <b>Show what comes up most</b> lists the ones most likely to come up next (see What comes up most). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off (as does <b>Move sounds</b> on the Options page); a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -571,7 +570,7 @@
         <h2>How practice is chosen</h2>
         <ul>
           <li>Practice uses spaced repetition: before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, new ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
-          <li><b>Adjust what comes up</b> (under Lines and Positions) has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practises almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset to defaults</b> puts all four back to 50%.</li>
+          <li><b>Adjust what comes up</b> has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practises almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset to defaults</b> puts all four back to 50%.</li>
           <li>The same line or position is never given twice in a row when there's another to choose.</li>
         </ul>
         <details>
@@ -812,9 +811,9 @@ const DEFAULT_SETTINGS = {
   sounds: false,
   penalties: { alternative: 2, masters: 2, error: 5, hint: 10 },
   mastersTop: 5, // a masters move is within this many top master moves
-  // The Practice page: main lines only, for lines and for positions; and the four spaced-repetition
+  // The Practice page: lines or positions; main lines only, for each; and the four spaced-repetition
   // sliders (0–100, shared; see Spaced repetition).
-  practice: { lines: { mainLinesOnly: false }, positions: { mainLinesOnly: false } },
+  practice: { kind: 'lines', lines: { mainLinesOnly: false }, positions: { mainLinesOnly: false } },
   weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
 };
 const validPenalties = v => !!v && typeof v === 'object'
@@ -828,10 +827,13 @@ function checkedSettings(saved) {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     penalties: validPenalties(v.penalties) ? { ...v.penalties } : { ...d.penalties },
     mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
-    practice: Object.fromEntries(['lines', 'positions'].map(kind => {
-      const m = v.practice?.[kind]?.mainLinesOnly;
-      return [kind, { mainLinesOnly: typeof m === 'boolean' ? m : d.practice[kind].mainLinesOnly }];
-    })),
+    practice: {
+      kind: ['lines', 'positions'].includes(v.practice?.kind) ? v.practice.kind : d.practice.kind,
+      ...Object.fromEntries(['lines', 'positions'].map(kind => {
+        const m = v.practice?.[kind]?.mainLinesOnly;
+        return [kind, { mainLinesOnly: typeof m === 'boolean' ? m : d.practice[kind].mainLinesOnly }];
+      })),
+    },
     weights: Object.fromEntries(Object.entries(d.weights).map(([k, dv]) => {
       const w = v.weights?.[k];
       return [k, Number.isInteger(w) && w >= 0 && w <= 100 ? w : dv];
@@ -1921,12 +1923,14 @@ let session = null;
 // Lines and positions, the two kinds of practice: their words, columns and items.
 const KINDS = {
   lines: {
-    noun: 'line', label: 'Lines', mainLines: 'main lines only',
+    noun: 'line', label: 'Lines', mainLines: 'main lines only', mainLinesLabel: 'Main lines only',
+    mainLinesTitle: "Only lines where the opponent always plays the study's main move",
     columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested', 'Chance next'],
     all: () => allLineItems(),
   },
   positions: {
-    noun: 'position', label: 'Positions', mainLines: 'positions from main lines only',
+    noun: 'position', label: 'Positions', mainLines: 'positions from main lines only', mainLinesLabel: 'Positions from main lines only',
+    mainLinesTitle: "Only positions reached by the study's main moves for the opponent",
     columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested', 'Chance next'],
     all: () => allPositionItems(),
   },
@@ -1972,24 +1976,29 @@ function chooserItems(kind) {
     : !items.length ? `Every ${noun} is untried, and Untried is at 0%.` : '' };
 }
 
+// The chooser shows the chosen kind (settings.practice.kind): the switch, its main-lines checkbox,
+// and a note when there's nothing to practise.
 function renderPracticeChooser() {
-  for (const kind of Object.keys(KINDS)) {
-    $(`chooser-${kind}-main`).checked = settings.practice[kind].mainLinesOnly;
-    const { items, note } = chooserItems(kind);
-    $(`chooser-${kind}-btn`).disabled = $(`chooser-${kind}-show`).disabled = !items.length;
-    $(`chooser-${kind}-note`).textContent = note;
-  }
-  for (const k of Object.keys(WEIGHT_NAMES)) {
-    $(`weight-${k}`).value = String(settings.weights[k]);
-    $(`weight-${k}-value`).textContent = `${settings.weights[k]}%`;
+  const kind = settings.practice.kind, k = KINDS[kind];
+  for (const name of Object.keys(KINDS)) $(`chooser-kind-${name}`).setAttribute('aria-pressed', String(name === kind));
+  $('chooser-main').checked = settings.practice[kind].mainLinesOnly;
+  $('chooser-main-text').textContent = k.mainLinesLabel;
+  $('chooser-main-label').title = k.mainLinesTitle;
+  const { items, note } = chooserItems(kind);
+  $('chooser-start').disabled = $('chooser-show').disabled = !items.length;
+  $('chooser-note').textContent = note;
+  for (const w of Object.keys(WEIGHT_NAMES)) {
+    $(`weight-${w}`).value = String(settings.weights[w]);
+    $(`weight-${w}-value`).textContent = `${settings.weights[w]}%`;
   }
 }
 
 for (const kind of Object.keys(KINDS)) {
-  $(`chooser-${kind}-main`).addEventListener('change', e => { settings.practice[kind].mainLinesOnly = e.target.checked; saveSettings(); renderPracticeChooser(); });
-  $(`chooser-${kind}-btn`).addEventListener('click', () => startSession(kind, chooserItems(kind).items));
-  $(`chooser-${kind}-show`).addEventListener('click', () => showTableOverlay(kind));
+  $(`chooser-kind-${kind}`).addEventListener('click', () => { settings.practice.kind = kind; saveSettings(); renderPracticeChooser(); });
 }
+$('chooser-main').addEventListener('change', e => { settings.practice[settings.practice.kind].mainLinesOnly = e.target.checked; saveSettings(); renderPracticeChooser(); });
+$('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, chooserItems(settings.practice.kind).items));
+$('chooser-show').addEventListener('click', () => showTableOverlay(settings.practice.kind));
 for (const k of Object.keys(WEIGHT_NAMES)) {
   $(`weight-${k}`).addEventListener('input', e => { $(`weight-${k}-value`).textContent = `${e.target.value}%`; });
   $(`weight-${k}`).addEventListener('change', e => { settings.weights[k] = +e.target.value; saveSettings(); renderPracticeChooser(); });
