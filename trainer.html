@@ -114,7 +114,7 @@
   .option-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .option-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
-  /* The table shown by "Show likely" on the Practice page */
+  /* The table shown by "Test probabilities" on the Practice page */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   .report-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
   .report-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -423,13 +423,13 @@
             <h3>Spaced repetition focus</h3>
             <p class="muted">How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.</p>
             <div class="weight-rows">
-            <label for="weight-frequency" title="Positions reached most often in Lichess games come up more">Frequency</label><input type="range" id="weight-frequency" min="0" max="100" step="5"><output id="weight-frequency-value" for="weight-frequency"></output>
-            <label for="weight-accuracy" title="Ones with low accuracy come up more">Accuracy</label><input type="range" id="weight-accuracy" min="0" max="100" step="5"><output id="weight-accuracy-value" for="weight-accuracy"></output>
-            <label for="weight-lastPlayed" title="Ones not tested for a while (for their accuracy) come up more">Last played</label><input type="range" id="weight-lastPlayed" min="0" max="100" step="5"><output id="weight-lastPlayed-value" for="weight-lastPlayed"></output>
-            <label for="weight-untried" title="Ones you haven't tried yet come up more. At 0% they never come up; at 100% they come first, until none is left">Untried</label><input type="range" id="weight-untried" min="0" max="100" step="5"><output id="weight-untried-value" for="weight-untried"></output>
+            <label for="weight-frequency">Frequency</label><input type="range" id="weight-frequency" min="0" max="100" step="5"><output id="weight-frequency-value" for="weight-frequency"></output>
+            <label for="weight-accuracy">Accuracy</label><input type="range" id="weight-accuracy" min="0" max="100" step="5"><output id="weight-accuracy-value" for="weight-accuracy"></output>
+            <label for="weight-lastPlayed">Last played</label><input type="range" id="weight-lastPlayed" min="0" max="100" step="5"><output id="weight-lastPlayed-value" for="weight-lastPlayed"></output>
+            <label for="weight-untried">Untried</label><input type="range" id="weight-untried" min="0" max="100" step="5"><output id="weight-untried-value" for="weight-untried"></output>
             </div>
-            <div class="weights-buttons"><button id="chooser-show" class="small" title="The lines or positions most likely to come up next, with these settings">Show likely</button></div>
-            <div class="weights-buttons"><button id="weights-reset" class="small">Reset to defaults</button></div>
+            <div class="weights-buttons"><button id="chooser-show" class="small" title="The lines or positions most likely to come up next, with these settings">Test probabilities</button></div>
+            <div class="weights-buttons"><button id="weights-reset" class="small" title="Put all four sliders back to 50%">Reset</button></div>
           </div>
           <p id="chooser-note" class="muted"></p>
           <button id="chooser-start" class="primary chooser-start">Start practice</button>
@@ -445,7 +445,7 @@
   </section>
 
   <!-- Help -->
-  <!-- The table shown over the Practice page by "Show likely" -->
+  <!-- The table shown over the Practice page by "Test probabilities" -->
   <div id="table-overlay" class="table-overlay hidden">
     <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
       <div class="overlay-head"><h2 id="overlay-title"></h2><button id="overlay-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
@@ -457,7 +457,7 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Choosing studies and chapters</a> · <a href="#help-practicing">Practicing</a> · <a href="#help-statistics">Your statistics</a> · <a href="#help-tables">Most likely lines and positions</a> · <a href="#help-chosen">How practice is chosen</a> · <a href="#help-options">Options and backups</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Choosing studies and chapters</a> · <a href="#help-practicing">Practicing</a> · <a href="#help-statistics">Your statistics</a> · <a href="#help-tables">Test probabilities</a> · <a href="#help-chosen">How practice is chosen</a> · <a href="#help-options">Options and backups</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
@@ -489,7 +489,7 @@
       <div class="card" id="help-practicing">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Show likely</b> lists the ones most likely to come up next (see Most likely lines and positions). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Test probabilities</b> lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off (as does <b>Move sounds</b> on the Options page); a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -529,7 +529,7 @@
         </details>
         <details>
           <summary>When lines and positions were last practiced</summary>
-          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> in the list shown by Show likely, and used to choose what comes up.</p>
+          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> in the list shown by Test probabilities, and used to choose what comes up.</p>
           <ul>
             <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you skip or stop with <b>End practice</b>, and single positions, don't count for the line; they only count for the moves you played.</li>
             <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press Skip or End practice (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
@@ -559,8 +559,8 @@
       </div>
 
       <div class="card" id="help-tables">
-        <h2>Most likely lines and positions</h2>
-        <p>On the Practice page, <b>Show likely</b> (under <b>Spaced repetition focus</b>) lists the 25 lines (or positions) most likely to come up next with the current settings, the most likely first. × (or Esc) closes it.</p>
+        <h2>Test probabilities</h2>
+        <p>On the Practice page, <b>Test probabilities</b> (under <b>Spaced repetition focus</b>) lists the 25 lines (or positions) most likely to come up next with the current settings, the most likely first. × (or Esc) closes it.</p>
         <ul>
           <li>Each row: the study and chapter, then the position named the usual way (for a line, its final position); how many times that position was reached in rated Lichess games (<b>End position reached</b> for a line, <b>Position reached</b> for a position; "–" until its statistics have downloaded); its <b>line accuracy</b> or <b>move accuracy</b> ("Untried" if you haven't tried it); <b>Last tested</b>, how many days ago you last played the line through from move 1, or last tried the move ("–" if not known); and <b>Chance next</b>, its chance of being the next one, e.g. 0.3%.</li>
           <li>Hover over a row to see the small board: for a line, its final move; for a position, the correct move and the errors you've played.</li>
@@ -572,7 +572,7 @@
         <h2>How practice is chosen</h2>
         <ul>
           <li>Practice uses spaced repetition: before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, new ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
-          <li><b>Spaced repetition focus</b> has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practises almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset to defaults</b> puts all four back to 50%.</li>
+          <li><b>Spaced repetition focus</b> has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practises almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset</b> puts all four back to 50%. Hover over a slider's name to see what it means.</li>
           <li>The same line or position is never given twice in a row when there's another to choose.</li>
         </ul>
         <details>
@@ -1938,6 +1938,14 @@ const KINDS = {
   },
 };
 const WEIGHT_NAMES = { frequency: 'Frequency', accuracy: 'Accuracy', lastPlayed: 'Last played', untried: 'Untried' };
+// What each slider means, shown when hovering over its name.
+const WEIGHT_DEFINITIONS = {
+  frequency: 'How often the position is reached in rated Lichess games (for a line, its final position). The higher the slider, the more the frequent ones come up.',
+  accuracy: 'Your move accuracy for a position, or line accuracy for a line. The higher the slider, the more the ones with low accuracy come up.',
+  lastPlayed: 'How long since you last tested it, compared with how long you can expect to remember it (longer the better you know it). The higher the slider, the more the overdue ones come up.',
+  untried: "Lines and positions you haven't tried yet. At 0% they never come up; at 100% they come first, until none is left.",
+};
+for (const [k, text] of Object.entries(WEIGHT_DEFINITIONS)) quickTip(document.querySelector(`label[for=weight-${k}]`), text);
 
 // The Practice page before anything is practised: the chooser.
 function showPracticeIdle() {
@@ -2007,7 +2015,7 @@ for (const k of Object.keys(WEIGHT_NAMES)) {
 }
 $('weights-reset').addEventListener('click', () => { settings.weights = { ...DEFAULT_SETTINGS.weights }; saveSettings(); renderPracticeChooser(); });
 
-// "Show likely": the lines or positions most likely to come up next, with the current
+// "Test probabilities": the lines or positions most likely to come up next, with the current
 // settings, over the Practice page, closed with ×, Esc or a click outside it.
 const TOP_ROWS = 25;
 function showTableOverlay(kind) {
@@ -2017,8 +2025,8 @@ function showTableOverlay(kind) {
   const total = chances.reduce((sum, c) => sum + c, 0);
   const rows = parts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
     .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance).slice(0, TOP_ROWS);
-  $('overlay-title').textContent = `Most likely ${k.label.toLowerCase()}`;
-  $('overlay-choices').textContent = Object.entries(WEIGHT_NAMES).map(([key, name]) => `${name} ${settings.weights[key]}%`).join(' · ')
+  $('overlay-title').textContent = 'Test probabilities';
+  $('overlay-choices').textContent = [k.label, ...Object.entries(WEIGHT_NAMES).map(([key, name]) => `${name} ${settings.weights[key]}%`)].join(' · ')
     + (settings.practice[kind].mainLinesOnly ? ` · ${k.mainLines}` : '');
   $('overlay-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
   $('overlay-rows').replaceChildren(...rows.map(tableRow));
@@ -2875,8 +2883,8 @@ function mastersShareText(epd, moveSan) {
   return stats && !totalGames(stats) ? 'Not in master games' : rankAndShareText(stats, moveSan, 'masters', 'Not played by masters');
 }
 
-// ---------- Most likely lines and positions ----------
-// A row of the table shown by "Show likely": the study and chapter, the position's name
+// ---------- Test probabilities ----------
+// A row of the table shown by "Test probabilities": the study and chapter, the position's name
 // (a line's final position), how often it's reached, its accuracy, when it was last tested, and its
 // chance of coming up next. Hovering shows the small board (a line's last move).
 const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
