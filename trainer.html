@@ -1626,7 +1626,7 @@ function updateSelectionPanel() {
   const all_ = $('all-box');
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
-  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected · ${plural(selected.flatMap(chapterLines).length, 'line')}`;
+  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected`;
   renderPresets();
   // The top eye: a line through it while hidden studies are out of sight.
   const sh = $('show-hidden-btn');
