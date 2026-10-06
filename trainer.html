@@ -84,6 +84,9 @@
   .token-row { display: flex; gap: 8px; margin-top: 12px; }
   .token-row input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
+  .update-status { margin-top: 10px; }
+  .update-status:empty { display: none; }
+  .update-status.error { color: var(--bad); }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 
   /* Help screen */
@@ -643,6 +646,7 @@
         <p id="opt-fetch-info" class="muted"></p>
         <p class="muted">Update studies downloads all your Lichess studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves that are no longer in your studies.</p>
         <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
+        <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
       </div>
 
       <div class="card">
@@ -1013,15 +1017,25 @@ const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, und
 
 function askForToken() {
   showOptions();
-  showBanner('Enter a Lichess token first.', true);
+  setUpdateStatus('Enter a Lichess token first.', true);
   $('opt-token-input').focus();
+}
+
+// Messages about fetching from Lichess appear on the Options page, under Update studies (and, before
+// any studies have been fetched, in the Studies page's empty list).
+function setUpdateStatus(message, isError = false) {
+  const parts = [].concat(message).filter(part => part !== ''); // '' clears it
+  const box = $('update-status');
+  box.className = 'update-status' + (isError ? ' error' : '');
+  box.replaceChildren(...parts);
+  if (!library && parts.length) $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
 }
 
 async function fetchStudies() {
   if (!token) return askForToken();
   const btn = $('update-studies-btn');
   btn.disabled = true;
-  showBanner('Fetching your studies from Lichess…');
+  setUpdateStatus('Fetching your studies from Lichess…');
   try {
     const account = await lichessRequest('/api/account', token);
     const text = await lichessRequest(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
@@ -1033,10 +1047,10 @@ async function fetchStudies() {
     startDownloads(); // missing Lichess data, quietly in the background
     const n = library.studies.reduce((s, st) => s + st.chapters.length, 0);
     const ns = library.studies.length;
-    showBanner(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
+    setUpdateStatus(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
     if (currentScreen === 'options') renderOptions(); else showStudies();
   } catch (e) {
-    showBanner(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
+    setUpdateStatus(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
   } finally {
     btn.disabled = false;
   }
@@ -1597,12 +1611,10 @@ function hideStudyButton(study, isHidden) {
 function toggleHideStudy(study) {
   if (hiddenStudies.has(study.id)) {
     hiddenStudies.delete(study.id);
-    showBanner(`"${study.name}" is shown again.`);
   } else {
     hiddenStudies.add(study.id);
     for (const c of study.chapters) selection.delete(c.key);
     saveSelection();
-    showBanner(`Hid "${study.name}". It won't be practiced.`);
   }
   saveHidden();
   renderStudies();
@@ -2736,13 +2748,11 @@ function allStudyPositions() {
   return found;
 }
 
-// After a download completes: suggest saving a backup (the library took a while).
+// After a download completes: suggest saving a backup (the downloads took a while), under Update studies.
 function suggestBackup(what) {
-  const b = $('banner');
-  b.className = 'banner';
-  b.replaceChildren(`${what} are complete. Save a backup so you won't need to download them again? `,
-    element('button', { class: 'small', onclick: () => { hideBanner(); $('backup-btn').click(); } }, 'Save backup'), ' ',
-    element('button', { class: 'small', onclick: hideBanner }, 'Not now'));
+  setUpdateStatus([`${what} are complete. Save a backup so you won't need to download them again? `,
+    element('button', { class: 'small', onclick: () => { setUpdateStatus(''); $('backup-btn').click(); } }, 'Save backup'), ' ',
+    element('button', { class: 'small', onclick: () => setUpdateStatus('') }, 'Not now')]);
 }
 
 // ---------- Move statistics (Lichess Opening Explorer) ----------
