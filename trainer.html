@@ -1374,12 +1374,12 @@ function saveAttempts() {
   saveHistory();
 }
 
-// The moves other than the correct one in a list of attempts, with how often each was played:
-// [['Bc4', 2], ['d3', 1]].
-function wrongMoveCounts(attempts, correct) {
+// The errors in a list of attempts (everything tried other than the correct move: moves, "hint" and
+// "show"), with how often each was made, in the order first made: [['Bc4', 2], ['hint', 1]].
+function errorCounts(attempts, correct) {
   const counts = new Map();
   for (const a of attempts) {
-    for (const s of a.tried) if (s !== 'hint' && s !== 'show' && withoutCheckMarks(s) !== withoutCheckMarks(correct)) counts.set(s, (counts.get(s) || 0) + 1);
+    for (const x of a.tried) if (withoutCheckMarks(x) !== withoutCheckMarks(correct)) counts.set(x, (counts.get(x) || 0) + 1);
   }
   return [...counts];
 }
@@ -1544,9 +1544,7 @@ function renderChapterTree(ch) {
     // The last move of a line you practice is underlined.
     const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
     const el = element('span', { class: 'tree-move ' + cls + moveQualityClass(node) + lineEnd, tabindex: '0' }, withFigurines(node.san));
-    const show = () => showHoverBoard(el, line, i);
-    el.addEventListener('mouseenter', show); el.addEventListener('focus', show); el.addEventListener('click', show);
-    el.addEventListener('mouseleave', hideHoverBoard); el.addEventListener('blur', hideHoverBoard);
+    addHoverBoard(el, line, i);
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null, el, glyphMarks(node),
       hasComment(node) ? commentBubble(moveLabel(node), node.notes, false) : null, ' '], moves };
@@ -2088,9 +2086,7 @@ function probabilityRow({ item: { line, i }, accuracy, games, lastTested, chance
       : element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
     element('td', { class: 'num' }, daysAgo(lastTested)),
     element('td', { class: 'num' }, chanceText(chance)));
-  tr.addEventListener('mouseenter', () => showHoverBoard(tr.firstChild, line, hoverAt));
-  tr.addEventListener('mouseleave', hideHoverBoard);
-  return tr;
+  return addHoverBoard(tr, line, hoverAt, null, tr.firstChild);
 }
 
 function hideProbabilities() {
@@ -2454,8 +2450,7 @@ function renderMoveList() {
     // Every move already played has the small hover board, during the line too, with its Lichess
     // share and, for your moves, how you did on it this time. (Only played moves are listed, so it
     // never shows a move still to come.)
-    cell.addEventListener('mouseenter', () => showHoverBoard(cell, practice.line, i, { attempt }));
-    cell.addEventListener('mouseleave', hideHoverBoard);
+    addHoverBoard(cell, practice.line, i, { attempt });
     cells.push(cell);
   });
   box.replaceChildren(...(cells.length ? cells : [element('span', { class: 'none' }, 'No moves yet.')]));
@@ -2581,13 +2576,19 @@ $('sounds-check').addEventListener('change', e => setSounds(e.target.checked));
 
 let hoverBoard = null;
 
-// Shows the hover board for move i of line next to el. With { attempt }, it describes this
-// attempt at the move (the practice move list): the wrong moves played this time, not the last 10
-// attempts; attempt is null for a move of yours that wasn't played this time (before a single position).
+// Gives el the hover board for move i of line: shown on hover, focus or tap, next to anchor. With
+// thisTime ({ attempt }, in the practice move list) a move of yours is described by this attempt
+// (attempt is undefined for a move not played this time); otherwise by its last 10 attempts.
+function addHoverBoard(el, line, i, thisTime = null, anchor = el) {
+  const show = () => showHoverBoard(anchor, line, i, thisTime);
+  for (const event of ['mouseenter', 'focus', 'click']) el.addEventListener(event, show);
+  for (const event of ['mouseleave', 'blur']) el.addEventListener(event, hideHoverBoard);
+  return el;
+}
+
 function showHoverBoard(el, line, i, thisTime = null) {
   const m = line.moves[i];
-  const { position, lastMove, shapes, rows } = !m.isYours ? opponentMoveBoard(line, i)
-    : thisTime ? yourAttemptBoard(line, i, thisTime.attempt) : yourHistoryBoard(line, i);
+  const { position, lastMove, shapes, rows } = m.isYours ? yourMoveBoard(line, i, thisTime) : opponentMoveBoard(line, i);
   let box = $('move-preview');
   if (!box) {
     box = element('div', { id: 'move-preview', class: 'move-preview hidden' },
@@ -2625,39 +2626,29 @@ const previousOpponentMove = (line, i) => {
   return previous && !previous.isYours ? squaresOf(previous) : undefined;
 };
 
-// Your move in the practice move list: the position before it, an arrow for the correct move and one
-// for each error tried this time (see ERROR_COLORS); the move accuracy of this attempt and everything
-// tried before the correct move.
-function yourAttemptBoard(line, i, attempt) {
+// Your move: the position before it, an arrow for the correct move and one for each error, then,
+// under the shared heading, the move accuracy, when it was last tested, and the errors ("Errors: d4
+// (alternative ?!), a3 ×2, hint"), coloured as their arrows. In the practice move list (thisTime) it's
+// about this attempt; elsewhere, about the last 10 attempts.
+function yourMoveBoard(line, i, thisTime) {
   const m = line.moves[i];
-  const tried = attempt ? attempt.tried : [];
-  const shapes = answerArrows(m.parent.position, m, wrongMoveCounts([{ tried }], m.san));
-  const errors = tried.filter(x => x === 'hint' || x === 'show' || withoutCheckMarks(x) !== withoutCheckMarks(m.san))
-    .map(x => element('span', { class: 'error-' + errorColor(m, x) }, errorLabel(m, x)));
-  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes, rows: [...hoverBoardHeading(m),
-    element('div', {}, attempt ? `${attempt.points * 10}% move accuracy` : 'Not tested this time'),
-    errors.length ? element('div', {}, 'Errors: ', joined(errors)) : null] };
+  const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(line, i);
+  const errors = errorCounts(attempts, m.san);
+  const accuracy = thisTime ? (attempts.length ? `${attempts[0].points * 10}% move accuracy` : 'Not tested this time')
+    : attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet';
+  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, errors), rows: [
+    ...hoverBoardHeading(m),
+    element('div', {}, accuracy),
+    thisTime ? null : lastTestedText(lastTriedAt(moveKey(line, i))),
+    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) =>
+      element('span', { class: 'error-' + errorColor(m, x) }, errorLabel(m, x) + (n > 1 ? ` ×${n}` : ''))))) : null] };
 }
 
-// Your move in the Studies page's move tree (and the Test probabilities table): the position before
-// it, an arrow for the correct move and one for each error in its last 10 attempts (see
-// ERROR_COLORS); the move accuracy, when it was last tested, and the errors.
 // "Last tested today", "Last tested 3 days ago"; nothing when the time isn't known.
 function lastTestedText(time) {
   if (!time) return null;
   const days = daysAgo(time);
   return element('div', {}, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`);
-}
-
-function yourHistoryBoard(line, i) {
-  const m = line.moves[i];
-  const attempts = attemptsAt(line, i);
-  const wrong = wrongMoveCounts(attempts, m.san);
-  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, wrong), rows: [
-    ...hoverBoardHeading(m),
-    element('div', {}, attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet'),
-    lastTestedText(lastTriedAt(moveKey(line, i))),
-    wrong.length ? element('div', {}, 'Errors: ', joined(wrong.map(([s, n]) => element('span', { class: 'error-' + errorColor(m, s) }, withFigurines(s) + (n > 1 ? ` ×${n}` : ''))))) : null] };
 }
 
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
@@ -2672,7 +2663,7 @@ function opponentMoveBoard(line, i) {
     m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
 }
 
-// One thing tried before the correct move m, for the practice pop-up's "Errors: …" row, labelled by
+// One thing tried before the correct move m, for the hover board's "Errors: …" row, labelled by
 // how it was scored: "a3 (alternative)" and "b3 (masters)" (the alternative and masters penalties); an alternative the study
 // marks ?, ?? or ?! shows the mark, "a3 (alternative ?!)"; anything else is unlabelled, and "hint"
 // or "show correct move". A move that is both an unmarked alternative and a masters move is
@@ -2707,10 +2698,11 @@ const errorColor = (m, x) => x === 'hint' || x === 'show' ? 'red' : ERROR_COLORS
 // A list of elements separated by commas.
 const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
-// An arrow for each error played ([[san, count], …]) and one for the correct move.
-function answerArrows(pos, m, wrong) {
+// An arrow for each error that's a move (errors: [[x, count], …]; the hint has none) and one for the
+// correct move.
+function answerArrows(pos, m, errors) {
   const arrow = (mv, brush) => { const [orig, dest] = arrowSquares(pos, mv); return { orig, dest, brush }; };
-  const shapes = wrong.map(([s]) => [san.parseSan(pos, s), ERROR_BRUSHES[errorColor(m, s)]]).filter(([mv]) => mv).map(([mv, b]) => arrow(mv, b));
+  const shapes = errors.map(([x]) => [san.parseSan(pos, x), ERROR_BRUSHES[errorColor(m, x)]]).filter(([mv]) => mv).map(([mv, b]) => arrow(mv, b));
   return [...shapes, arrow(parseUci(m.uci), 'green')];
 }
 

@@ -40,7 +40,7 @@ export const app = {
   setHidden(ids) { hiddenStudies = new Set(ids); },
   checkedSettings, chapterByKey, chapterLines, alternativeCount, branchKeys, allStudyPositions,
   renderChapterTree,
-  positionName, pointsFor, isMasterMove, scoreOf, moveRank, wrongMoveCounts, moveKey,
+  positionName, pointsFor, isMasterMove, scoreOf, moveRank, errorCounts, moveKey,
   parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
   // Saving and network requests switched off, so stored data is never touched.
   isolate() {
@@ -202,7 +202,7 @@ function run(app) {
     ['Position reached … times', 'Position never reached', 'Position reached 950 times', 'Position reached 1.8bn times']);
 
   // Wrong moves counted over attempts
-  check('wrong move counts', app.wrongMoveCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['c4', 1]]);
+  check('error counts, the hint included', app.errorCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['hint', 1], ['c4', 1]]);
 
   // Move keys
   check('move key', app.moveKey(italian[0], 2), 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3');
