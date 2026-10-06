@@ -1664,14 +1664,17 @@ function chosenChanged() {
 function renderPresets() {
   const preset = chosenPreset();
   const changed = chosenChanged();
-  // The open list shows only the presets. With none chosen, the closed drop-down shows a hint that
-  // isn't in the list.
+  // The open list shows only the presets. The closed drop-down shows the chosen preset, or, with none
+  // chosen, a hint that isn't in the list. While the ticks differ from the chosen preset, its name is
+  // greyed out and shown by a hidden stand-in, so choosing the preset again in the list is a change
+  // (a drop-down ignores choosing what's already chosen) and ticks its chapters again.
+  const shown = !preset ? (presets.length ? 'None chosen' : 'No presets yet') : changed ? preset.name : null;
   $('preset-select').replaceChildren(
-    ...preset ? [] : [element('option', { value: '', hidden: true, disabled: true }, presets.length ? 'None chosen' : 'No presets yet')],
+    ...shown ? [element('option', { value: '', hidden: true, disabled: true }, shown)] : [],
     ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p =>
       element('option', { value: p.name }, p.name)));
-  $('preset-select').classList.toggle('changed', changed || !preset); // greyed out while the ticks differ, and "None chosen"
-  $('preset-select').value = preset ? preset.name : '';
+  $('preset-select').classList.toggle('changed', !!shown); // greyed out while the ticks differ, and "None chosen"
+  $('preset-select').value = shown ? '' : preset.name;
   $('preset-select').disabled = !presets.length;
   $('preset-new-btn').disabled = selection.size === 0;
   $('preset-update-btn').disabled = !preset || !changed || selection.size === 0;

@@ -458,7 +458,12 @@ function runPresets(app) {
   $('preset-name-cancel').click();
   app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
   app.renderPresets();
-  check('presets: changed ticks grey the name out', [options(), $('preset-select').classList.contains('changed'), $('preset-update-btn').disabled], [['Italian'], true, false]);
+  check('presets: changed ticks grey the name out', [options(), $('preset-select').classList.contains('changed'), $('preset-select').selectedOptions[0].textContent, $('preset-update-btn').disabled], [['Italian'], true, 'Italian', false]);
+  $('preset-select').value = 'Italian';
+  $('preset-select').dispatchEvent(new Event('change'));
+  check('presets: choosing the same preset again ticks its chapters again', [app.selection, $('preset-select').classList.contains('changed')], [['AAAAAAAA/BBBBBBBB'], false]);
+  app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
+  app.renderPresets();
   $('preset-update-btn').click();
   check('presets: Update, then the edit buttons close', [app.presets[0].chapters.length, $('preset-select').classList.contains('changed'), $('preset-update-btn').disabled, $('preset-edit').classList.contains('hidden')], [2, false, true, true]);
   $('preset-edit-btn').click();
