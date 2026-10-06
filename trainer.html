@@ -2695,13 +2695,12 @@ function errorKind(m, x) {
 // The colours of moves on the hover boards, as arrows and in their "Errors: …" lists: green for your
 // correct move; for an error, blue for an alternative or masters move, amber for a move the study
 // marks ?!, ? or ?? (the opponent's marked moves are amber too), red for anything else (the hint
-// included); white for the opponent's move. Errors' arrows are pale, so they differ from the correct
-// move by more than colour.
+// included); white for the opponent's move. Errors' arrows are a little lighter than the others.
 const ERROR_COLORS = { alternative: 'blue', masters: 'blue', marked: 'amber', wrong: 'red' };
 const ERROR_BRUSHES = { blue: 'errorBlue', amber: 'errorAmber', red: 'errorRed' };
-// The errors' arrows: chessground's blue, amber ("yellow") and red, fainter and wider than the
-// correct move's solid arrow.
-const errorArrow = (key, color) => ({ key, color, opacity: 0.65, lineWidth: 13 });
+// The errors' arrows: chessground's blue, amber ("yellow") and red, the same width as the other
+// arrows and only a little lighter than the correct move's solid arrow.
+const errorArrow = (key, color) => ({ key, color, opacity: 0.85, lineWidth: 10 });
 const ERROR_ARROWS = { errorBlue: errorArrow('eb', '#003088'), errorAmber: errorArrow('ea', '#e68f00'), errorRed: errorArrow('er', '#882020') };
 const errorColor = (m, x) => x === 'hint' || x === 'show' ? 'red' : ERROR_COLORS[errorKind(m, x)];
 

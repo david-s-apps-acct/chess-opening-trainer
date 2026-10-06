@@ -353,7 +353,7 @@ Lines are shown with the user's moves highlighted by score (see Progress trackin
 - **A move the study marks ?!, ? or ??:** amber (Lichess's colour for ?), whether it's your alternative or the opponent's move. (Marked moves used to be red, the same as any other error.)
 - **Any other error** (the hint included, in the list): red.
 - **The opponent's move:** a white arrow.
-- Errors' arrows are fainter and wider than the correct move's solid arrow (65% opacity; first 40%, made a little stronger at the user's request), so they differ from it by more than colour, which helps colour-blind users.
+- All the arrows are the same width, and errors' arrows are only a little lighter than the others (85% opacity), at the user's request. (They were first fainter and wider, at 40% then 65% opacity, to set them apart from the correct move by more than colour.)
 
 **Statistics page (removed).** There used to be a separate Statistics page (a "Statistics" header button) listing every played line across all studies, worst first, with a **Reset stats** control (pick everything, a study or a chapter, then an "Are you sure?"). The user asked to remove both: the page because a chapter's lines on the Studies page (now its move tree) show the same information, and Reset stats because it wasn't useful. Stats can no longer be cleared from the app; they're still dropped for lines that no longer exist after a refresh, and a backup can be restored.
 
