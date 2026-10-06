@@ -196,7 +196,7 @@
 
   /* Practice page */
   .quiz { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
-  .board-col { width: min(560px, calc(100vw - 44px)); flex: none; }
+  .board-col { width: min(640px, calc(100vw - 44px)); flex: none; }
   .icon-btn { background: none; box-shadow: none; padding: 2px 4px; color: var(--muted); line-height: 0; }
   .icon-btn:hover:not(:disabled) { background: none; color: var(--text-strong); }
   .icon-btn .sound-off-line { display: none; }
@@ -493,7 +493,7 @@
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs an error's penalty; an unmarked one gets "♗c4 is one of your alternative moves" and costs an alternative's penalty (see Your statistics). Any other wrong move says how popular it is, e.g. "♕d3 is the #3 masters move but not your move" (a masters move, see Your statistics) or "♕d3 is the #4 Lichess move but not your move" (an error), or just "♕d3 is not your move".</li>
+          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs an error's penalty; an unmarked one gets "♗c4 is one of your alternative moves" and costs an alternative's penalty (see Your statistics). Any other error says, on separate lines: "Not your preferred move"; how masters rate it, "#3 masters move" (a masters move, see Your statistics) or "Not a masters move"; and how often Lichess games play it, "#4 Lichess move" or "Not played in Lichess games". It's in red, except for a masters move, which costs less. (A line is left out until its statistics have downloaded.)</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move accuracy is 0% this time).</li>
           <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practising. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
@@ -2249,15 +2249,18 @@ async function rejectMove(status) {
   updateBoard();
 }
 
-// The status after a wrong move that isn't in the study, in the same words as the alternatives
-// ("♕d3 is one of your alternative moves"): a masters move (see isMasterMove)
-// "♕d3 is the #3 masters move but not your move"; otherwise, if Lichess games play it, "♕d3 is the
-// #4 Lichess move but not your move"; else "♕d3 is not your move". Only the masters move isn't red.
+// The status after an error that isn't in the study, one fact per line: "Not your preferred move",
+// then how masters rate it ("#3 masters move" for a masters move, see isMasterMove, otherwise "Not a
+// masters move"), then how often Lichess games play it ("#4 Lichess move", or "Not played in Lichess
+// games"). A line is left out while its statistics haven't downloaded. Red, except for a masters move.
 function wrongMoveStatus(expected, played) {
-  if (isMasterMove(expected.epdBefore, played)) return [`${withFigurines(played)} is the #${moveRank(masterGamesAt(expected.epdBefore), played)} masters move but not your move`];
-  const stats = lichessGamesAt(expected.epdBefore);
-  const r = stats && moveRank(stats, played);
-  return [r ? `${withFigurines(played)} is the #${r} Lichess move but not your move` : `${withFigurines(played)} is not your move`, 'bad'];
+  const masters = masterGamesAt(expected.epdBefore), lichess = lichessGamesAt(expected.epdBefore);
+  const isMasters = isMasterMove(expected.epdBefore, played);
+  const lichessRank = lichess && moveRank(lichess, played);
+  const lines = ['Not your preferred move',
+    masters && (isMasters ? `#${moveRank(masters, played)} masters move` : 'Not a masters move'),
+    lichess && (lichessRank ? `#${lichessRank} Lichess move` : 'Not played in Lichess games')];
+  return [lines.filter(Boolean).map(text => element('div', {}, text)), isMasters ? '' : 'bad'];
 }
 
 // An alternative the study marks ?, ?? or ?!: say so, show the opponent's reply from that

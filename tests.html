@@ -265,7 +265,9 @@ async function runPractice(app) {
   // 1. The main line, with a masters move, an alternative, a marked alternative and a hint.
   app.startLine(main);
   await play('d2d4');
-  check('practice: masters move message', status(), 'd4 is the #2 masters move but not your move');
+  const statusLines = () => [...document.getElementById('practice-status').children].map(d => d.textContent);
+  const isRed = () => document.getElementById('practice-status').classList.contains('bad');
+  check('practice: masters move message, one fact per line, not red', [statusLines(), isRed()], [['Not your preferred move', '#2 masters move', '#2 Lichess move'], false]);
   await play('e2e4');
   await play('b1c3');
   check('practice: alternative message', status(), '♘c3 is one of your alternative moves');
@@ -322,6 +324,7 @@ async function runPractice(app) {
   const before = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length;
   await play('e2e4');
   await play('a2a3'); // an error on the move you're on
+  check('practice: error message, in red (no masters statistics here, so no masters line)', [statusLines(), isRed()], [['Not your preferred move', 'Not played in Lichess games'], true]);
   await until(yourTurn, 'the error to be taken back');
   document.getElementById('end-practice-btn').click();
   check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length - before,
