@@ -97,7 +97,7 @@ const LIBRARY = {
 };
 
 const explorer = (moves, extra = {}) => {
-  const list = moves.map(([san, n]) => ({ san, uci: '', white: n, draws: 0, black: 0 }));
+  const list = moves.map(([san, n]) => ({ san, uci: '', white: n, draws: 0, black: 0, averageRating: 2000 + n }));
   return { white: list.reduce((s, m) => s + m.white, 0), draws: 0, black: 0, moves: list, ...extra };
 };
 
@@ -268,7 +268,7 @@ async function runPractice(app) {
   // The status's lines, each [text, whether it's red].
   const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.classList.contains('bad')]);
   check('practice: a masters move and top-3 Lichess move, one fact per line, none red', statusLines(),
-    [['Not your preferred move', false], ['#2 masters move', false], ['#2 Lichess move', false]]);
+    [['Not your preferred move', false], ['#2 masters move', false], ['#2 Lichess move (average ELO 2300)', false]]);
   await play('e2e4');
   await play('b1c3');
   check('practice: alternative message, not red', statusLines()[0], ['Alternative move, not your preferred move', false]);
