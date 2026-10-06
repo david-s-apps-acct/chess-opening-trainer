@@ -544,7 +544,7 @@
             <li><b>Studies page</b>: each study and chapter shows the average move accuracy of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
             <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
             <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by move accuracy.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colours), and above it the move with how often it's played in Lichess games, e.g. "5. c3 (Lichess games 45%)" (once the statistics have downloaded), then e.g. "75% move accuracy (last 10 tries)" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colours), and above it the move, its rank and share among Lichess games and master games, e.g. "#2 overall move (27%)" and "#1 masters move (90%)" (once the statistics have downloaded), and "Position reached 23k times", the same as in the practice move list; then e.g. "75% move accuracy (last 10 tries)", "Last tested 3 days ago" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
           </ul>
         </details>
         <details>
@@ -2586,7 +2586,7 @@ let hoverBoard = null;
 // attempts; attempt is null for a move of yours that wasn't played this time (before a single position).
 function showHoverBoard(el, line, i, thisTime = null) {
   const m = line.moves[i];
-  const { position, lastMove, shapes, rows } = !m.isYours ? opponentMoveBoard(line, i, thisTime)
+  const { position, lastMove, shapes, rows } = !m.isYours ? opponentMoveBoard(line, i)
     : thisTime ? yourAttemptBoard(line, i, thisTime.attempt) : yourHistoryBoard(line, i);
   let box = $('move-preview');
   if (!box) {
@@ -2609,17 +2609,12 @@ function showHoverBoard(el, line, i, thisTime = null) {
   hoverBoard.redrawAll();
 }
 
-// The rows shared by every hover board. In the practice move list: the move alone, then its rank
-// and share among all Lichess games and among master games (each left out until downloaded). In
-// the Studies page's move tree: the move with its Lichess share, e.g. "2… ♘c6 (Lichess games 62%)".
-// Then "Position reached 23k times": the Lichess games reaching the position after the move.
-function hoverBoardHeading(m, inPractice) {
+// The rows shared by every hover board (the practice move list, the Studies page's move tree and the
+// Test probabilities table alike): the move, then its rank and share among all Lichess games and
+// among master games (each left out until downloaded), e.g. "#2 overall move (27%)", then "Position
+// reached 23k times": the Lichess games reaching the position after the move.
+function hoverBoardHeading(m) {
   const count = element('div', { class: 'muted' }, positionCountText(lichessGamesAt(m.epd)));
-  if (!inPractice) {
-    const share = moveShare(m.epdBefore, m.san);
-    return [element('div', {}, element('b', {}, moveLabel(m)),
-      element('span', { class: 'muted', style: 'margin-left: 0.6em' }, share === 'no games' ? '(no Lichess games)' : `(Lichess games ${share})`)), count];
-  }
   const shares = [lichessShareText(m.epdBefore, m.san), mastersShareText(m.epdBefore, m.san)].map(t => t && element('div', { class: 'muted' }, t));
   return [element('div', {}, element('b', {}, moveLabel(m))), ...shares, count];
 }
@@ -2639,32 +2634,41 @@ function yourAttemptBoard(line, i, attempt) {
   const shapes = answerArrows(m.parent.position, m, wrongMoveCounts([{ tried }], m.san));
   const errors = tried.filter(x => x === 'hint' || x === 'show' || withoutCheckMarks(x) !== withoutCheckMarks(m.san))
     .map(x => element('span', { class: 'error-' + errorColor(m, x) }, errorLabel(m, x)));
-  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes, rows: [...hoverBoardHeading(m, true),
+  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes, rows: [...hoverBoardHeading(m),
     element('div', {}, attempt ? `${attempt.points * 10}% move accuracy` : 'Not tested this time'),
     errors.length ? element('div', {}, 'Errors: ', joined(errors)) : null] };
 }
 
-// Your move in the Studies page's move tree (and the positions table): the position before it, an
-// arrow for the correct move and one for each error in its last 10 attempts (see ERROR_COLORS).
+// Your move in the Studies page's move tree (and the Test probabilities table): the position before
+// it, an arrow for the correct move and one for each error in its last 10 attempts (see
+// ERROR_COLORS); the move accuracy, when it was last tested, and the errors.
+// "Last tested today", "Last tested 3 days ago"; nothing when the time isn't known.
+function lastTestedText(time) {
+  if (!time) return null;
+  const days = daysAgo(time);
+  return element('div', {}, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`);
+}
+
 function yourHistoryBoard(line, i) {
   const m = line.moves[i];
   const attempts = attemptsAt(line, i);
   const wrong = wrongMoveCounts(attempts, m.san);
   return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, wrong), rows: [
-    ...hoverBoardHeading(m, false),
+    ...hoverBoardHeading(m),
     element('div', {}, attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet'),
+    lastTestedText(lastTriedAt(moveKey(line, i))),
     wrong.length ? element('div', {}, 'Errors: ', joined(wrong.map(([s, n]) => element('span', { class: 'error-' + errorColor(m, s) }, withFigurines(s) + (n > 1 ? ` ×${n}` : ''))))) : null] };
 }
 
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
 // on Lichess, with the move as a white arrow, or amber if the study marks it ?!, ? or ?? (see
 // ERROR_COLORS).
-function opponentMoveBoard(line, i, thisTime) {
+function opponentMoveBoard(line, i) {
   const m = line.moves[i];
   const [orig, dest] = arrowSquares(m.parent.position, parseUci(m.uci));
   const mistake = isMistake(m);
   return { position: m.position, lastMove: squaresOf(m), shapes: [{ orig, dest, brush: mistake ? 'yellow' : 'white' }], rows: [
-    ...hoverBoardHeading(m, !!thisTime),
+    ...hoverBoardHeading(m),
     m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
 }
 
@@ -2906,12 +2910,6 @@ function positionCountText(stats) {
   return `Position reached ${shortCount(n)} times`;
 }
 
-// A move's share of the Lichess games in a position: "45%", "<1%", "0%", "no games", or "–" when
-// that position's statistics haven't been downloaded yet.
-function moveShare(epd, moveSan) {
-  const share = shareText(lichessGamesAt(epd), moveSan);
-  return share == null ? '–' : share || 'no games';
-}
 
 // A move's share of a position's games as a percentage ("45%", "<1%", "0%"); null when the
 // statistics haven't been downloaded yet, '' when no game reaches the position.
