@@ -500,13 +500,13 @@
         <h2>Your statistics</h2>
         <p>The app measures the <b>move accuracy</b> of each of <b>your</b> moves separately (and a <b>line accuracy</b> each time you complete a line), so you can see exactly which moves you know and which you don't.</p>
         <ul>
-          <li>Each attempt at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each <b>error</b> before the right move (any move that isn't the one in your study, or the hint) costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past attempts are re-scored straight away.</li>
+          <li>Each try at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each <b>error</b> before the right move (any move that isn't the one in your study, or the hint) costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past tries are re-scored straight away.</li>
           <li><b>Errors and mistakes</b> mean different things in this app. An <b>error</b> is any move you play that isn't the one in your study, or the hint; errors are what reduce move accuracy. A <b>mistake</b> is a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious), for example a reply your study gives the opponent with ?.</li>
           <li><b>Alternative move</b>, −20%: one of your study's unmarked alternative moves.</li>
           <li><b>Masters move</b>, −20%: a move among the <b>top 5</b> master moves in that position that masters play <b>10% of the time or more</b> (in Lichess's Masters database). You can change "top 5" to anything from top 1 to top 5 on the Options page. Other moves masters play count as errors. A move that is both an alternative and a masters move costs the alternative's penalty.</li>
           <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
           <li><b>Hint</b>, −100%: the Hint, and Show correct move. Move accuracy never goes below 0%.</li>
-          <li>Each move keeps its <b>last 10 attempts</b>, including everything you tried. Its <b>move accuracy</b> is their average, as a percentage, with recent attempts counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. attempts of 0%, 80%, 100%, 100% (oldest to newest) give 74%. Move accuracies are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
+          <li>Each move keeps its <b>last 10 tries</b>, including everything you tried. Its <b>move accuracy</b> is their average, as a percentage, with recent tries counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. tries of 0%, 80%, 100%, 100% (oldest to newest) give 74%. Move accuracies are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
           <li><b>Not counted</b>: a line dropped because you refreshed your studies in the middle of it.</li>
           <li>Highlighting: moves you know (<span class="score-100">100%</span>) look plain. Moves that need work, below 100%, get a <span class="needs-work">violet background</span>, the same for any accuracy below 100%. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
         </ul>
@@ -538,7 +538,7 @@
             <li><b>Studies page</b>: each study and chapter shows the average move accuracy of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
             <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
             <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by move accuracy.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colours), and above it the move, its rank and share among Lichess games and master games, e.g. "#2 overall move (27%)" and "#1 masters move (90%)" (once the statistics have downloaded), and "Position reached 23k times", the same as in the practice move list; then e.g. "75% move accuracy (last 10 tries)", "Last tested 3 days ago" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colours), and above it the move, its rank and share among Lichess games and master games, e.g. "#2 Lichess move (27%)" and "#1 masters move (90%)" (once the statistics have downloaded), and "Position reached 23k times", the same as in the practice move list; then e.g. "75% move accuracy (last 10 tries)", "Last tested 3 days ago" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
           </ul>
         </details>
         <details>
@@ -592,7 +592,7 @@
           <p><b>The pick.</b> Priorities are worked out afresh before every pick, so as soon as you answer one, its priority changes. The pick is random but weighted: the order is never predictable, and low-priority ones still come up now and then. The same one is never given twice in a row when there's another to choose.</p>
           <p><b>Worth knowing:</b></p>
           <ul>
-            <li>Attempts from before each attempt got its own time count as "last tested unknown", so they're treated as fully due; this fades as you practise.</li>
+            <li>Tries from before each try got its own time count as "last tested unknown", so they're treated as fully due; this fades as you practise.</li>
             <li>New ones are favoured: with many you haven't tried, they'll fill early sessions, since 6 is more than most tried ones' need.</li>
             <li>Lines and positions are chosen separately: a position you've just answered in a line can still come up soon under Positions, since only that move's last-tried time changed.</li>
           </ul>
@@ -615,7 +615,7 @@
     <div class="cards">
       <div class="card">
         <h2>Error penalties reducing move accuracy</h2>
-        <p class="muted">How much of a move's accuracy each error costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changing these recalculates the move accuracy of all your past attempts straight away.</p>
+        <p class="muted">How much of a move's accuracy each error costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changing these recalculates the move accuracy of all your past tries straight away.</p>
         <div class="penalties">
           <label for="pen-alternative">Alternative move <span class="muted">(an unmarked alternative from your study)</span></label>
           <select id="pen-alternative" class="pen-select"></select>
@@ -1426,7 +1426,7 @@ function scoreElement({ lines, tried, score }) {
   if (!lines) return element('span', { class: 'rate' }, 'no lines to test');
   if (!tried) return element('span', { class: 'rate' });
   return quickTip(element('span', { class: 'rate' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)), // highlight just the text
-    'Average move accuracy over the last 10 attempts');
+    'Average move accuracy over the last 10 tries');
 }
 
 // "· 5 lines" after a chapter's name.
@@ -1744,6 +1744,8 @@ function hideNameForm() {
 }
 
 // The ✎ button opens the edit panel under the bar; × (or ✎ again) closes it.
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('preset-edit').classList.contains('hidden')) showPresetEdit(false); });
+
 function showPresetEdit(open) {
   $('preset-edit').classList.toggle('hidden', !open);
   $('preset-edit-btn').setAttribute('aria-expanded', String(open));
@@ -2249,29 +2251,31 @@ async function rejectMove(status) {
   fadeToYourMove();
 }
 
-// The status after an error, one fact per line, each in red or not:
-//   what the move is: "Not your preferred move" (red, unless it's a masters move); for one of your
-//     study's alternatives, "Alternative move, not your preferred move" (not red), or, for one the
-//     study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (red), followed by the
+// The status after an error, one fact per line, each coloured like the move on the hover boards
+// (see ERROR_COLORS):
+//   what the move is: "Not your preferred move" (red; blue for a masters move); for one of your
+//     study's alternatives, "Alternative move, not your preferred move" (blue), or, for one the study
+//     marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (amber), followed by the
 //     opponent's reply from that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
-//   how masters rate it: "#3 masters move (played 1.2k times)" for a masters move (see isMasterMove),
+//   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; blue),
 //     otherwise "Not a masters move" (red);
-//   how often Lichess games play it: "#4 Lichess move (played 23k times)", red unless it's among the
-//     top 3, or "Not played in Lichess games" (red).
-// A line is left out while its statistics haven't downloaded. Every line is red for a move the
-// study marks ?!, ? or ??.
+//   how often Lichess games play it: "#4 Lichess move (8%)", plain for the top 3 and red from #4,
+//     or "Not played in Lichess games" (red).
+// The percentages are the move's share of the games there, as on the hover boards. A line is left
+// out while its statistics haven't downloaded. For a move the study marks ?!, ? or ??, the masters
+// and Lichess lines are red.
 function errorStatus(expected, played) {
   const epd = expected.epdBefore, alt = expected.alternatives?.[played], marked = isMistake(alt);
   const masters = masterGamesAt(epd), lichess = lichessGamesAt(epd);
   const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
-  const timesPlayed = stats => ` (played ${shortCount(gamesWith(stats, played))} times)`;
-  const line = (text, red) => element('div', { class: red || marked ? 'bad' : null }, text);
+  const line = (text, color) => element('div', { class: color ? 'error-' + color : null }, text);
+  const stat = (good, color) => marked ? 'red' : good ? color : 'red';
   return [
-    marked ? line(`Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`)
-      : alt ? line('Alternative move, not your preferred move', false) : line('Not your preferred move', !isMasters),
-    marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`),
-    masters && line(isMasters ? `#${moveRank(masters, played)} masters move${timesPlayed(masters)}` : 'Not a masters move', !isMasters),
-    lichess && line(lichessRank ? `#${lichessRank} Lichess move${timesPlayed(lichess)}` : 'Not played in Lichess games', !(lichessRank && lichessRank <= 3)),
+    marked ? line(`Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`, 'amber')
+      : alt ? line('Alternative move, not your preferred move', 'blue') : line('Not your preferred move', isMasters ? 'blue' : 'red'),
+    marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'amber'),
+    masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', stat(isMasters, 'blue')),
+    lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', stat(lichessRank && lichessRank <= 3, null)),
   ].filter(Boolean);
 }
 
@@ -2600,12 +2604,12 @@ function showHoverBoard(el, line, i, thisTime = null) {
 
 // The rows shared by every hover board (the practice move list, the Studies page's move tree and the
 // Test probabilities table alike): the move, then its rank and share among all Lichess games and
-// among master games (each left out until downloaded), e.g. "#2 overall move (27%)", then "Position
+// among master games (each left out until downloaded), e.g. "#2 Lichess move (27%)", then "Position
 // reached 23k times": the Lichess games reaching the position after the move.
 function hoverBoardHeading(m) {
-  const count = element('div', { class: 'muted' }, positionCountText(lichessGamesAt(m.epd)));
+  const countText = positionCountText(lichessGamesAt(m.epd)), count = countText && element('div', { class: 'muted' }, countText);
   const masters = masterGamesAt(m.epdBefore);
-  const shares = [rankAndShareText(lichessGamesAt(m.epdBefore), m.san, 'overall', 'Not played overall'),
+  const shares = [rankAndShareText(lichessGamesAt(m.epdBefore), m.san, 'Lichess', 'Not played in Lichess games'),
     masters && !totalGames(masters) ? 'Not in master games' : rankAndShareText(masters, m.san, 'masters', 'Not played by masters')]
     .map(t => t && element('div', { class: 'muted' }, t));
   return [element('div', {}, element('b', {}, moveLabel(m))), ...shares, count];
@@ -2626,7 +2630,7 @@ function yourMoveBoard(line, i, thisTime) {
   const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(line, i);
   const errors = errorCounts(attempts, m.san);
   const accuracy = thisTime ? (attempts.length ? `${attempts[0].points * 10}% move accuracy` : 'Not tested this time')
-    : attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Not tried yet';
+    : attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Untried';
   return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, errors), rows: [
     ...hoverBoardHeading(m),
     element('div', {}, accuracy),
@@ -2881,10 +2885,10 @@ function updateStatisticsInfo() {
   }
 }
 
-// "Position reached 950 / 23k / 1.2M / 1.8bn times" (the same short counts as everywhere), "Position reached … times"
-// (not downloaded yet) or "Position never reached".
+// "Position reached 950 / 23k / 1.2M / 1.8bn times" (the same short counts as everywhere), or
+// "Position never reached"; null while the position's statistics haven't downloaded.
 function positionCountText(stats) {
-  if (!stats) return 'Position reached … times';
+  if (!stats) return null;
   const n = totalGames(stats);
   if (!n) return 'Position never reached';
   return `Position reached ${shortCount(n)} times`;
@@ -2908,8 +2912,8 @@ function moveRank(stats, moveSan) {
   const counts = stats.moves.map(totalGames);
   return 1 + counts.filter(c => c > n).length;
 }
-// The practice pop-up board's share lines, e.g. "#2 overall move (27%)" and "#1 masters move (90%)";
-// "Not played overall" / "Not played by masters" for a move no game played there.
+// The hover boards' share lines, e.g. "#2 Lichess move (27%)" and "#1 masters move (90%)"; "Not
+// played in Lichess games" / "Not played by masters" for a move no game played there.
 function rankAndShareText(stats, moveSan, who, none) {
   const s = shareText(stats, moveSan);
   if (s == null) return null;

@@ -198,7 +198,7 @@ function run(app) {
   check('short counts', [950, 23400, 999600, 1234567, 999960000, 1846500000].map(app.shortCount), ['950', '23k', '1.0M', '1.2M', '1.0bn', '1.8bn']);
 
   check('position counts use the same short counts', [undefined, explorer([]), explorer([['e4', 950]]), explorer([['e4', 1846500000]])].map(app.positionCountText),
-    ['Position reached … times', 'Position never reached', 'Position reached 950 times', 'Position reached 1.8bn times']);
+    [null, 'Position never reached', 'Position reached 950 times', 'Position reached 1.8bn times']);
 
   // Wrong moves counted over attempts
   check('error counts, the hint included', app.errorCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['hint', 1], ['c4', 1]]);
@@ -265,18 +265,19 @@ async function runPractice(app) {
   app.startLine(main);
   await play('d2d4');
   // The status's lines, each [text, whether it's red].
-  const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.classList.contains('bad')]);
-  check('practice: a masters move and top-3 Lichess move, one fact per line, none red', statusLines(),
-    [['Not your preferred move', false], ['#2 masters move (played 300 times)', false], ['#2 Lichess move (played 300 times)', false]]);
+  // The status's lines, each [text, its colour: 'red', 'blue', 'amber' or '' (plain)].
+  const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.className.replace('error-', '')]);
+  check('practice: a masters move and top-3 Lichess move, one fact per line, as on the hover boards', statusLines(),
+    [['Not your preferred move', 'blue'], ['#2 masters move (30%)', 'blue'], ['#2 Lichess move (30%)', '']]);
   await new Promise(r => setTimeout(r, 3800));
   check('practice: after 3 seconds the message fades to "Your move", with where you are in the line', status(), 'Your move (1 of 6 in line)');
   await play('e2e4');
   await play('b1c3');
-  check('practice: alternative message, not red', statusLines()[0], ['Alternative move, not your preferred move', false]);
+  check('practice: alternative message, blue', statusLines()[0], ['Alternative move, not your preferred move', 'blue']);
   await play('g1f3');
   await play('f1b5');
-  check('practice: marked alternative message, with the study\'s answer, every line red, taken back at once', [statusLines()[0][0], statusLines().every(([, red]) => red), yourTurn()],
-    ['Alternative move marked as a mistake', true, true]);
+  check('practice: marked alternative message, amber, its statistics red, taken back at once', [statusLines()[0], statusLines().slice(1).every(([, c]) => c === 'red' || c === 'amber'), yourTurn()],
+    [['Alternative move marked as a mistake', 'amber'], true, true]);
   const d6Line = app.chapterLines(app.chapterByKey('AAAAAAAA/BBBBBBBB')).find(l => l.key.endsWith('Nf3 d6 d4'));
   check('practice: a marked alternative with a reply in the study', app.errorStatus(d6Line.moves[4], 'Bc4').slice(0, 2).map(d => d.textContent),
     ['Alternative move marked as a dubious move', 'Your study answers 3… h6']);
@@ -329,7 +330,7 @@ async function runPractice(app) {
   const before = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length;
   await play('e2e4');
   await play('a2a3'); // an error on the move you're on
-  check('practice: error message, in red (no masters statistics here, so no masters line)', statusLines(), [['Not your preferred move', true], ['Not played in Lichess games', true]]);
+  check('practice: error message, in red (no masters statistics here, so no masters line)', statusLines(), [['Not your preferred move', 'red'], ['Not played in Lichess games', 'red']]);
   await until(yourTurn, 'the error to be taken back');
   document.getElementById('end-practice-btn').click();
   check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length - before,
