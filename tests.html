@@ -265,15 +265,16 @@ async function runPractice(app) {
   // 1. The main line, with a masters move, an alternative, a marked alternative and a hint.
   app.startLine(main);
   await play('d2d4');
-  const statusLines = () => [...document.getElementById('practice-status').children].map(d => d.textContent);
-  const isRed = () => document.getElementById('practice-status').classList.contains('bad');
-  check('practice: masters move message, one fact per line, not red', [statusLines(), isRed()], [['Not your preferred move', '#2 masters move', '#2 Lichess move'], false]);
+  // The status's lines, each [text, whether it's red].
+  const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.classList.contains('bad')]);
+  check('practice: a masters move and top-3 Lichess move, one fact per line, none red', statusLines(),
+    [['Not your preferred move', false], ['#2 masters move', false], ['#2 Lichess move', false]]);
   await play('e2e4');
   await play('b1c3');
-  check('practice: alternative message', status(), '♘c3 is one of your alternative moves');
+  check('practice: alternative message, not red', statusLines()[0], ['Alternative move, not your preferred move', false]);
   await play('g1f3');
   await play('f1b5');
-  check('practice: marked alternative message', status(), '♗b5? is one of your alternative moves, marked as a mistake');
+  check('practice: marked alternative message, every line red', [statusLines()[0], statusLines().every(([, red]) => red)], [['Alternative move marked as a mistake', true], true]);
   await until(yourTurn, 'the marked alternative to be taken back');
   document.getElementById('hint-btn').click();
   check('practice: hint shows the study comment on the wrong move', status(), 'Hint: move the circled piece.3. ♗b5 (your move)? Mistake: Not in this repertoire.');
@@ -324,7 +325,7 @@ async function runPractice(app) {
   const before = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length;
   await play('e2e4');
   await play('a2a3'); // an error on the move you're on
-  check('practice: error message, in red (no masters statistics here, so no masters line)', [statusLines(), isRed()], [['Not your preferred move', 'Not played in Lichess games'], true]);
+  check('practice: error message, in red (no masters statistics here, so no masters line)', statusLines(), [['Not your preferred move', true], ['Not played in Lichess games', true]]);
   await until(yourTurn, 'the error to be taken back');
   document.getElementById('end-practice-btn').click();
   check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length - before,

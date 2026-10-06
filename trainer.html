@@ -196,7 +196,7 @@
 
   /* Practice page */
   .quiz { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
-  .board-col { width: min(640px, calc(100vw - 44px)); flex: none; }
+  .board-col { width: min(600px, calc(100vw - 44px)); flex: none; }
   .icon-btn { background: none; box-shadow: none; padding: 2px 4px; color: var(--muted); line-height: 0; }
   .icon-btn:hover:not(:disabled) { background: none; color: var(--text-strong); }
   .icon-btn .sound-off-line { display: none; }
@@ -245,7 +245,7 @@
   .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
   #practice-position { font-size: 13px; }
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
-  .status.bad { color: var(--bad); }
+  .status.bad, .status .bad { color: var(--bad); }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
@@ -493,7 +493,7 @@
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>If your study has other moves for you at that point: one marked ?, ?? or ?! is shown as an error, with the opponent's reply from your study, and costs an error's penalty; an unmarked one gets "♗c4 is one of your alternative moves" and costs an alternative's penalty (see Your statistics). Any other error says, on separate lines: "Not your preferred move"; how masters rate it, "#3 masters move" (a masters move, see Your statistics) or "Not a masters move"; and how often Lichess games play it, "#4 Lichess move" or "Not played in Lichess games". It's in red, except for a masters move, which costs less. (A line is left out until its statistics have downloaded.)</li>
+          <li>Every error gets a message, one fact per line. The first says what the move is: "Not your preferred move"; for one of your study's alternative moves, "Alternative move, not your preferred move"; or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (the move and the opponent's reply from your study are shown, then taken back). The next says how masters rate it: "#3 masters move" (a masters move, see Your statistics) or "Not a masters move". The last says how often Lichess games play it: "#4 Lichess move" or "Not played in Lichess games". A line is in red when it's bad news: "Not your preferred move" (unless it's a masters move), "Not a masters move", and a Lichess move outside the top 3 or not played at all; every line is red for a move your study marks ?!, ? or ??. A line is left out until its statistics have downloaded. Alternatives and masters moves cost less than other errors (see Your statistics).</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move accuracy is 0% this time).</li>
           <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practising. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
@@ -2231,50 +2231,53 @@ async function onYourMove(orig, dest) {
     if (await pause(250)) advance();
     return;
   }
-  // A move that's in the study as an alternative at this point.
+  // An error. There's no limit: the correct move is only shown when you ask for it.
   const alt = expected.alternatives?.[played];
-  if (isMistake(alt)) return showMarkedAlternative(orig, dest, move, played, alt);
-  if (alt) return rejectMove([`${withFigurines(played)} is one of your alternative moves`]); // a gentle nudge
-  // Any other wrong move. There's no limit: the correct move is only shown when you ask for it.
-  return rejectMove(wrongMoveStatus(expected, played));
+  if (isMistake(alt)) return showMarkedAlternative(orig, dest, move, alt, errorStatus(expected, played));
+  return rejectMove(errorStatus(expected, played));
 }
 
 // Puts a wrong move back, after showing its message for a moment.
 async function rejectMove(status) {
   practice.busy = true;
   updateBoard();
-  setStatus(...status);
+  setStatus(status);
   if (!await pause(350)) return;
   practice.busy = false;
   updateBoard();
 }
 
-// The status after an error that isn't in the study, one fact per line: "Not your preferred move",
-// then how masters rate it ("#3 masters move" for a masters move, see isMasterMove, otherwise "Not a
-// masters move"), then how often Lichess games play it ("#4 Lichess move", or "Not played in Lichess
-// games"). A line is left out while its statistics haven't downloaded. Red, except for a masters move.
-function wrongMoveStatus(expected, played) {
-  const masters = masterGamesAt(expected.epdBefore), lichess = lichessGamesAt(expected.epdBefore);
-  const isMasters = isMasterMove(expected.epdBefore, played);
-  const lichessRank = lichess && moveRank(lichess, played);
-  const lines = ['Not your preferred move',
-    masters && (isMasters ? `#${moveRank(masters, played)} masters move` : 'Not a masters move'),
-    lichess && (lichessRank ? `#${lichessRank} Lichess move` : 'Not played in Lichess games')];
-  return [lines.filter(Boolean).map(text => element('div', {}, text)), isMasters ? '' : 'bad'];
+// The status after an error, one fact per line, each in red or not:
+//   what the move is: "Not your preferred move" (red, unless it's a masters move); for one of your
+//     study's alternatives, "Alternative move, not your preferred move" (not red), or, for one the
+//     study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (red);
+//   how masters rate it: "#3 masters move" for a masters move (see isMasterMove), otherwise "Not a
+//     masters move" (red);
+//   how often Lichess games play it: "#4 Lichess move", red unless it's among the top 3, or "Not
+//     played in Lichess games" (red).
+// A line is left out while its statistics haven't downloaded. Every line is red for a move the
+// study marks ?!, ? or ??.
+function errorStatus(expected, played) {
+  const epd = expected.epdBefore, alt = expected.alternatives?.[played], marked = isMistake(alt);
+  const masters = masterGamesAt(epd), lichess = lichessGamesAt(epd);
+  const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
+  const line = (text, red) => element('div', { class: red || marked ? 'bad' : null }, text);
+  return [
+    marked ? line(`Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`)
+      : alt ? line('Alternative move, not your preferred move', false) : line('Not your preferred move', !isMasters),
+    masters && line(isMasters ? `#${moveRank(masters, played)} masters move` : 'Not a masters move', !isMasters),
+    lichess && line(lichessRank ? `#${lichessRank} Lichess move` : 'Not played in Lichess games', !(lichessRank && lichessRank <= 3)),
+  ].filter(Boolean);
 }
 
-// An alternative the study marks ?, ?? or ?!: say so, show the opponent's reply from that
-// variation, then take both moves back. Counts as a wrong try.
-async function showMarkedAlternative(orig, dest, move, played, alt) {
+// An alternative the study marks ?, ?? or ?!: say so (status: errorStatus's lines), show the
+// opponent's reply from that variation, then take both moves back. Counts as an error.
+async function showMarkedAlternative(orig, dest, move, alt, status) {
   practice.busy = true;
-  const n = alt.nags.find(x => MISTAKE_NAGS.includes(x));
-  const [sym, name] = GLYPHS[n];
   const pos = practice.position.clone();
   pos.play(move);
   const r = alt.children[0]; // the opponent's reply in that variation, if the study gives one
-  const replyLabel = r && moveLabel(r);
-  const said = `${withFigurines(played)}${sym} is one of your alternative moves, marked as a ${name.toLowerCase()}`;
-  setStatus(said + (r ? `. The opponent replies ${replyLabel}.` : ''), 'bad');
+  setStatus([...status, r && element('div', { class: 'bad' }, `The opponent replies ${moveLabel(r)}.`)]);
   // Show the user's move, then the reply, on the board.
   board.set({ fen: fenOf(pos), lastMove: [orig, dest], turnColor: pos.turn, movable: { color: practice.line.yourColor, dests: new Map() } });
   if (r) {
@@ -2287,7 +2290,7 @@ async function showMarkedAlternative(orig, dest, move, played, alt) {
   if (!await pause(2200)) return;
   practice.busy = false;
   updateBoard(); // back to the position before the mistake
-  setStatus(said, 'bad');
+  setStatus(status);
 }
 
 $('hint-btn').addEventListener('click', () => {
