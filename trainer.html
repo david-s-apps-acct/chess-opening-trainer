@@ -474,7 +474,7 @@
         <h2>Choosing studies and chapters</h2>
         <ul>
           <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
-          <li>Each study shows how many chapters it has, and each chapter how many lines and alternative moves, e.g. "5 lines · 2 alternative moves". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: a move your study marks ?, ?? or ?! is shown as an error, and an unmarked one gets "is one of your alternative moves". In a chapter's move tree they're shown in italics.</li>
+          <li>Each study shows how many chapters it has (click it, like the name, to show or hide them), and each chapter how many lines, e.g. "5 lines". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: "Alternative move, not your preferred move", or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake". In a chapter's move tree they're shown in italics.</li>
           <li>Click a chapter's name (or the ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). Click the chapter's number of lines (e.g. "3 lines") to open every variation at once, and again to close them. Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
           <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them, and they close by themselves once you've saved, updated, renamed or deleted a preset. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b> (its chapters in hidden studies are kept); until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
           <li>To hide a study you no longer use, click the eye at the top (next to the presets' pencil): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
@@ -1191,9 +1191,6 @@ function allMoveNodes(ch) {
   return out;
 }
 
-// The alternative moves in a chapter: the study's other moves at your practiced moves. They aren't
-// practiced (only the main move counts at your turn); each counts once, whatever follows it.
-const alternativeCount = ch => allMoveNodes(ch).filter(n => n.isYours).reduce((sum, n) => sum + Object.keys(n.alternatives || {}).length, 0);
 
 // A move key identifies one of your moves in a chapter: the chapter key plus the moves up to and
 // including yours, e.g. "studyId/chapterId|e4 e5 Nf3", so every line through that point shares its
@@ -1423,12 +1420,10 @@ function scoreElement({ lines, tried, score }) {
     'Average move accuracy over the last 10 attempts');
 }
 
-// "· 5 lines · 2 alternative moves" after a chapter's name (the alternative moves only when there are any).
+// "· 5 lines" after a chapter's name.
 // Clicking the number of lines (when the chapter has variations) shows or hides all of them.
-function chapterCounts(nLines, nAlt, toggleVariations) {
-  return [element('span', { class: 'muted' }, ' · ', toggleVariations ? opener(plural(nLines, 'line'), toggleVariations) : plural(nLines, 'line')),
-    nAlt ? quickTip(element('span', { class: 'muted' }, ` · ${plural(nAlt, 'alternative move')}`),
-      "Other moves your study gives you at your turns, besides the main move. They aren't tested; only the main move counts as correct.") : null];
+function chapterCounts(nLines, toggleVariations) {
+  return element('span', { class: 'muted' }, ' · ', toggleVariations ? opener(plural(nLines, 'line'), toggleVariations) : plural(nLines, 'line'));
 }
 
 function renderStudies() {
@@ -1482,7 +1477,7 @@ function studyRow(study, isHidden) {
     }),
     element('span', { class: 'name' }, opener(study.name, toggleStudy),
       showHiddenStudies ? hideStudyButton(study, isHidden) : null,
-      element('span', { class: 'muted', style: 'font-weight:400' }, ` · ${plural(study.chapters.length, 'chapter')}`)),
+      element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))),
     scoreElement(averageScore(study.chapters)));
 }
 
@@ -1512,7 +1507,7 @@ function chapterRow(ch, studyHidden) {
     // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
-      lines.length ? chapterCounts(lines.length, alternativeCount(ch), branches.length ? toggleVariations : null) : null),
+      lines.length ? chapterCounts(lines.length, branches.length ? toggleVariations : null) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
     scoreElement(averageScore([ch])));
 }
