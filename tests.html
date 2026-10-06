@@ -268,7 +268,9 @@ async function runPractice(app) {
   // The status's lines, each [text, whether it's red].
   const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.classList.contains('bad')]);
   check('practice: a masters move and top-3 Lichess move, one fact per line, none red', statusLines(),
-    [['Not your preferred move', false], ['#2 masters move (average ELO 2300)', false], ['#2 Lichess move (average ELO 2300)', false]]);
+    [['Not your preferred move', false], ['#2 masters move (played 300 times)', false], ['#2 Lichess move (played 300 times)', false]]);
+  await new Promise(r => setTimeout(r, 3800));
+  check('practice: after 3 seconds the message fades to "Your move", with where you are in the line', status(), 'Your move (1 of 6 in line)');
   await play('e2e4');
   await play('b1c3');
   check('practice: alternative message, not red', statusLines()[0], ['Alternative move, not your preferred move', false]);
