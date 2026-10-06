@@ -1543,10 +1543,12 @@ function renderChapterTree(ch) {
     const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(line, i))) : node.untested ? 'untested-move' : 'opp';
     // The last move of a line you practice is underlined.
     const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
-    const el = element('span', { class: 'tree-move ' + cls + moveQualityClass(node) + lineEnd, tabindex: '0' }, withFigurines(node.san));
+    const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
+    const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + lineEnd, tabindex: '0' }, withFigurines(node.san));
     addHoverBoard(el, line, i);
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
-    return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null, el, glyphMarks(node),
+    return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
+      highlight ? element('span', { class: 'needs-work' }, el, glyphMarks(node)) : [el, glyphMarks(node)],
       hasComment(node) ? commentBubble(moveLabel(node), node.notes, false) : null, ' '], moves };
   };
   // The moves from start (the root, or { children: [an alternative] }), following main moves;
