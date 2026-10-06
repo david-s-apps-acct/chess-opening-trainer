@@ -199,8 +199,8 @@
   .board-col { width: min(600px, calc(100vw - 44px)); flex: none; }
   .icon-btn { background: none; box-shadow: none; padding: 2px 4px; color: var(--muted); line-height: 0; }
   .icon-btn:hover:not(:disabled) { background: none; color: var(--text-strong); }
-  .icon-btn .sound-off-line { display: none; }
-  .icon-btn.off .sound-off-line { display: inline; }
+  .icon-btn .off-line { display: none; } /* the line through an icon when it's off */
+  .icon-btn.off .off-line { display: inline; }
   .below-board { display: flex; justify-content: flex-end; margin-top: 6px; } /* the sounds bell, under the board's right edge */
   .board-wrap { position: relative; width: 100%; aspect-ratio: 1; }
   /* Speech bubbles: a study comment on a move (or the chapter's intro), shown on hover. */
@@ -349,13 +349,7 @@
       <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
       </button>
-      <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>
-          <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
-          <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
+      <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
       <span id="sel-summary" class="muted"></span>
     </div>
     <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
@@ -397,7 +391,7 @@
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path d="M12 3a5 5 0 0 0-5 5v3.5L5.5 14v1.5h13V14L17 11.5V8a5 5 0 0 0-5-5z" fill="currentColor"/>
             <path d="M10 17.5a2 2 0 0 0 4 0z" fill="currentColor"/>
-            <line class="sound-off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line class="off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
         </div>
@@ -886,6 +880,7 @@ let currentScreen = null;
 
 function showScreen(name) {
   currentScreen = name;
+  hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
   for (const s of ['token', 'studies', 'practice', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
   // The header buttons are always shown; the current page's button is highlighted.
@@ -953,6 +948,10 @@ function daysAgo(time) {
 // ---------- Chess helpers ----------
 
 const fenOf = pos => fen.makeFen(pos.toSetup());
+
+// The board settings that show a position: its pieces, whose turn it is, check, and the last move
+// highlighted (undefined for none).
+const boardPosition = (pos, lastMove) => ({ fen: fenOf(pos), turnColor: pos.turn, check: pos.isCheck() ? pos.turn : false, lastMove });
 const epdOf = f => f.split(' ').slice(0, 4).join(' ');
 const withoutCheckMarks = x => x.replace(/[+#]/g, '');
 
@@ -980,13 +979,15 @@ class LichessError extends Error {
   constructor(message, status) { super(message); this.status = status; }
 }
 
+// A request to Lichess with the token; LichessError when Lichess can't be reached.
+async function lichessFetch(url, tok) {
+  try { return await fetch(url, { headers: { Authorization: 'Bearer ' + tok } }); }
+  catch { throw new LichessError("Couldn't reach Lichess. Check your internet connection."); }
+}
+
+// A request to the Lichess API, its answer as JSON (or text); LichessError on any failure.
 async function lichessRequest(path, tok, asText) {
-  let res;
-  try {
-    res = await fetch(LICHESS + path, { headers: { Authorization: 'Bearer ' + tok } });
-  } catch {
-    throw new LichessError("Couldn't reach Lichess. Check your internet connection.");
-  }
+  const res = await lichessFetch(LICHESS + path, tok);
   if (res.status === 401) throw new LichessError('Lichess rejected the token. It may have expired or been revoked. Replace it on the Options page.', 401);
   if (res.status === 429) throw new LichessError('Lichess is rate-limiting requests. Wait a minute and try again.', 429);
   if (!res.ok) throw new LichessError(`Lichess returned an error (${res.status}).`, res.status);
@@ -1094,6 +1095,7 @@ async function checkAndSaveToken(value, errorEl) {
 const allChapters = () => library ? library.studies.flatMap(s => s.chapters) : [];
 const chapterByKey = key => allChapters().find(c => c.key === key);
 const studyOfChapter = ch => library.studies.find(s => s.chapters.includes(ch));
+const chapterTitle = ch => `${studyOfChapter(ch).name} · ${ch.name}`; // "My repertoire · Italian"
 const parsedChapters = new Map();   // chapter key -> { game, start, color } or { error }
 const linesByChapter = new Map(); // chapter key -> lines
 function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear(); }
@@ -1457,6 +1459,10 @@ function renderStudies() {
   updateSelectionPanel();
 }
 
+// A ▸ / ▾ triangle that shows or hides something (titles: [when closed, when open]).
+const triangle = (open, [showTitle, hideTitle], onClick) =>
+  element('button', { class: 'toggle', title: open ? hideTitle : showTitle, 'aria-expanded': String(open), onclick: onClick }, open ? '▾' : '▸');
+
 // A study's or chapter's name: clicking it (or Enter / Space on it) does the same as its first
 // triangle: a study shows or hides its chapters, a chapter its moves. Its checkbox ticks it.
 function opener(name, onOpen) {
@@ -1472,15 +1478,12 @@ function studyRow(study, isHidden) {
   const open = openStudies.has(study.id);
   const toggleStudy = () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); };
   return element('div', { class: 'row study-row' },
-    element('button', { class: 'toggle', title: open ? 'Collapse' : 'Expand', 'aria-expanded': String(open), onclick: toggleStudy }, open ? '▾' : '▸'),
+    triangle(open, ['Show chapters', 'Hide chapters'], toggleStudy),
     element('input', {
       type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
       checked: ticked === keys.length && keys.length > 0,
       indeterminate: ticked > 0 && ticked < keys.length,
-      onchange: e => {
-        keys.forEach(k => e.target.checked ? selection.add(k) : selection.delete(k));
-        saveSelection(); renderStudies();
-      },
+      onchange: e => setTicked(keys, e.target.checked),
     }),
     element('span', { class: 'name' }, opener(study.name, toggleStudy),
       showHiddenStudies ? hideStudyButton(study, isHidden) : null,
@@ -1507,10 +1510,10 @@ function chapterRow(ch, studyHidden) {
   return element('div', { class: 'row chapter-row' },
     element('span', { class: 'toggle-space' }), // indented under its study
     lines.length
-      ? element('button', { class: 'toggle', title: movesOpen ? 'Hide moves' : 'Show moves', 'aria-expanded': String(movesOpen), onclick: toggleMoves }, movesOpen ? '▾' : '▸')
+      ? triangle(movesOpen, ['Show moves', 'Hide moves'], toggleMoves)
       : element('span', { class: 'toggle-space' }),
     element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
-      onchange: e => { e.target.checked ? selection.add(ch.key) : selection.delete(ch.key); saveSelection(); renderStudies(); } }),
+      onchange: e => setTicked([ch.key], e.target.checked) }),
     // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
@@ -1594,17 +1597,27 @@ function branchKeys(ch) {
   return root ? [root, ...allMoveNodes(ch)].filter(n => n.children.length > 1).map(n => ch.key + '|' + n.path.join(' ')) : [];
 }
 
+// The eye icon (the top eye, and each study's): a line through it when its button is "off".
+const eyeIcon = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">`
+  + '<path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>'
+  + '<circle cx="12" cy="12" r="2.2" fill="currentColor"/><line class="off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+$('show-hidden-btn').innerHTML = eyeIcon(16);
+
 // A study's eye, right after its name (only while the top eye shows hidden studies): a plain eye
 // for a visible study (click to hide it), an eye with a line for a hidden one (click to unhide).
-const EYE_PATH = 'M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z';
-
 function hideStudyButton(study, isHidden) {
-  const btn = element('button', { class: 'icon-btn hide-btn',
+  const btn = element('button', { class: 'icon-btn hide-btn' + (isHidden ? ' off' : ''),
     title: isHidden ? 'Unhide this study' : "Hide this study (it won't be practiced)",
     onclick: () => toggleHideStudy(study) });
-  btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="${EYE_PATH}" fill="currentColor"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>`
-    + (isHidden ? '<line x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' : '') + '</svg>';
+  btn.innerHTML = eyeIcon(15);
   return btn;
+}
+
+// Ticks or unticks chapters (by key), saves the selection and redraws the list.
+function setTicked(keys, ticked) {
+  for (const k of keys) ticked ? selection.add(k) : selection.delete(k);
+  saveSelection();
+  renderStudies();
 }
 
 // Hiding a study unticks its chapters; they can't be ticked (or practiced) while it's hidden.
@@ -1631,16 +1644,10 @@ function updateSelectionPanel() {
   $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected`;
   renderPresets();
   // The top eye: a line through it while hidden studies are out of sight.
-  const sh = $('show-hidden-btn');
-  sh.classList.toggle('off', !showHiddenStudies);
-  sh.setAttribute('aria-pressed', String(showHiddenStudies));
-  sh.title = showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies';
+  setToggle('show-hidden-btn', showHiddenStudies, showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies');
 }
 
-$('all-box').addEventListener('change', e => {
-  for (const c of visibleChapters()) e.target.checked ? selection.add(c.key) : selection.delete(c.key);
-  saveSelection(); renderStudies();
-});
+$('all-box').addEventListener('change', e => setTicked(visibleChapters().map(c => c.key), e.target.checked));
 
 // Presets: named sets of chapters, chosen from the drop-down to tick exactly those chapters.
 // The chosen one is edited by changing the ticks and pressing Update (its name is greyed out until then).
@@ -1929,11 +1936,8 @@ function updateBoard(lastMove) {
   }
   const yourTurn = practice.movesPlayed < practice.line.moves.length && practice.line.moves[practice.movesPlayed].isYours && !practice.busy;
   board.set({
-    fen: fenOf(practice.position),
+    ...boardPosition(practice.position, lastMove ?? practice.lastMove),
     orientation: practice.line.yourColor,
-    turnColor: practice.position.turn,
-    check: practice.position.isCheck() ? practice.position.turn : false,
-    lastMove: lastMove ?? practice.lastMove,
     movable: { color: practice.line.yourColor, dests: yourTurn ? compat.chessgroundDests(practice.position) : new Map() },
   });
   if (lastMove) practice.lastMove = lastMove;
@@ -1996,11 +2000,7 @@ function showChooser() {
   endPractice();
   showScreen('practice');
   ensureBoard();
-  board.set({
-    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    orientation: 'white', turnColor: 'white', lastMove: undefined, check: false,
-    movable: { color: undefined, dests: new Map() },
-  });
+  board.set({ ...boardPosition(variant.defaultPosition('chess'), undefined), orientation: 'white', movable: { color: undefined, dests: new Map() } });
   board.setAutoShapes([]);
   board.redrawAll();
   for (const id of ['practice-title', 'practice-position']) $(id).textContent = '';
@@ -2082,7 +2082,7 @@ function probabilityRow({ item: { line, i }, accuracy, games, lastTested, chance
   const ch = chapterByKey(line.chapterKey);
   const [nameAt, hoverAt] = i == null ? [line.moves.length, line.moves.length - 1] : [i, i];
   const tr = element('tr', {},
-    element('td', {}, element('div', {}, `${studyOfChapter(ch).name} · ${ch.name}`), element('div', { class: 'muted position-name' }, positionName(line, nameAt))),
+    element('td', {}, element('div', {}, chapterTitle(ch)), element('div', { class: 'muted position-name' }, positionName(line, nameAt))),
     element('td', { class: 'num' }, games == null ? '–' : shortCount(games)),
     element('td', { class: 'num accuracy' }, accuracy == null ? element('span', { class: 'muted' }, 'Untried')
       : element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
@@ -2111,7 +2111,6 @@ let session = null;
 function startSession(kind, items) {
   if (!items.length) return;
   session = { kind, items, previous: null };
-  hideBanner();
   showScreen('practice');
   ensureBoard();
   board.redrawAll();
@@ -2467,8 +2466,6 @@ function viewAfterMoves(k) {
   k = Math.max(0, Math.min(k, practice.movesPlayed));
   if (k === practice.movesPlayed) { updateBoard(); return; }
   const shown = k ? practice.line.moves[k - 1] : practice.line.root;
-  const pos = shown.position;
-  const last = k ? squaresOf(shown) : undefined;
   practice.viewing = k;
   updatePositionName();
   // During a line, the status says how to get back (and is restored on return). After the line
@@ -2477,13 +2474,7 @@ function viewAfterMoves(k) {
     practice.savedStatus = { cls: $('practice-status').className, nodes: [...$('practice-status').childNodes] };
     setStatus('Press ⏭ or End to return.');
   }
-  board.set({
-    fen: fenOf(pos),
-    turnColor: pos.turn,
-    check: pos.isCheck() ? pos.turn : false,
-    lastMove: last,
-    movable: { color: practice.line.yourColor, dests: new Map() },
-  });
+  board.set({ ...boardPosition(shown.position, k ? squaresOf(shown) : undefined), movable: { color: practice.line.yourColor, dests: new Map() } });
   board.setAutoShapes([]);
   $('hint-btn').disabled = true;
   renderMoveList();
@@ -2519,7 +2510,7 @@ function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  $('practice-title').replaceChildren(`${studyOfChapter(ch).name} · ${ch.name}`, intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '');
+  $('practice-title').replaceChildren(chapterTitle(ch), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '');
   updatePositionName();
 }
 
@@ -2596,8 +2587,7 @@ function showHoverBoard(el, line, i, thisTime = null) {
   box.firstChild.replaceChildren(...rows.filter(Boolean));
   box.classList.remove('hidden');
   const config = {
-    fen: fenOf(position), orientation: line.yourColor, turnColor: position.turn, lastMove,
-    check: position.isCheck() ? position.turn : false,
+    ...boardPosition(position, lastMove), orientation: line.yourColor,
     viewOnly: true, coordinates: false, animation: { enabled: false },
     drawable: { enabled: false, visible: true, brushes: ERROR_ARROWS },
   };
@@ -2614,7 +2604,10 @@ function showHoverBoard(el, line, i, thisTime = null) {
 // reached 23k times": the Lichess games reaching the position after the move.
 function hoverBoardHeading(m) {
   const count = element('div', { class: 'muted' }, positionCountText(lichessGamesAt(m.epd)));
-  const shares = [lichessShareText(m.epdBefore, m.san), mastersShareText(m.epdBefore, m.san)].map(t => t && element('div', { class: 'muted' }, t));
+  const masters = masterGamesAt(m.epdBefore);
+  const shares = [rankAndShareText(lichessGamesAt(m.epdBefore), m.san, 'overall', 'Not played overall'),
+    masters && !totalGames(masters) ? 'Not in master games' : rankAndShareText(masters, m.san, 'masters', 'Not played by masters')]
+    .map(t => t && element('div', { class: 'muted' }, t));
   return [element('div', {}, element('b', {}, moveLabel(m))), ...shares, count];
 }
 
@@ -2847,7 +2840,7 @@ async function downloadExplorerPositions(kind, run) {
     }
     let res;
     try {
-      res = await fetch(explorer.url(position.fen), { headers: { Authorization: 'Bearer ' + token } });
+      res = await lichessFetch(explorer.url(position.fen), token);
     } catch {
       status(`Couldn't reach the Lichess explorer. ${explorer.Label} stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
       return;
@@ -2922,13 +2915,6 @@ function rankAndShareText(stats, moveSan, who, none) {
   if (s == null) return null;
   const r = s && moveRank(stats, moveSan);
   return r ? `#${r} ${who} move (${s})` : none;
-}
-function lichessShareText(epd, moveSan) {
-  return rankAndShareText(lichessGamesAt(epd), moveSan, 'overall', 'Not played overall');
-}
-function mastersShareText(epd, moveSan) {
-  const stats = masterGamesAt(epd);
-  return stats && !totalGames(stats) ? 'Not in master games' : rankAndShareText(stats, moveSan, 'masters', 'Not played by masters');
 }
 
 // ---------- Options page and token ----------
@@ -3093,7 +3079,6 @@ $('restore-file').addEventListener('change', async e => {
 $('nav-practice').addEventListener('click', () => {
   if (currentScreen === 'practice') return; // already on the practice page
   if (!library) { $('nav-studies').click(); return; }
-  hideBanner();
   if (practice) { // back to the line in progress (or its summary), exactly as it was
     showScreen('practice');
     board.redrawAll();
@@ -3105,16 +3090,14 @@ $('nav-practice').addEventListener('click', () => {
 // Studies: the selection page (or the token screen before any studies are fetched).
 // A line in progress is kept; Practice returns to it.
 $('nav-studies').addEventListener('click', () => {
-  hideBanner();
   if (library) showStudies();
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); }
   else showScreen('token');
 });
 
-$('nav-options').addEventListener('click', () => { hideBanner(); showOptions(); });
+$('nav-options').addEventListener('click', showOptions);
 
 $('nav-help').addEventListener('click', () => {
-  hideBanner();
   showScreen('help'); // a line in progress is kept
   window.scrollTo(0, 0);
 });
