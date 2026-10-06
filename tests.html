@@ -52,7 +52,7 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { startSession('lines', [{ line, i: null }]); }, // practising just this line
-  startSession, renderChooser, priorities, priorityOf, itemFacts, practiceItems,
+  startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
   onYourMove,
@@ -276,7 +276,11 @@ async function runPractice(app) {
   check('practice: alternative message, not red', statusLines()[0], ['Alternative move, not your preferred move', false]);
   await play('g1f3');
   await play('f1b5');
-  check('practice: marked alternative message, every line red', [statusLines()[0], statusLines().every(([, red]) => red)], [['Alternative move marked as a mistake', true], true]);
+  check('practice: marked alternative message, with the study\'s answer, every line red, taken back at once', [statusLines()[0][0], statusLines().every(([, red]) => red), yourTurn()],
+    ['Alternative move marked as a mistake', true, true]);
+  const d6Line = app.chapterLines(app.chapterByKey('AAAAAAAA/BBBBBBBB')).find(l => l.key.endsWith('Nf3 d6 d4'));
+  check('practice: a marked alternative with a reply in the study', app.errorStatus(d6Line.moves[4], 'Bc4').slice(0, 2).map(d => d.textContent),
+    ['Alternative move marked as a dubious move', 'Your study answers 3… h6']);
   await until(yourTurn, 'the marked alternative to be taken back');
   document.getElementById('hint-btn').click();
   check('practice: hint shows the study comment on the wrong move', status(), 'Hint: move the circled piece.3. ♗b5 (your move)? Mistake: Not in this repertoire.');
