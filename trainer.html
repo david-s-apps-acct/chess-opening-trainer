@@ -2597,7 +2597,7 @@ function showHoverBoard(el, line, i, thisTime = null) {
     fen: fenOf(position), orientation: line.yourColor, turnColor: position.turn, lastMove,
     check: position.isCheck() ? position.turn : false,
     viewOnly: true, coordinates: false, animation: { enabled: false },
-    drawable: { enabled: false, visible: true, brushes: { paleAmber: { key: 'pa', color: '#e68f00', opacity: 0.45, lineWidth: 15 } } },
+    drawable: { enabled: false, visible: true, brushes: ERROR_ARROWS },
   };
   if (!hoverBoard) hoverBoard = Chessground(box.querySelector('.cg-wrap'), config);
   else hoverBoard.set(config); // lastMove: undefined clears the previous highlight
@@ -2691,7 +2691,11 @@ function errorKind(m, x) {
 // included); white for the opponent's move. Errors' arrows are pale, so they differ from the correct
 // move by more than colour.
 const ERROR_COLORS = { alternative: 'blue', masters: 'blue', marked: 'amber', wrong: 'red' };
-const ERROR_BRUSHES = { blue: 'paleBlue', amber: 'paleAmber', red: 'paleRed' };
+const ERROR_BRUSHES = { blue: 'errorBlue', amber: 'errorAmber', red: 'errorRed' };
+// The errors' arrows: chessground's blue, amber ("yellow") and red, fainter and wider than the
+// correct move's solid arrow.
+const errorArrow = (key, color) => ({ key, color, opacity: 0.65, lineWidth: 13 });
+const ERROR_ARROWS = { errorBlue: errorArrow('eb', '#003088'), errorAmber: errorArrow('ea', '#e68f00'), errorRed: errorArrow('er', '#882020') };
 const errorColor = (m, x) => x === 'hint' || x === 'show' ? 'red' : ERROR_COLORS[errorKind(m, x)];
 
 // A list of elements separated by commas.
