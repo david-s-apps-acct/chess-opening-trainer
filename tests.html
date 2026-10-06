@@ -268,7 +268,7 @@ async function runPractice(app) {
   // The status's lines, each [text, whether it's red].
   const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.classList.contains('bad')]);
   check('practice: a masters move and top-3 Lichess move, one fact per line, none red', statusLines(),
-    [['Not your preferred move', false], ['#2 masters move', false], ['#2 Lichess move (average ELO 2300)', false]]);
+    [['Not your preferred move', false], ['#2 masters move (average ELO 2300)', false], ['#2 Lichess move (average ELO 2300)', false]]);
   await play('e2e4');
   await play('b1c3');
   check('practice: alternative message, not red', statusLines()[0], ['Alternative move, not your preferred move', false]);
@@ -404,8 +404,8 @@ function runPositions(app) {
   $('weights-reset').click();
   check('chooser: Reset', app.settings.practice.weights, { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 });
   $('chooser-kind-positions').click();
-  check('chooser: the switch and the main-lines checkbox', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, app.settings.practice.kind],
-    ['true', 'false', 'Positions from main lines only', 'positions']);
+  check('chooser: the switch, the main-lines checkbox and Show positions', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, $('probabilities-btn').textContent, app.settings.practice.kind],
+    ['true', 'false', 'Positions from main lines only', 'Show positions', 'positions']);
   $('chooser-start').click();
   check('chooser: practising positions', [app.practice.singleAt != null, $('practice-side').textContent.startsWith('Positions: '),
     $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);

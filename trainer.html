@@ -114,7 +114,7 @@
   .option-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .option-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
-  /* The table shown by "Test probabilities" on the Practice page */
+  /* The Test probabilities table, shown by "Show lines" / "Show positions" on the Practice page */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   .report-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
   .report-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -261,10 +261,8 @@
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .chooser-frame { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--muted); border-radius: 4px; padding: 10px 12px; }
   .chooser-frame > button { align-self: flex-start; }
-  .weights h3 { margin: 0; font-size: 14px; display: flex; align-items: baseline; gap: 6px; } /* the icon's bottom sits on the text's baseline */
-  /* A small circled "?" icon that shows an explanation when clicked. */
-  .query-btn { display: inline-flex; padding: 0; border: none; background: none; box-shadow: none; color: var(--muted); line-height: 0; }
-  .query-btn:hover:not(:disabled), .query-btn[aria-expanded=true] { background: none; color: var(--accent); }
+  .weights h3 { margin: 0; font-size: 14px; }
+  #weights-heading { cursor: help; }
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
   .weight-rows output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -423,9 +421,9 @@
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
           </div>
           <div class="chooser-frame weights">
-            <h3>Spaced repetition focus <button id="weights-help" class="query-btn" aria-label="What the sliders do" aria-expanded="false"><svg viewBox="2.2 2.2 19.6 19.6" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 17v.01"/><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/></svg></button></h3>
+            <h3><span id="weights-heading">Spaced repetition focus</span></h3>
             <div id="weight-rows" class="weight-rows"></div>
-            <button id="probabilities-btn" class="small" title="The lines or positions most likely to come up next, with these settings">Test probabilities</button>
+            <button id="probabilities-btn" class="small" title="The ones most likely to come up next, with these settings, and their chances">Show lines</button>
             <button id="weights-reset" class="small" title="Put all four sliders back to 50%">Reset</button>
           </div>
           <p id="chooser-note" class="muted"></p>
@@ -487,13 +485,13 @@
       <div class="card" id="help-practicing">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Test probabilities</b> lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Show lines</b> (<b>Show positions</b>) lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off (as does <b>Move sounds</b> on the Options page); a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>Every error gets a message, one fact per line. The first says what the move is: "Not your preferred move"; for one of your study's alternative moves, "Alternative move, not your preferred move"; or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (the move and the opponent's reply from your study are shown, then taken back). The next says how masters rate it: "#3 masters move" (a masters move, see Your statistics) or "Not a masters move". The last says how often Lichess games play it, with the average rating of the players who played it: "#4 Lichess move (average ELO 1720)", or "Not played in Lichess games". A line is in red when it's bad news: "Not your preferred move" (unless it's a masters move), "Not a masters move", and a Lichess move outside the top 3 or not played at all; every line is red for a move your study marks ?!, ? or ??. A line is left out until its statistics have downloaded. Alternatives and masters moves cost less than other errors (see Your statistics).</li>
+          <li>Every error gets a message, one fact per line. The first says what the move is: "Not your preferred move"; for one of your study's alternative moves, "Alternative move, not your preferred move"; or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (the move and the opponent's reply from your study are shown, then taken back). The next says how masters rate it: "#3 masters move (average ELO 2450)" (a masters move, see Your statistics) or "Not a masters move". The last says how often Lichess games play it, with the average rating of the players who played it: "#4 Lichess move (average ELO 1720)", or "Not played in Lichess games". A line is in red when it's bad news: "Not your preferred move" (unless it's a masters move), "Not a masters move", and a Lichess move outside the top 3 or not played at all; every line is red for a move your study marks ?!, ? or ??. A line is left out until its statistics have downloaded. Alternatives and masters moves cost less than other errors (see Your statistics).</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move accuracy is 0% this time).</li>
           <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practising. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
@@ -527,7 +525,7 @@
         </details>
         <details>
           <summary>When lines and positions were last practiced</summary>
-          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> in the list shown by Test probabilities, and used to choose what comes up.</p>
+          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> in the list shown by Show lines or Show positions, and used to choose what comes up.</p>
           <ul>
             <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you skip or stop with <b>End practice</b>, and single positions, don't count for the line; they only count for the moves you played.</li>
             <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press Skip or End practice (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
@@ -558,7 +556,7 @@
 
       <div class="card" id="help-tables">
         <h2>Test probabilities</h2>
-        <p>On the Practice page, <b>Test probabilities</b> (under <b>Spaced repetition focus</b>) lists the 25 lines (or positions) most likely to come up next with the current settings, the most likely first. × (or Esc) closes it.</p>
+        <p>On the Practice page, <b>Show lines</b> or <b>Show positions</b> (under <b>Spaced repetition focus</b>) lists the 25 lines (or positions) most likely to come up next with the current settings, the most likely first. × (or Esc) closes it.</p>
         <ul>
           <li>Each row: the study and chapter, then the position named the usual way (for a line, its final position); how many times that position was reached in rated Lichess games (<b>End position reached</b> for a line, <b>Position reached</b> for a position; "–" until its statistics have downloaded); its <b>line accuracy</b> or <b>move accuracy</b> ("Untried" if you haven't tried it); <b>Last tested</b>, how many days ago you last played the line through from move 1, or last tried the move ("–" if not known); and <b>Chance next</b>, its chance of being the next one, e.g. 0.3%.</li>
           <li>Hover over a row to see the small board: for a line, its final move; for a position, the correct move and the errors you've played.</li>
@@ -1960,7 +1958,7 @@ function choosePromotion(color) {
 
 // ---------- Practice: choosing what to practise ----------
 // The Practice page when nothing is in progress: the Lines | Positions switch with its main-lines
-// checkbox, the "Spaced repetition focus" sliders with Test probabilities and Reset, and Start
+// checkbox, the "Spaced repetition focus" sliders with Show lines (positions) and Reset, and Start
 // practice. Everything here is kept in settings.practice.
 
 // Lines and positions, the two kinds of practice: their words.
@@ -2022,6 +2020,7 @@ function renderChooser() {
   $('chooser-main').checked = mainLinesOnly[kind];
   $('chooser-main-text').textContent = k.mainLines;
   $('chooser-main-label').title = k.mainLinesTitle;
+  $('probabilities-btn').textContent = `Show ${k.label.toLowerCase()}`;
   for (const { key } of WEIGHTS) {
     $(`weight-${key}`).value = String(weights[key]);
     $(`weight-${key}-value`).textContent = `${weights[key]}%`;
@@ -2044,21 +2043,10 @@ $('weights-reset').addEventListener('click', () => changePractice(p => { p.weigh
 $('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items));
 $('probabilities-btn').addEventListener('click', () => showProbabilities(settings.practice.kind));
 
-// The ? next to "Spaced repetition focus": what the sliders do, in a pop-up until the next click (or Esc).
-const WEIGHTS_HELP = 'How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.';
-const weightsHelpOpen = () => $('weights-help').getAttribute('aria-expanded') === 'true';
-function showWeightsHelp(open) {
-  let pop = $('weights-help-pop');
-  if (!pop) { pop = element('div', { id: 'weights-help-pop', class: 'note-pop hidden', role: 'note' }, WEIGHTS_HELP); document.body.append(pop); }
-  pop.classList.toggle('hidden', !open);
-  $('weights-help').setAttribute('aria-expanded', String(open));
-  if (open) placePopup(pop, $('weights-help'));
-}
-$('weights-help').addEventListener('click', e => { e.stopPropagation(); showWeightsHelp(!weightsHelpOpen()); });
-document.addEventListener('click', () => { if (weightsHelpOpen()) showWeightsHelp(false); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && weightsHelpOpen()) showWeightsHelp(false); });
+// Hovering over "Spaced repetition focus" says what the sliders do.
+quickTip($('weights-heading'), 'How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.');
 
-// "Test probabilities": the lines or positions most likely to come up next with the current
+// "Show lines" / "Show positions": the Test probabilities table, the ones most likely to come up next with the current
 // settings, the most likely first, over the Practice page; closed with ×, Esc or a click outside it.
 // Each row: the study and chapter, the position's name (a line's final position), how often it's
 // reached, its accuracy, when it was last tested, and its chance of coming up next. Hovering shows
@@ -2251,8 +2239,8 @@ async function rejectMove(status) {
 //   what the move is: "Not your preferred move" (red, unless it's a masters move); for one of your
 //     study's alternatives, "Alternative move, not your preferred move" (not red), or, for one the
 //     study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (red);
-//   how masters rate it: "#3 masters move" for a masters move (see isMasterMove), otherwise "Not a
-//     masters move" (red);
+//   how masters rate it: "#3 masters move (average ELO 2450)" for a masters move (see isMasterMove),
+//     otherwise "Not a masters move" (red);
 //   how often Lichess games play it: "#4 Lichess move (average ELO 1720)", red unless it's among the
 //     top 3 (the average rating of the players who played it, when Lichess gives one), or "Not played
 //     in Lichess games" (red).
@@ -2262,13 +2250,17 @@ function errorStatus(expected, played) {
   const epd = expected.epdBefore, alt = expected.alternatives?.[played], marked = isMistake(alt);
   const masters = masterGamesAt(epd), lichess = lichessGamesAt(epd);
   const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
-  const rating = lichess?.moves.find(m => withoutCheckMarks(m.san) === withoutCheckMarks(played))?.averageRating;
+  // The average rating of the players who played the move there, as " (average ELO 1720)", when known.
+  const averageElo = stats => {
+    const rating = stats?.moves.find(m => withoutCheckMarks(m.san) === withoutCheckMarks(played))?.averageRating;
+    return rating ? ` (average ELO ${rating})` : '';
+  };
   const line = (text, red) => element('div', { class: red || marked ? 'bad' : null }, text);
   return [
     marked ? line(`Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`)
       : alt ? line('Alternative move, not your preferred move', false) : line('Not your preferred move', !isMasters),
-    masters && line(isMasters ? `#${moveRank(masters, played)} masters move` : 'Not a masters move', !isMasters),
-    lichess && line(lichessRank ? `#${lichessRank} Lichess move${rating ? ` (average ELO ${rating})` : ''}` : 'Not played in Lichess games', !(lichessRank && lichessRank <= 3)),
+    masters && line(isMasters ? `#${moveRank(masters, played)} masters move${averageElo(masters)}` : 'Not a masters move', !isMasters),
+    lichess && line(lichessRank ? `#${lichessRank} Lichess move${averageElo(lichess)}` : 'Not played in Lichess games', !(lichessRank && lichessRank <= 3)),
   ].filter(Boolean);
 }
 
