@@ -251,7 +251,7 @@
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
-  #practice-title:empty, #practice-position:empty, #practice-side:empty { display: none; } /* nothing above the chooser */
+  #practice-title:empty, #practice-position:empty { display: none; } /* nothing above the chooser */
   .practice-chooser label { display: flex; align-items: center; gap: 6px; }
   .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
   /* Lines or Positions: two halves of one switch, the chosen one blue. */
@@ -404,7 +404,6 @@
       <div class="panel">
         <h2 id="practice-title"></h2>
         <div id="practice-position" class="muted"></div>
-        <div id="practice-side" class="muted"></div>
         <div id="practice-line">
         <div id="practice-moves" class="moves" aria-label="Moves played"></div>
         <div class="move-nav">
@@ -487,7 +486,7 @@
       <div class="card" id="help-practicing">
         <h2>Practicing</h2>
         <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Show lines</b> (<b>Show positions</b>) lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices. The line under the chapter name says what you're practising and how many you've done, e.g. "Lines · 7 done".</li>
+          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Show lines</b> (<b>Show positions</b>) lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices.</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
           <li>The bell under the board turns move sounds on and off (as does <b>Move sounds</b> on the Options page); a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
@@ -2000,7 +1999,7 @@ function showChooser() {
   });
   board.setAutoShapes([]);
   board.redrawAll();
-  for (const id of ['practice-title', 'practice-position', 'practice-side']) $(id).textContent = '';
+  for (const id of ['practice-title', 'practice-position']) $(id).textContent = '';
   $('practice-line').classList.add('hidden'); // the move list and its buttons, until a line starts
   setStatus('');
   $('practice-status').classList.add('hidden'); // setStatus shows it again when a line starts
@@ -2102,14 +2101,14 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('probab
 // ---------- Practice: playing lines ----------
 
 // What's being practised: { kind: 'lines' or 'positions', items (see practiceItems), previous (the
-// item practised last), done (how many finished, not skipped) }. Null when nothing is.
+// item practised last) }. Null when nothing is.
 let session = null;
 
 // Practise lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
 function startSession(kind, items) {
   if (!items.length) return;
-  session = { kind, items, previous: null, done: 0 };
+  session = { kind, items, previous: null };
   hideBanner();
   showScreen('practice');
   ensureBoard();
@@ -2125,14 +2124,6 @@ function nextItem() {
   startLine(pick.line, pick.i);
 }
 
-// The line under the chapter name: what's being practised (the board's orientation already shows
-// your side), the position for a single position, and how many are done, e.g. "Lines · 7 done".
-function updatePracticeSide() {
-  const { line, singleAt } = practice;
-  $('practice-side').textContent = KINDS[session.kind].label + (singleAt != null ? `: ${positionName(line, singleAt)}` : '')
-    + (session.done ? ` · ${session.done} done` : '');
-}
-
 // Starts a line from move 1, or with singleAt (the index of one of your moves), tests just that move
 // as a single position.
 function startLine(line, singleAt = null) {
@@ -2143,7 +2134,6 @@ function startLine(line, singleAt = null) {
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
   $('practice-line').classList.remove('hidden');
-  updatePracticeSide();
   $('next-btn').classList.add('hidden');
   for (const id of ['hint-btn', 'skip-btn', 'end-practice-btn']) $(id).classList.remove('hidden');
   hideCommentPopup();
@@ -2384,12 +2374,10 @@ function showNextButton(label) {
   b.focus();
 }
 
-// The end of a line or single position: its attempts are saved, it counts as done, the move list
-// gets hover boards, and the app waits for Next (or Enter) so the moves can be looked at.
+// The end of a line or single position: its attempts are saved, the move list gets hover boards,
+// and the app waits for Next (or Enter) so the moves can be looked at.
 function finish(nextLabel) {
   saveAttempts();
-  session.done++;
-  updatePracticeSide();
   practice.isOver = true;
   practice.busy = true;
   updateBoard();

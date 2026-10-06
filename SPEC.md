@@ -143,7 +143,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 - A **single position** tests one move of the user's: the position before it is set up instantly, without sounds; the earlier moves appear in the move list (and can be stepped back through), their comments get bubbles, and only that move is tested; the rest of the line isn't played. Single positions come from the Practice page's Positions choice.
 - The same position is never tested twice in a row when there's another to choose.
-- The panel's line under the chapter name names the position, e.g. "Weak and frequent positions: Italian Game: Giuoco Piano, 4. c3 ♘f6" or "All positions: …". Tries, hints and comments work as usual.
+- The position is named in the panel's heading, under the chapter name (the position reached, as for lines). (There used to be a second line naming it again, e.g. "Positions: Italian Game: Giuoco Piano, 4. c3 ♘f6"; the user removed that line, 6 October 2026.) Tries, hints and comments work as usual.
 - After a right answer (including after wrong tries or a hint), the status says "Correct." and the app waits for **Next position** (or Enter), as at the end of a line (the user's decision in the UI clean-up; the next position used to follow by itself after about a second, except after a reveal).
 - Each single position counts as one try of that move in its line (see Progress tracking).
 - (Before the Positions page's buttons, "Test single positions" and "Partway through" were choices of "Where lines start" on the Studies page, with single positions only from move 5 on; they were removed.)
@@ -255,7 +255,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Frequency:** 0.2 to 1, by the rated Lichess games reaching the position (for a line, its final position), on a log scale up to the most frequent item being practised; 0.6 for an item whose statistics haven't downloaded.
   - E.g. a 100% position tested yesterday has need 0.1; a 50% position untested for a month 5.3; a new one 6; a 0% one never timed 9.
 - **The sliders** (the user's design): four sliders, 0% to 100%, shared by lines and positions, under **Spaced repetition focus**: **Frequency**, **Accuracy** (low accuracy), **Last played** (not tested for a while) and **Untried**. The defaults give exactly the priority above. Moving Frequency and Accuracy to 100% and the others to 0% practises (almost) only common positions with low accuracy. *Claude's design, accepted by the user:* each slider is a power on its part of the priority: 0% → power 0 (ignored), 50% (the default) → power 1 (as above), 100% → power 6, so the items highest in it take almost every pick (in between, the power rises evenly: 25% → 0.5, 75% → 3.5). **Untried** works on the 6 that untried items get: at 0% untried items never come up, and at 100% they get every pick until none is left. Sliders change chances, not rules: apart from Untried at 0% or 100%, every item can still come up.
-- The panel's line under the chapter name says "Lines", or "Positions: <position>" (it said "All lines" / "All positions: …" while there were two options).
+- **No line saying what's being practised** (the user's request, 6 October 2026: it should be obvious): the panel shows just the study and chapter, then the position reached. (It used to add a line, "Lines" or "Positions: <position>", earlier "All lines" / "All positions: …", with a count such as "· 7 done".)
 - The Help page's "How practice is chosen" card explains it, with the numbers in a collapsed section.
 
 ### Spaced repetition (removed)
@@ -440,7 +440,7 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 - **The chooser** shows the table's drop-downs and Show table only when "Weak and frequent" is chosen (they used to be greyed out under All).
 - **Skip** replaced End line here (see Skip).
 - **Single positions wait for Next position**, like lines wait for Next line.
-- **Progress:** the line under the chapter name ends with how many lines or positions have been finished (not skipped) since practice started, e.g. "All lines · 7 done".
+- **Progress:** (removed by the user on 6 October 2026) the line under the chapter name used to end with how many lines or positions had been finished since practice started, e.g. "All lines · 7 done".
 - **One ▸ per chapter** on the Studies page (see Clicking names); the opening-name pop-up waits about 0.7 seconds, and no pop-up appears after a click until the mouse moves away from where it clicked.
 - **The current page's header button** stays highlighted when hovered.
 - **Options:** "What counts as a masters move" moved to the end of the penalties card under "Masters moves"; "Move frequency" renamed "Lichess move statistics"; a **Sounds** card with a **Move sounds** checkbox, kept in step with the bell under the board.

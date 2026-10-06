@@ -301,7 +301,7 @@ async function runPractice(app) {
   document.getElementById('hint-btn').click();
   check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
   document.getElementById('skip-btn').click();
-  check('practice: Skip goes on to the next', [p() !== skipped, p().line === main, document.getElementById('practice-side').textContent], [true, true, 'Lines']);
+  check('practice: Skip goes on to the next', [p() !== skipped, p().line === main], [true, true]);
   app.endSession();
   const lastE4 = app.history.moves['AAAAAAAA/BBBBBBBB|e4'].at(-1);
   check('practice: the move on was recorded', [lastE4.tried, lastE4.points, typeof lastE4.at], [['hint', 'show'], 0, 'number']);
@@ -313,10 +313,9 @@ async function runPractice(app) {
   app.startSession('positions', [{ line: main, i: 8 }, { line: main, i: 10 }]);
   const first = p();
   check('practice: single position from the list', [p().singleAt != null, [8, 10].includes(p().singleAt), p().movesPlayed === p().singleAt,
-    document.getElementById('practice-side').textContent.startsWith('Positions: ')], [true, true, true, true]);
+    document.getElementById('practice-position').textContent === app.positionName(main, p().singleAt)], [true, true, true, true]);
   await playRest();
-  check('practice: single position answered', [status(), document.getElementById('next-btn').textContent, p() === first,
-    document.getElementById('practice-side').textContent.endsWith(' · 1 done')], ['Correct.', 'Next position', true, true]);
+  check('practice: single position answered', [status(), document.getElementById('next-btn').textContent, p() === first], ['Correct.', 'Next position', true]);
   document.getElementById('next-btn').click();
   check('practice: the next position is the other one', [p().singleAt != null, p().singleAt !== first.singleAt], [true, true]);
   check('practice: a single position is not a play-through', app.history.lines[main.key]?.length, 2);
@@ -409,13 +408,13 @@ function runPositions(app) {
   check('chooser: the switch, the main-lines checkbox and Show positions', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, $('probabilities-btn').textContent, app.settings.practice.kind],
     ['true', 'false', 'Positions from main lines only', 'Show positions', 'positions']);
   $('chooser-start').click();
-  check('chooser: practising positions', [app.practice.singleAt != null, $('practice-side').textContent.startsWith('Positions: '),
+  check('chooser: practising positions', [app.practice.singleAt != null, $('practice-position').textContent !== '',
     $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden')], [true, true, true, true]);
   $('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
   $('chooser-kind-lines').click();
   $('chooser-start').click();
-  check('chooser: practising lines, from move 1', [app.practice.singleAt, $('practice-side').textContent], [null, 'Lines']);
+  check('chooser: practising lines, from move 1', app.practice.singleAt, null);
   app.endSession();
   // Untried at 0% with nothing tried: nothing to practise.
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
