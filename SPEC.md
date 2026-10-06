@@ -452,7 +452,7 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 - **Progress:** (removed by the user on 6 October 2026) the line under the chapter name used to end with how many lines or positions had been finished since practice started, e.g. "All lines · 7 done".
 - **One ▸ per chapter** on the Studies page (see Clicking names); the opening-name pop-up waits about 0.7 seconds, and no pop-up appears after a click until the mouse moves away from where it clicked.
 - **The current page's header button** stays highlighted when hovered.
-- **Options:** "What counts as a masters move" moved to the end of the penalties card under "Masters moves"; "Move frequency" renamed "Lichess move statistics"; a **Sounds** card with a **Move sounds** checkbox, kept in step with the bell under the board.
+- **Options:** "What counts as a masters move" moved to the end of the penalties card under "Masters moves"; "Move frequency" renamed "Lichess move statistics"; a **Sounds** card with a **Move sounds** checkbox, kept in step with the bell under the board (later removed at the user's request, 6 October 2026: the bell under the board is the only sound control).
 - **Help** starts with a list of links to its sections.
 - *Claude's choices, accepted by the user:* Skip's wording and place (between Hint and End practice); "7 done" counts only finished items; the 0.7-second delay is only for the chapter names (other pop-ups still appear immediately); the Sounds card is second on the Options page; Hint's tooltip now says it "Counts as an error" (it said "a miss").
 

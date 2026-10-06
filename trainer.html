@@ -111,8 +111,6 @@
   .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
   .penalties select { flex: none; width: auto; padding: 3px 6px; }
   .card h3 { font-size: 14px; margin: 16px 0 0; }
-  .option-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-  .option-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
   /* The Test probabilities table, shown by "Show lines" / "Show positions" on the Practice page */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
@@ -488,7 +486,7 @@
         <ul>
           <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Show lines</b> (<b>Show positions</b>) lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices.</li>
           <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
-          <li>The bell under the board turns move sounds on and off (as does <b>Move sounds</b> on the Options page); a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
+          <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
           <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
           <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
@@ -607,7 +605,7 @@
       <div class="card" id="help-options">
         <h2>Options and backups</h2>
         <ul>
-          <li><b>Options</b>: error penalties and what counts as a masters move, move sounds, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
+          <li><b>Options</b>: error penalties and what counts as a masters move, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move statistics and masters statistics, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
@@ -638,11 +636,6 @@
             <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
           </select>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>Sounds</h2>
-        <label class="option-check"><input type="checkbox" id="sounds-check"> Move sounds <span class="muted">(also the bell under the board)</span></label>
       </div>
 
       <div class="card">
@@ -2557,14 +2550,10 @@ function setSounds(on) {
   if (settings.sounds) playSound('Move'); // a quick sample
 }
 
-// The bell under the board, and the Options page's checkbox, show whether sounds are on.
-function updateSoundButton() {
-  setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
-  $('sounds-check').checked = settings.sounds;
-}
+// The bell under the board shows whether sounds are on.
+const updateSoundButton = () => setToggle('sound-toggle', settings.sounds, settings.sounds ? 'Turn sounds off' : 'Turn sounds on');
 
 $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
-$('sounds-check').addEventListener('change', e => setSounds(e.target.checked));
 
 // ---------- Hover board (the small board shown when hovering over a move) ----------
 // Your moves: the position before the move, an arrow for the correct move and one for each error
