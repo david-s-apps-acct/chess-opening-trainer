@@ -396,6 +396,19 @@ function runPositions(app) {
   check('test probabilities: lines, the one never played through first', lineRows.map(r => [r[0], r[2], r[3]]),
     [['Test Study · Side line1. e4 f6 2. d4', '50%', '–'], ['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today']]);
   check('test probabilities: chances to one decimal, adding up to 100%', [lineRows.every(r => /^\d+\.\d%$/.test(r[4])), Math.round(lineRows.reduce((sum, r) => sum + parseFloat(r[4]), 0))], [true, 100]);
+  // More than 25: the rest in a last row, so the chances add up to 100%.
+  const replies = ['a6', 'a5', 'b6', 'b5', 'c6', 'c5', 'd6', 'd5', 'e6', 'e5', 'f6', 'f5', 'g6', 'g5', 'h6', 'h5', 'Na6', 'Nc6', 'Nf6', 'Nh6'];
+  const manyReplies = (id, first) => ({ key: 'MMMMMMMM/' + id, id, name: 'Many ' + first,
+    pgn: `[Event "Many: ${first}"]\n[Site "https://lichess.org/study/MMMMMMMM/${id}"]\n[Orientation "white"]\n\n1. ${first} ${replies[0]} ${replies.slice(1).map(r => `( 1... ${r} )`).join(' ')} *` });
+  const many = structuredClone(library);
+  many.studies.push({ id: 'MMMMMMMM', name: 'Many', chapters: [manyReplies('NNNNNNNN', 'e4'), manyReplies('OOOOOOOO', 'd4')] });
+  app.setLibrary(many);
+  app.setSelection(['MMMMMMMM/NNNNNNNN', 'MMMMMMMM/OOOOOOOO']);
+  const manyRows = shown('lines');
+  check('test probabilities: 25 rows, then the rest in one', [manyRows.length, manyRows.at(-1)[0], manyRows.at(-1).slice(1, 4), manyRows.reduce((sum, r) => sum + parseFloat(r[4]), 0).toFixed(1)],
+    [26, 'Other lines to be tested (15)', ['', '', ''], '100.0']);
+  app.setLibrary(library);
+  app.setSelection(['AAAAAAAA/DDDDDDDD']);
   $('chooser-kind-positions').click();
   $('probabilities-btn').click();
   check('test probabilities: the title and settings', [$('probabilities').classList.contains('hidden'), $('probabilities-title').textContent, $('probabilities-settings').textContent],

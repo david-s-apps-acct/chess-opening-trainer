@@ -2057,8 +2057,10 @@ $('probabilities-btn').addEventListener('click', () => showProbabilities(setting
 // Hovering over "Spaced repetition focus" says what the sliders do.
 quickTip($('weights-heading'), 'How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.');
 
-// "Show lines" / "Show positions": the Test probabilities table, the ones most likely to come up next with the current
-// settings, the most likely first, over the Practice page; closed with ×, Esc or a click outside it.
+// "Show lines" / "Show positions": the Test probabilities table, the 25 most likely to come up next
+// with the current settings, the most likely first, and the rest together in a last row ("Other lines
+// to be tested (12)"), so the chances add up to 100%; over the Practice page, closed with ×, Esc or a
+// click outside it.
 // Each row: the study and chapter, the position's name (a line's final position), how often it's
 // reached, its accuracy, when it was last tested, and its chance of coming up next. Hovering shows
 // the small board (a line's last move).
@@ -2070,11 +2072,16 @@ function showProbabilities(kind) {
   const facts = itemFacts(practiceItems(kind));
   const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
-  const rows = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
-    .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance).slice(0, PROBABILITY_ROWS);
+  const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
+    .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance);
+  const rows = likely.slice(0, PROBABILITY_ROWS), others = likely.slice(PROBABILITY_ROWS);
   $('probabilities-settings').textContent = [k.label, ...WEIGHTS.map(w => `${w.name} ${weights[w.key]}%`), ...mainLinesOnly[kind] ? [k.mainLines.toLowerCase()] : []].join(' · ');
   $('probabilities-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
-  $('probabilities-rows').replaceChildren(...rows.map(probabilityRow));
+  // The rest in one last row: what the rows shown leave of 100%, so the column adds up exactly.
+  const shownPercent = rows.reduce((sum, r) => sum + Number(chanceText(r.chance).replace(/[<%]/g, '')), 0);
+  $('probabilities-rows').replaceChildren(...rows.map(probabilityRow), ...others.length ? [element('tr', { class: 'muted' },
+    element('td', {}, `Other ${k.noun}s to be tested (${others.length})`), element('td'), element('td'), element('td'),
+    element('td', { class: 'num' }, `${Math.max(0, 100 - shownPercent).toFixed(1)}%`))] : []);
   $('probabilities-note').textContent = rows.length ? '' : practicable(kind).note;
   $('probabilities').classList.remove('hidden');
   $('probabilities-close').focus();
