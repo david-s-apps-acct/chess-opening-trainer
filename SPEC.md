@@ -240,6 +240,30 @@ The last selection is remembered between visits (stored in the browser, like the
 - *Claude's choices, accepted by the user:* the sliders move in steps of 5% and show their value; the buttons are disabled, with a note above Start practice, when there's nothing to practise ("No lines to practise: tick chapters on the Studies page.", or "Every line is untried, and Untried is at 0%."); the sliders are remembered between visits and included in backups. 
 - (History: there were separate Lines and Positions boxes, each with radio buttons "All (spaced repetition)" and "Weak and frequent" — later "Frequent lines/positions with low accuracy" — with drop-downs "Maximum of [20] lines with ≤ [70]% accuracy" and a "Show table" (later "Show selected lines") button. Their settings are no longer kept.)
 
+### Reverse sides (26 October 2026)
+
+- **What it is (the user's request):** an option to play the opponent's side. You make the opponent's moves from the study and the app replies with your moves from the study.
+- **On the chooser:** a checkbox **"Reverse sides (not scored)"** under **Main lines only**, shown only when **Lines** is chosen. When **Positions** is chosen it isn't shown and nothing is greyed out (the user's decisions).
+- **Not scored (the user's decision):** no move accuracy, line accuracy, history or last tested is recorded. Backups, the Studies page and the violet highlighting are unaffected.
+- **Which reply counts as correct:**
+  - **Main lines only not ticked:** any reply the study gives counts, and the line follows the reply played.
+  - **Main lines only ticked:** only the study's main reply counts (the user's decision).
+- **Playing a line:**
+  - The board is turned to the opponent's side.
+  - The app plays your study's main move at each of your turns.
+  - Errors show the usual messages and colours; with Main lines only ticked, a study reply that isn't the main one shows as a blue "Alternative move, not your preferred move".
+  - Hint and Show correct move point to the study's main reply.
+  - The move list, hover boards, sounds, Skip and End practice work as usual.
+- **Choosing lines:** the Spaced repetition focus frame is greyed out while the option is ticked, since there's no accuracy to work with. Lines come up weighted by how often their final position is reached (the same frequency measure as the Frequency slider).
+- *Claude's choices, accepted by the user (before building):* lines are weighted by how often they're reached rather than picked purely at random; with Main lines only, another study reply is shown as a blue "Alternative move" error; the end-of-line summary leaves out line accuracy; the checkbox is remembered between visits, like Main lines only.
+- *Claude's choices, for the user to accept or reject:*
+  - The checkbox's tick is kept when switching to Positions and back.
+  - Show lines is disabled while the frame is greyed out (the Test probabilities table is about spaced repetition).
+  - In the practice move list, the moves you played get the "your move" hover board (correct move in green, errors as arrows and "Errors: …") without a move accuracy row; the app's moves get the opponent's hover board.
+  - Hovering over the checkbox says "You play the opponent's moves from your studies and the app plays yours. Nothing is recorded."; hovering over the greyed frame says "Not used with Reverse sides: lines come up by how often they're reached."
+  - Lines in which the opponent never moves are left out.
+  - The option is described in Help, under Practicing.
+
 ### End practice
 
 - Once practice has started, an **End practice** button on the Practice page ends the session and shows the chooser again (the user's request, so practice can be switched from the Practice page; without it, the Practice button always returns to the session in progress). It shows during a line and after it (beside Next line / Next position).

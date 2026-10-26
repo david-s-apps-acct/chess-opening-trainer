@@ -155,10 +155,10 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5,
-    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
+    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
   check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9 }).mastersTop, app.checkedSettings({ penalties: { alternative: 11, hint: 4 } }).penalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [5, { alternative: 2, masters: 2, error: 5, hint: 4 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
+    [5, { alternative: 2, masters: 2, error: 5, hint: 4 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
 
   // Masters moves: top N and 10% or more
   const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
@@ -336,6 +336,49 @@ async function runPractice(app) {
   check('practice: End practice records the moves answered', [app.history.moves['AAAAAAAA/BBBBBBBB|e4'].length - before,
     app.history.moves['AAAAAAAA/BBBBBBBB|e4 e5 Nf3'].at(-1).tried], [1, ['a3']]);
   check('practice: a line stopped with End practice is not a play-through', [app.history.lines[main.key]?.length, app.practice], [2, null]);
+  app.setSettings({});
+
+  // 6. Reverse sides: you play the opponent's moves (Black here); not scored.
+  const yourTurnReversed = () => p() && !p().busy && p().movesPlayed < p().line.moves.length && !p().line.moves[p().movesPlayed].isYours;
+  const playReversed = async (uci) => { await until(yourTurnReversed, 'your turn (reversed)'); await app.onYourMove(uci.slice(0, 2), uci.slice(2, 4)); };
+  const savedHistory = JSON.stringify(app.storedHistory());
+  app.startSession('lines', [{ line: main, i: null }], { mainLinesOnly: false });
+  await playReversed('a7a6');
+  check('reversed: an error, with the usual message', statusLines()[0], ['Not your preferred move', 'red']);
+  await playReversed('e7e5');
+  await until(yourTurnReversed, 'your turn after the app\'s move');
+  check('reversed: the board is turned, the app played your move', [!!document.querySelector('#board.orientation-black, #board .orientation-black'), p().line.moves[2].san, p().movesPlayed], [true, 'Nf3', 3]);
+  await playReversed('d7d6'); // the study's other reply: correct, and the line follows it
+  await until(() => p().isOver, 'the line to end');
+  check('reversed: any study reply is correct; the line follows it', [p().line.key.endsWith('Nf3 d6 d4'), summary()], [true, ['1 of 2 moves correct']]);
+  check('reversed: nothing is recorded', JSON.stringify(app.storedHistory()), savedHistory);
+  // Main lines only: just the main reply counts; the others are alternatives. Hint: the main reply.
+  app.startSession('lines', [{ line: main, i: null }], { mainLinesOnly: true });
+  await playReversed('e7e5');
+  await playReversed('d7d6');
+  check('reversed, main lines only: another reply is an alternative', statusLines()[0], ['Alternative move, not your preferred move', 'blue']);
+  await until(yourTurnReversed, 'the alternative to be taken back');
+  document.getElementById('hint-btn').click();
+  document.getElementById('hint-btn').click();
+  check('reversed: Show correct move gives the main reply', status(), 'The move is 2… ♘c6. Play it on the board.');
+  for (;;) {
+    await until(() => p().isOver || yourTurnReversed(), 'your turn or the end');
+    if (p().isOver) break;
+    const u = p().line.moves[p().movesPlayed].uci;
+    await app.onYourMove(u.slice(0, 2), u.slice(2, 4));
+  }
+  check('reversed: the main line to its end, unscored', [p().line === main, summary()], [true, ['5 of 6 moves correct']]);
+  check('reversed: still nothing recorded', JSON.stringify(app.storedHistory()), savedHistory);
+  app.endSession();
+  // The chooser: the checkbox only for lines; with it, the sliders are greyed out.
+  app.setSettings({ practice: { kind: 'lines', reversed: true } });
+  app.renderChooser();
+  const $ = id => document.getElementById(id);
+  const chooserState = () => [$('chooser-reversed-label').classList.contains('hidden'), $('chooser-weights').classList.contains('off'), $('weight-frequency').disabled, $('probabilities-btn').disabled];
+  check('chooser: Reverse sides greys out the sliders', chooserState(), [false, true, true, true]);
+  app.setSettings({ practice: { kind: 'positions', reversed: true } });
+  app.renderChooser();
+  check('chooser: no Reverse sides for positions, nothing greyed', chooserState(), [true, false, false, false]);
   app.setSettings({});
 }
 
