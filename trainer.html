@@ -93,7 +93,7 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
-  #opt-fetch-info:empty { display: none; }
+  #opt-fetch-info:empty, #opt-token-error:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   .update-status.error { color: var(--bad); }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
@@ -122,6 +122,7 @@
   /* Options page: error penalties */
   .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
   .penalties select { flex: none; width: auto; padding: 3px 6px; }
+  .penalties .penalties-gap { margin-top: 8px; } /* Masters moves, apart from the penalties */
   .card h3 { font-size: 14px; margin: 16px 0 0; }
 
   /* The Test probabilities table, shown by "Show lines" / "Show positions" on the Practice page */
@@ -258,7 +259,7 @@
   .status.fading > * { opacity: 0; } /* an error's message fading before "Your move" */
   .status.bad, .status .bad { color: var(--bad); }
   .error-blue { color: #6ea8f0; } .error-amber { color: #e69d00; } .error-red { color: var(--bad); } /* see ERROR_COLORS */
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
   #practice-title:empty, #practice-position:empty { display: none; } /* nothing above the chooser */
@@ -275,7 +276,7 @@
   .chooser-frame > button { align-self: flex-start; }
   .weights h3 { margin: 0; font-size: 14px; }
   .chooser-frame.off { opacity: .45; } /* not used when playing the reversed sides */
-  #weights-heading { cursor: help; }
+  [data-tip] { cursor: help; } /* explained on hover (see quickTip) */
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
   .weight-rows output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -428,7 +429,7 @@
             <label id="chooser-reversed-label" title="You play the opponent's moves from your studies and the app plays yours. Nothing is recorded."><input type="checkbox" id="chooser-reversed"> Reverse sides (not scored)</label>
           </div>
           <div id="chooser-weights" class="chooser-frame weights">
-            <h3><span id="weights-heading">Spaced repetition focus</span></h3>
+            <h3><span id="weights-heading" data-tip="How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.">Spaced repetition focus</span></h3>
             <div id="weight-rows" class="weight-rows"></div>
             <button id="probabilities-btn" class="small" title="The ones most likely to come up next, with these settings, and their chances">Show lines</button>
             <button id="weights-reset" class="small" title="Put all four sliders back to 50%">Reset</button>
@@ -614,51 +615,50 @@
       <div class="card" id="help-options">
         <h2>Options and backups</h2>
         <ul>
-          <li><b>Options</b>: error penalties and what counts as a masters move, updating your studies, the progress of the automatic Lichess downloads (move statistics and masters statistics), your Lichess token, and backups.</li>
-          <li><b>Backup</b>: <b>Save backup</b> saves a file with your stats, settings and downloaded Lichess data (move statistics and masters statistics, so they needn't be downloaded again) (in Chrome and Edge you choose where; Safari and Firefox put it in your download folder, unless you set them to ask where to save downloads). <b>Restore backup</b> loads it again, on another browser or after clearing your browser. It never includes your token.</li>
+          <li>On the <b>Options</b> page, hover over a heading (or a penalty) to see what it's for.</li>
+          <li><b>Error penalties</b>: how much move accuracy each kind of error costs, and what counts as a masters move (see Your statistics). Changing them works out the move accuracy of all your past tries again, straight away.</li>
+          <li><b>Lichess studies</b>: your Lichess account, and when your studies were last fetched. <b>Update studies</b> downloads all your studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves no longer in your studies.</li>
+          <li><b>Lichess move statistics</b>: how many positions have their Lichess and masters statistics so far (masters: over-the-board games between players rated 2200+ FIDE). They download automatically in the background after Update studies and whenever the app opens, and you can keep practicing meanwhile. Positions no game reaches are skipped. If Lichess can't be reached, or asks the app to slow down, the download carries on later by itself.</li>
+          <li><b>Lichess token</b>: the app reads your studies with a personal API token that needs the <b>Read private studies</b> (<code>study:read</code>) scope. Paste a new token to replace the stored one. <b>Clear token</b> removes it from this browser; your fetched studies stay, but updating them needs a token again.</li>
+          <li><b>Backup</b>: your stats, settings and downloaded Lichess data are stored only in this browser. <b>Save backup</b> saves them in a file (move statistics and masters statistics included, so they needn't be downloaded again). In Chrome and Edge you choose where; Safari and Firefox put it in your download folder (in Safari, Settings → General → File download location → Ask for each download lets you choose each time). <b>Restore backup</b> loads a backup, on another browser or after clearing your browser: it replaces your stats and settings and merges the Lichess data with what's already here. Backups never include your token. The Options page says when you last saved one.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
       </div>
     </div>
   </section>
 
-  <!-- Options -->
+  <!-- Options: as few words as possible; each heading (and each penalty) explains itself on hover
+       (data-tip), with more on the Help page. -->
   <section id="options-screen" class="hidden">
     <div class="cards">
       <div class="card">
-        <h2>Error penalties reducing move accuracy</h2>
-        <p class="muted">How much of a move's accuracy each error costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changing these recalculates the move accuracy of all your past tries straight away.</p>
+        <h2><span data-tip="How much move accuracy each error costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changes apply to all your past tries straight away.">Error penalties</span></h2>
         <div class="penalties">
-          <label for="pen-alternative">Alternative move <span class="muted">(an unmarked alternative from your study)</span></label>
+          <label for="pen-alternative" data-tip="An unmarked alternative move from your study.">Alternative move</label>
           <select id="pen-alternative" class="pen-select"></select>
-          <label for="pen-masters">Masters move <span class="muted">(one of the top master moves, played 10% of the time or more)</span></label>
+          <label for="pen-masters" data-tip="A masters move (see Masters moves below) that isn't in your study.">Masters move</label>
           <select id="pen-masters" class="pen-select"></select>
-          <label for="pen-error">Error <span class="muted">(any other wrong move, or an alternative your study marks ?, ?? or ?!)</span></label>
+          <label for="pen-error" data-tip="Any other move that isn't your study's move, or an alternative your study marks ?, ?? or ?!.">Error</label>
           <select id="pen-error" class="pen-select"></select>
-          <label for="pen-hint">Hint <span class="muted">(and Show correct move)</span></label>
+          <label for="pen-hint" data-tip="Hint, and Show correct move.">Hint</label>
           <select id="pen-hint" class="pen-select"></select>
-        </div>
-        <h3>Masters moves</h3>
-        <div class="penalties">
-          <label for="masters-top">What counts as a masters move <span class="muted">(among this many of the most played master moves, and played 10% of the time or more)</span></label>
-          <select id="masters-top">
+          <label for="masters-top" class="penalties-gap" data-tip="What counts as a masters move: one of this many of the most played master moves in the position, and played 10% of the time or more.">Masters moves</label>
+          <select id="masters-top" class="penalties-gap">
             <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
           </select>
         </div>
       </div>
 
       <div class="card">
-        <h2>Lichess studies</h2>
+        <h2><span data-tip="Update studies downloads all your Lichess studies again, private ones included, so changes made on Lichess appear here. Your statistics are kept, except for moves no longer in your studies.">Lichess studies</span></h2>
         <p id="opt-fetch-info" class="muted"></p>
-        <p class="muted">Update studies downloads all your Lichess studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves that are no longer in your studies.</p>
         <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
         <p id="opt-fetched" class="muted after-actions"></p>
         <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
       </div>
 
       <div class="card">
-        <h2>Lichess move statistics</h2>
-        <p class="muted">How often each move is played in all rated Lichess games, shown on the small boards when you hover over a move, and in the Masters database (over-the-board games between players rated 2200+ FIDE), saved for later use. The statistics for positions that don't have them yet download automatically in the background after Update studies (and resume when you open the app); you can keep practicing meanwhile.</p>
+        <h2><span data-tip="How often each move is played in rated Lichess games and in master games (over the board, players rated 2200+ FIDE), shown on the hover boards. They download automatically in the background after Update studies and when the app opens; you can keep practicing meanwhile.">Lichess move statistics</span></h2>
         <p id="opt-stats-info" class="muted"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="opt-masters-info" class="muted"></p>
@@ -666,21 +666,21 @@
       </div>
 
       <div class="card">
-        <h2>Lichess token</h2>
+        <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Paste a new token to replace the stored one.">Lichess token</span></h2>
         <p id="opt-token-state" class="muted"></p>
-        <p>Paste a new token to replace the stored one. It needs the <code>study:read</code> scope.
-          <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token</a></p>
         <form id="opt-token-form" class="token-row">
-          <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+          <input id="opt-token-input" type="password" placeholder="New token (lip_…)" autocomplete="off" spellcheck="false">
           <button class="primary" type="submit">Save token</button>
         </form>
         <div id="opt-token-error" class="form-error"></div>
-        <button id="token-clear-btn">Clear stored token</button>
+        <div class="actions">
+          <button id="token-clear-btn">Clear token</button>
+          <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token</a>
+        </div>
       </div>
 
       <div class="card">
-        <h2>Backup</h2>
-        <p class="muted">Your stats, settings and downloaded Lichess data are stored only in this browser. Save a backup file to keep them safe or move them to another browser; restoring merges the Lichess data with what's already here. The file never includes your Lichess token.</p>
+        <h2><span data-tip="Your stats, settings and downloaded Lichess data are stored only in this browser. A backup file keeps them safe or moves them to another browser. Restoring replaces your stats and settings and merges the Lichess data with what's here. Backups never include your token.">Backup</span></h2>
         <div class="actions">
           <button id="backup-btn">Save backup</button>
           <button id="restore-btn">Restore backup</button>
@@ -943,6 +943,9 @@ function quickTip(el, text, delay = 0) {
 }
 
 function hideQuickTip() { clearTimeout(quickTipTimer); $('quick-tip')?.classList.add('hidden'); }
+
+// The page's own explanations: any element with data-tip shows it on hover.
+for (const el of document.querySelectorAll('[data-tip]')) quickTip(el, el.dataset.tip);
 window.addEventListener('scroll', hideQuickTip, { passive: true });
 
 // An icon button: a line through it when off; title is its hover text.
@@ -2114,8 +2117,6 @@ $('weights-reset').addEventListener('click', () => changePractice(p => { p.weigh
 $('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items, reversedSides()));
 $('probabilities-btn').addEventListener('click', () => showProbabilities(settings.practice.kind));
 
-// Hovering over "Spaced repetition focus" says what the sliders do.
-quickTip($('weights-heading'), 'How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.');
 
 // "Show lines" / "Show positions": the Test probabilities table, the 25 most likely to come up next
 // with the current settings, the most likely first, and the rest together in a last row ("Other lines
@@ -2822,7 +2823,7 @@ function allStudyPositions() {
 
 // After a download completes: suggest saving a backup (the downloads took a while), under Update studies.
 function suggestBackup(what) {
-  setUpdateStatus([`${what} are complete. Save a backup so you won't need to download them again? `,
+  setUpdateStatus([`${what} downloaded. Save a backup? `,
     element('button', { class: 'small', onclick: () => { setUpdateStatus(''); $('backup-btn').click(); } }, 'Save backup'), ' ',
     element('button', { class: 'small', onclick: () => setUpdateStatus('') }, 'Not now')]);
 }
@@ -2849,14 +2850,14 @@ function gamesWith(stats, s) {
 // Lichess games and Masters (over-the-board games, players 2200+ FIDE).
 const EXPLORER_DATABASES = {
   lichess: {
-    label: 'move statistics', Label: 'Move statistics', none: 'no Lichess game reaches them',
+    Label: 'Move statistics',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
     status: 'lichess-status', info: 'opt-stats-info',
     keep: (answer, position) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(withoutCheckMarks(m.san))), at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, at: Date.now() }),
   },
   masters: {
-    label: 'masters statistics', Label: 'Masters statistics', none: 'no master game reaches them',
+    Label: 'Masters statistics',
     url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
     status: 'masters-status', info: 'opt-masters-info',
     keep: answer => ({ ...answer, at: Date.now() }),
@@ -2902,18 +2903,18 @@ async function downloadExplorerPositions(kind, run) {
   const tier = position => position.isBranchPoint ? 0 : position.onMainLine ? 1 : 2;
   const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
-  const total = todo.length;
-  if (!total) return; // nothing missing: nothing to say
-  let skipped = 0;
+  if (!todo.length) return; // nothing missing: nothing to say
+  // The progress shows in the Options page's "Move statistics: 3 of 10 positions (downloading…)"; the
+  // status line under it is only for problems.
+  status('');
+  if (currentScreen === 'options') updateStatisticsInfo();
   for (let i = 0; i < todo.length; ) {
     if (explorerDownloads[kind] !== run) return; // a newer download took over
-    status(`Downloading ${explorer.label}: ${i} of ${total} positions`);
     const [epd, position] = todo[i];
     // Skip positions nobody reaches: every known way here is a move no game in this database played.
     // (A different move order could still reach it, so this is a close approximation.)
     if (position.parents.length && position.parents.every(parent => saved(parent.epd) && !(gamesWith(saved(parent.epd), parent.san) > 0))) {
       setPositionData(epd, kind, explorer.empty());
-      skipped++;
       i++;
       continue;
     }
@@ -2921,42 +2922,38 @@ async function downloadExplorerPositions(kind, run) {
     try {
       res = await lichessFetch(explorer.url(position.fen), token);
     } catch {
-      status(`Couldn't reach the Lichess explorer. ${explorer.Label} stopped at ${i} of ${total}; the rest downloads the next time you open the app or press Update studies.`);
+      status("Couldn't reach Lichess. The rest downloads next time.");
       return;
     }
     if (res.status === 429) {
       // Lichess asks clients to wait a minute after a rate-limit response.
-      status(`Downloading ${explorer.label}: ${i} of ${total} positions (Lichess asked to slow down; waiting a minute…)`);
+      status('Lichess asked to slow down: waiting a minute…');
       await sleep(61000);
+      status('');
       continue;
     }
     if (res.status === 401) {
-      status(`Lichess rejected the token for ${explorer.label}. Replace it on the Options page; the download then continues.`);
+      status('Lichess rejected the token. Replace it below to continue.');
       return;
     }
     if (res.ok) {
       setPositionData(epd, kind, explorer.keep(await res.json(), position));
     }
     i++;
-    status(`Downloading ${explorer.label}: ${i} of ${total} positions`);
     if (currentScreen === 'options') updateStatisticsInfo();
   }
   if (explorerDownloads[kind] !== run) return;
-  status(`${explorer.Label} downloaded for ${plural(total, 'position')}` + (skipped ? ` (${skipped} skipped because ${explorer.none}).` : '.'));
-  setTimeout(() => { if (!explorerDownloads[kind]) status(''); }, 5000); // unless a newer download is running
   suggestBackup(explorer.Label); // every position now has these statistics
 }
 
-// The Options page's "Move statistics: N of M positions downloaded" and "Masters statistics: …" lines.
+// The Options page's "Move statistics: 3 of 10 positions (downloading…)" and "Masters statistics: …" lines.
 function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
     const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
     if (!library) { el.textContent = ''; continue; }
     const done = studied.filter(epd => moveStats[epd]?.[kind]).length;
-    el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')} downloaded`
-      + (explorerDownloads[kind] && done < studied.length ? ' (downloading now…)' : '')
-      + (!explorerDownloads[kind] && done < studied.length ? '. The rest downloads automatically after Update studies, or when you next open the app.' : '.');
+    el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
   }
 }
 
@@ -3035,7 +3032,7 @@ function renderOptions() {
   $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved yet.';
   updateSoundButton();
   updateStatisticsInfo();
-  $('opt-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
+  $('opt-token-state').textContent = token ? 'Token stored.' : 'No token stored.';
   $('opt-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
 }
@@ -3064,7 +3061,7 @@ $('token-clear-btn').addEventListener('click', () => {
   token = null;
   store.remove('token');
   renderOptions();
-  showBanner('Stored token cleared. Your cached studies are still available; refreshing needs a new token.');
+  showBanner('Token cleared.');
 });
 
 // ---------- Backup ----------
@@ -3104,7 +3101,7 @@ $('backup-btn').addEventListener('click', async () => {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   backupSaved(); // the download can't be checked, so it counts as saved
-  showBanner(`Backup saved as ${name} in your download folder. To choose the folder each time in Safari: Safari → Settings → General → File download location → Ask for each download.`);
+  showBanner(`Backup saved as ${name} in your download folder.`);
 });
 
 // When the last backup was saved from this browser (not itself in backups), shown on the Options page.
