@@ -566,7 +566,7 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 
 - **Version control:** the project folder is a local git repository (no GitHub or upload), set up at the user's request; each agreed change can be committed as a snapshot and undone by going back to an earlier one. The first commit recorded the app, spec, project notes and the natural-language archive.
 
-- **Delivery:** a single HTML file (`trainer.html`) on the user's computer, opened directly in the browser (`file://`). No server, no build step.
+- **Delivery:** a single HTML file, `index.html` (called `trainer.html` until 26 October 2026, renamed at the user's request so the GitHub Pages address needs no file name), opened directly from disk (`file://`) or from GitHub Pages. No server, no build step.
 - **Lichess API:** called directly from the page; the Lichess API allows cross-origin browser requests.
 - **Libraries:** chessops and chessground (JS and CSS) are loaded from the jsDelivr CDN via ES module imports. The app needs internet to reach Lichess anyway, so this adds no new requirement online.
 - **Offline** (discussed 26 October 2026): once the studies are fetched, everything except Lichess (Update studies, the statistics downloads, Add token) works offline, as long as the browser still has the libraries cached from an earlier visit (jsDelivr marks them cacheable for a year). That isn't guaranteed: a cleared cache or a private window means the app can't start offline. Without cached fonts or sounds, system fonts are used and moves are silent. The user chose to leave the file-on-disk version relying on the browser cache, and to add a service worker once the app is on GitHub Pages (see Publishing on GitHub).
@@ -576,13 +576,14 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 - **Sounds:** Lichess's SFX move and capture sounds, served by jsDelivr from the `lichess-org/lila` GitHub repository at a pinned commit.
 - **Board UI:** use [chessground](https://github.com/lichess-org/chessground), Lichess's board library, which pairs with chessops. The user makes moves by dragging or clicking pieces on it. It uses Lichess's default look (brown board, cburnett pieces); no other board or piece styles are offered.
 
-## Publishing on GitHub (planned)
+## Publishing on GitHub
 
-The user plans to publish the app on GitHub Pages (repository `david-s-apps-acct/chess-opening-trainer`); until then, work stays local. What's planned or still to decide:
+The app is published on GitHub Pages (repository `david-s-apps-acct/chess-opening-trainer`). The order agreed on 26 October 2026: basic publishing first, then the trial database, then the service worker and "Log in with Lichess".
 
 - **Service worker for offline use** (the user's decision, 26 October 2026): on the GitHub Pages version, a small service worker stores the app and its libraries, fonts and sounds, so it opens and works offline (except Lichess) even with the browser cache cleared, and can be installed like an app. Service workers don't work for a file opened from disk, which keeps relying on the browser cache.
 - **"Log in with Lichess"** (Lichess's OAuth login) as the main way to connect, with no token to copy; Add token stays for the copy opened from disk.
-- Still to decide: whether to rename `trainer.html` to `index.html`; a sample backup so people can try the app before adding their own studies (which studies, and whether backups should include studies); enabling Pages; whether to push after each commit.
+- **Done (26 October 2026):** `trainer.html` renamed `index.html`; the commits pushed; Pages (already turned on, serving `main` from the root) shows the app at https://david-s-apps-acct.github.io/chess-opening-trainer/.
+- Still to decide: a sample backup so people can try the app before adding their own studies (which studies, and whether it includes the move statistics); whether to push after each commit.
 
 ## Possible future improvements
 
@@ -602,7 +603,7 @@ Ideas agreed or mentioned along the way that haven't been built yet:
 - **Offline copy:** a separate `trainer-offline.html` that runs without an internet connection, for practicing with saved studies, stats, move frequencies (anything that talks to Lichess or Anthropic would still need a connection: Update studies, the two download buttons, fetching an evaluation at the end of a line, checking a token, natural-language selection).
   - Everything the page now loads from jsDelivr would be embedded in the one file: chessops and chessground bundled into the script (a one-time bundling step, e.g. esbuild, since jsDelivr's versions import further files), and the board and piece images, fonts (only the subsets used) and sounds embedded as data. A folder of files beside the page wouldn't work, because browsers block scripts loaded from neighbouring files on `file://`.
   - The file would grow from about 144 KB to roughly 1–2 MB.
-  - `trainer.html` stays the file that's edited; a small script generates the offline copy whenever a fresh one is wanted (this keeps the "no build step" rule for the app itself). The offline copy would also be a fully self-contained backup that keeps working if jsDelivr or the pinned library versions ever disappear.
+  - `index.html` stays the file that's edited; a small script generates the offline copy whenever a fresh one is wanted (this keeps the "no build step" rule for the app itself). The offline copy would also be a fully self-contained backup that keeps working if jsDelivr or the pinned library versions ever disappear.
   - Discussed and deferred by the user ("not yet").
 
 ## Ideas for a separate app

@@ -1,6 +1,6 @@
 # Natural-language selection (archived)
 
-"Describe what to practice" let the user type a request such as "all openings where I am white" on the Studies page; Claude (Haiku 4.5, via Anthropic's JavaScript SDK in browser mode) returned the matching chapters, which were then ticked. It was removed from `trainer.html` on 2026-09-29 at the user's request, to cut upkeep and stop storing an Anthropic API key. This file keeps everything needed to rebuild it; the app never loads it.
+"Describe what to practice" let the user type a request such as "all openings where I am white" on the Studies page; Claude (Haiku 4.5, via Anthropic's JavaScript SDK in browser mode) returned the matching chapters, which were then ticked. It was removed from `index.html` on 2026-09-29 at the user's request, to cut upkeep and stop storing an Anthropic API key. This file keeps everything needed to rebuild it; the app never loads it.
 
 To rebuild: put the HTML back where noted, restore the state variables and the handlers below, and re-add the `useNL` setting to backups and the Help page. The chapter catalog (`describeChapters`) will need checking against the app's current data (e.g. per-position stats, hidden studies).
 

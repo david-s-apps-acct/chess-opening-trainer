@@ -8,7 +8,7 @@ Chess Opening Trainer: a browser app that pulls the user's Lichess studies (incl
 
 ## Current phase
 
-Building. The app is `trainer.html`; keep it in line with SPEC.md.
+Building. The app is `index.html`; keep it in line with SPEC.md.
 
 ## Standing rules
 
@@ -41,18 +41,18 @@ Building. The app is `trainer.html`; keep it in line with SPEC.md.
 
 ## Running
 
-Open `trainer.html` in a browser. It needs internet access, for Lichess and the CDN.
+Open `index.html` in a browser. It needs internet access, for Lichess and the CDN.
 
 For testing without a real token: serve the folder over localhost (the Browser pane blocks storage on `file://`), seed IndexedDB key `studies` in database `chess-opening-trainer`, or stub `window.fetch` for `/api/account` and `/export.pgn` (and `explorer.lichess.org` for move statistics).
 
-**Tests:** `tests.html` (open over localhost) loads `trainer.html` without starting the app and checks the core logic (scoring, penalties, masters moves, position names, study parsing), plays whole practice lines through the app (wrong moves, alternatives, hints, ending early, single positions, the Practice page's chooser, spaced repetition, presets; saving and network are switched off from the start, so stored data is never touched), plus a recorded snapshot of how the test chapters become lines, trees and positions. It takes about 20 seconds. Run it after any change to that logic or to practice; all checks should pass. After a deliberate change to the chapter structures, re-record the snapshot with `tests.html?record` and replace `EXPECTED_SNAPSHOT`.
+**Tests:** `tests.html` (open over localhost) loads `index.html` without starting the app and checks the core logic (scoring, penalties, masters moves, position names, study parsing), plays whole practice lines through the app (wrong moves, alternatives, hints, ending early, single positions, the Practice page's chooser, spaced repetition, presets; saving and network are switched off from the start, so stored data is never touched), plus a recorded snapshot of how the test chapters become lines, trees and positions. It takes about 20 seconds. Run it after any change to that logic or to practice; all checks should pass. After a deliberate change to the chapter structures, re-record the snapshot with `tests.html?record` and replace `EXPECTED_SNAPSHOT`.
 
 ## Where things are
 
 - Counts of games are always shown with `shortCount()` (950, 23k, 1.2M, 1.8bn). Use it for any new place that shows how often a position was reached.
 
 - Natural-language selection ("Describe what to practice") was removed; its spec and code are archived in `archive/natural-language-selection.md` (not loaded by the app) in case it's rebuilt.
-- The script in `trainer.html` is divided into sections marked `// ---------- Name ----------`: Storage, State, Page helpers, Chess helpers, Lichess, Chapters and lines (with `positionName`), Annotations, Move results and grading, Studies page, Spaced repetition (`practiceItems`, `itemFacts`, `priorityOf`, the `WEIGHTS` sliders), Practice: the board, Practice: choosing what to practise (the chooser and Test probabilities), Practice: playing lines (`session`, `startSession`, `nextItem`, `finish`, `endPractice`), the move list, names and sounds, the hover board, the Lichess downloads, Options, Backup, Navigation and Start. Put new code in the section it belongs to.
+- The script in `index.html` is divided into sections marked `// ---------- Name ----------`: Storage, State, Page helpers, Chess helpers, Lichess, Chapters and lines (with `positionName`), Annotations, Move results and grading, Studies page, Spaced repetition (`practiceItems`, `itemFacts`, `priorityOf`, the `WEIGHTS` sliders), Practice: the board, Practice: choosing what to practise (the chooser and Test probabilities), Practice: playing lines (`session`, `startSession`, `nextItem`, `finish`, `endPractice`), the move list, names and sounds, the hover board, the Lichess downloads, Options, Backup, Navigation and Start. Put new code in the section it belongs to.
 - Practice starts only from the Practice page's chooser (`startSession`) and stops with End practice (`endPractice`); every line or position played belongs to a `session`. The Studies page only selects chapters.
 - Stored data: localStorage (`cot.` + `token`, `tokenSavedAt`, `settings`, `selection`, `presets` (`[{ name, chapters }]`), `chosenPreset`, `hiddenStudies`, `history`, `lastBackup` (when a backup was last saved from this browser; not in backups)) and IndexedDB database `chess-opening-trainer` version 4 (store `library` for the fetched studies, store `moveStats` keyed by EPD, each `{ lichess, masters }`). `history` is `{ moves: { moveKey: [{ tried, at }] }, lines: { lineKey: [times] } }` (a move's key is its tree node's `key`, a line's is its last move's) (the last 10 of each); points aren't stored, they're worked out in memory (`rescoreHistory`). `settings.practice` is `{ kind: 'lines' | 'positions', mainLinesOnly: { lines, positions }, reversed (Reverse sides, lines only, not scored), weights: { frequency, accuracy, lastPlayed, untried } }` (the weights are the four spaced-repetition sliders, 0–100, default 50). Backups are version 5 and hold the same pieces; older backups can't be restored.
 - Each chapter is parsed once into a tree of move nodes (`parseChapter(ch).root`; see the comment above `parseChapter`). Lines, the Studies-page tree, branch points, alternative counts and the positions to download all read from that tree, and each node carries its position and its `key` ("studyId/chapterId|e4 e5 Nf3"), so nothing replays moves from the start or rebuilds keys. Hover boards take a move node (`addHoverBoard(el, node, orientation)`).

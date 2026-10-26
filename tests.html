@@ -15,7 +15,7 @@
 <h1>Opening Trainer tests</h1>
 <p>Checks the app's core logic (scoring, penalties, masters moves, position names, and how chapters are
 turned into lines and trees) against known answers. Open over localhost (e.g. <code>python3 -m http.server</code>
-in this folder); the page loads <code>trainer.html</code> without starting the app, so nothing stored is touched.
+in this folder); the page loads <code>index.html</code> without starting the app, so nothing stored is touched.
 <a href="?record">Record a new snapshot</a> prints the current chapter structures, to paste into
 <code>EXPECTED_SNAPSHOT</code> after a deliberate change.</p>
 <div id="summary"></div>
@@ -59,7 +59,7 @@ export const app = {
 };`;
 
 async function loadApp() {
-  const html = await (await fetch('trainer.html', { cache: 'no-store' })).text();
+  const html = await (await fetch('index.html', { cache: 'no-store' })).text();
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const script = doc.querySelector('script[type=module]');
   script.remove();
