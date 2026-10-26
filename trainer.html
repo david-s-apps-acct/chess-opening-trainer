@@ -114,6 +114,7 @@
   .help-contents { line-height: 1.8; }
   .help-contents a { color: var(--accent); white-space: nowrap; }
   .help details[open] summary { margin-bottom: 4px; }
+  .help details details { background: var(--surface-3); } /* a second level, inside a drop-down */
   .help-table { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
   .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
   .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
@@ -465,168 +466,173 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Choosing studies and chapters</a> · <a href="#help-practicing">Practicing</a> · <a href="#help-statistics">Your statistics</a> · <a href="#help-tables">Test probabilities</a> · <a href="#help-chosen">How practice is chosen</a> · <a href="#help-options">Options and backups</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Studies</a> · <a href="#help-practice">Practice</a> · <a href="#help-options">Options</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li>Press <b>Add token</b>: Lichess opens in a new tab, ready to create a personal API token with the <b>Read private studies</b> (<code>study:read</code>) scope. Create it and copy it.</li>
-          <li>Paste it into the box in the app. It's checked and saved straight away; the app then fetches all your studies, private ones included, and remembers the token.</li>
-          <li>When you change your studies on Lichess, use <b>Update studies</b> on the Options page.</li>
-          <li>How often each move is played on Lichess and in master games downloads automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the Options page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
+          <li><b>Add token</b>: Lichess opens in a new tab, ready to create a token that can read your studies. Create it, copy it and paste it into the box. Your studies, private ones included, are then fetched.</li>
+          <li><b>Studies</b>: tick the chapters you want to practice.</li>
+          <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
         </ol>
+        <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile.</p>
         <details>
-          <summary>What the app stores, and where</summary>
-          <p>Everything stays in this browser: your token, your studies, your stats and your settings. Nothing is sent anywhere except Lichess (to fetch studies and move statistics). Stats don't move to another browser or computer by themselves; use a backup for that (see below).</p>
+          <summary>Words used in the app</summary>
+          <ul>
+            <li><b>Line</b>: one path through a chapter: your main move at each of your turns, and every reply your study gives the opponent.</li>
+            <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. Alternatives aren't tested; only the main move is correct.</li>
+            <li><b>Move accuracy</b>: how well you know one of your moves, from 0% to 100% (see Practice).</li>
+            <li><b>Line accuracy</b>: the average move accuracy of your moves in a completed line.</li>
+            <li><b>Error</b>: any move you play that isn't your study's move, or the hint. Errors cost move accuracy.</li>
+            <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
+            <li><b>Masters move</b>: one of the top 5 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more. "Top 5" can be changed on the Options page.</li>
+            <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, e.g. "Position reached 23k times".</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Where your data is kept</summary>
+          <p>Everything (your token, studies, stats and settings) stays in this browser. The app only talks to Lichess, to fetch your studies and move statistics. To keep your stats safe or move them to another browser, save a backup (see Options).</p>
         </details>
       </div>
 
       <div class="card" id="help-studies">
-        <h2>Choosing studies and chapters</h2>
+        <h2>Studies</h2>
         <ul>
-          <li>Tick the checkboxes to choose studies or individual chapters, or <b>All</b>. Click a study's name (or its ▸) to show or hide its chapters, and a chapter's name to show or hide its moves (the main line). Click a chapter's number of lines (e.g. "3 lines") to show or hide all its variations as well. Clicking a name doesn't tick it.</li>
-          <li>Each study shows how many chapters it has (click it, like the name, to show or hide them), and each chapter how many lines, e.g. "5 lines". A <b>line</b> is one path through a chapter that you're quizzed on: your main move at each of your turns, and every reply your study gives the opponent. An <b>alternative move</b> is another move for <i>you</i> that your study has at one of your turns, for example 3. Bb5 where the main move is 3. Bc4. Alternative moves aren't tested, because only the main move counts as correct. If you play one, the app tells you: "Alternative move, not your preferred move", or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake". In a chapter's move tree they're shown in italics.</li>
-          <li>Click a chapter's name (or the ▸ next to it) to see its moves as a tree, as on Lichess: the main line runs along the top, and a small <b>+</b> after a move opens its variations underneath (<b>−</b> closes them). Click the chapter's number of lines (e.g. "3 lines") to open every variation at once, and again to close them. Moves you need to work on are highlighted in violet (see Your statistics), alternative moves for you (which aren't tested), and the moves after them, are in italics, and moves your study marks with a glyph such as ! or ? take the glyph's color. Hover over a move to see the small board.</li>
-          <li><b>Presets</b> are saved chapter selections: choose one from the <b>Presets</b> drop-down above the list to tick exactly its chapters again (chapters no longer on Lichess, or in hidden studies, are skipped; the last one chosen is remembered). Click the pencil (✎) next to it to open the editing buttons; × closes them, and they close by themselves once you've saved, updated, renamed or deleted a preset. <b>Save as new</b> saves the chapters ticked now under a name you type. To change a preset's chapters, choose it, change the ticks, and press <b>Update</b> (its chapters in hidden studies are kept); until then its name is greyed out in the drop-down. <b>Rename</b> changes the chosen preset's name, and <b>Delete</b> deletes it (the ticks stay as they are). Presets are included in backups; your old favorites became one called "Favorites".</li>
-          <li>To hide a study you no longer use, click the eye at the top (next to the presets' pencil): hidden studies appear in grey and each study gets its own eye after its name. Click a study's eye to hide it (a line through it) or unhide it. Click the top eye again to put hidden studies out of sight. Hidden studies aren't practiced.</li>
-          <li>The Studies page only chooses what you work on: practice starts from the <b>Practice</b> page, using the chapters ticked here.</li>
-          <li>The small circle after each chapter's name shows which side you play: white or black (the board orientation you set on Lichess). Each chapter also shows, once you've played it, the average move accuracy of its moves (e.g. "82%"; hover over it for an explanation), highlighted the same way as your moves (see Your statistics).</li>
-        </ul>
-      </div>
-
-      <div class="card" id="help-practicing">
-        <h2>Practicing</h2>
-        <ul>
-          <li>To begin, press <b>Practice</b>: when nothing is in progress, the page shows a switch, <b>Lines</b> | <b>Positions</b> (the blue one is chosen): <b>Lines</b> are whole lines, always from move 1 to the end; <b>Positions</b> are single positions, just one of your moves at a time, from the chapters ticked on the Studies page. Tick <b>Main lines only</b> (<b>Positions from main lines only</b>) to leave out the opponent's side variations. Which comes up next is chosen by spaced repetition, and the sliders under <b>Spaced repetition focus</b> change how (see How practice is chosen); <b>Show lines</b> (<b>Show positions</b>) lists the ones most likely to come up next (see Test probabilities). Press <b>Start practice</b>. Practice carries on (Next line, Next position) until you press <b>End practice</b>, which brings back these choices.</li>
-          <li><b>Reverse sides (not scored)</b>, under <b>Main lines only</b> when <b>Lines</b> is chosen: you play the opponent's moves from your studies, with the board turned round, and the app plays yours. Any reply your study gives counts as correct, and the line carries on from the one you play; with <b>Main lines only</b> ticked, only the study's main reply counts, and its other replies are alternatives. Hint and Show correct move give the main reply. Errors get the usual messages but cost nothing: nothing is recorded, and the end of a line shows your errors but no line accuracy. Lines come up by how often their final position is reached, so the sliders aren't used (they're greyed out).</li>
-          <li>You can visit any other page in the middle of a line; press <b>Practice</b> to return to it where you left off. If you refresh your studies in the meantime, the line is dropped.</li>
-          <li>The bell under the board turns move sounds on and off; a line through it means sounds are off. Hovering over it says what a click will do ("Turn sounds on / off").</li>
-          <li>Moves are written with piece symbols, as on Lichess: ♘ knight, ♗ bishop, ♖ rook, ♕ queen, ♔ king (so ♗c4 means Bc4). Pawn moves have no symbol.</li>
-          <li>You play the side at the bottom of the board; the app plays the other side's moves. Drag or click pieces to move.</li>
-          <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
-          <li>Every error gets a message, one fact per line. The first says what the move is: "Not your preferred move"; for one of your study's alternative moves, "Alternative move, not your preferred move"; or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from your study, e.g. "Your study answers 4… ♘xe4". The next says how masters rate it: "#3 masters move (played 1.2k times)" (a masters move, see Your statistics) or "Not a masters move". The last says how often Lichess games play it: "#4 Lichess move (played 23k times)", or "Not played in Lichess games". A line is in red when it's bad news: "Not your preferred move" (unless it's a masters move), "Not a masters move", and a Lichess move outside the top 3 or not played at all; every line is red for a move your study marks ?!, ? or ??. A line is left out until its statistics have downloaded. Alternatives and masters moves cost less than other errors (see Your statistics). After 3 seconds the message fades and the status says whose move it is, with where you are in the line, e.g. "Your move (3 of 5 in line)".</li>
-          <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move accuracy is 0% this time).</li>
-          <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practicing. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
-          <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
-          <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a solid green arrow for the right move and a pale arrow for each error: blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; the errors are listed in the same colors; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue. A single position works the same way: once you've found the move, press <b>Next position</b> (or Enter).</li>
-        </ul>
-      </div>
-
-      <div class="card" id="help-statistics">
-        <h2>Your statistics</h2>
-        <p>The app measures the <b>move accuracy</b> of each of <b>your</b> moves separately (and a <b>line accuracy</b> each time you complete a line), so you can see exactly which moves you know and which you don't.</p>
-        <ul>
-          <li>Each try at a move starts at <b>100%</b>; finding the move on your first try keeps it at 100%. Each <b>error</b> before the right move (any move that isn't the one in your study, or the hint) costs a penalty, each time you make it. The defaults are below; you can change each one (0% to 100%) on the <b>Options</b> page, and your past tries are re-scored straight away.</li>
-          <li><b>Errors and mistakes</b> mean different things in this app. An <b>error</b> is any move you play that isn't the one in your study, or the hint; errors are what reduce move accuracy. A <b>mistake</b> is a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious), for example a reply your study gives the opponent with ?.</li>
-          <li><b>Alternative move</b>, −20%: one of your study's unmarked alternative moves.</li>
-          <li><b>Masters move</b>, −20%: a move among the <b>top 5</b> master moves in that position that masters play <b>10% of the time or more</b> (in Lichess's Masters database). You can change "top 5" to anything from top 1 to top 5 on the Options page. Other moves masters play count as errors. A move that is both an alternative and a masters move costs the alternative's penalty.</li>
-          <li><b>Error</b>, −50%: an alternative your study marks ?!, ? or ??, or any other wrong move.</li>
-          <li><b>Hint</b>, −100%: the Hint, and Show correct move. Move accuracy never goes below 0%.</li>
-          <li>Each move keeps its <b>last 10 tries</b>, including everything you tried. Its <b>move accuracy</b> is their average, as a percentage, with recent tries counting more: the latest counts 100%, the one before 90%, then 80%, down to 10% for the 10th. E.g. tries of 0%, 80%, 100%, 100% (oldest to newest) give 74%. Move accuracies are refreshed each time you open the app, so new data (such as master games) is taken into account.</li>
-          <li><b>Not counted</b>: a line dropped because you refreshed your studies in the middle of it.</li>
-          <li>Highlighting: moves you know (<span class="score-100">100%</span>) look plain. Moves that need work, below 100%, get a <span class="needs-work">violet background</span>, the same for any accuracy below 100%. Moves you haven't tried yet, and the opponent's moves, look plain too. As on Lichess, a move's text is colored only when the study gives it a glyph (e.g. <span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange). (Violet is used so it isn't confused with the red and amber that chess sites use for bad moves; your highlighted moves are the right moves, ones you keep missing.)</li>
+          <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
+          <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
+          <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
+          <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
-          <summary>What counts as a try</summary>
+          <summary>Presets</summary>
           <ul>
-            <li>Playing a line: one try for each of your moves in it.</li>
-            <li>A single position: one try of the move tested.</li>
-            <li>Stopping a line part way, with <b>Skip</b> or <b>End practice</b>: one try for each of your moves answered so far, and for the move you're on if you'd already tried a move or used Hint there.</li>
-            <li>A line dropped because you refreshed your studies in the middle of it records nothing.</li>
+            <li>A preset is a saved set of ticked chapters. Choose one from <b>Presets</b> to tick exactly its chapters.</li>
+            <li>The pencil (✎) opens the buttons: <b>Save as new</b> saves the ticked chapters under a new name; <b>Update</b> saves them in the chosen preset; <b>Rename</b> and <b>Delete</b> (the ticks stay).</li>
+            <li>When the ticks differ from the chosen preset, its name is greyed out; choose it again to go back to its chapters.</li>
+            <li>Chapters no longer on Lichess, or in hidden studies, are skipped. Presets are included in backups.</li>
           </ul>
         </details>
         <details>
-          <summary>When lines and positions were last practiced</summary>
-          <p>The app also keeps track of when you practice. The times are shown as <b>Last tested</b> in the list shown by Show lines or Show positions, and used to choose what comes up.</p>
-          <ul>
-            <li><b>Lines</b>: a line counts as practiced only when you play it all the way through, from move 1 to the end. Its time is when you attempted its last move, and the last 10 times are kept. A line you skip or stop with <b>End practice</b>, and single positions, don't count for the line; they only count for the moves you played.</li>
-            <li><b>Positions</b>: each position where you have to find a move keeps the time you last attempted it, whether in a line or as a single position, including the move you're on when you press Skip or End practice (if you'd already tried something). So a position can have been practiced more recently than any line through it.</li>
-            <li>Times are kept only from now on, are included in backups, and are dropped for lines and moves that are no longer in your studies after Update studies.</li>
-          </ul>
+          <summary>Hiding studies</summary>
+          <p>The eye at the top shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the top eye again to put them out of sight. Hidden studies aren't practiced.</p>
         </details>
         <details>
-          <summary>Which lines share a move accuracy</summary>
-          <p>Each move accuracy belongs to one of your moves at one point in a chapter: the chapter plus the moves leading to it. Every line that passes through that point shares it, so getting 3. Bc4 right in one line counts for all the lines that continue from it. The same position in a different chapter, or reached by a different move order, keeps its own move accuracy.</p>
-        </details>
-        <details>
-          <summary>Where you see your statistics</summary>
+          <summary>The move tree</summary>
           <ul>
-            <li><b>Studies page</b>: each study and chapter shows the average move accuracy of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
-            <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
-            <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by move accuracy.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colors), and above it the move, its rank and share among Lichess games and master games, e.g. "#2 Lichess move (27%)" and "#1 masters move (90%)" (once the statistics have downloaded), and "Position reached 23k times", the same as in the practice move list; then e.g. "75% move accuracy (last 10 tries)", "Last tested 3 days ago" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
-          </ul>
-        </details>
-        <details>
-          <summary>When statistics are dropped</summary>
-          <ul>
-            <li>After Update studies, move accuracies for moves that no longer exist in your studies are dropped; everything else is kept.</li>
-            <li>Statistics live only in this browser. Use a backup (Options page) to keep them safe or move them.</li>
+            <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
+            <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
+            <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
+            <li>Hover over a move to see the small board (see Practice).</li>
           </ul>
         </details>
       </div>
 
-      <div class="card" id="help-tables">
-        <h2>Test probabilities</h2>
-        <p>On the Practice page, <b>Show lines</b> or <b>Show positions</b> (under <b>Spaced repetition focus</b>) lists the 25 lines (or positions) most likely to come up next with the current settings, the most likely first. × (or Esc) closes it.</p>
+      <div class="card" id="help-practice">
+        <h2>Practice</h2>
         <ul>
-          <li>Each row: the study and chapter, then the position named the usual way (for a line, its final position); how many times that position was reached in rated Lichess games (<b>End position reached</b> for a line, <b>Position reached</b> for a position; "–" until its statistics have downloaded); its <b>line accuracy</b> or <b>move accuracy</b> ("Untried" if you haven't tried it); <b>Last tested</b>, how many days ago you last played the line through from move 1, or last tried the move ("–" if not known); and <b>Chance next</b>, its chance of being the next one, e.g. 0.3%.</li>
-          <li>Hover over a row to see the small board: for a line, its final move; for a position, the correct move and the errors you've played.</li>
-          <li>Move the sliders under <b>Spaced repetition focus</b>, then show the list again to see the difference.</li>
-        </ul>
-      </div>
-
-      <div class="card" id="help-chosen">
-        <h2>How practice is chosen</h2>
-        <ul>
-          <li>Practice uses spaced repetition: before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, new ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
-          <li><b>Spaced repetition focus</b> has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practices almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset</b> puts all four back to 50%. Hover over a slider's name to see what it means.</li>
-          <li>The same line or position is never given twice in a row when there's another to choose.</li>
+          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time), from the chapters ticked on the Studies page. <b>Main lines only</b> leaves out the opponent's side variations.</li>
+          <li>Spaced repetition chooses what comes next; the sliders under <b>Spaced repetition focus</b> change the balance, and <b>Show lines</b> lists what's most likely next.</li>
+          <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
+          <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
+          <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
+          <li><b>Skip</b> goes on to the next one; <b>End practice</b> stops. The moves you've answered still count.</li>
+          <li>Comments from your study appear as blue bubbles in the move list; hover over one to read it. Click a move, or use ◀ ▶ or the arrow keys, to look back.</li>
+          <li>At the end of a line you see how it went, e.g. "5 of 6 moves correct" and "83% line accuracy". Press <b>Next line</b> (<b>Next position</b> for positions), or Enter.</li>
+          <li>You can visit other pages mid-line; <b>Practice</b> takes you back. The bell under the board turns sounds on and off.</li>
         </ul>
         <details>
-          <summary>How the next one is chosen</summary>
-          <p>There's no fixed schedule. Before each line or position, every one gets a <b>priority</b>, and the next is picked at random, with higher priorities more likely.</p>
-          <p><b>What's included.</b> <b>Lines</b>: every line of the chapters ticked on the Studies page, played from move 1 (only main lines if <b>Main lines only</b> is ticked). <b>Positions</b>: every one of your moves in those chapters, once each, as single positions (only those reached through the opponent's main moves if <b>Positions from main lines only</b> is ticked). Both include ones you've never tried. Hidden studies are left out.</p>
-          <p>With every slider at 50%: <b>priority = frequency × need</b>. (Each slider raises its part to a power: 0% to the power 0, which ignores it; 50% to the power 1; 100% to the power 6.)</p>
+          <summary>Error messages</summary>
+          <p>One fact per line, e.g.:</p>
           <ul>
-            <li><b>Need</b> is how much it needs practice. It's <b>6</b> for one you've never tried (for a line: none of its moves tried). Otherwise it's <b>weakness × due</b>.</li>
-            <li><b>Weakness</b> = 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%.</li>
-            <li><b>Due</b> = the days since it was last tested ÷ its review interval, kept between 0.1 and 3 (3 if the last test time isn't known). The <b>review interval</b> grows with accuracy, 2<sup>7 × accuracy</sup> days, so a well-known one isn't due again for weeks and a weak one is due the next day:
-              <table class="help-table"><tr><th>Accuracy</th><th>Interval</th></tr>
-                <tr><td>0%</td><td>1 day</td></tr><tr><td>50%</td><td>about 11 days</td></tr><tr><td>70%</td><td>about 30 days</td></tr><tr><td>100%</td><td>128 days</td></tr></table></li>
-            <li><b>Accuracy and last tested.</b> A position uses its move accuracy and when you last tried that move: in a line, as a single position, or when you skipped or ended practice on it. A line uses its line accuracy, with moves you haven't tried counting as 0%, and when you last played it through from move 1 to the end (skipped lines don't count).</li>
-            <li><b>Frequency</b> runs from 0.2 to 1, by how many times the position was reached in rated Lichess games (for a line, the position at its end), on a logarithmic scale up to the most frequent one; 0.6 until its statistics have downloaded. So an equally weak but much more common position comes up up to five times as often as a rare one.</li>
+            <li>What the move is: "Not your preferred move", "Alternative move, not your preferred move", or "Alternative move marked as a mistake" with your study's answer, e.g. "Your study answers 4… ♘xe4".</li>
+            <li>How masters rate it: "#3 masters move (12%)" or "Not a masters move".</li>
+            <li>How often it's played on Lichess: "#4 Lichess move (8%)" or "Not played in Lichess games".</li>
           </ul>
-          <p><b>Examples of need:</b></p>
+          <p>Red means bad news; blue marks an alternative or masters move, amber a move your study marks ?!, ? or ??. After 3 seconds the message gives way to "Your move (3 of 5 in line)". After an error, Hint also shows what your study says about the move you tried.</p>
+        </details>
+        <details>
+          <summary>The small board</summary>
+          <p>Hover over (or tap) a move in the move list, the move tree or the Show lines table.</p>
+          <ul>
+            <li><b>Your move</b>: the position you had to answer, a green arrow for the correct move and a pale arrow for each error (blue: alternative or masters move; amber: an alternative marked ?!, ? or ??; red: any other error). Then its move accuracy, when you last tested it, and your errors in the same colors.</li>
+            <li><b>The opponent's move</b>: the position after it, with a white arrow (amber if your study marks it ?!, ? or ??).</li>
+            <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and "Position reached 23k times".</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Move accuracy</summary>
+          <p>Each try at one of your moves starts at 100%. Each error before the right move costs a penalty, every time you make it (set on the Options page; never below 0%):</p>
           <table class="help-table">
-            <tr><th>Line or position</th><th>Need</th></tr>
-            <tr><td>100% accuracy, tested yesterday</td><td>1 × 0.1 = 0.1</td></tr>
-            <tr><td>50%, tested a month ago</td><td>2 × 2.65 = 5.3</td></tr>
-            <tr><td>Never tried</td><td>6</td></tr>
-            <tr><td>0%, last test time unknown</td><td>3 × 3 = 9</td></tr>
+            <tr><th>Error</th><th>Default</th></tr>
+            <tr><td>Alternative move (unmarked)</td><td>−20%</td></tr>
+            <tr><td>Masters move</td><td>−20%</td></tr>
+            <tr><td>Any other move, or an alternative marked ?!, ? or ??</td><td>−50%</td></tr>
+            <tr><td>Hint, or Show correct move</td><td>−100%</td></tr>
           </table>
-          <p><b>The pick.</b> Priorities are worked out afresh before every pick, so as soon as you answer one, its priority changes. The pick is random but weighted: the order is never predictable, and low-priority ones still come up now and then. The same one is never given twice in a row when there's another to choose.</p>
-          <p><b>Worth knowing:</b></p>
+          <p>A move's accuracy is the average of its last 10 tries, the latest counting most (100%, then 90%, 80% … down to 10%). Moves below 100% get a violet background.</p>
+          <details>
+            <summary>What counts as a try</summary>
+            <ul>
+              <li>Each of your moves in a line, and the move in a single position.</li>
+              <li>With Skip or End practice: the moves answered so far, and the move you're on if you'd already tried something there.</li>
+              <li>Every line through the same point in a chapter shares that move's accuracy. The same position in another chapter, or by another move order, has its own.</li>
+              <li>After Update studies, accuracies of moves no longer in your studies are dropped.</li>
+            </ul>
+          </details>
+        </details>
+        <details>
+          <summary>Spaced repetition</summary>
+          <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
-            <li>Tries from before each try got its own time count as "last tested unknown", so they're treated as fully due; this fades as you practice.</li>
-            <li>New ones are favoured: with many you haven't tried, they'll fill early sessions, since 6 is more than most tried ones' need.</li>
-            <li>Lines and positions are chosen separately: a position you've just answered in a line can still come up soon under Positions, since only that move's last-tried time changed.</li>
+            <li>The four sliders set how much each counts: <b>Frequency</b> (how often the position is reached on Lichess), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones) and <b>Untried</b>. 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
+            <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely next, with their position reached, accuracy, when last tested and chance of coming up next.</li>
           </ul>
+          <details>
+            <summary>How the priority is worked out</summary>
+            <p>With every slider at 50%: <b>priority = frequency × need</b>. Each slider raises its part to a power: 0 at 0%, 1 at 50%, 6 at 100%.</p>
+            <ul>
+              <li><b>Frequency</b>: 0.2 to 1, by the times the position was reached on Lichess (a line: its final position), on a log scale; 0.6 until its statistics download.</li>
+              <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
+              <li><b>Weakness</b>: 1 + 2 × (1 − accuracy): 1 at 100%, 3 at 0%.</li>
+              <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × accuracy</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
+              <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever its move is tried, in a line or on its own, so it can be more recent than any line through it. A line uses its line accuracy (untried moves count as 0%); a position, its move accuracy.</li>
+            </ul>
+            <table class="help-table">
+              <tr><th>Example</th><th>Need</th></tr>
+              <tr><td>100%, tested yesterday</td><td>1 × 0.1 = 0.1</td></tr>
+              <tr><td>50%, tested a month ago</td><td>2 × 2.65 = 5.3</td></tr>
+              <tr><td>Never tried</td><td>6</td></tr>
+              <tr><td>0%, last test unknown</td><td>3 × 3 = 9</td></tr>
+            </table>
+          </details>
+        </details>
+        <details>
+          <summary>Reverse sides</summary>
+          <p><b>Reverse sides (not scored)</b>, for Lines: you play the opponent's moves from your studies and the app plays yours. Any reply your study gives is correct, and the line follows it; with Main lines only, just the main reply. Hint gives the main reply. Nothing is recorded, and lines come up by how often they're reached (the sliders aren't used).</p>
         </details>
       </div>
 
       <div class="card" id="help-options">
-        <h2>Options and backups</h2>
+        <h2>Options</h2>
+        <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
-          <li>On the <b>Options</b> page, hover over a heading (or a penalty) to see what it's for.</li>
-          <li><b>Error penalties</b>: how much move accuracy each kind of error costs, and what counts as a masters move (see Your statistics). Changing them works out the move accuracy of all your past tries again, straight away.</li>
-          <li><b>Lichess studies</b>: your Lichess account, when your studies were last fetched, and how many positions have their move statistics and masters statistics so far. <b>Update studies</b> downloads all your studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves no longer in your studies.</li>
-          <li><b>Move statistics</b> and <b>masters statistics</b> (how often each move is played in rated Lichess games, and in over-the-board games between players rated 2200+ FIDE) download automatically in the background after Update studies and whenever the app opens, and you can keep practicing meanwhile. Positions no game reaches are skipped. If Lichess can't be reached, or asks the app to slow down, the download carries on later by itself.</li>
-          <li><b>Lichess token</b>: the app reads your studies with a personal API token that needs the <b>Read private studies</b> (<code>study:read</code>) scope. <b>Add token</b> opens Lichess to create one; paste it into the box that appears and it's saved straight away (or type it and press Enter), replacing the stored one. <b>Clear token</b> removes it from this browser; your fetched studies stay, but updating them needs a token again.</li>
-          <li><b>Backup</b>: your stats, settings and downloaded Lichess data are stored only in this browser. <b>Save backup</b> saves them in a file (move statistics and masters statistics included, so they needn't be downloaded again). In Chrome and Edge you choose where; Safari and Firefox put it in your download folder (in Safari, Settings → General → File download location → Ask for each download lets you choose each time). <b>Restore backup</b> loads a backup, on another browser or after clearing your browser: it replaces your stats and settings and merges the Lichess data with what's already here. Backups never include your token. The Options page says when you last saved one.</li>
+          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away.</li>
+          <li><b>Lichess studies</b>: <b>Update studies</b> fetches your studies again after you change them on Lichess; your stats are kept. Below it: your account, when your studies were fetched, and how many positions have move statistics so far.</li>
+          <li><b>Lichess token</b>: <b>Add token</b> opens Lichess to create one; paste it into the box and it's saved. <b>Clear token</b> removes it from this browser (your studies stay).</li>
+          <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
         </ul>
-        <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
+        <details>
+          <summary>Move statistics</summary>
+          <p>How often each move is played in rated Lichess games and in master games. They download in the background after Update studies and whenever the app opens, and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the app suggests a backup, so they needn't be downloaded again.</p>
+        </details>
+        <details>
+          <summary>Backups</summary>
+          <ul>
+            <li>Chrome and Edge ask where to save. Safari and Firefox use your download folder (in Safari, Settings → General → File download location → Ask for each download lets you choose).</li>
+            <li>Restoring replaces your stats and settings, and merges the Lichess statistics with those already here (the newer copy of each wins). Backups from earlier versions of the app can't be restored.</li>
+          </ul>
+        </details>
+        <p class="muted">Credits: move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
       </div>
     </div>
   </section>
