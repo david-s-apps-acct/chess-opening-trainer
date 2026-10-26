@@ -583,7 +583,11 @@ The app is published on GitHub Pages (repository `david-s-apps-acct/chess-openin
 - **Service worker for offline use** (the user's decision, 26 October 2026): on the GitHub Pages version, a small service worker stores the app and its libraries, fonts and sounds, so it opens and works offline (except Lichess) even with the browser cache cleared, and can be installed like an app. Service workers don't work for a file opened from disk, which keeps relying on the browser cache.
 - **"Log in with Lichess"** (Lichess's OAuth login) as the main way to connect, with no token to copy; Add token stays for the copy opened from disk.
 - **Done (26 October 2026):** `trainer.html` renamed `index.html`; the commits pushed; Pages (already turned on, serving `main` from the root) shows the app at https://david-s-apps-acct.github.io/chess-opening-trainer/.
-- Still to decide: a sample backup so people can try the app before adding their own studies (which studies, and whether it includes the move statistics); whether to push after each commit.
+- **Trial database** (the user's decisions, 26 October 2026): `trial.json` holds the user's **Ruy Lopez** and **Queen's Gambit Declined** studies (10 chapters, 41 lines) and the Lichess and masters move statistics for all 366 of their positions, but none of the user's accuracy statistics, history, settings, presets or token. Its shape: `{ app: 'chess-opening-trainer', kind: 'trial', createdAt, library, moveStats }`, with `library` and `moveStats` as stored by the app. About 700 KB.
+  - **How it was made:** the studies were downloaded from Lichess (Share → Download), which leaves out the `[Orientation]` tag, so each chapter's side was added: Black for both Queen's Gambit Declined chapters (confirmed by Lichess's own export of that public study) and for the Ruy Lopez Marshall Attack, Exchange Variation and Center Attack; White for Main Line (Chigorin), Berlin Defense, Archangel, Jaenisch gambit and Bird's defense (worked out from the user's history: every recorded move in each chapter is on that side). The statistics come from the user's backup of 26 October 2026; every position had both. The app's own code worked out the positions and checked the finished file.
+  - The studies' moves and comments become public with the repository.
+  - Still to design: the "Try it" button on the first-visit screen, and what happens when a trial user adds their own token.
+- Still to decide: whether to push after each commit.
 
 ## Possible future improvements
 

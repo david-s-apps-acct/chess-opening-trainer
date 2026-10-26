@@ -1,2 +1,6 @@
 .DS_Store
 .claude/
+# Personal files that must never be published
+opening-trainer-backup-*.json
+*.pgn
+trainer.html
