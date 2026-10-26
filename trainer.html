@@ -345,13 +345,12 @@
       <h2>Connect to Lichess</h2>
       <p>This app reads your Lichess studies, including private ones, using a personal API token.</p>
       <ol>
-        <li><b>Create token</b> on Lichess, with the <b>Read private studies</b> (<code>study:read</code>) scope.</li>
-        <li>Paste it next to <b>Save token</b>, and save it. Your browser remembers it, so you only do this once.</li>
+        <li><b>Add token</b> opens Lichess in a new tab, with the <b>Read private studies</b> (<code>study:read</code>) scope already chosen: create the token there and copy it.</li>
+        <li>Come back here and paste it into the box: it's checked with Lichess and saved straight away. Your browser remembers it, so you only do this once.</li>
       </ol>
-      <div class="actions"><button class="primary token-create" title="Opens Lichess in a new tab, with the access this app needs">Create token</button></div>
-      <form id="token-form" class="token-row">
-        <button class="primary" type="submit">Save token</button>
-        <input id="token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+      <div class="actions"><button class="primary token-add" title="Opens Lichess in a new tab to create a token, with the access this app needs">Add token</button></div>
+      <form id="token-form" class="token-row hidden">
+        <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
       </form>
       <div id="token-error" class="form-error"></div>
     </div>
@@ -471,8 +470,8 @@
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li>On Lichess, <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">create a personal API token</a> with the <b>Read private studies</b> (<code>study:read</code>) permission.</li>
-          <li>Paste it into the app. It fetches all your studies, private ones included, and remembers the token.</li>
+          <li>Press <b>Add token</b>: Lichess opens in a new tab, ready to create a personal API token with the <b>Read private studies</b> (<code>study:read</code>) scope. Create it and copy it.</li>
+          <li>Paste it into the box in the app. It's checked and saved straight away; the app then fetches all your studies, private ones included, and remembers the token.</li>
           <li>When you change your studies on Lichess, use <b>Update studies</b> on the Options page.</li>
           <li>How often each move is played on Lichess and in master games downloads automatically in the background after your studies are fetched or updated (and resume when you open the app). The first time can take a while; a line on the Options page shows the progress, and you can practice meanwhile. When the move statistics are complete, the app suggests saving a backup.</li>
         </ol>
@@ -624,7 +623,7 @@
           <li><b>Error penalties</b>: how much move accuracy each kind of error costs, and what counts as a masters move (see Your statistics). Changing them works out the move accuracy of all your past tries again, straight away.</li>
           <li><b>Lichess studies</b>: your Lichess account, when your studies were last fetched, and how many positions have their move statistics and masters statistics so far. <b>Update studies</b> downloads all your studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves no longer in your studies.</li>
           <li><b>Move statistics</b> and <b>masters statistics</b> (how often each move is played in rated Lichess games, and in over-the-board games between players rated 2200+ FIDE) download automatically in the background after Update studies and whenever the app opens, and you can keep practicing meanwhile. Positions no game reaches are skipped. If Lichess can't be reached, or asks the app to slow down, the download carries on later by itself.</li>
-          <li><b>Lichess token</b>: the app reads your studies with a personal API token that needs the <b>Read private studies</b> (<code>study:read</code>) scope. Paste a new token to replace the stored one. <b>Clear token</b> removes it from this browser; your fetched studies stay, but updating them needs a token again.</li>
+          <li><b>Lichess token</b>: the app reads your studies with a personal API token that needs the <b>Read private studies</b> (<code>study:read</code>) scope. <b>Add token</b> opens Lichess to create one; paste it into the box that appears and it's saved straight away (or type it and press Enter), replacing the stored one. <b>Clear token</b> removes it from this browser; your fetched studies stay, but updating them needs a token again.</li>
           <li><b>Backup</b>: your stats, settings and downloaded Lichess data are stored only in this browser. <b>Save backup</b> saves them in a file (move statistics and masters statistics included, so they needn't be downloaded again). In Chrome and Edge you choose where; Safari and Firefox put it in your download folder (in Safari, Settings → General → File download location → Ask for each download lets you choose each time). <b>Restore backup</b> loads a backup, on another browser or after clearing your browser: it replaces your stats and settings and merges the Lichess data with what's already here. Backups never include your token. The Options page says when you last saved one.</li>
         </ul>
         <p class="muted">Credits: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+). The board and move logic use Lichess's chessground and chessops libraries.</p>
@@ -667,11 +666,10 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Paste a new token to replace the stored one.">Lichess token</span></h2>
-        <div class="actions"><button class="primary token-create" title="Opens Lichess in a new tab, with the access this app needs">Create token</button></div>
-        <form id="opt-token-form" class="token-row">
-          <button class="primary" type="submit">Save token</button>
-          <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
+        <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Add token opens Lichess to create one; paste it into the box and it's saved, replacing the stored one.">Lichess token</span></h2>
+        <div class="actions"><button class="primary token-add" title="Opens Lichess in a new tab to create a token, with the access this app needs">Add token</button></div>
+        <form id="opt-token-form" class="token-row hidden">
+          <input id="opt-token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
         </form>
         <p id="opt-token-state" class="muted after-actions"></p>
         <div id="opt-token-error" class="form-error"></div>
@@ -1038,8 +1036,8 @@ const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, und
 
 function askForToken() {
   showOptions();
-  setUpdateStatus('Enter a Lichess token first.', true);
-  $('opt-token-input').focus();
+  setUpdateStatus('Add a Lichess token first.', true);
+  showTokenBox($('opt-token-form'));
 }
 
 // Messages about fetching from Lichess appear on the Options page, under Update studies (and, before
@@ -2947,7 +2945,8 @@ async function downloadExplorerPositions(kind, run) {
     if (currentScreen === 'options') updateStatisticsInfo();
   }
   if (explorerDownloads[kind] !== run) return;
-  suggestBackup(explorer.Label); // every position now has these statistics
+  // Only once every position has these statistics (a request Lichess refused leaves a gap).
+  if (todo.every(([epd]) => saved(epd))) suggestBackup(explorer.Label);
 }
 
 // The Options page's "Move statistics: 3 of 10 positions (downloading…)" and "Masters statistics: …" lines.
@@ -3044,26 +3043,45 @@ function renderOptions() {
 
 $('update-studies-btn').addEventListener('click', fetchStudies);
 
-$('token-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  if (await checkAndSaveToken($('token-input').value, $('token-error'))) {
-    $('token-input').value = '';
-    fetchStudies(); // first visit: fetch automatically
-  }
+// Adding a token (on the first visit and the Options page): Add token opens Lichess's page for
+// creating one, with the scope the app needs, in a new tab, and shows the box; pasting a token into
+// it (or typing one and pressing Enter) checks it with Lichess and saves it.
+const TOKEN_PAGE = 'https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer';
+
+function showTokenBox(form) {
+  form.classList.remove('hidden');
+  form.querySelector('input').focus();
+}
+
+function setUpTokenBox(form, errorEl, onSaved) {
+  const input = form.querySelector('input');
+  let checking = false;
+  const save = async () => {
+    if (checking) return;
+    checking = true;
+    try {
+      if (await checkAndSaveToken(input.value, errorEl)) {
+        input.value = '';
+        form.classList.add('hidden');
+        onSaved();
+      }
+    } finally { checking = false; }
+  };
+  form.addEventListener('submit', e => { e.preventDefault(); save(); });
+  input.addEventListener('paste', () => setTimeout(save)); // once the pasted text is in the box
+}
+
+for (const btn of document.querySelectorAll('.token-add')) btn.addEventListener('click', () => {
+  window.open(TOKEN_PAGE, '_blank', 'noopener');
+  showTokenBox(btn.closest('.card').querySelector('.token-row'));
 });
 
-$('opt-token-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  if (await checkAndSaveToken($('opt-token-input').value, $('opt-token-error'))) {
-    $('opt-token-input').value = '';
-    renderOptions();
-    if (!library) fetchStudies();
-    else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
-  }
+setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies()); // first visit: fetch straight away
+setUpTokenBox($('opt-token-form'), $('opt-token-error'), () => {
+  renderOptions();
+  if (!library) fetchStudies();
+  else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
 });
-
-// Creating a token on Lichess, with the scope the app needs, in a new tab.
-for (const btn of document.querySelectorAll('.token-create')) btn.addEventListener('click', () => window.open('https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer', '_blank', 'noopener'));
 
 $('token-clear-btn').addEventListener('click', () => {
   token = null;
