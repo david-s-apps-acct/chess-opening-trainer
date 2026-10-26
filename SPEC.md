@@ -592,7 +592,7 @@ The app is published on GitHub Pages (repository `david-s-apps-acct/chess-openin
   - Everything then works as usual (practice, accuracy, presets, backups). The sample is marked only on the Options page (the user's decision): "Sample studies" in place of "Lichess account: …", and no "Fetched …" line. Update studies asks for a token, as it does without one.
   - Adding a token (Options) fetches the user's own studies, which replace the sample; the usual clean-up after fetching drops the sample's stats.
   - Help's Getting started has a line about it.
-  - *Claude's choices, for the user to accept or reject:* if loading fails, the message appears under the button; the first-visit and Options buttons all widened from 9.5em to 11em, so "Try sample studies" fits on one line and they stay the same width.
+  - *Claude's choices, accepted by the user:* if loading fails, the message appears under the button; the first-visit and Options buttons all widened from 9.5em to 11em, so "Try sample studies" fits on one line and they stay the same width.
 - Still to decide: whether to push after each commit.
 
 ## Possible future improvements
