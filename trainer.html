@@ -97,6 +97,8 @@
   .update-status:empty { display: none; }
   #opt-fetch-info:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
+  #options-screen button.primary { flex: none; width: 9.5em; } /* every Options button the same width */
+  .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
   .update-status.error { color: var(--bad); }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 
@@ -677,7 +679,7 @@
 
       <div class="card">
         <h2><span data-tip="Your stats, settings and downloaded Lichess data are stored only in this browser. A backup file keeps them safe or moves them to another browser. Restoring replaces your stats and settings and merges the Lichess data with what's here. Backups never include your token.">Backup</span></h2>
-        <div class="actions">
+        <div class="actions stacked">
           <button id="backup-btn" class="primary">Save backup</button>
           <button id="restore-btn" class="primary">Restore backup</button>
           <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
