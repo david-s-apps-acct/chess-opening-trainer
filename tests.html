@@ -40,7 +40,7 @@ export const app = {
   setHidden(ids) { hiddenStudies = new Set(ids); },
   checkedSettings, chapterByKey, chapterLines, branchKeys, allStudyPositions,
   renderChapterTree,
-  positionName, pointsFor, isMasterMove, scoreOf, moveRank, errorCounts, moveKey,
+  positionName, pointsFor, isMasterMove, scoreOf, moveRank, errorCounts,
   parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
   // Saving and network requests switched off, so stored data is never touched.
   isolate() {
@@ -204,7 +204,7 @@ function run(app) {
   check('error counts, the hint included', app.errorCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['hint', 1], ['c4', 1]]);
 
   // Move keys
-  check('move key', app.moveKey(italian[0], 2), 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3');
+  check('move key', italian[0].moves[2].key, 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3');
 
   // Position names (the chess-book convention)
   const names = italian[0].moves.map((m, i) => app.positionName(italian[0], i));
@@ -402,7 +402,7 @@ function runPositions(app) {
   for (const line of lines) line.moves.forEach((m, i) => {
     positions[m.epdBefore] = { lichess: explorer([['e4', 100 - i]]) };
     positions[m.epd] ||= { lichess: explorer([['e4', 50 - i]]) };
-    if (m.isYours) moves[app.moveKey(line, i)] = [{ tried: ['a3', m.san], points: 5, at: null }];
+    if (m.isYours) moves[m.key] = [{ tried: ['a3', m.san], points: 5, at: null }];
   });
   app.setMoveStats(positions);
   app.setHistory({ moves, lines: { [lines[0].key]: [Date.now()] } });

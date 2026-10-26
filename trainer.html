@@ -653,9 +653,7 @@
           <label for="pen-hint" data-tip="Hint, and Show correct move.">Hint</label>
           <select id="pen-hint" class="pen-select"></select>
           <label for="masters-top" class="penalties-gap" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
-          <select id="masters-top" class="penalties-gap">
-            <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
-          </select>
+          <select id="masters-top" class="penalties-gap"></select>
         </div>
       </div>
 
@@ -888,6 +886,7 @@ function shortCount(n) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const DAY_MS = 86400000;
 
 function showBanner(msg, isError = false) {
   const b = $('banner');
@@ -965,7 +964,7 @@ function setToggle(id, on, title) {
 function daysAgo(time) {
   if (!time) return '–';
   const midnight = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
-  const days = Math.round((midnight(Date.now()) - midnight(time)) / 86400000);
+  const days = Math.round((midnight(Date.now()) - midnight(time)) / DAY_MS);
   return days <= 0 ? 'Today' : plural(days, 'day');
 }
 
@@ -1002,6 +1001,9 @@ function arrowSquares(pos, move) {
 class LichessError extends Error {
   constructor(message, status) { super(message); this.status = status; }
 }
+
+// What went wrong, for a message: Lichess's own words, or the error's.
+const errorText = e => e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message;
 
 // A request to Lichess with the token; LichessError when Lichess can't be reached.
 async function lichessFetch(url, tok) {
@@ -1073,7 +1075,7 @@ async function fetchStudies() {
     setUpdateStatus(''); // the Options page says what was fetched, and when
     if (currentScreen === 'options') renderOptions(); else showStudies();
   } catch (e) {
-    setUpdateStatus(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
+    setUpdateStatus(errorText(e), true);
   } finally {
     btn.disabled = false;
   }
@@ -1083,8 +1085,7 @@ async function fetchStudies() {
 function pruneAfterRefresh() {
   const chapters = allChapters();
   const chapterKeys = new Set(chapters.map(c => c.key));
-  const moveKeys = new Set();
-  for (const ch of chapters) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) moveKeys.add(moveKey(line, i));
+  const moveKeys = new Set(chapters.flatMap(ch => yourMoves(ch).map(m => m.key)));
   selection = new Set([...selection].filter(k => chapterKeys.has(k)));
   hiddenStudies = new Set([...hiddenStudies].filter(id => library.studies.some(s => s.id === id)));
   saveHidden();
@@ -1103,7 +1104,7 @@ async function checkAndSaveToken(value, errorEl) {
   } catch (e) {
     errorEl.textContent = e.status === 401
       ? 'Lichess rejected this token. Check it\'s complete and has the study:read scope.'
-      : e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message;
+      : errorText(e);
     return false;
   }
   errorEl.textContent = '';
@@ -1119,7 +1120,7 @@ const allChapters = () => library ? library.studies.flatMap(s => s.chapters) : [
 const chapterByKey = key => allChapters().find(c => c.key === key);
 const studyOfChapter = ch => library.studies.find(s => s.chapters.includes(ch));
 const chapterTitle = ch => `${studyOfChapter(ch).name} · ${ch.name}`; // "My repertoire · Italian"
-const parsedChapters = new Map();   // chapter key -> { game, start, color } or { error }
+const parsedChapters = new Map();   // chapter key -> { game, yourColor, intro, root } or { error } (see parseChapter)
 const linesByChapter = new Map(); // chapter key -> lines
 function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear(); }
 
@@ -1128,7 +1129,9 @@ function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear()
 //   san, uci, moveNumber, color (the side that plays it), notes (comment and glyphs), nags,
 //   epdBefore, position (after the move: a chessops position), fen and epd (of that position),
 //   parent, children (the study's continuations, main one first), path (the SANs up to and
-//   including this move), variationIndex (0 for the main continuation, 1, 2 … for the others),
+//   including this move), key (the chapter key and the path, "studyId/chapterId|e4 e5 Nf3": a move
+//   of yours is recorded under it, a line under its last move's, and a branch point under its own;
+//   the root's ends in "|"), variationIndex (0 for the main continuation, 1, 2 … for the others),
 //   untested (it's an alternative at your move, or follows one: never practiced),
 //   isYours (your move, on a practiced path),
 //   alternatives (at your moves: the study's other moves there, by SAN; each is a move node, whose
@@ -1145,15 +1148,15 @@ function parseChapter(ch) {
   else {
     const o = (game.headers.get('Orientation') || 'white').toLowerCase();
     const yourColor = o === 'black' ? 'black' : 'white';
-    result = { game, yourColor, intro: commentText(game.comments), root: moveTree(game, start.value, yourColor) };
+    result = { game, yourColor, intro: commentText(game.comments), root: moveTree(ch.key, game, start.value, yourColor) };
   }
   parsedChapters.set(ch.key, result);
   return result;
 }
 
-function moveTree(game, start, yourColor) {
+function moveTree(chapterKey, game, start, yourColor) {
   const fen = fenOf(start);
-  const root = { position: start, fen, epd: epdOf(fen), path: [], children: [] };
+  const root = { position: start, fen, epd: epdOf(fen), path: [], key: chapterKey + '|', children: [] };
   const grow = (pgnNode, parent) => {
     const before = parent.position;
     const yourTurn = before.turn === yourColor;
@@ -1168,7 +1171,7 @@ function moveTree(game, start, yourColor) {
       const node = {
         san: moveSan, uci: makeUci(move), moveNumber: before.fullmoves, color: before.turn,
         notes: moveNotes(child.data), nags: child.data.nags || [], epdBefore: parent.epd,
-        position, fen, epd: epdOf(fen), parent, children: [], path: [...parent.path, moveSan],
+        position, fen, epd: epdOf(fen), parent, children: [], path: [...parent.path, moveSan], key: `${chapterKey}|${[...parent.path, moveSan].join(' ')}`,
         variationIndex, untested, isYours: yourTurn && !untested,
       };
       parent.children.push(node);
@@ -1203,7 +1206,7 @@ function chapterLines(ch) {
     const next = practicedChildren(node, parsed.yourColor);
     if (!next.length) {
       if (!moves.some(m => m.isYours) || lines.length >= MAX_LINES_PER_CHAPTER) return;
-      lines.push({ key: ch.key + '|' + node.path.join(' '), chapterKey: ch.key, yourColor: parsed.yourColor, root: parsed.root, moves, isMainLine });
+      lines.push({ key: node.key, chapterKey: ch.key, yourColor: parsed.yourColor, root: parsed.root, moves, isMainLine });
       return;
     }
     const yourTurn = yourTurnAfter(node, parsed.yourColor);
@@ -1223,10 +1226,12 @@ function allMoveNodes(ch) {
   return out;
 }
 
+// Your practiced moves in a chapter, each once (however many lines pass through it).
+const yourMoves = ch => allMoveNodes(ch).filter(m => m.isYours);
 
-// A move key identifies one of your moves in a chapter: the chapter key plus the moves up to and
-// including yours, e.g. "studyId/chapterId|e4 e5 Nf3", so every line through that point shares its
-// history (see History above).
+
+// A move of yours is recorded under its node's key (see parseChapter), so every line through that
+// point shares its history.
 
 const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.isYours ? [i] : []);
 
@@ -1330,12 +1335,7 @@ window.addEventListener('scroll', hideCommentPopup, { passive: true });
 
 const HISTORY_LENGTH = 10;
 
-function moveKey(line, i) {
-  const keys = line.moveKeys ||= [];
-  return keys[i] ||= line.chapterKey + '|' + line.moves.slice(0, i + 1).map(m => m.san).join(' ');
-}
-
-const attemptsAt = (line, i) => history.moves[moveKey(line, i)] || [];
+const attemptsAt = m => history.moves[m.key] || [];
 
 // When a move was last tried, and when a line was last played through (null if unknown or never).
 const lastTriedAt = key => history.moves[key]?.at(-1)?.at ?? null;
@@ -1385,8 +1385,7 @@ function pointsFor(tried, yourMove) {
 // downloaded since). Points aren't stored.
 function rescoreHistory() {
   if (!library) return;
-  const moves = new Map();
-  for (const ch of allChapters()) for (const line of chapterLines(ch)) for (const i of yourMoveIndexes(line)) moves.set(moveKey(line, i), line.moves[i]);
+  const moves = new Map(allChapters().flatMap(ch => yourMoves(ch).map(m => [m.key, m])));
   for (const [key, attempts] of Object.entries(history.moves)) {
     const move = moves.get(key);
     if (move) for (const a of attempts) a.points = pointsFor(a.tried, move);
@@ -1395,9 +1394,9 @@ function rescoreHistory() {
 
 // Saves this line's attempts into your history (not with Reverse sides, which isn't recorded).
 function saveAttempts() {
-  if (practice.reversed) return;
+  if (session.reversed) return;
   for (const { index, tried, points, at } of practice.attempts) {
-    const key = moveKey(practice.line, index);
+    const key = practice.line.moves[index].key;
     history.moves[key] = [...history.moves[key] || [], { tried, points, at }].slice(-HISTORY_LENGTH);
   }
   saveHistory();
@@ -1415,7 +1414,7 @@ function errorCounts(attempts, correct) {
 
 // One attempt, as recorded when the move is played (or the line is ended on it); with Reverse sides,
 // unscored (points null).
-const newAttempt = (expected, index) => ({ index, tried: practice.tried, points: practice.reversed ? null : pointsFor(practice.tried, expected), at: Date.now() });
+const newAttempt = (expected, index) => ({ index, tried: practice.tried, points: session.reversed ? null : pointsFor(practice.tried, expected), at: Date.now() });
 
 const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
 
@@ -1423,21 +1422,12 @@ const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 8
 // 'untried' (plain) when there's none.
 const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-work';
 
-// The average score of the tried moves (each position once) in these chapters.
+// The average move accuracy of your tried moves (each once) in these chapters, and how many lines
+// they have.
 function averageScore(chapters) {
-  let lines = 0, tried = 0, sum = 0;
-  const seen = new Set();
-  for (const ch of chapters) for (const line of chapterLines(ch)) {
-    lines++;
-    for (const i of yourMoveIndexes(line)) {
-      const k = moveKey(line, i);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      const s = scoreOf(history.moves[k] || []);
-      if (s != null) { tried++; sum += s; }
-    }
-  }
-  return { lines, tried, score: tried ? sum / tried : null };
+  const scores = chapters.flatMap(ch => yourMoves(ch).map(m => scoreOf(attemptsAt(m)))).filter(s => s != null);
+  return { lines: chapters.reduce((n, ch) => n + chapterLines(ch).length, 0), tried: scores.length,
+    score: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null };
 }
 
 // ---------- Studies page ----------
@@ -1560,9 +1550,9 @@ function openingName(parsed) {
 
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
-// Your weak practiced moves are highlighted by score; side variations at your moves (never
-// practiced) are italics; moves with a move-quality glyph take its color. Each practiced line's last move is followed by
-// Every move has the small hover board.
+// Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
+// are italics; moves with a move-quality glyph take its color; each practiced line's last move is
+// underlined. Every move has the small hover board.
 function renderChapterTree(ch) {
   const parsed = parseChapter(ch);
   const box = element('div', { class: 'tree' });
@@ -1570,14 +1560,12 @@ function renderChapterTree(ch) {
   // up to and including it.
   const moveEls = (node, path, showNo) => {
     const moves = [...path, node];
-    const line = { chapterKey: ch.key, yourColor: parsed.yourColor, root: parsed.root, moves };
-    const i = moves.length - 1;
-    const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(line, i))) : node.untested ? 'untested-move' : 'opp';
+    const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(node))) : node.untested ? 'untested-move' : 'opp';
     // The last move of a line you practice is underlined.
     const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
     const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
     const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + lineEnd, tabindex: '0' }, withFigurines(node.san));
-    addHoverBoard(el, line, i);
+    addHoverBoard(el, node, parsed.yourColor);
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       highlight ? element('span', { class: 'needs-work' }, el, glyphMarks(node)) : [el, glyphMarks(node)],
@@ -1595,7 +1583,7 @@ function renderChapterTree(ch) {
       flow.append(...res.els.flat(Infinity).filter(x => x != null));
       showNo = false;
       if (alts.length) {
-        const key = ch.key + '|' + path.map(m => m.san).join(' ');
+        const key = node.key; // the branch point (in a variation, a stand-in starts the walk: never a branch)
         const open = openBranches.has(key);
         flow.append(element('button', { class: 'tree-toggle', 'aria-expanded': String(open),
           title: open ? 'Hide variations' : `Show ${plural(alts.length, 'variation')}`,
@@ -1621,7 +1609,7 @@ function renderChapterTree(ch) {
 // for openBranches: "chapter key|moves before the branch".
 function branchKeys(ch) {
   const root = parseChapter(ch).root;
-  return root ? [root, ...allMoveNodes(ch)].filter(n => n.children.length > 1).map(n => ch.key + '|' + n.path.join(' ')) : [];
+  return root ? [root, ...allMoveNodes(ch)].filter(n => n.children.length > 1).map(n => n.key) : [];
 }
 
 // The eye icon (the top eye, and each study's): a line through it when its button is "off".
@@ -1827,7 +1815,6 @@ $('preset-name-form').addEventListener('submit', e => {
 // the picks until none is left.
 const UNTRIED_NEED = 6;
 const UNKNOWN_FREQUENCY = 0.6;
-const DAY_MS = 86400000;
 const STRONGEST = 6; // the power at 100%
 const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
 
@@ -1862,19 +1849,19 @@ function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kin
   if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
   const items = new Map(); // move key -> item
   for (const line of lines) for (const i of yourMoveIndexes(line)) {
-    const key = moveKey(line, i);
+    const key = line.moves[i].key;
     if (!items.has(key) && (!mainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
   }
   return [...items.values()];
 }
 
 function itemAccuracy({ line, i }) {
-  if (i != null) return scoreOf(attemptsAt(line, i));
-  const scores = yourMoveIndexes(line).map(k => scoreOf(attemptsAt(line, k)));
+  if (i != null) return scoreOf(attemptsAt(line.moves[i]));
+  const scores = yourMoveIndexes(line).map(k => scoreOf(attemptsAt(line.moves[k])));
   return scores.every(s => s == null) ? null : scores.reduce((sum, s) => sum + (s ?? 0), 0) / scores.length;
 }
 
-const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(moveKey(line, i)) : lastPlayedAt(line.key);
+const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].key) : lastPlayedAt(line.key);
 
 const itemEpd = ({ line, i }) => i != null ? line.moves[i].epdBefore : line.moves[line.moves.length - 1].epd;
 
@@ -1914,8 +1901,7 @@ const priorities = items => priorityOf(itemFacts(items));
 let board = null;
 // The line in progress (null when none; see startLine):
 //   line, singleAt (for a single position, the index of the move tested; null for a whole line),
-//   reversed (playing the reversed sides: { mainLinesOnly }, or null; see the chooser), position (on
-//   the board), movesPlayed, tried (what you've done at the move you're on, in order:
+//   position (on the board), movesPlayed, tried (what you've done at the move you're on, in order:
 //   moves as SAN, "hint", "show"), attempts (one per move of yours finished in this line),
 //   busy (the board is waiting for the app), isOver, lastMove, shapes (the arrows and circles drawn),
 //   viewing (the move looked back at, or null for the live position), savedStatus (the status to
@@ -1925,10 +1911,10 @@ let board = null;
 //   since the user may have moved on).
 let practice = null;
 
-// The moves you play in this line, and their colour: your study's moves, or, with Reverse sides, the
-// opponent's.
-const isTested = m => !!m && (practice.reversed ? !m.isYours : !!m.isYours);
-const testedColor = () => practice.reversed ? opposite(practice.line.yourColor) : practice.line.yourColor;
+// The moves you play in this line, and their color: your study's moves, or, with Reverse sides
+// (session.reversed), the opponent's.
+const isTested = m => !!m && (session.reversed ? !m.isYours : !!m.isYours);
+const testedColor = () => session.reversed ? opposite(practice.line.yourColor) : practice.line.yourColor;
 const testedIndexes = line => line.moves.flatMap((m, i) => isTested(m) ? [i] : []);
 const opposite = color => color === 'white' ? 'black' : 'white';
 
@@ -1936,9 +1922,9 @@ const opposite = color => color === 'white' ? 'black' : 'white';
 // reply the study gives there (one of the chapter's lines continues with it), or with main lines
 // only, the study's main reply.
 function correctMoves(m) {
-  if (!practice.reversed) return [m];
+  if (!session.reversed) return [m];
   const replies = m.parent.children.filter(c => lineThrough(c, practice.movesPlayed));
-  return practice.reversed.mainLinesOnly ? replies.slice(0, 1) : replies;
+  return session.reversed.mainLinesOnly ? replies.slice(0, 1) : replies;
 }
 // A line of this chapter whose move i is the move node m.
 const lineThrough = (m, i) => m === practice.line.moves[i] ? practice.line : chapterLines(chapterByKey(practice.line.chapterKey)).find(l => l.moves[i] === m);
@@ -1946,8 +1932,8 @@ const lineThrough = (m, i) => m === practice.line.moves[i] ? practice.line : cha
 // The study's other moves that count as alternatives to the correct move m, by SAN: at your moves,
 // its alternatives; reversed with main lines only, the study's other replies (without main lines
 // only, every reply is correct).
-const alternativesAt = m => practice?.reversed && !m.isYours
-  ? Object.fromEntries(practice.reversed.mainLinesOnly ? m.parent.children.filter(c => c !== m).map(c => [c.san, c]) : [])
+const alternativesAt = m => session?.reversed && !m.isYours
+  ? Object.fromEntries(session.reversed.mainLinesOnly ? m.parent.children.filter(c => c !== m).map(c => [c.san, c]) : [])
   : m.alternatives;
 
 function ensureBoard() {
@@ -2165,7 +2151,7 @@ function probabilityRow({ item: { line, i }, accuracy, games, lastTested, chance
       : element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
     element('td', { class: 'num' }, daysAgo(lastTested)),
     element('td', { class: 'num' }, chanceText(chance)));
-  return addHoverBoard(tr, line, hoverAt, null, tr.firstChild);
+  return addHoverBoard(tr, line.moves[hoverAt], line.yourColor, null, tr.firstChild);
 }
 
 function hideProbabilities() {
@@ -2210,7 +2196,7 @@ function nextItem() {
 // as a single position.
 function startLine(line, singleAt = null) {
   practice = {
-    line, singleAt, reversed: session.reversed, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, isOver: false,
+    line, singleAt, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, isOver: false,
     lastMove: undefined, shapes: [], viewing: null, savedStatus: null, hintComment: null, bubblePopped: -1, run: {},
   };
   hideBoardNotice(true);
@@ -2256,7 +2242,7 @@ function lineSummary() {
   const correct = attempts.filter(a => a.tried.length === 1).length;
   const accuracy = attempts.length ? Math.round(attempts.reduce((sum, a) => sum + a.points, 0) / attempts.length * 10) : 100;
   return [element('div', {}, correct < attempts.length ? `${correct} of ${plural(attempts.length, 'move')} correct` : 'No errors.'),
-    practice.reversed ? null : element('div', {}, `${accuracy}% line accuracy`)].filter(Boolean);
+    session.reversed ? null : element('div', {}, `${accuracy}% line accuracy`)].filter(Boolean);
 }
 
 // Play opponent moves until it's your turn or the line ends.
@@ -2454,7 +2440,7 @@ function finish(nextLabel) {
 // is when its last move was attempted, and summed up.
 function endLine() {
   const { line, attempts } = practice;
-  if (!practice.reversed) { // Reverse sides isn't recorded
+  if (!session.reversed) { // Reverse sides isn't recorded
     history.lines[line.key] = [...history.lines[line.key] || [], attempts.at(-1)?.at ?? Date.now()].slice(-HISTORY_LENGTH);
     saveHistory();
   }
@@ -2540,7 +2526,7 @@ function renderMoveList() {
     // Every move already played has the small hover board, during the line too, with its Lichess
     // share and, for your moves, how you did on it this time. (Only played moves are listed, so it
     // never shows a move still to come.)
-    addHoverBoard(cell, practice.line, i, { attempt, reversed: !!practice.reversed });
+    addHoverBoard(cell, m, testedColor(), { attempt });
     cells.push(cell);
   });
   box.replaceChildren(...(cells.length ? cells : [element('span', { class: 'none' }, 'No moves yet.')]));
@@ -2654,21 +2640,20 @@ $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 
 let hoverBoard = null;
 
-// Gives el the hover board for move i of line: shown on hover, focus or tap, next to anchor. With
-// thisTime ({ attempt, reversed }, in the practice move list) a move of yours is described by this
-// attempt (attempt is undefined for a move not played this time); otherwise by its last 10 attempts.
-// With reversed (Reverse sides) the opponent's moves are the ones you played, and the board is turned.
-function addHoverBoard(el, line, i, thisTime = null, anchor = el) {
-  const show = () => showHoverBoard(anchor, line, i, thisTime);
+// Gives el the hover board for move m: shown on hover, focus or tap, next to anchor, the board
+// turned to orientation (the side you play). A move by that side (unless untested) is one of yours;
+// with Reverse sides those are the opponent's moves. With thisTime ({ attempt }, in the practice
+// move list) a move of yours is described by this attempt (undefined for a move not played this
+// time); otherwise by its last 10 attempts.
+function addHoverBoard(el, m, orientation, thisTime = null, anchor = el) {
+  const show = () => showHoverBoard(anchor, m, orientation, thisTime);
   for (const event of ['mouseenter', 'focus', 'click']) el.addEventListener(event, show);
   for (const event of ['mouseleave', 'blur']) el.addEventListener(event, hideHoverBoard);
   return el;
 }
 
-function showHoverBoard(el, line, i, thisTime = null) {
-  const m = line.moves[i];
-  const reversed = !!thisTime?.reversed;
-  const { position, lastMove, shapes, rows } = reversed !== !!m.isYours ? yourMoveBoard(line, i, thisTime) : opponentMoveBoard(line, i);
+function showHoverBoard(el, m, orientation, thisTime = null) {
+  const { position, lastMove, shapes, rows } = m.color === orientation && !m.untested ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m);
   let box = $('move-preview');
   if (!box) {
     box = element('div', { id: 'move-preview', class: 'move-preview hidden' },
@@ -2678,7 +2663,7 @@ function showHoverBoard(el, line, i, thisTime = null) {
   box.firstChild.replaceChildren(...rows.filter(Boolean));
   box.classList.remove('hidden');
   const config = {
-    ...boardPosition(position, lastMove), orientation: reversed ? opposite(line.yourColor) : line.yourColor,
+    ...boardPosition(position, lastMove), orientation,
     viewOnly: true, coordinates: false, animation: { enabled: false },
     drawable: { enabled: false, visible: true, brushes: ERROR_ARROWS },
   };
@@ -2703,22 +2688,21 @@ function hoverBoardHeading(m) {
 }
 
 // Before one of your moves the opponent's previous move is highlighted (no arrow).
-const previousOpponentMove = (line, i) => line.moves[i - 1] && squaresOf(line.moves[i - 1]);
+const previousOpponentMove = m => m.parent.uci && squaresOf(m.parent);
 
 // Your move: the position before it, an arrow for the correct move and one for each error, then,
 // under the shared heading, the move accuracy, when it was last tested, and the errors ("Errors: d4
 // (alternative ?!), a3 ×2, hint"), coloured as their arrows. In the practice move list (thisTime) it's
 // about this attempt; elsewhere, about the last 10 attempts.
-function yourMoveBoard(line, i, thisTime) {
-  const m = line.moves[i];
-  const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(line, i);
+function yourMoveBoard(m, thisTime) {
+  const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(m);
   const errors = errorCounts(attempts, m.san);
   const accuracy = thisTime ? (!attempts.length ? 'Not tested this time' : attempts[0].points == null ? null : `${attempts[0].points * 10}% move accuracy`)
     : attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Untried';
-  return { position: m.parent.position, lastMove: previousOpponentMove(line, i), shapes: answerArrows(m.parent.position, m, errors), rows: [
+  return { position: m.parent.position, lastMove: previousOpponentMove(m), shapes: answerArrows(m.parent.position, m, errors), rows: [
     ...hoverBoardHeading(m),
     accuracy && element('div', {}, accuracy),
-    thisTime ? null : lastTestedText(lastTriedAt(moveKey(line, i))),
+    thisTime ? null : lastTestedText(lastTriedAt(m.key)),
     errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) =>
       element('span', { class: 'error-' + errorColor(m, x) }, errorLabel(m, x) + (n > 1 ? ` ×${n}` : ''))))) : null] };
 }
@@ -2733,8 +2717,7 @@ function lastTestedText(time) {
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
 // on Lichess, with the move as a white arrow, or amber if the study marks it ?!, ? or ?? (see
 // ERROR_COLORS).
-function opponentMoveBoard(line, i) {
-  const m = line.moves[i];
+function opponentMoveBoard(m) {
   const [orig, dest] = arrowSquares(m.parent.position, parseUci(m.uci));
   const mistake = isMistake(m);
   return { position: m.position, lastMove: squaresOf(m), shapes: [{ orig, dest, brush: mistake ? 'yellow' : 'white' }], rows: [
@@ -2788,9 +2771,10 @@ function answerArrows(pos, m, errors) {
 function hideHoverBoard() { $('move-preview')?.classList.add('hidden'); }
 window.addEventListener('scroll', hideHoverBoard, { passive: true });
 
-// ---------- Lichess downloads ----------
-
-// The Lichess downloads run by themselves, in the background, after Update studies and when the
+// ---------- Lichess downloads (move statistics and masters statistics) ----------
+// For every position in the studies, how often each move is played in all rated Lichess games and in
+// master games, from the Lichess Opening Explorer: downloaded in the background, new positions only,
+// and saved. The downloads run by themselves, in the background, after Update studies and when the
 // app opens (so an interrupted download resumes): missing move statistics (they need the token),
 // then missing Masters statistics. Each fetches only what's missing, and says nothing if nothing is.
 let downloadsRunning = false;
@@ -2836,11 +2820,7 @@ function suggestBackup(what) {
     element('button', { class: 'small', onclick: () => setUpdateStatus('') }, 'Not now')]);
 }
 
-// ---------- Move statistics (Lichess Opening Explorer) ----------
-// For every position in the studies' lines, how often each move is played in all rated Lichess
-// games and in master games. Downloaded in the background, new positions only, and saved.
-
-// positions[epd].lichess and .masters: the Opening Explorer's answer exactly as Lichess sends it
+// moveStats[epd].lichess and .masters: the Opening Explorer's answer exactly as Lichess sends it
 // ({ white, draws, black, moves: [{ uci, san, averageRating, white, draws, black, … }], opening, … }),
 // plus at (when it was downloaded). For Lichess games, moves beyond the 10 most played are dropped
 // unless the studies play them there; for Masters the full move list is kept (topGames isn't
@@ -3023,6 +3003,7 @@ for (const sel of document.querySelectorAll('.pen-select')) {
     rescoreHistory(); // past attempts are scored again with the new penalties
   });
 }
+for (const n of MASTERS_TOPS) $('masters-top').append(element('option', { value: String(n) }, `Top ${n}`));
 $('masters-top').addEventListener('change', e => {
   settings.mastersTop = +e.target.value;
   saveSettings();
@@ -3039,7 +3020,6 @@ function renderOptions() {
   $('opt-fetched').textContent = library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
   const lastBackup = store.get('lastBackup', null);
   $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
-  updateSoundButton();
   updateStatisticsInfo();
   const tokenSavedAt = store.get('tokenSavedAt', null);
   $('opt-token-state').textContent = !token ? 'No token stored.' : tokenSavedAt ? `Token stored ${onDateAtTime(tokenSavedAt)}` : 'Token stored.';
