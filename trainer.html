@@ -93,6 +93,8 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
+  #opt-fetch-info:empty { display: none; }
+  .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   .update-status.error { color: var(--bad); }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
 
@@ -650,6 +652,7 @@
         <p id="opt-fetch-info" class="muted"></p>
         <p class="muted">Update studies downloads all your Lichess studies again, private ones included, so changes you've made on Lichess (new chapters, moves, variations or comments) appear here. Your statistics are kept, except for moves that are no longer in your studies.</p>
         <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
+        <p id="opt-fetched" class="muted after-actions"></p>
         <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
       </div>
 
@@ -683,6 +686,7 @@
           <button id="restore-btn">Restore backup</button>
           <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
         </div>
+        <p id="opt-backup-info" class="muted after-actions"></p>
       </div>
     </div>
   </section>
@@ -1059,9 +1063,7 @@ async function fetchStudies() {
     pruneAfterRefresh();
     if (practice) endPractice(); // its lines may have changed: practice starts afresh
     startDownloads(); // missing Lichess data, quietly in the background
-    const n = library.studies.reduce((s, st) => s + st.chapters.length, 0);
-    const ns = library.studies.length;
-    setUpdateStatus(`Fetched ${plural(ns, 'study', 'studies')} (${plural(n, 'chapter')}).`);
+    setUpdateStatus(''); // the Options page says what was fetched, and when
     if (currentScreen === 'options') renderOptions(); else showStudies();
   } catch (e) {
     setUpdateStatus(e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message, true);
@@ -3002,12 +3004,9 @@ function showOptions() {
   renderOptions();
 }
 
-// A date and time with the time zone, e.g. "9/26/2026, 2:13 PM ET".
-function formatWithZone(ts) {
-  const opts = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-  try { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'shortGeneric' }); }
-  catch { return new Date(ts).toLocaleString(undefined, { ...opts, timeZoneName: 'short' }); } // older browsers: "EDT"
-}
+// When something happened, in this computer's time zone and the browser's date format, without the
+// zone: "on 10/26/26 at 12:01 PM".
+const onDateAtTime = ts => `on ${new Date(ts).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })} at ${new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
 // The Error penalties card: each drop-down 0%–100% in steps of 10 (1 point each).
 for (const sel of document.querySelectorAll('.pen-select')) {
@@ -3030,10 +3029,10 @@ function renderPenalties() {
 
 function renderOptions() {
   renderPenalties();
-  const nChapters = allChapters().length;
-  $('opt-fetch-info').textContent = library
-    ? `${library.username} · ${plural(library.studies.length, 'study', 'studies')}, ${plural(nChapters, 'chapter')} · fetched ${formatWithZone(library.fetchedAt)}`
-    : 'No studies fetched yet.';
+  $('opt-fetch-info').textContent = library ? `Lichess account: ${library.username}` : '';
+  $('opt-fetched').textContent = library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched yet.';
+  const lastBackup = store.get('lastBackup', null);
+  $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved yet.';
   updateSoundButton();
   updateStatisticsInfo();
   $('opt-token-state').textContent = token ? 'A token is stored in this browser.' : 'No token is stored.';
@@ -3090,6 +3089,7 @@ $('backup-btn').addEventListener('click', async () => {
       const w = await handle.createWritable();
       await w.write(blob);
       await w.close();
+      backupSaved();
       showBanner(`Backup saved as ${handle.name}.`);
     } catch (e) {
       if (e.name !== 'AbortError') showBanner("Couldn't save the backup: " + e.message, true); // AbortError: the user cancelled
@@ -3103,8 +3103,15 @@ $('backup-btn').addEventListener('click', async () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  backupSaved(); // the download can't be checked, so it counts as saved
   showBanner(`Backup saved as ${name} in your download folder. To choose the folder each time in Safari: Safari → Settings → General → File download location → Ask for each download.`);
 });
+
+// When the last backup was saved from this browser (not itself in backups), shown on the Options page.
+function backupSaved() {
+  store.set('lastBackup', Date.now());
+  renderOptions();
+}
 
 $('restore-btn').addEventListener('click', () => $('restore-file').click());
 
@@ -3123,7 +3130,7 @@ $('restore-file').addEventListener('change', async e => {
     return;
   }
   const n = Object.keys(b.history.moves).length;
-  const when = b.exportedAt ? ` from ${new Date(b.exportedAt).toLocaleString()}` : '';
+  const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
   if (!confirm(`Are you sure? This replaces your current history and settings with the backup${when} (${plural(n, 'move')} with results). It can't be undone.`)) return;
 
   history = b.history;
