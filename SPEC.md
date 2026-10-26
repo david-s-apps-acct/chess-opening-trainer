@@ -326,7 +326,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Look and layout
 
-- **Always dark**, like lichess.org's dark theme; there is no light mode and no toggle. The board keeps its own colors (Lichess's default brown board and pieces).
+- **Always dark**, like lichess.org's dark theme; there is no light mode and no toggle. The board keeps its own colors (Lichess's default brown board and pieces): light squares #f0d9b5 and dark squares #b58863, as on lichess.org (the user's request, 26 October 2026; chessground's own brown theme drew the dark squares much paler).
 - **Colors and fonts** follow Lichess's dark theme: a near-black page with a subtle gradient at the top, dark gray panels without borders, light gray text, Lichess blue (#3692e7) for primary buttons and highlights, and the Noto Sans font (loaded from jsDelivr rather than Google Fonts, to keep all external files on one CDN; system fonts are the fallback).
 - **Practice screen:** the board on the left, up to **600px** wide (the user's choice; it was 560px, then briefly 640px), smaller on narrow screens (there's no longer a comments box below it; comments are speech bubbles in the move list); the panel on the right holds the chapter details, the move list, the status, the end-of-line summary and the buttons. On narrow screens the panel moves below the board.
 - **Practice page icons:** there are none in the practice panel any more; the only icon is the sounds bell just below the board (see Sounds). (Four icons used to sit together at the top right of the practice panel, level with the chapter name: missed moves, annotations, names and sounds; the user removed the first three so those things are always shown, and moved the bell below the board.)

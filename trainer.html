@@ -12,6 +12,13 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.brown.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.cburnett.css">
 <style>
+  /* Lichess's brown board: solid #b58863 dark squares on #f0d9b5 (chessground's brown theme only
+     darkens its light squares by 20%, which is much paler). Repeated in 2×2 tiles: a8 is light. */
+  cg-board {
+    background-color: #f0d9b5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2' shape-rendering='crispEdges'%3E%3Cpath fill='%23b58863' d='M1 0h1v1H1zM0 1h1v1H0z'/%3E%3C/svg%3E");
+    background-size: 25% 25%;
+  }
   /* The chess piece symbols (♔♕♖♗♘) from Noto Sans Symbols 2, drawn a little larger than the text. */
   @font-face {
     font-family: 'Chess Figurines';
