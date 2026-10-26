@@ -348,7 +348,7 @@
         <li><b>Add token</b> opens Lichess in a new tab, with the <b>Read private studies</b> (<code>study:read</code>) scope already chosen: create the token there and copy it.</li>
         <li>Come back here and paste it into the box: it's checked with Lichess and saved straight away. Your browser remembers it, so you only do this once.</li>
       </ol>
-      <div class="actions"><button class="primary token-add" title="Opens Lichess in a new tab to create a token, with the access this app needs">Add token</button></div>
+      <div class="actions"><button class="primary token-add" title="Opens Lichess to create a token">Add token</button></div>
       <form id="token-form" class="token-row hidden">
         <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
       </form>
@@ -370,10 +370,10 @@
     <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
       <div class="preset-edit-row">
         <div class="preset-buttons">
-          <button id="preset-new-btn" class="small" title="Save the chapters ticked now as a new preset, with a name">Save as new</button>
-          <button id="preset-update-btn" class="small" title="Save the chapters ticked now in the chosen preset">Update</button>
-          <button id="preset-rename-btn" class="small" title="Change the chosen preset's name">Rename</button>
-          <button id="preset-delete-btn" class="small" title="Delete the chosen preset (the ticks stay as they are)">Delete</button>
+          <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
+          <button id="preset-update-btn" class="small" title="Save the ticked chapters in this preset">Update</button>
+          <button id="preset-rename-btn" class="small">Rename</button>
+          <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
         </div>
         <button id="preset-edit-close" class="icon-btn" aria-label="Close" title="Close (Esc)">×</button>
       </div>
@@ -427,16 +427,16 @@
         <div id="practice-chooser" class="practice-chooser hidden">
           <div class="chooser-frame">
             <div class="kind-switch" role="group" aria-label="What to practice">
-              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, each played from move 1 to the end">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="Single positions: one of your moves at a time">Positions</button>
+              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, from move 1">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="One of your moves at a time">Positions</button>
             </div>
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
-            <label id="chooser-reversed-label" title="You play the opponent's moves from your studies and the app plays yours. Nothing is recorded."><input type="checkbox" id="chooser-reversed"> Reverse sides (not scored)</label>
+            <label id="chooser-reversed-label" title="You play the opponent's moves; the app plays yours"><input type="checkbox" id="chooser-reversed"> Reverse sides (not scored)</label>
           </div>
           <div id="chooser-weights" class="chooser-frame weights">
-            <h3><span id="weights-heading" data-tip="How strongly each counts when choosing the next line or position: 0% ignores it, 50% is the usual balance, 100% makes it dominate.">Spaced repetition focus</span></h3>
+            <h3><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates.">Spaced repetition focus</span></h3>
             <div id="weight-rows" class="weight-rows"></div>
-            <button id="probabilities-btn" class="small" title="The ones most likely to come up next, with these settings, and their chances">Show lines</button>
-            <button id="weights-reset" class="small" title="Put all four sliders back to 50%">Reset</button>
+            <button id="probabilities-btn" class="small" title="What's most likely to come up next">Show lines</button>
+            <button id="weights-reset" class="small" title="All sliders to 50%">Reset</button>
           </div>
           <p id="chooser-note" class="muted"></p>
           <button id="chooser-start" class="primary chooser-start">Start practice</button>
@@ -444,8 +444,8 @@
         <div class="actions">
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
-          <button id="skip-btn" class="hidden" title="Go on to the next one. The moves you've answered count; this one isn't counted as played through.">Skip</button>
-          <button id="end-practice-btn" class="end-practice hidden" title="Stop practicing and choose what to practice next. In a line you're in the middle of, the moves you've answered still count.">End practice</button>
+          <button id="skip-btn" class="hidden" title="On to the next; the moves answered still count">Skip</button>
+          <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
     </div>
@@ -636,17 +636,17 @@
   <section id="options-screen" class="hidden">
     <div class="cards">
       <div class="card">
-        <h2><span data-tip="How much move accuracy each error costs, each time you make it before finding the right move. A move found first time has 100% move accuracy; it never goes below 0%. Changes apply to all your past tries straight away.">Error penalties</span></h2>
+        <h2><span data-tip="Move accuracy lost for each error before the right move (never below 0%). Changes apply to past tries too.">Error penalties</span></h2>
         <div class="penalties">
-          <label for="pen-alternative" data-tip="An unmarked alternative move from your study.">Alternative move</label>
+          <label for="pen-alternative" data-tip="An unmarked alternative in your study.">Alternative move</label>
           <select id="pen-alternative" class="pen-select"></select>
-          <label for="pen-masters" data-tip="A masters move (see Masters moves below) that isn't in your study.">Masters move</label>
+          <label for="pen-masters" data-tip="A masters move not in your study.">Masters move</label>
           <select id="pen-masters" class="pen-select"></select>
-          <label for="pen-error" data-tip="Any other move that isn't your study's move, or an alternative your study marks ?, ?? or ?!.">Error</label>
+          <label for="pen-error" data-tip="Any other move, or an alternative marked ?, ?? or ?!.">Error</label>
           <select id="pen-error" class="pen-select"></select>
           <label for="pen-hint" data-tip="Hint, and Show correct move.">Hint</label>
           <select id="pen-hint" class="pen-select"></select>
-          <label for="masters-top" class="penalties-gap" data-tip="What counts as a masters move: one of this many of the most played master moves in the position, and played 10% of the time or more.">Masters moves</label>
+          <label for="masters-top" class="penalties-gap" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
           <select id="masters-top" class="penalties-gap">
             <option value="1">Top 1</option><option value="2">Top 2</option><option value="3">Top 3</option><option value="4">Top 4</option><option value="5">Top 5</option>
           </select>
@@ -654,7 +654,7 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="Update studies downloads all your Lichess studies again, private ones included, so changes made on Lichess appear here. Your statistics are kept, except for moves no longer in your studies. The move statistics and masters statistics (how often each move is played in rated Lichess games and in master games, shown on the hover boards) then download automatically in the background, and whenever the app opens; you can keep practicing meanwhile.">Lichess studies</span></h2>
+        <h2><span data-tip="Update studies downloads all your studies again; your stats are kept. Move and masters statistics then download in the background.">Lichess studies</span></h2>
         <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
         <p id="opt-fetch-info" class="muted after-actions"></p>
         <p id="opt-fetched" class="muted"></p>
@@ -666,8 +666,8 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Add token opens Lichess to create one; paste it into the box and it's saved, replacing the stored one.">Lichess token</span></h2>
-        <div class="actions"><button class="primary token-add" title="Opens Lichess in a new tab to create a token, with the access this app needs">Add token</button></div>
+        <h2><span data-tip="Needs the Read private studies (study:read) scope. A new token replaces the stored one.">Lichess token</span></h2>
+        <div class="actions"><button class="primary token-add" title="Opens Lichess to create a token">Add token</button></div>
         <form id="opt-token-form" class="token-row hidden">
           <input id="opt-token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
         </form>
@@ -677,7 +677,7 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="Your stats, settings and downloaded Lichess data are stored only in this browser. A backup file keeps them safe or moves them to another browser. Restoring replaces your stats and settings and merges the Lichess data with what's here. Backups never include your token.">Backup</span></h2>
+        <h2><span data-tip="Your stats, settings and Lichess data are kept only in this browser. Backups never include your token.">Backup</span></h2>
         <div class="actions stacked">
           <button id="backup-btn" class="primary">Save backup</button>
           <button id="restore-btn" class="primary">Restore backup</button>
@@ -1006,8 +1006,8 @@ async function lichessFetch(url, tok) {
 // A request to the Lichess API, its answer as JSON (or text); LichessError on any failure.
 async function lichessRequest(path, tok, asText) {
   const res = await lichessFetch(LICHESS + path, tok);
-  if (res.status === 401) throw new LichessError('Lichess rejected the token. It may have expired or been revoked. Replace it on the Options page.', 401);
-  if (res.status === 429) throw new LichessError('Lichess is rate-limiting requests. Wait a minute and try again.', 429);
+  if (res.status === 401) throw new LichessError('Lichess rejected the token. Add a new one on the Options page.', 401);
+  if (res.status === 429) throw new LichessError('Lichess is limiting requests. Try again in a minute.', 429);
   if (!res.ok) throw new LichessError(`Lichess returned an error (${res.status}).`, res.status);
   return asText ? res.text() : res.json();
 }
@@ -1096,7 +1096,7 @@ async function checkAndSaveToken(value, errorEl) {
     await lichessRequest('/api/account', tok);
   } catch (e) {
     errorEl.textContent = e.status === 401
-      ? 'Lichess rejected this token. Check it was copied in full and has the study:read scope.'
+      ? 'Lichess rejected this token. Check it\'s complete and has the study:read scope.'
       : e instanceof LichessError ? e.message : 'Something went wrong: ' + e.message;
     return false;
   }
@@ -1628,7 +1628,7 @@ $('show-hidden-btn').innerHTML = eyeIcon(16);
 // for a visible study (click to hide it), an eye with a line for a hidden one (click to unhide).
 function hideStudyButton(study, isHidden) {
   const btn = element('button', { class: 'icon-btn hide-btn' + (isHidden ? ' off' : ''),
-    title: isHidden ? 'Unhide this study' : "Hide this study (it won't be practiced)",
+    title: isHidden ? 'Unhide this study' : 'Hide this study (not practiced)',
     onclick: () => toggleHideStudy(study) });
   btn.innerHTML = eyeIcon(15);
   return btn;
@@ -1827,10 +1827,10 @@ const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
 
 // The four sliders: their names, and what each means (shown when hovering over its name).
 const WEIGHTS = [
-  { key: 'frequency', name: 'Frequency', definition: 'How often the position is reached in rated Lichess games (for a line, its final position). The higher the slider, the more the frequent ones come up.' },
-  { key: 'accuracy', name: 'Accuracy', definition: 'Your move accuracy for a position, or line accuracy for a line. The higher the slider, the more the ones with low accuracy come up.' },
-  { key: 'lastPlayed', name: 'Last played', definition: 'How long since you last tested it, compared with how long you can expect to remember it (longer the better you know it). The higher the slider, the more the overdue ones come up.' },
-  { key: 'untried', name: 'Untried', definition: "Lines and positions you haven't tried yet. At 0% they never come up; at 100% they come first, until none is left." },
+  { key: 'frequency', name: 'Frequency', definition: 'How often the position is reached on Lichess (for a line, its final position). Higher: common ones come up more.' },
+  { key: 'accuracy', name: 'Accuracy', definition: 'Move accuracy (line accuracy for a line). Higher: weak ones come up more.' },
+  { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
+  { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none is left.' },
 ];
 
 function weightedPick(items, weight) {
@@ -1996,7 +1996,7 @@ function updateBoard(lastMove) {
   // After "Show correct move" the arrow stays and the button is disabled until the move is played.
   const hinted = hintStep() > 0;
   $('hint-btn').textContent = hinted ? 'Show correct move' : 'Hint';
-  $('hint-btn').title = hinted ? 'Shows the correct move with an arrow; you then play it. Counts as an error.' : 'Circles the piece to move. Counts as an error.';
+  $('hint-btn').title = hinted ? 'Shows the move with an arrow (counts as an error)' : 'Circles the piece to move (counts as an error)';
   $('hint-btn').disabled = !yourTurn || hintStep() >= 2;
   renderMoveList();
 }
@@ -2032,12 +2032,12 @@ function choosePromotion(color) {
 const KINDS = {
   lines: {
     noun: 'line', label: 'Lines', mainLines: 'Main lines only',
-    mainLinesTitle: "Only lines where the opponent always plays the study's main move",
+    mainLinesTitle: "Only the opponent's main moves",
     columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested', 'Chance next'],
   },
   positions: {
     noun: 'position', label: 'Positions', mainLines: 'Positions from main lines only',
-    mainLinesTitle: "Only positions reached by the study's main moves for the opponent",
+    mainLinesTitle: "Only positions reached by the opponent's main moves",
     columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested', 'Chance next'],
   },
 };
@@ -2096,7 +2096,7 @@ function renderChooser() {
   // Reversed, the sliders aren't used: greyed out.
   const reversed = reversedSides();
   $('chooser-weights').classList.toggle('off', !!reversed);
-  $('chooser-weights').title = reversed ? "Not used with Reverse sides: lines come up by how often they're reached." : '';
+  $('chooser-weights').title = reversed ? 'Not used with Reverse sides' : '';
   for (const el of $('chooser-weights').querySelectorAll('input, button')) el.disabled = !!reversed;
   const { items, note } = practicable(kind);
   $('chooser-start').disabled = !items.length;
@@ -3150,12 +3150,12 @@ $('restore-file').addEventListener('change', async e => {
     return;
   }
   if (b.version !== BACKUP_VERSION || !validHistory(b.history)) {
-    showBanner('That backup was made by an earlier version of the app and can\'t be restored. Save a new backup from this version instead.', true);
+    showBanner('This backup is from an earlier version and can\'t be restored.', true);
     return;
   }
   const n = Object.keys(b.history.moves).length;
   const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
-  if (!confirm(`Are you sure? This replaces your current history and settings with the backup${when} (${plural(n, 'move')} with results). It can't be undone.`)) return;
+  if (!confirm(`Replace your history and settings with the backup${when} (${plural(n, 'move')} with results)? This can't be undone.`)) return;
 
   history = b.history;
   settings = checkedSettings(b.settings);
@@ -3178,7 +3178,7 @@ $('restore-file').addEventListener('change', async e => {
   saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
   updateSoundButton();
   renderOptions();
-  showBanner(`Restored your history for ${plural(n, 'move')} and your settings from the backup.`);
+  showBanner(`Backup restored: history for ${plural(n, 'move')}, and settings.`);
 });
 
 // ---------- Navigation ----------
