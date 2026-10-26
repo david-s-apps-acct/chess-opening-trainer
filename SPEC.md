@@ -4,6 +4,8 @@
 
 A browser-based chess practice program. It pulls the user's studies from lichess.org and quizzes the user on the correct next moves.
 
+**Writing guideline (the user's, 26 October 2026):** users are assumed to be intelligent and experienced at chess. Everything on screen uses as few words as possible: brief labels, messages and hover hints rather than long explanations. Longer explanations belong on the Help page.
+
 ## Lichess access
 
 - Covers all of the user's studies, including private ones.
