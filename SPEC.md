@@ -568,12 +568,21 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 
 - **Delivery:** a single HTML file (`trainer.html`) on the user's computer, opened directly in the browser (`file://`). No server, no build step.
 - **Lichess API:** called directly from the page; the Lichess API allows cross-origin browser requests.
-- **Libraries:** chessops and chessground (JS and CSS) are loaded from the jsDelivr CDN via ES module imports. The app needs internet to reach Lichess anyway, so this adds no new requirement.
+- **Libraries:** chessops and chessground (JS and CSS) are loaded from the jsDelivr CDN via ES module imports. The app needs internet to reach Lichess anyway, so this adds no new requirement online.
+- **Offline** (discussed 26 October 2026): once the studies are fetched, everything except Lichess (Update studies, the statistics downloads, Add token) works offline, as long as the browser still has the libraries cached from an earlier visit (jsDelivr marks them cacheable for a year). That isn't guaranteed: a cleared cache or a private window means the app can't start offline. Without cached fonts or sounds, system fonts are used and moves are silent. The user chose to leave the file-on-disk version relying on the browser cache, and to add a service worker once the app is on GitHub Pages (see Publishing on GitHub).
 - **PGN parsing:** use [chessops](https://github.com/niklasf/chessops), the library Lichess itself uses. Its `chessops/pgn` module parses study PGN into a move tree that keeps all variations, and its move logic validates the user's moves.
 - **Font:** Noto Sans from jsDelivr (`@fontsource/noto-sans`), plus Noto Sans Symbols 2 (`@fontsource/noto-sans-symbols-2`) for the chess piece symbols; only the subset containing the symbols is downloaded.
 - **Move statistics:** Lichess Opening Explorer API (`explorer.lichess.org/lichess`), called from the page with the Lichess token.
 - **Sounds:** Lichess's SFX move and capture sounds, served by jsDelivr from the `lichess-org/lila` GitHub repository at a pinned commit.
 - **Board UI:** use [chessground](https://github.com/lichess-org/chessground), Lichess's board library, which pairs with chessops. The user makes moves by dragging or clicking pieces on it. It uses Lichess's default look (brown board, cburnett pieces); no other board or piece styles are offered.
+
+## Publishing on GitHub (planned)
+
+The user plans to publish the app on GitHub Pages (repository `david-s-apps-acct/chess-opening-trainer`); until then, work stays local. What's planned or still to decide:
+
+- **Service worker for offline use** (the user's decision, 26 October 2026): on the GitHub Pages version, a small service worker stores the app and its libraries, fonts and sounds, so it opens and works offline (except Lichess) even with the browser cache cleared, and can be installed like an app. Service workers don't work for a file opened from disk, which keeps relying on the browser cache.
+- **"Log in with Lichess"** (Lichess's OAuth login) as the main way to connect, with no token to copy; Add token stays for the copy opened from disk.
+- Still to decide: whether to rename `trainer.html` to `index.html`; a sample backup so people can try the app before adding their own studies (which studies, and whether backups should include studies); enabling Pages; whether to push after each commit.
 
 ## Possible future improvements
 
