@@ -97,7 +97,7 @@
   .update-status:empty { display: none; }
   #opt-fetch-info:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
-  #options-screen button.primary { flex: none; width: 9.5em; } /* every Options button the same width */
+  #options-screen button.primary, #token-screen button.primary { flex: none; width: 9.5em; } /* every Options (and first-visit) button the same width */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
   .update-status.error { color: var(--bad); }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
@@ -280,7 +280,7 @@
   .chooser-frame > button { align-self: flex-start; }
   .weights h3 { margin: 0; font-size: 14px; }
   .chooser-frame.off { opacity: .45; } /* not used when playing the reversed sides */
-  [data-tip] { cursor: help; } /* explained on hover (see quickTip) */
+  .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
   .weight-rows output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -345,12 +345,13 @@
       <h2>Connect to Lichess</h2>
       <p>This app reads your Lichess studies, including private ones, using a personal API token.</p>
       <ol>
-        <li><a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token on Lichess</a> with the <b>Read private studies</b> (<code>study:read</code>) scope.</li>
-        <li>Paste it below. Your browser remembers it, so you only do this once.</li>
+        <li><b>Create token</b> on Lichess, with the <b>Read private studies</b> (<code>study:read</code>) scope.</li>
+        <li>Paste it next to <b>Save token</b>, and save it. Your browser remembers it, so you only do this once.</li>
       </ol>
+      <div class="actions"><button class="primary token-create" title="Opens Lichess in a new tab, with the access this app needs">Create token</button></div>
       <form id="token-form" class="token-row">
+        <button class="primary" type="submit">Save token</button>
         <input id="token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
-        <button class="primary" type="submit">Save</button>
       </form>
       <div id="token-error" class="form-error"></div>
     </div>
@@ -359,7 +360,7 @@
   <!-- Choose chapters -->
   <section id="studies-screen" class="hidden">
     <div class="selection-bar">
-      <label for="preset-select">Presets:</label>
+      <label for="preset-select">Presets</label>
       <select id="preset-select" title="Tick exactly the chapters of a preset"></select>
       <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
@@ -375,7 +376,7 @@
           <button id="preset-rename-btn" class="small" title="Change the chosen preset's name">Rename</button>
           <button id="preset-delete-btn" class="small" title="Delete the chosen preset (the ticks stay as they are)">Delete</button>
         </div>
-        <button id="preset-edit-close" class="icon-btn" aria-label="Close" title="Close">×</button>
+        <button id="preset-edit-close" class="icon-btn" aria-label="Close" title="Close (Esc)">×</button>
       </div>
       <form id="preset-name-form" class="preset-name-form hidden">
         <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
@@ -426,7 +427,7 @@
         <div id="practice-status" class="status"></div>
         <div id="practice-chooser" class="practice-chooser hidden">
           <div class="chooser-frame">
-            <div class="kind-switch" role="group" aria-label="What to practise">
+            <div class="kind-switch" role="group" aria-label="What to practice">
               <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, each played from move 1 to the end">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="Single positions: one of your moves at a time">Positions</button>
             </div>
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
@@ -445,7 +446,7 @@
           <button id="next-btn" class="primary hidden">Next line</button>
           <button id="hint-btn" class="hidden">Hint</button>
           <button id="skip-btn" class="hidden" title="Go on to the next one. The moves you've answered count; this one isn't counted as played through.">Skip</button>
-          <button id="end-practice-btn" class="end-practice hidden" title="Stop practising and choose what to practise next. In a line you're in the middle of, the moves you've answered still count.">End practice</button>
+          <button id="end-practice-btn" class="end-practice hidden" title="Stop practicing and choose what to practice next. In a line you're in the middle of, the moves you've answered still count.">End practice</button>
         </div>
       </div>
     </div>
@@ -506,10 +507,10 @@
           <li>Only the study's main-line move counts as correct. You can keep trying as long as you like.</li>
           <li>Every error gets a message, one fact per line. The first says what the move is: "Not your preferred move"; for one of your study's alternative moves, "Alternative move, not your preferred move"; or, for one your study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from your study, e.g. "Your study answers 4… ♘xe4". The next says how masters rate it: "#3 masters move (played 1.2k times)" (a masters move, see Your statistics) or "Not a masters move". The last says how often Lichess games play it: "#4 Lichess move (played 23k times)", or "Not played in Lichess games". A line is in red when it's bad news: "Not your preferred move" (unless it's a masters move), "Not a masters move", and a Lichess move outside the top 3 or not played at all; every line is red for a move your study marks ?!, ? or ??. A line is left out until its statistics have downloaded. Alternatives and masters moves cost less than other errors (see Your statistics). After 3 seconds the message fades and the status says whose move it is, with where you are in the line, e.g. "Your move (3 of 5 in line)".</li>
           <li><b>Hint</b>: circles the piece to move. The button then becomes <b>Show correct move</b>, which draws an arrow for the right move; you then play it yourself. Each costs the hint's penalty (by default 100%, so the move accuracy is 0% this time).</li>
-          <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practising. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
+          <li><b>Skip</b> goes straight on to the next line or position; <b>End practice</b> stops practicing. Either way, the moves you've answered count as usual, and the move you're on counts only if you'd already tried a move or used Hint on it; a line you skip doesn't count as played through.</li>
           <li>The study's glyphs (such as <b>!</b>) appear in the move list; hover over a glyph to see its name (e.g. Good move). A move with a study comment gets a small speech bubble: hover over it (or tap it) to read the comment. Bubbles are blue so they stand out, and a new one pops when it appears, so you don't miss it. The heading above the moves shows the study and chapter (with the chapter's introductory comment as a bubble), then the position reached, named by its opening and the moves since, which updates as you play. After a wrong move, <b>Hint</b> also shows what your study says about that move.</li>
           <li>Click a move in the move list, or use ◀ ▶ or the arrow keys, to look back at earlier positions. Hovering over any move already played shows the small board with its Lichess share and, for your moves, how you did on it this time.</li>
-          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a solid green arrow for the right move and a pale arrow for each error: blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; the errors are listed in the same colours; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue. A single position works the same way: once you've found the move, press <b>Next position</b> (or Enter).</li>
+          <li>A move you lose points on gets a violet background in the move list as soon as you've played it. When a line ends, the status says "Line complete.", then how it went, e.g. "3 of 6 moves correct" or "No errors." (a move is correct when you found it first time without a hint; hover over a violet-highlighted move to see what went wrong there) and "77% line accuracy" (the average move accuracy of your moves in the line). Hover over any move in the move list to see how many times the position was reached ("Position reached 23k times"), the move's share of all Lichess games and of master games and, for your moves, how you did this time (e.g. "80% move accuracy", then what you tried before the right move, such as "Errors: exd5, a3 (alternative), b3 (masters), hint", with a solid green arrow for the right move and a pale arrow for each error: blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; the errors are listed in the same colors; "(alternative)" and "(masters)" mark the alternatives and masters moves, which by default cost less than errors). A <b>Line complete</b> panel also appears over the board for a few seconds, with the same summary and a Next line button; once the line is over, touching the board reminds you to press Next line. Press <b>Next line</b> (or Enter) to continue. A single position works the same way: once you've found the move, press <b>Next position</b> (or Enter).</li>
         </ul>
       </div>
 
@@ -555,7 +556,7 @@
             <li><b>Studies page</b>: each study and chapter shows the average move accuracy of the moves you've tried in it, e.g. "82%" (hover over it for an explanation), highlighted the same way. Nothing is shown until you've tried a move there.</li>
             <li><b>End of a line</b>: in the move list, the moves that lost points this time get a violet background; hover over one to see its points and the wrong moves you played.</li>
             <li><b>A chapter's move tree</b> (click the ▸ next to a chapter on the Studies page): every move of the chapter, with yours highlighted by move accuracy.</li>
-            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colours), and above it the move, its rank and share among Lichess games and master games, e.g. "#2 Lichess move (27%)" and "#1 masters move (90%)" (once the statistics have downloaded), and "Position reached 23k times", the same as in the practice move list; then e.g. "75% move accuracy (last 10 tries)", "Last tested 3 days ago" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
+            <li><b>Small board</b>: in a chapter's move tree, and in the practice move list once a line is over, hover over (or tap) any move. For your moves it shows the position you had to answer, with a solid green arrow for the correct move, and a pale arrow for each error you've played in the last 10 tries (blue for alternatives and masters moves, amber for alternatives your study marks ?!, ? or ??, red for any other error; listed in the same colors), and above it the move, its rank and share among Lichess games and master games, e.g. "#2 Lichess move (27%)" and "#1 masters move (90%)" (once the statistics have downloaded), and "Position reached 23k times", the same as in the practice move list; then e.g. "75% move accuracy (last 10 tries)", "Last tested 3 days ago" and "Errors: ♗c4 ×2, d3". For the opponent's moves it shows the position after the move, with the move as a white arrow, or an amber arrow if your study marks it ?!, ? or ??.</li>
           </ul>
         </details>
         <details>
@@ -581,7 +582,7 @@
         <h2>How practice is chosen</h2>
         <ul>
           <li>Practice uses spaced repetition: before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, new ones, weak ones and ones you haven't tested for a while come up more, and across all of these, frequent ones (reached most often in Lichess games) come up most.</li>
-          <li><b>Spaced repetition focus</b> has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practises almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset</b> puts all four back to 50%. Hover over a slider's name to see what it means.</li>
+          <li><b>Spaced repetition focus</b> has four sliders, shared by lines and positions: <b>Frequency</b>, <b>Accuracy</b> (low accuracy), <b>Last played</b> (not tested for a while) and <b>Untried</b>. Each sets how strongly it counts: <b>0%</b> ignores it, <b>50%</b> (the default) is the usual balance described below, and <b>100%</b> makes it dominate, so the ones highest in it take almost every pick. For example, Frequency and Accuracy at 100% and the others at 0% practices almost only common positions you often get wrong. <b>Untried</b> at 0% leaves out the ones you haven't tried, and at 100% gives them every pick until none is left. <b>Reset</b> puts all four back to 50%. Hover over a slider's name to see what it means.</li>
           <li>The same line or position is never given twice in a row when there's another to choose.</li>
         </ul>
         <details>
@@ -609,7 +610,7 @@
           <p><b>The pick.</b> Priorities are worked out afresh before every pick, so as soon as you answer one, its priority changes. The pick is random but weighted: the order is never predictable, and low-priority ones still come up now and then. The same one is never given twice in a row when there's another to choose.</p>
           <p><b>Worth knowing:</b></p>
           <ul>
-            <li>Tries from before each try got its own time count as "last tested unknown", so they're treated as fully due; this fades as you practise.</li>
+            <li>Tries from before each try got its own time count as "last tested unknown", so they're treated as fully due; this fades as you practice.</li>
             <li>New ones are favoured: with many you haven't tried, they'll fill early sessions, since 6 is more than most tried ones' need.</li>
             <li>Lines and positions are chosen separately: a position you've just answered in a line can still come up soon under Positions, since only that move's last-tried time changed.</li>
           </ul>
@@ -667,7 +668,7 @@
 
       <div class="card">
         <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Paste a new token to replace the stored one.">Lichess token</span></h2>
-        <div class="actions"><button id="token-create-btn" class="primary">Create token</button></div>
+        <div class="actions"><button class="primary token-create" title="Opens Lichess in a new tab, with the access this app needs">Create token</button></div>
         <form id="opt-token-form" class="token-row">
           <button class="primary" type="submit">Save token</button>
           <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
@@ -925,6 +926,7 @@ document.addEventListener('mousemove', e => { if (lastClick && Math.hypot(e.clie
 
 function quickTip(el, text, delay = 0) {
   if (!text) return el;
+  el.classList.add('tip'); // the help cursor
   el.addEventListener('mouseenter', () => {
     clearTimeout(quickTipTimer);
     if (lastClick) return;
@@ -1450,8 +1452,10 @@ function scoreElement({ lines, tried, score }) {
 
 // "· 5 lines" after a chapter's name.
 // Clicking the number of lines (when the chapter has variations) shows or hides all of them.
-function chapterCounts(nLines, toggleVariations) {
-  return element('span', { class: 'muted' }, ' · ', toggleVariations ? opener(plural(nLines, 'line'), toggleVariations) : plural(nLines, 'line'));
+function chapterCounts(nLines, toggleVariations, variationsOpen) {
+  const lines = toggleVariations ? opener(plural(nLines, 'line'), toggleVariations) : plural(nLines, 'line');
+  if (toggleVariations) lines.title = variationsOpen ? 'Hide all variations' : 'Show all variations';
+  return element('span', { class: 'muted' }, ' · ', lines);
 }
 
 function renderStudies() {
@@ -1536,7 +1540,7 @@ function chapterRow(ch, studyHidden) {
     // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
-      lines.length ? chapterCounts(lines.length, branches.length ? toggleVariations : null) : null),
+      lines.length ? chapterCounts(lines.length, branches.length ? toggleVariations : null, allOpen) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
     scoreElement(averageScore([ch])));
 }
@@ -2074,7 +2078,7 @@ function practicable(kind, reversed = reversedSides()) {
   const chances = chancesOf(all, reversed);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
-  return { items, note: !all.length ? `No ${noun}s to practise: tick chapters on the Studies page.`
+  return { items, note: !all.length ? `No ${noun}s to practice: tick chapters on the Studies page.`
     : !items.length ? `Every ${noun} is untried, and Untried is at 0%.` : '' };
 }
 
@@ -2426,6 +2430,7 @@ function hideLineButtons() { $('hint-btn').classList.add('hidden'); $('skip-btn'
 function showNextButton(label) {
   const b = $('next-btn');
   b.textContent = label;
+  b.title = `${label} (Enter)`;
   b.classList.remove('hidden');
   b.focus();
 }
@@ -3058,7 +3063,7 @@ $('opt-token-form').addEventListener('submit', async e => {
 });
 
 // Creating a token on Lichess, with the scope the app needs, in a new tab.
-$('token-create-btn').addEventListener('click', () => window.open('https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer', '_blank', 'noopener'));
+for (const btn of document.querySelectorAll('.token-create')) btn.addEventListener('click', () => window.open('https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer', '_blank', 'noopener'));
 
 $('token-clear-btn').addEventListener('click', () => {
   token = null;
