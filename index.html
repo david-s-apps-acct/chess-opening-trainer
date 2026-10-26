@@ -2936,9 +2936,11 @@ async function downloadExplorerPositions(kind, run) {
   // status line under it is only for problems.
   status('');
   if (currentScreen === 'options') updateStatisticsInfo();
+  let fetched = 0;
   for (let i = 0; i < todo.length; ) {
     if (explorerDownloads[kind] !== run) return; // a newer download took over
     const [epd, position] = todo[i];
+    if (saved(epd)) { i++; continue; } // arrived meanwhile, e.g. from a restored backup
     // Skip positions nobody reaches: every known way here is a move no game in this database played.
     // (A different move order could still reach it, so this is a close approximation.)
     if (position.parents.length && position.parents.every(parent => saved(parent.epd) && !(gamesWith(saved(parent.epd), parent.san) > 0))) {
@@ -2966,13 +2968,15 @@ async function downloadExplorerPositions(kind, run) {
     }
     if (res.ok) {
       setPositionData(epd, kind, explorer.keep(await res.json(), position));
+      fetched++;
     }
     i++;
     if (currentScreen === 'options') updateStatisticsInfo();
   }
   if (explorerDownloads[kind] !== run) return;
-  // Only once every position has these statistics (a request Lichess refused leaves a gap).
-  if (todo.every(([epd]) => saved(epd))) suggestBackup(explorer.Label);
+  // Only once every position has these statistics (a request Lichess refused leaves a gap), and only
+  // if this download fetched any (not when a restored backup brought them all).
+  if (fetched && todo.every(([epd]) => saved(epd))) suggestBackup(explorer.Label);
 }
 
 // The Options page's "Move statistics: 3 of 10 positions (downloading…)" and "Masters statistics: …" lines.

@@ -55,7 +55,9 @@ export const app = {
   startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
-  onYourMove, renderOptions,
+  onYourMove, renderOptions, downloadExplorer, allStudyPositions,
+  setToken(t) { token = t; },
+  get moveStats() { return moveStats; },
   get library() { return library; },
 };`;
 
@@ -252,6 +254,21 @@ async function runTrial(app) {
   app.setLibrary(structuredClone(LIBRARY));
   app.renderOptions();
   check('own studies: the account again', $('opt-fetch-info').textContent, 'Lichess account: tester');
+
+  // A download skips positions whose statistics arrive meanwhile (e.g. from a restored backup).
+  app.setMoveStats({});
+  app.setToken('lip_test');
+  const epds = [...app.allStudyPositions().keys()];
+  let requests = 0;
+  window.fetch = async () => {
+    requests++;
+    for (const epd of epds) app.moveStats[epd] ||= { lichess: explorer([['e4', 1]]) }; // the "restore"
+    return new Response(JSON.stringify(explorer([['e4', 1]])), { status: 200 });
+  };
+  await app.downloadExplorer('lichess');
+  window.fetch = isolated;
+  app.setToken(null);
+  check('download: positions restored meanwhile are skipped', [requests, epds.every(epd => app.moveStats[epd]?.lichess)], [1, true]);
 }
 
 // ---------- Practice: whole lines played through the app ----------
