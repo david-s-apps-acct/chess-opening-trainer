@@ -37,6 +37,7 @@
     --text: #bababa;
     --text-strong: #dddddd;
     --muted: #8b8985;
+    --faint: #6b6965; /* fainter than --muted */
     --border: #3d3a36;
     --accent: #3692e7;
     --accent-text: #ffffff;
@@ -90,6 +91,7 @@
   .card h2 { margin-top: 0; font-size: 18px; }
   .token-row { display: flex; gap: 8px; margin-top: 12px; }
   .token-row input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+  .token-row input::placeholder { color: var(--faint); }
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
@@ -140,7 +142,7 @@
   .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
   .selection-bar label { font-weight: 600; }
   .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
-  .selection-bar select.changed { color: #6b6965; } /* fainter than --muted: the ticks differ from the chosen preset, or "None chosen" */
+  .selection-bar select.changed { color: var(--faint); } /* the ticks differ from the chosen preset, or "None chosen" */
   .selection-bar select option { color: var(--text); }
   .selection-bar #sel-summary { margin-left: auto; }
   #preset-edit-btn[aria-expanded=true] { color: var(--text-strong); }
@@ -667,16 +669,14 @@
 
       <div class="card">
         <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Paste a new token to replace the stored one.">Lichess token</span></h2>
+        <div class="actions"><button id="token-create-btn" class="primary">Create token</button></div>
         <form id="opt-token-form" class="token-row">
           <button class="primary" type="submit">Save token</button>
-          <input id="opt-token-input" type="password" placeholder="New token (lip_…)" autocomplete="off" spellcheck="false">
+          <input id="opt-token-input" type="password" placeholder="lip_…" autocomplete="off" spellcheck="false">
         </form>
         <p id="opt-token-state" class="muted after-actions"></p>
         <div id="opt-token-error" class="form-error"></div>
-        <div class="actions">
-          <button id="token-clear-btn" class="primary">Clear token</button>
-          <button id="token-create-btn" class="primary">Create a token</button>
-        </div>
+        <div class="actions"><button id="token-clear-btn" class="primary">Clear token</button></div>
       </div>
 
       <div class="card">
@@ -1105,6 +1105,7 @@ async function checkAndSaveToken(value, errorEl) {
   errorEl.textContent = '';
   token = tok;
   store.set('token', token);
+  store.set('tokenSavedAt', Date.now()); // shown on the Options page
   return true;
 }
 
@@ -3029,10 +3030,11 @@ function renderOptions() {
   $('opt-fetch-info').textContent = library ? `Lichess account: ${library.username}` : '';
   $('opt-fetched').textContent = library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched yet.';
   const lastBackup = store.get('lastBackup', null);
-  $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved yet.';
+  $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
   updateSoundButton();
   updateStatisticsInfo();
-  $('opt-token-state').textContent = token ? 'Token stored.' : 'No token stored.';
+  const tokenSavedAt = store.get('tokenSavedAt', null);
+  $('opt-token-state').textContent = !token ? 'No token stored.' : tokenSavedAt ? `Token stored ${onDateAtTime(tokenSavedAt)}` : 'Token stored.';
   $('opt-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
 }
@@ -3063,6 +3065,7 @@ $('token-create-btn').addEventListener('click', () => window.open('https://liche
 $('token-clear-btn').addEventListener('click', () => {
   token = null;
   store.remove('token');
+  store.remove('tokenSavedAt');
   renderOptions();
   showBanner('Token cleared.');
 });
