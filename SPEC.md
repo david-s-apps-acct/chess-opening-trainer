@@ -511,7 +511,7 @@ A separate Options page, opened from the "Options" button in the header. (It was
   - **The four sliders' definitions:** Frequency "How often the position is reached on Lichess (for a line, its final position). Higher: common ones come up more."; Accuracy "Move accuracy (line accuracy for a line). Higher: weak ones come up more."; Last played "Time since last tested, against how long you should remember it. Higher: overdue ones come up more."; Untried "Not tried yet. 0%: never; 100%: first, until none is left."
   - **The Options page's hover explanations**, each a sentence or two; the detail is in Help's Options and backups section.
   - **Messages:** "Lichess rejected the token. Add a new one on the Options page."; "Lichess is limiting requests. Try again in a minute."; "Lichess rejected this token. Check it's complete and has the study:read scope."; Restore's prompt and "Backup restored: history for N moves, and settings."; "This backup is from an earlier version and can't be restored."
-- *Claude's choices, for the user to accept or reject:* the wording of each; status messages during practice ("Hint: move the circled piece.", "The move is 1. e4. Play it on the board.", "Opponent to move…") were already short and are unchanged.
+- *Claude's choices, accepted by the user:* the wording of each; status messages during practice ("Hint: move the circled piece.", "The move is 1. e4. Play it on the board.", "Opponent to move…") were already short and are unchanged.
 
 ### Second consistency pass (26 October 2026)
 
