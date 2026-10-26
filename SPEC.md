@@ -475,7 +475,7 @@ A separate Options page, opened from the "Options" button in the header. (It was
   - **Lichess token:** "Token stored.", the box and Save token, Clear token and Create a token.
   - **Backup:** Save backup, Restore backup, "Last backup saved on …".
 - **The explanations:** each tile's heading, and each penalty's name, shows its explanation on hover (the app's usual pop-up, with the help cursor), the same way as "Spaced repetition focus". The Help page's "Options and backups" section now covers each tile in full.
-- *Claude's choices, for the user to accept or reject:*
+- *Claude's choices, accepted by the user:*
   - The hover-overs are on the headings (and the penalty names), not on the buttons; the wording is shortened from the old paragraphs.
   - Shorter messages: "Token stored." / "No token stored."; "Token cleared." (it also used to say the studies stay and updating needs a new token; that's now in Help); "Backup saved as … in your download folder." (Safari's setting for choosing the folder moved to Help); the backup suggestion "Move statistics downloaded. Save a backup?"; the download problems above.
   - The separate download progress line and the finished message ("… downloaded for 1344 positions (380 skipped …)") are gone; the count line shows the progress, and Help says positions no game reaches are skipped.
