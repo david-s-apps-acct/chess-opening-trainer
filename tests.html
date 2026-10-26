@@ -55,7 +55,8 @@ export const app = {
   startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
-  onYourMove,
+  onYourMove, renderOptions,
+  get library() { return library; },
 };`;
 
 async function loadApp() {
@@ -227,6 +228,30 @@ function run(app) {
       else for (const part of Object.keys(v)) check(`snapshot: ${k} ${part}`, snap[k][part], v[part]);
     }
   }
+}
+
+// ---------- Sample studies ("Try sample studies") ----------
+
+async function runTrial(app) {
+  const $ = id => document.getElementById(id);
+  app.setLibrary(null);
+  app.setSelection([]);
+  app.setMoveStats({});
+  // trial.json, as the published file would answer (the test library and one position's statistics).
+  const isolated = window.fetch;
+  window.fetch = async url => String(url).endsWith('trial.json')
+    ? new Response(JSON.stringify({ app: 'chess-opening-trainer', kind: 'trial', library: structuredClone(LIBRARY), moveStats: structuredClone(POSITIONS) }))
+    : isolated(url);
+  $('trial-btn').click();
+  await until(() => app.library, 'the sample studies');
+  window.fetch = isolated;
+  await wait(50);
+  check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length, $('trial-offer').classList.contains('hidden')], [true, 2, false]);
+  app.renderOptions();
+  check('sample studies: the Options page says so (no account, no fetched line)', [$('opt-fetch-info').textContent, $('opt-fetched').textContent], ['Sample studies', '']);
+  app.setLibrary(structuredClone(LIBRARY));
+  app.renderOptions();
+  check('own studies: the account again', $('opt-fetch-info').textContent, 'Lichess account: tester');
 }
 
 // ---------- Practice: whole lines played through the app ----------
@@ -566,6 +591,7 @@ try {
   runPositions(app);
   await runPractice(app);
   runPresets(app);
+  await runTrial(app);
 } catch (e) {
   results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
 }

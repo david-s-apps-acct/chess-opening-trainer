@@ -95,9 +95,9 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
-  #opt-fetch-info:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty { display: none; }
+  #opt-fetch-info:empty, #opt-fetched:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
-  #options-screen button.primary, #token-screen button.primary { flex: none; width: 9.5em; } /* every Options (and first-visit) button the same width */
+  #options-screen button.primary, #token-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options (and first-visit) button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
   .update-status.error { color: var(--bad); }
   select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
@@ -354,6 +354,11 @@
         <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
       </form>
       <div id="token-error" class="form-error"></div>
+      <div id="trial-offer">
+        <p class="muted">Or try the app with sample studies (Ruy Lopez and Queen's Gambit Declined), no account needed.</p>
+        <div class="actions"><button id="trial-btn" class="primary">Try sample studies</button></div>
+        <div id="trial-error" class="form-error"></div>
+      </div>
     </div>
   </section>
 
@@ -476,6 +481,7 @@
           <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile.</p>
+        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Add a token later and your own studies replace them.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -771,7 +777,8 @@ async function saveMoveStats(epds = Object.keys(moveStats)) {
 // ---------- State ----------
 
 let token = store.get('token', null);
-let library = null; // the studies fetched from Lichess: { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
+let library = null; // the studies fetched from Lichess: { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] },
+                    // or the sample studies, marked trial: true (see Sample studies)
 let selection = new Set(store.get('selection', [])); // the ticked chapters' keys, "studyId/chapterId"
 // Presets: saved chapter selections, [{ name, chapters: [chapter keys] }], and the name of the one
 // chosen in the drop-down.
@@ -1113,6 +1120,39 @@ async function checkAndSaveToken(value, errorEl) {
   store.set('tokenSavedAt', Date.now()); // shown on the Options page
   return true;
 }
+
+// ---------- Sample studies ----------
+// "Try sample studies" on the first-visit screen loads trial.json, published with the app: two
+// studies and their move statistics ({ library, moveStats }, as stored by the app), so the app can be
+// tried without a Lichess account. Its library is marked trial: true, which the Options page shows.
+// Adding a token then fetches the user's own studies, which replace it (and the clean-up after
+// fetching drops the sample's stats). A page opened from disk can't read trial.json, so the offer is
+// hidden there.
+const isTrial = () => !!library?.trial;
+if (location.protocol === 'file:') $('trial-offer').classList.add('hidden');
+
+$('trial-btn').addEventListener('click', async () => {
+  $('trial-btn').disabled = true;
+  $('trial-error').textContent = '';
+  try {
+    const res = await fetch('trial.json');
+    if (!res.ok) throw new Error(`the sample studies couldn't be loaded (${res.status})`);
+    const trial = await res.json();
+    library = { ...trial.library, trial: true };
+    await saveLibrary();
+    for (const [epd, stats] of Object.entries(trial.moveStats)) moveStats[epd] ||= stats;
+    await saveMoveStats(Object.keys(trial.moveStats));
+    forgetParsedChapters();
+    selection = new Set(allChapters().map(c => c.key)); // every chapter ticked, ready to practice
+    saveSelection();
+    rescoreHistory();
+    showStudies();
+  } catch (e) {
+    $('trial-error').textContent = errorText(e);
+  } finally {
+    $('trial-btn').disabled = false;
+  }
+});
 
 // ---------- Chapters and lines ----------
 
@@ -3016,8 +3056,8 @@ function renderPenalties() {
 
 function renderOptions() {
   renderPenalties();
-  $('opt-fetch-info').textContent = library ? `Lichess account: ${library.username}` : '';
-  $('opt-fetched').textContent = library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
+  $('opt-fetch-info').textContent = isTrial() ? 'Sample studies' : library ? `Lichess account: ${library.username}` : '';
+  $('opt-fetched').textContent = isTrial() ? '' : library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
   const lastBackup = store.get('lastBackup', null);
   $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
   updateStatisticsInfo();
@@ -3065,7 +3105,7 @@ for (const btn of document.querySelectorAll('.token-add')) btn.addEventListener(
 setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies()); // first visit: fetch straight away
 setUpTokenBox($('opt-token-form'), $('opt-token-error'), () => {
   renderOptions();
-  if (!library) fetchStudies();
+  if (!library || isTrial()) fetchStudies(); // your own studies, replacing the sample ones
   else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
 });
 

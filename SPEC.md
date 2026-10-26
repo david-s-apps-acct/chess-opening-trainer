@@ -586,7 +586,13 @@ The app is published on GitHub Pages (repository `david-s-apps-acct/chess-openin
 - **Trial database** (the user's decisions, 26 October 2026): `trial.json` holds the user's **Ruy Lopez** and **Queen's Gambit Declined** studies (10 chapters, 41 lines) and the Lichess and masters move statistics for all 366 of their positions, but none of the user's accuracy statistics, history, settings, presets or token. Its shape: `{ app: 'chess-opening-trainer', kind: 'trial', createdAt, library, moveStats }`, with `library` and `moveStats` as stored by the app. About 700 KB.
   - **How it was made:** the studies were downloaded from Lichess (Share → Download), which leaves out the `[Orientation]` tag, so each chapter's side was added: Black for both Queen's Gambit Declined chapters (confirmed by Lichess's own export of that public study) and for the Ruy Lopez Marshall Attack, Exchange Variation and Center Attack; White for Main Line (Chigorin), Berlin Defense, Archangel, Jaenisch gambit and Bird's defense (worked out from the user's history: every recorded move in each chapter is on that side). The statistics come from the user's backup of 26 October 2026; every position had both. The app's own code worked out the positions and checked the finished file.
   - The studies' moves and comments become public with the repository.
-  - Still to design: the "Try it" button on the first-visit screen, and what happens when a trial user adds their own token.
+- **Try sample studies** (the user's design, 26 October 2026):
+  - On the first-visit screen, under Add token: "Or try the app with sample studies (Ruy Lopez and Queen's Gambit Declined), no account needed." and a **Try sample studies** button (the user's label). Hidden when the app is opened from disk, which can't read `trial.json`.
+  - It loads `trial.json`: the studies become the library, marked `trial: true`; their statistics are added to any already stored; every chapter is ticked; the Studies page opens. No token is needed and nothing is downloaded.
+  - Everything then works as usual (practice, accuracy, presets, backups). The sample is marked only on the Options page (the user's decision): "Sample studies" in place of "Lichess account: …", and no "Fetched …" line. Update studies asks for a token, as it does without one.
+  - Adding a token (Options) fetches the user's own studies, which replace the sample; the usual clean-up after fetching drops the sample's stats.
+  - Help's Getting started has a line about it.
+  - *Claude's choices, for the user to accept or reject:* if loading fails, the message appears under the button; the first-visit and Options buttons all widened from 9.5em to 11em, so "Try sample studies" fits on one line and they stay the same width.
 - Still to decide: whether to push after each commit.
 
 ## Possible future improvements
