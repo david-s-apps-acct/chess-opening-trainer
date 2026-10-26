@@ -651,9 +651,9 @@
 
       <div class="card">
         <h2><span data-tip="Update studies downloads all your Lichess studies again, private ones included, so changes made on Lichess appear here. Your statistics are kept, except for moves no longer in your studies.">Lichess studies</span></h2>
-        <p id="opt-fetch-info" class="muted"></p>
         <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
-        <p id="opt-fetched" class="muted after-actions"></p>
+        <p id="opt-fetch-info" class="muted after-actions"></p>
+        <p id="opt-fetched" class="muted"></p>
         <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
       </div>
 
@@ -667,23 +667,23 @@
 
       <div class="card">
         <h2><span data-tip="The app reads your studies with a Lichess personal API token, which needs the Read private studies (study:read) scope. Paste a new token to replace the stored one.">Lichess token</span></h2>
-        <p id="opt-token-state" class="muted"></p>
         <form id="opt-token-form" class="token-row">
-          <input id="opt-token-input" type="password" placeholder="New token (lip_…)" autocomplete="off" spellcheck="false">
           <button class="primary" type="submit">Save token</button>
+          <input id="opt-token-input" type="password" placeholder="New token (lip_…)" autocomplete="off" spellcheck="false">
         </form>
+        <p id="opt-token-state" class="muted after-actions"></p>
         <div id="opt-token-error" class="form-error"></div>
         <div class="actions">
-          <button id="token-clear-btn">Clear token</button>
-          <a href="https://lichess.org/account/oauth/token/create?scopes[]=study:read&amp;description=Opening+Trainer" target="_blank" rel="noopener">Create a token</a>
+          <button id="token-clear-btn" class="primary">Clear token</button>
+          <button id="token-create-btn" class="primary">Create a token</button>
         </div>
       </div>
 
       <div class="card">
         <h2><span data-tip="Your stats, settings and downloaded Lichess data are stored only in this browser. A backup file keeps them safe or moves them to another browser. Restoring replaces your stats and settings and merges the Lichess data with what's here. Backups never include your token.">Backup</span></h2>
         <div class="actions">
-          <button id="backup-btn">Save backup</button>
-          <button id="restore-btn">Restore backup</button>
+          <button id="backup-btn" class="primary">Save backup</button>
+          <button id="restore-btn" class="primary">Restore backup</button>
           <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
         </div>
         <p id="opt-backup-info" class="muted after-actions"></p>
@@ -3056,6 +3056,9 @@ $('opt-token-form').addEventListener('submit', async e => {
     else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
   }
 });
+
+// Creating a token on Lichess, with the scope the app needs, in a new tab.
+$('token-create-btn').addEventListener('click', () => window.open('https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer', '_blank', 'noopener'));
 
 $('token-clear-btn').addEventListener('click', () => {
   token = null;
