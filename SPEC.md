@@ -576,6 +576,12 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 - **Sounds:** Lichess's SFX move and capture sounds, served by jsDelivr from the `lichess-org/lila` GitHub repository at a pinned commit.
 - **Board UI:** use [chessground](https://github.com/lichess-org/chessground), Lichess's board library, which pairs with chessops. The user makes moves by dragging or clicking pieces on it. It uses Lichess's default look (brown board, cburnett pieces); no other board or piece styles are offered.
 
+## Licence and attribution
+
+- **The user's decision (26 October 2026):** the app is licensed under the **GNU AGPL-3.0-or-later** (the licence Lichess uses; compatible with chessground and chessops, GPL-3.0-or-later, and the SFX sounds, AGPL-3.0-or-later), © 2026 David Sharman, with an **additional term under section 7(b)**: copies and modified versions, including ones offered over a network, must keep "Chess Opening Trainer by David Sharman" visible in the Help page, and modified versions must say they've been changed.
+- **Where it's stated:** `LICENSE` (the official AGPL text), `NOTICE.md` (copyright, the licence grant, the attribution term, the sample studies, and the third-party parts with their licences), a comment at the top of `index.html`, and the end of the Help page: "Chess Opening Trainer by David Sharman · © 2026 · Source code under the AGPL-3.0-or-later, with an attribution term (see NOTICE.md). Not affiliated with Lichess.org." followed by the credits.
+- A licence can't stop copying (the libraries' licences require the app to be open source); it requires copies to keep the notices and attribution and to publish their source under the same licence.
+
 ## Publishing on GitHub
 
 The app is published on GitHub Pages (repository `david-s-apps-acct/chess-opening-trainer`). The order agreed on 26 October 2026: basic publishing first, then the trial database, then the service worker and "Log in with Lichess".
