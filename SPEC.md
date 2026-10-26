@@ -256,7 +256,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - The move list, hover boards, sounds, Skip and End practice work as usual.
 - **Choosing lines:** the Spaced repetition focus frame is greyed out while the option is ticked, since there's no accuracy to work with. Lines come up weighted by how often their final position is reached (the same frequency measure as the Frequency slider).
 - *Claude's choices, accepted by the user (before building):* lines are weighted by how often they're reached rather than picked purely at random; with Main lines only, another study reply is shown as a blue "Alternative move" error; the end-of-line summary leaves out line accuracy; the checkbox is remembered between visits, like Main lines only.
-- *Claude's choices, for the user to accept or reject:*
+- *Claude's choices, accepted by the user:*
   - The checkbox's tick is kept when switching to Positions and back.
   - Show lines is disabled while the frame is greyed out (the Test probabilities table is about spaced repetition).
   - In the practice move list, the moves you played get the "your move" hover board (correct move in green, errors as arrows and "Errors: …") without a move accuracy row; the app's moves get the opponent's hover board.
