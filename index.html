@@ -353,7 +353,7 @@
         <h2>Welcome to Chess Opening Trainer</h2>
         <p>Practice the openings in your Lichess studies. The app quizzes you on your moves, remembers which ones you know, and brings back the ones you don't.</p>
         <div class="actions">
-          <button class="primary token-add" title="Opens Lichess to create a token">Connect to Lichess</button>
+          <button id="connect-btn" class="primary" title="Sign in to Lichess and allow the app to read your studies">Connect to Lichess</button>
           <button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button>
         </div>
         <div class="token-box hidden">
@@ -491,7 +491,7 @@
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li><b>Connect to Lichess</b>: Lichess opens in a new tab, ready to create a token that can read your studies. Create it, copy it and paste it into the box. Your studies, private ones included, are then fetched.</li>
+          <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> brings back your stats and the move statistics; otherwise press <b>Start</b>.</li>
           <li><b>Studies</b>: tick the chapters you want to practice.</li>
           <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
@@ -1148,6 +1148,55 @@ async function checkAndSaveToken(value, errorEl) {
   token = tok;
   store.set('token', token);
   store.set('tokenSavedAt', Date.now()); // shown on the Options page
+  return true;
+}
+
+// ---------- Lichess login (OAuth) ----------
+// "Log in with Lichess" (Lichess's OAuth login with PKCE, for apps without a server): Connect to
+// Lichess sends you to Lichess, which asks you to sign in if needed and to allow the app to read your
+// studies, then sends you back here with a code; the app exchanges it for a token (lasting about a
+// year) and fetches your studies. Lichess needs an address to send you back to, so it works only
+// online (GitHub Pages, or a local test server); a page opened from disk pastes a token instead.
+// The code verifier and state wait in sessionStorage while you're on Lichess.
+const OAUTH_CLIENT = 'chess-opening-trainer.david-s-apps-acct.github.io'; // any unique name will do
+const canLogIn = location.protocol !== 'file:';
+const returnAddress = () => location.origin + location.pathname;
+const base64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const randomText = () => base64url(crypto.getRandomValues(new Uint8Array(32)));
+
+async function logInWithLichess() {
+  const verifier = randomText(), state = randomText();
+  try { sessionStorage.setItem('cot.login', JSON.stringify({ verifier, state })); } catch {}
+  location.href = await loginAddress(verifier, state);
+}
+
+// Lichess's login page, asking to read your studies, for this verifier and state.
+async function loginAddress(verifier, state) {
+  const challenge = base64url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+  return `${LICHESS}/oauth?` + new URLSearchParams({ response_type: 'code', client_id: OAUTH_CLIENT, redirect_uri: returnAddress(),
+    code_challenge_method: 'S256', code_challenge: challenge, scope: 'study:read', state });
+}
+
+// Back from Lichess (the address has ?code=… or ?error=…): exchanges the code for a token and saves
+// it. True when you've just logged in; on a failure the welcome screen says what went wrong.
+async function finishLogIn() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has('code') && !params.has('error')) return false;
+  window.history.replaceState(null, '', returnAddress()); // the code isn't left in the address bar (`history` is your practice history)
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem('cot.login')); sessionStorage.removeItem('cot.login'); } catch {}
+  const fail = text => { setUpdateStatus(text, true); return false; };
+  if (params.get('error') === 'access_denied') return fail('Connecting was cancelled on Lichess.');
+  if (params.has('error')) return fail(`Lichess couldn't connect: ${params.get('error_description') || params.get('error')}.`);
+  if (!saved || params.get('state') !== saved.state) return fail("Connecting didn't complete. Please try again.");
+  try {
+    const res = await fetch(`${LICHESS}/api/token`, { method: 'POST', body: new URLSearchParams({ grant_type: 'authorization_code',
+      code: params.get('code'), code_verifier: saved.verifier, redirect_uri: returnAddress(), client_id: OAUTH_CLIENT }) });
+    if (!res.ok) return fail(`Lichess couldn't connect (${res.status}). Please try again.`);
+    token = (await res.json()).access_token;
+  } catch (e) { return fail(errorText(e)); }
+  store.set('token', token);
+  store.set('tokenSavedAt', Date.now());
   return true;
 }
 
@@ -3144,10 +3193,16 @@ function setUpTokenBox(form, errorEl, onSaved) {
   input.addEventListener('paste', () => setTimeout(save)); // once the pasted text is in the box
 }
 
-for (const btn of document.querySelectorAll('.token-add')) btn.addEventListener('click', () => {
+// Lichess's token page in a new tab, and the box beside the button to paste the token into.
+function openTokenPage(btn) {
   window.open(TOKEN_PAGE, '_blank', 'noopener');
   showTokenBox(btn.closest('.card').querySelector('.token-row'));
-});
+}
+for (const btn of document.querySelectorAll('.token-add')) btn.addEventListener('click', () => openTokenPage(btn));
+
+// The welcome screen's Connect to Lichess: "Log in with Lichess" online; from disk, the token page.
+if (!canLogIn) $('connect-btn').title = 'Opens Lichess to create a token';
+$('connect-btn').addEventListener('click', () => canLogIn ? logInWithLichess() : openTokenPage($('connect-btn')));
 
 setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies({ welcome: true })); // first visit: fetch straight away
 
@@ -3313,6 +3368,8 @@ async function init() {
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting
   rescoreHistory(); // attempts scored again with the current rules and data
+  // Back from logging in with Lichess: on to the welcome screen's next step.
+  if (!library && await finishLogIn()) { showScreen('token'); return fetchStudies({ welcome: true }); }
   // Open on the Studies page and resume any missing Lichess downloads.
   if (library) { showStudies(); startDownloads(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }

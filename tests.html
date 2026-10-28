@@ -57,6 +57,8 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies,
   setToken(t) { token = t; },
+  get token() { return token; },
+  loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
   get moveStats() { return moveStats; },
   get library() { return library; },
@@ -280,6 +282,28 @@ async function runTrial(app) {
   $('welcome-start-btn').click();
   check('welcome: Start opens the Studies page and downloads', [!$('studies-screen').classList.contains('hidden'), app.downloading], [true, true]);
   await until(() => !app.downloading, 'the downloads to finish');
+  window.fetch = isolated;
+  app.setToken(null);
+
+  // Log in with Lichess: the address sent to Lichess (PKCE: the RFC 7636 example verifier and its
+  // challenge), then the way back with a code, exchanged for a token.
+  const address = new URL(await app.loginAddress('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk', 'st4te'));
+  check('login: the address sent to Lichess', [address.origin + address.pathname, ...['response_type', 'client_id', 'code_challenge_method', 'code_challenge', 'scope', 'state'].map(k => address.searchParams.get(k)),
+    address.searchParams.get('redirect_uri') === location.origin + location.pathname],
+    ['https://lichess.org/oauth', 'code', 'chess-opening-trainer.david-s-apps-acct.github.io', 'S256', 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM', 'study:read', 'st4te', true]);
+  let sent = null;
+  window.fetch = async (url, init) => { sent = [String(url), Object.fromEntries(init.body)]; return new Response(JSON.stringify({ token_type: 'Bearer', access_token: 'lio_new', expires_in: 31536000 })); };
+  sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
+  history.replaceState(null, '', location.pathname + '?code=liu_code&state=st4te');
+  const loggedIn = await app.finishLogIn();
+  check('login: back from Lichess, the code exchanged for a token', [loggedIn, app.token, sent[0], sent[1].code, sent[1].code_verifier, location.search, sessionStorage.getItem('cot.login')],
+    [true, 'lio_new', 'https://lichess.org/api/token', 'liu_code', 'v3rifier', '', null]);
+  sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
+  history.replaceState(null, '', location.pathname + '?error=access_denied&state=st4te');
+  check('login: cancelled on Lichess', [await app.finishLogIn(), $('welcome-status').textContent], [false, 'Connecting was cancelled on Lichess.']);
+  sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
+  history.replaceState(null, '', location.pathname + '?code=liu_code&state=other');
+  check('login: a state that doesn\'t match is refused', await app.finishLogIn(), false);
   window.fetch = isolated;
   app.setToken(null);
 
