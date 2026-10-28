@@ -499,7 +499,7 @@
           <li><b>Studies</b>: tick the chapters you want to practice.</li>
           <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
         </ol>
-        <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile.</p>
+        <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Press <b>Connect to Lichess</b> at the top later, and your own studies replace them.</p>
         <details>
           <summary>Words used in the app</summary>
@@ -3380,6 +3380,8 @@ $('nav-help').addEventListener('click', () => {
 // ---------- Start ----------
 
 async function init() {
+  // Online, the service worker (sw.js) keeps the app working offline; a page opened from disk can't have one.
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered', e));
   try {
     library = await loadLibrary();
     moveStats = await loadMoveStats();

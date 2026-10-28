@@ -14,7 +14,7 @@ Building. The app is `index.html`; keep it in line with SPEC.md.
 
 - **Licence:** AGPL-3.0-or-later with a section 7(b) attribution term (`LICENSE`, `NOTICE.md`). Keep "Chess Opening Trainer by David Sharman" in the Help page, and add any new third-party part, with its licence, to `NOTICE.md` and the Help credits.
 - **Writing for the user (the user's guideline):** assume users are intelligent and experienced at chess. Use as few words as possible on screen: brief labels, messages and hover hints, never long explanations. Longer explanations go on the Help page.
-- The whole app is a single HTML file, opened directly from disk (`file://`). No server, no build step, no npm.
+- The whole app is a single HTML file, `index.html`, opened from disk (`file://`) or from GitHub Pages. No server, no build step, no npm. Online, `sw.js` (the service worker) keeps it working offline: when a library, font or sound URL changes, update its file list and bump its `VERSION`.
 - Libraries load from the jsDelivr CDN via ES module imports:
   - chessops for PGN parsing and move validation
   - chessground for the board
