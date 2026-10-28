@@ -273,6 +273,11 @@ The last selection is remembered between visits (stored in the browser, like the
 - *Claude's choices, accepted by the user:* it sits at the right-hand end of the buttons, apart from Hint and Skip; it ends straight away, without asking. (It was first also proposed that a line in the middle of being played wouldn't be counted at all.)
 - **A line stopped part way with End practice still records its moves** (the user's decision): each of the user's moves answered so far gets its attempt, correct or not, with its last-tried time, as in a finished line. It isn't a play-through (no line time). *Claude's choices, accepted by the user:* the move the user is on counts only if they'd already tried a move or used Hint on it, the same rule as Skip; the same applies to a single position stopped before it's answered.
 
+### Positions from move 3 (to do)
+
+- **The user's decision (28 October 2026; not built yet):** Positions practice only uses positions where your move is move 3 or later; your moves 1 and 2 aren't practiced as single positions. Lines are unchanged.
+- *Claude's assumptions, for the user to confirm:* "move 3" is the full move number, as written in the moves (3. Bb5 for White, 3… a6 for Black); the Show positions table follows, since it lists what can come up.
+
 ### Spaced repetition and its sliders
 
 - **Practice lines** practises every line of the chapters ticked on the Studies page, filtered by **Main lines only**, each from move 1, including lines never tried. **Practice positions** practises every move of the user's in the ticked chapters (once each), filtered by **Positions from main lines only**, each as a single position, including moves never tried. Neither uses the table's count and accuracy drop-downs (the user's decision). (These were first the Lines and Positions pages' "Practice all lines/positions" buttons.)
