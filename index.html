@@ -339,8 +339,8 @@
   <h1>Opening Trainer</h1>
   <nav>
     <button id="nav-connect" class="nav-connect hidden" title="Sign in to Lichess to use your own studies instead of the sample ones">Connect to Lichess</button>
-    <button id="nav-studies">Studies</button>
     <button id="nav-practice">Practice</button>
+    <button id="nav-studies">Studies</button>
     <button id="nav-options">Options</button>
     <button id="nav-help">Help</button>
   </nav>
@@ -489,15 +489,14 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Studies</a> · <a href="#help-practice">Practice</a> · <a href="#help-options">Options</a> · <a href="#help-about">About</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies</a> · <a href="#help-options">Options</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> brings back your stats and the move statistics; otherwise press <b>Start</b>.</li>
-          <li><b>Studies</b>: tick the chapters you want to practice.</li>
-          <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
+          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some on the <b>Studies</b> page.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Press <b>Connect to Lichess</b> at the top later, and your own studies replace them.</p>
@@ -517,38 +516,6 @@
         <details>
           <summary>Where your data is kept</summary>
           <p>Everything (your token, studies, stats and settings) stays in this browser. The app only talks to Lichess, to fetch your studies and move statistics. To keep your stats safe or move them to another browser, save a backup (see Options).</p>
-        </details>
-      </div>
-
-      <div class="card" id="help-studies">
-        <h2>Studies</h2>
-        <ul>
-          <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
-          <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
-          <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
-        </ul>
-        <details>
-          <summary>Presets</summary>
-          <ul>
-            <li>A preset is a saved set of ticked chapters. Choose one from <b>Presets</b> to tick exactly its chapters.</li>
-            <li>The pencil (✎) opens the buttons: <b>Save as new</b> saves the ticked chapters under a new name; <b>Update</b> saves them in the chosen preset; <b>Rename</b> and <b>Delete</b> (the ticks stay).</li>
-            <li>When the ticks differ from the chosen preset, its name is greyed out; choose it again to go back to its chapters.</li>
-            <li>Chapters no longer on Lichess, or in hidden studies, are skipped. Presets are included in backups.</li>
-          </ul>
-        </details>
-        <details>
-          <summary>Hiding studies</summary>
-          <p>The eye at the top shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the top eye again to put them out of sight. Hidden studies aren't practiced.</p>
-        </details>
-        <details>
-          <summary>The move tree</summary>
-          <ul>
-            <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
-            <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
-            <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>Hover over a move to see the small board (see Practice).</li>
-          </ul>
         </details>
       </div>
 
@@ -634,6 +601,38 @@
         <details>
           <summary>Reverse sides</summary>
           <p><b>Reverse sides (not scored)</b>, for Lines: you play the opponent's moves from your studies and the app plays yours. Any reply your study gives is correct, and the line follows it; with Main lines only, just the main reply. Hint gives the main reply. Nothing is recorded, and lines come up by how often they're reached (the sliders aren't used).</p>
+        </details>
+      </div>
+
+      <div class="card" id="help-studies">
+        <h2>Studies</h2>
+        <ul>
+          <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
+          <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
+          <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
+          <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
+        </ul>
+        <details>
+          <summary>Presets</summary>
+          <ul>
+            <li>A preset is a saved set of ticked chapters. Choose one from <b>Presets</b> to tick exactly its chapters.</li>
+            <li>The pencil (✎) opens the buttons: <b>Save as new</b> saves the ticked chapters under a new name; <b>Update</b> saves them in the chosen preset; <b>Rename</b> and <b>Delete</b> (the ticks stay).</li>
+            <li>When the ticks differ from the chosen preset, its name is greyed out; choose it again to go back to its chapters.</li>
+            <li>Chapters no longer on Lichess, or in hidden studies, are skipped. Presets are included in backups.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Hiding studies</summary>
+          <p>The eye at the top shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the top eye again to put them out of sight. Hidden studies aren't practiced.</p>
+        </details>
+        <details>
+          <summary>The move tree</summary>
+          <ul>
+            <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
+            <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
+            <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
+            <li>Hover over a move to see the small board (see Practice).</li>
+          </ul>
         </details>
       </div>
 
@@ -1118,6 +1117,7 @@ async function fetchStudies({ welcome = false } = {}) {
     const account = await lichessRequest('/api/account', token);
     const text = await lichessRequest(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
     library = parseStudyExport(text, account.username);
+    if (welcome) { selection = new Set(allChapters().map(c => c.key)); saveSelection(); } // first import: everything ticked, ready to practice
     await saveLibrary();
     forgetParsedChapters();
     pruneAfterRefresh();
@@ -1242,7 +1242,7 @@ $('trial-btn').addEventListener('click', async () => {
     selection = new Set(allChapters().map(c => c.key)); // every chapter ticked, ready to practice
     saveSelection();
     rescoreHistory();
-    showStudies();
+    showChooser(); // the Practice page, ready to start
   } catch (e) {
     $('token-error').textContent = errorText(e);
   } finally {
@@ -3233,9 +3233,9 @@ $('connect-btn').addEventListener('click', () => canLogIn ? logInWithLichess() :
 
 setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies({ welcome: true })); // first visit: fetch straight away
 
-// The welcome screen once the studies have been fetched for the first time: restore a backup (stats
-// and move statistics, so they needn't be downloaded), or start. Either way the Studies page opens
-// and the missing statistics download. (Closing the page instead is fine: the app opens normally.)
+// The welcome screen once the studies have been fetched for the first time (every chapter ticked):
+// restore a backup (stats, move statistics and your ticks, so they needn't be downloaded), or start.
+// Either way the Practice page opens and the missing statistics download. (Closing the page instead is fine: the app opens normally.)
 function showWelcomeReady() {
   const n = library.studies.length;
   $('welcome-ready-title').textContent = n === 1 ? 'Your study is ready.' : `Your ${n} studies are ready.`;
@@ -3245,7 +3245,7 @@ function showWelcomeReady() {
 }
 
 function leaveWelcome() {
-  showStudies();
+  showChooser(); // the Practice page, ready to start
   startDownloads();
 }
 
@@ -3408,8 +3408,8 @@ async function init() {
     if (loggedIn) { showBanner('Connected.'); startDownloads(); }
     return;
   }
-  // Open on the Studies page and resume any missing Lichess downloads.
-  if (library) { showStudies(); startDownloads(); keepData(); }
+  // Open on the Practice page and resume any missing Lichess downloads.
+  if (library) { showChooser(); startDownloads(); keepData(); } // the Practice page
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
 }

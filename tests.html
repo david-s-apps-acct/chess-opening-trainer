@@ -285,7 +285,7 @@ async function runTrial(app) {
   check('welcome: studies fetched, then Restore backup or Start, nothing downloading', [!$('token-screen').classList.contains('hidden'), $('welcome-ready').classList.contains('hidden'),
     $('welcome-ready-title').textContent, app.downloading], [true, false, 'Your study is ready.', false]);
   $('welcome-start-btn').click();
-  check('welcome: Start opens the Studies page and downloads', [!$('studies-screen').classList.contains('hidden'), app.downloading], [true, true]);
+  check('welcome: every chapter ticked; Start opens the Practice page and downloads', [app.selection.length, !$('practice-screen').classList.contains('hidden'), app.downloading], [2, true, true]);
   await until(() => !app.downloading, 'the downloads to finish');
   window.fetch = isolated;
   app.setToken(null);
