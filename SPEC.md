@@ -529,7 +529,7 @@ A separate Options page, opened from the "Options" button in the header. (It was
   6. **A chapter's "3 lines"** on the Studies page has the hint "Show all variations" / "Hide all variations".
   7. **Next line / Next position** have the hint "Next line (Enter)", like the ⏮ ◀ ▶ ⏭ buttons showing their keys.
   8. **Create token** has the hint "Opens Lichess in a new tab, with the access this app needs".
-- **The rule (already the app's practice, now stated):** buttons and checkboxes say what they do in the browser's own small tooltip; explanatory text uses the app's pop-up with the help cursor. Controls whose purpose is obvious have no hint.
+- **The rule (already the app's practice, now stated):** buttons and checkboxes say what they do in the browser's own small tooltip; explanatory text uses the app's pop-up with the help cursor. Controls whose purpose is obvious have no hint. (28 October 2026: the browser's tooltips appear only after a second or so in Safari, a delay pages can't change; switching every button's hint to the app's pop-up was discussed, and the user chose to leave it for now.)
 
 ### Consistency pass (6 October 2026)
 
