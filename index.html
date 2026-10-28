@@ -101,7 +101,7 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
-  #opt-fetch-info:empty, #opt-fetched:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty { display: none; }
+  #opt-fetch-info:empty, #opt-fetched:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty, #token-error:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   #options-screen button.primary, #token-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options (and first-visit) button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
@@ -346,26 +346,33 @@
 <main>
   <div id="banner" class="banner hidden"></div>
 
-  <!-- First visit: ask for the token -->
+  <!-- First visit: the welcome, then (after connecting) the offer to restore a backup -->
   <section id="token-screen" class="hidden">
-    <div class="card">
-      <h2>Connect to Lichess</h2>
-      <p>This app reads your Lichess studies, including private ones, using a personal API token.</p>
-      <ol>
-        <li><b>Add token</b> opens Lichess in a new tab, with the <b>Read private studies</b> (<code>study:read</code>) scope already chosen: create the token there and copy it.</li>
-        <li>Come back here and paste it into the box: it's checked with Lichess and saved straight away. Your browser remembers it, so you only do this once.</li>
-      </ol>
-      <div class="actions"><button class="primary token-add" title="Opens Lichess to create a token">Add token</button></div>
-      <form id="token-form" class="token-row hidden">
-        <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
-      </form>
-      <div id="token-error" class="form-error"></div>
-      <p class="muted">Used the app before? Restore your backup first, so the statistics needn't be downloaded again.</p>
-      <div class="actions"><button id="first-restore-btn" class="primary">Restore backup</button></div>
-      <div id="trial-offer">
-        <p class="muted">Or try the app with sample studies (Ruy Lopez and Queen's Gambit Declined), no account needed.</p>
-        <div class="actions"><button id="trial-btn" class="primary">Try sample studies</button></div>
-        <div id="trial-error" class="form-error"></div>
+    <div class="card welcome">
+      <div id="welcome-start">
+        <h2>Welcome to Chess Opening Trainer</h2>
+        <p>Practice the openings in your Lichess studies. The app quizzes you on your moves, remembers which ones you know, and brings back the ones you don't.</p>
+        <div class="actions">
+          <button class="primary token-add" title="Opens Lichess to create a token">Connect to Lichess</button>
+          <button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button>
+        </div>
+        <div class="token-box hidden">
+          <p>Create the token on Lichess (the access needed is already chosen), copy it, and paste it here.</p>
+          <form id="token-form" class="token-row">
+            <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
+          </form>
+        </div>
+        <div id="token-error" class="form-error"></div>
+        <div id="welcome-status" class="update-status"></div>
+        <p class="muted">Your studies stay in your browser; the app only talks to Lichess.</p>
+      </div>
+      <div id="welcome-ready" class="hidden">
+        <h2 id="welcome-ready-title"></h2>
+        <p>Used the app before? Restore your backup to bring back your stats and the move statistics.</p>
+        <div class="actions">
+          <button id="first-restore-btn" class="primary">Restore backup</button>
+          <button id="welcome-start-btn" class="primary">Start</button>
+        </div>
       </div>
     </div>
   </section>
@@ -441,7 +448,7 @@
         <div id="practice-chooser" class="practice-chooser hidden">
           <div class="chooser-frame">
             <div class="kind-switch" role="group" aria-label="What to practice">
-              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, from move 1">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="One of your moves at a time">Positions</button>
+              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, from move 1">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="One of your moves at a time, from move 3">Positions</button>
             </div>
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
             <label id="chooser-reversed-label" title="You play the opponent's moves; the app plays yours"><input type="checkbox" id="chooser-reversed"> Reverse sides (not scored)</label>
@@ -479,18 +486,18 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Studies</a> · <a href="#help-practice">Practice</a> · <a href="#help-options">Options</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-studies">Studies</a> · <a href="#help-practice">Practice</a> · <a href="#help-options">Options</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li><b>Add token</b>: Lichess opens in a new tab, ready to create a token that can read your studies. Create it, copy it and paste it into the box. Your studies, private ones included, are then fetched.</li>
+          <li><b>Connect to Lichess</b>: Lichess opens in a new tab, ready to create a token that can read your studies. Create it, copy it and paste it into the box. Your studies, private ones included, are then fetched.</li>
+          <li>Used the app before (in another browser, say)? <b>Restore backup</b> brings back your stats and the move statistics; otherwise press <b>Start</b>.</li>
           <li><b>Studies</b>: tick the chapters you want to practice.</li>
           <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile.</p>
-        <p>Used the app before (in another browser, say)? On the first screen, <b>Restore backup</b> before adding your token, so the statistics needn't be downloaded again.</p>
-        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Add a token later and your own studies replace them.</p>
+        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Add a token later (Options) and your own studies replace them.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -545,7 +552,7 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time), from the chapters ticked on the Studies page. <b>Main lines only</b> leaves out the opponent's side variations.</li>
+          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters ticked on the Studies page. <b>Main lines only</b> leaves out the opponent's side variations.</li>
           <li>Spaced repetition chooses what comes next; the sliders under <b>Spaced repetition focus</b> change the balance, and <b>Show lines</b> lists what's most likely next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
@@ -631,7 +638,7 @@
         <h2>Options</h2>
         <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
-          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties back to their defaults.</li>
+          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
           <li><b>Lichess studies</b>: <b>Update studies</b> fetches your studies again after you change them on Lichess; your stats are kept. Below it: your account, when your studies were fetched, and how many positions have move statistics so far.</li>
           <li><b>Lichess token</b>: <b>Add token</b> opens Lichess to create one; paste it into the box and it's saved. <b>Clear token</b> removes it from this browser (your studies stay).</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
@@ -647,7 +654,12 @@
             <li>Restoring replaces your stats and settings, and merges the Lichess statistics with those already here (the newer copy of each wins). Backups from earlier versions of the app can't be restored.</li>
           </ul>
         </details>
-        <p class="muted"><b>Chess Opening Trainer by David Sharman</b> · © 2026 · <a href="https://github.com/david-s-apps-acct/chess-opening-trainer" target="_blank" rel="noopener">Source code</a> under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0-or-later</a>, with an attribution term (see NOTICE.md). Not affiliated with Lichess.org.</p>
+      </div>
+
+      <div class="card" id="help-about">
+        <h2>About</h2>
+        <p><b>Chess Opening Trainer by David Sharman</b> · © 2026</p>
+        <p class="muted"><a href="https://github.com/david-s-apps-acct/chess-opening-trainer" target="_blank" rel="noopener">Source code</a> under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0-or-later</a>, with an attribution term (see NOTICE.md). Not affiliated with Lichess.org.</p>
         <p class="muted">Credits: the board and chess rules use Lichess's chessground and chessops libraries (GPL-3.0-or-later); move sounds are Lichess's "SFX" sounds by Enigmahack (AGPL-3.0-or-later); fonts are Noto Sans (OFL-1.1); move statistics come from the Lichess Opening Explorer.</p>
       </div>
     </div>
@@ -671,7 +683,7 @@
           <label for="masters-top" class="penalties-gap" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
           <select id="masters-top" class="penalties-gap"></select>
         </div>
-        <div class="actions"><button id="penalties-reset" class="primary" title="All four penalties back to 20%, 20%, 50% and 100%">Reset</button></div>
+        <div class="actions"><button id="penalties-reset" class="primary" title="Penalties back to 20%, 20%, 50% and 100%, and Masters moves to Top 5">Reset</button></div>
       </div>
 
       <div class="card">
@@ -1073,10 +1085,15 @@ function setUpdateStatus(message, isError = false) {
   const box = $('update-status');
   box.className = 'update-status' + (isError ? ' error' : '');
   box.replaceChildren(...parts);
+  // The welcome screen shows the same while connecting ("Fetching…", errors): text only.
+  $('welcome-status').className = box.className;
+  $('welcome-status').replaceChildren(...parts.filter(part => typeof part === 'string'));
   if (!library && parts.length) $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
 }
 
-async function fetchStudies() {
+// With welcome (the first connection, from the welcome screen), the statistics don't download yet:
+// the welcome screen offers to restore a backup first (see showWelcomeReady).
+async function fetchStudies({ welcome = false } = {}) {
   if (!token) return askForToken();
   const btn = $('update-studies-btn');
   btn.disabled = true;
@@ -1090,9 +1107,10 @@ async function fetchStudies() {
     pruneAfterRefresh();
     rescoreHistory(); // your tries' points, from the studies just fetched (a backup restored before them has none yet)
     if (practice) endPractice(); // its lines may have changed: practice starts afresh
-    startDownloads(); // missing Lichess data, quietly in the background
+    if (!welcome) startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Options page says what was fetched, and when
-    if (currentScreen === 'options') renderOptions(); else showStudies();
+    if (welcome) showWelcomeReady();
+    else if (currentScreen === 'options') renderOptions(); else showStudies();
   } catch (e) {
     setUpdateStatus(errorText(e), true);
   } finally {
@@ -1141,11 +1159,11 @@ async function checkAndSaveToken(value, errorEl) {
 // fetching drops the sample's stats). A page opened from disk can't read trial.json, so the offer is
 // hidden there.
 const isTrial = () => !!library?.trial;
-if (location.protocol === 'file:') $('trial-offer').classList.add('hidden');
+if (location.protocol === 'file:') $('trial-btn').classList.add('hidden');
 
 $('trial-btn').addEventListener('click', async () => {
   $('trial-btn').disabled = true;
-  $('trial-error').textContent = '';
+  $('token-error').textContent = '';
   try {
     const res = await fetch('trial.json');
     if (!res.ok) throw new Error(`the sample studies couldn't be loaded (${res.status})`);
@@ -1160,7 +1178,7 @@ $('trial-btn').addEventListener('click', async () => {
     rescoreHistory();
     showStudies();
   } catch (e) {
-    $('trial-error').textContent = errorText(e);
+    $('token-error').textContent = errorText(e);
   } finally {
     $('trial-btn').disabled = false;
   }
@@ -1894,14 +1912,17 @@ const tickedChapters = () => visibleChapters().filter(c => selection.has(c.key))
 const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours && m.variationIndex !== 0);
 
 // What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked
-// chapters (i is null: played from move 1); for 'positions', every move of yours in them, once each
+// chapters (i is null: played from move 1); for 'positions', every move of yours in them from move 3
+// (FIRST_POSITION_MOVE), once each
 // (i: the move tested as a single position).
+const FIRST_POSITION_MOVE = 3;
 function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind]) {
   const lines = tickedChapters().flatMap(chapterLines);
   if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
   const items = new Map(); // move key -> item
   for (const line of lines) for (const i of yourMoveIndexes(line)) {
     const key = line.moves[i].key;
+    if (line.moves[i].moveNumber < FIRST_POSITION_MOVE) continue; // your first moves are practiced in lines only
     if (!items.has(key) && (!mainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
   }
   return [...items.values()];
@@ -3060,9 +3081,10 @@ for (const sel of document.querySelectorAll('.pen-select')) {
     rescoreHistory(); // past attempts are scored again with the new penalties
   });
 }
-// Reset: the four penalties back to their defaults (Masters moves is left as it is).
+// Reset: the four penalties and Masters moves back to their defaults.
 $('penalties-reset').addEventListener('click', () => {
   settings.penalties = { ...DEFAULT_SETTINGS.penalties };
+  settings.mastersTop = DEFAULT_SETTINGS.mastersTop;
   saveSettings();
   rescoreHistory();
   renderPenalties();
@@ -3100,6 +3122,7 @@ const TOKEN_PAGE = 'https://lichess.org/account/oauth/token/create?scopes[]=stud
 
 function showTokenBox(form) {
   form.classList.remove('hidden');
+  form.closest('.token-box')?.classList.remove('hidden'); // on the welcome screen, with its instruction
   form.querySelector('input').focus();
 }
 
@@ -3126,7 +3149,25 @@ for (const btn of document.querySelectorAll('.token-add')) btn.addEventListener(
   showTokenBox(btn.closest('.card').querySelector('.token-row'));
 });
 
-setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies()); // first visit: fetch straight away
+setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies({ welcome: true })); // first visit: fetch straight away
+
+// The welcome screen once the studies have been fetched for the first time: restore a backup (stats
+// and move statistics, so they needn't be downloaded), or start. Either way the Studies page opens
+// and the missing statistics download. (Closing the page instead is fine: the app opens normally.)
+function showWelcomeReady() {
+  const n = library.studies.length;
+  $('welcome-ready-title').textContent = n === 1 ? 'Your study is ready.' : `Your ${n} studies are ready.`;
+  $('welcome-start').classList.add('hidden');
+  $('welcome-ready').classList.remove('hidden');
+  showScreen('token');
+}
+
+function leaveWelcome() {
+  showStudies();
+  startDownloads();
+}
+
+$('welcome-start-btn').addEventListener('click', leaveWelcome);
 setUpTokenBox($('opt-token-form'), $('opt-token-error'), () => {
   renderOptions();
   if (!library || isTrial()) fetchStudies(); // your own studies, replacing the sample ones
@@ -3229,6 +3270,7 @@ $('restore-file').addEventListener('change', async e => {
   saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
   updateSoundButton();
   renderOptions();
+  if (currentScreen === 'token' && library) return leaveWelcome(); // from the welcome screen: on to the studies
   showBanner(`Backup restored: history for ${plural(n, 'move')}, and settings.` + (token ? '' : ' Now add your token.'));
 });
 

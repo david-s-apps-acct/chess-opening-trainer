@@ -17,7 +17,7 @@ A browser-based chess practice program. It pulls the user's studies from lichess
 
 ### Fetching studies
 
-- Studies are pulled from Lichess only when the user asks, via an "Update studies" button. The first visit (nothing cached yet) fetches automatically once the token is entered.
+- Studies are pulled from Lichess only when the user asks, via an "Update studies" button. The first visit (nothing cached yet) fetches automatically once the token is entered, then offers Restore backup or Start before anything downloads (see The welcome screen).
 - Fetched studies are cached in the browser between visits. Use IndexedDB rather than localStorage, since a full export of many studies can exceed localStorage's ~5 MB limit.
 
 ## Selecting what to practice
@@ -273,10 +273,11 @@ The last selection is remembered between visits (stored in the browser, like the
 - *Claude's choices, accepted by the user:* it sits at the right-hand end of the buttons, apart from Hint and Skip; it ends straight away, without asking. (It was first also proposed that a line in the middle of being played wouldn't be counted at all.)
 - **A line stopped part way with End practice still records its moves** (the user's decision): each of the user's moves answered so far gets its attempt, correct or not, with its last-tried time, as in a finished line. It isn't a play-through (no line time). *Claude's choices, accepted by the user:* the move the user is on counts only if they'd already tried a move or used Hint on it, the same rule as Skip; the same applies to a single position stopped before it's answered.
 
-### Positions from move 3 (to do)
+### Positions from move 3
 
-- **The user's decision (28 October 2026; not built yet):** Positions practice only uses positions where your move is move 3 or later; your moves 1 and 2 aren't practiced as single positions. Lines are unchanged.
+- **The user's decision (28 October 2026):** Positions practice only uses positions where your move is move 3 or later; your moves 1 and 2 aren't practiced as single positions. Lines are unchanged.
 - *Claude's assumptions, confirmed by the user:* "move 3" is the full move number, as written in the moves (3. Bb5 for White, 3… a6 for Black); the Show positions table follows, since it lists what can come up.
+- The Positions button's hint is "One of your moves at a time, from move 3", and Help says the same.
 
 ### Spaced repetition and its sliders
 
@@ -451,10 +452,11 @@ A page, **Positions**, listing the user's most common weak positions (built at t
 A Help page, opened from the "Help" button in the header. It opens only when clicked, never automatically. Opening it during a line keeps the line; Practice returns to it.
 
 - **Reworked on 26 October 2026 (the user's request):** four sections named after the pages, **Getting started**, **Studies**, **Practice** and **Options**, with a contents line at the top. Each section has a few short bullets, in the order things appear or are used on its page; the detail is in the blue drop-downs, some with a second level inside (shown on a slightly lighter background). About 580 words show before any drop-down is opened (the whole page was about 4,400 words; now about 1,900).
-  - **Getting started:** Add token, tick chapters on Studies, Start practice; move statistics download in the background. Drop-downs: **Words used in the app** (line, alternative move, move accuracy, line accuracy, error, mistake, masters move, position reached) and **Where your data is kept**.
+  - **Getting started:** Connect to Lichess, then Restore backup or Start, tick chapters on Studies, Start practice; Try sample studies; move statistics download in the background. Drop-downs: **Words used in the app** (line, alternative move, move accuracy, line accuracy, error, mistake, masters move, position reached) and **Where your data is kept**.
   - **Studies:** ticking, opening studies and chapters ("7 chapters", "3 lines"), the opening on hover and the side dot, the average move accuracy. Drop-downs: **Presets**, **Hiding studies**, **The move tree**.
   - **Practice:** Lines or Positions, Main lines only, the sliders and Show lines, Start practice, playing moves, Hint and Show correct move, Skip and End practice, comments and looking back, the end of a line, visiting other pages, the bell. Drop-downs: **Error messages**, **The small board**, **Move accuracy** (the penalties table and the last-10-tries average; inside it, **What counts as a try**), **Spaced repetition** (the sliders and Show lines; inside it, **How the priority is worked out**, with the example needs), **Reverse sides**.
-  - **Options:** one bullet per card, in the page's order. Drop-downs: **Move statistics**, **Backups**. Then the credits line: the move sounds are Lichess's "SFX" sounds by Enigmahack (AGPLv3+), and the board and move logic use Lichess's chessground and chessops.
+  - **Options:** one bullet per card, in the page's order. Drop-downs: **Move statistics**, **Backups**.
+  - **About** (added 28 October 2026, at the end, and in the contents line): the attribution, the licence and the credits (see Licence and attribution).
   - *Claude's choices, accepted by the user:* the drop-downs and their names; the glossary in Getting started; the scoring (formerly "Your statistics"), the Show lines table (formerly "Test probabilities") and "How practice is chosen" folded into Practice's drop-downs; some fine detail left out as obvious to experienced players or already said on screen: the piece symbols, the end-of-line panel over the board, the reminder when touching the board after a line, when tries without a time count as due, that new ones are favoured early on, that lines and positions are chosen separately, and that a line in progress is dropped by Update studies.
 - (Before: seven sections, Getting started; Choosing studies and chapters; Practicing; Your statistics; Test probabilities; How practice is chosen; Options and backups, with long bullets and a few drop-downs.)
 
@@ -487,7 +489,7 @@ A separate Options page, opened from the "Options" button in the header. (It was
 
 - **The user's request:** a **Reset** button in the Error penalties card puts the four penalties back to their defaults (20%, 20%, 50%, 100%), and past tries are worked out again straight away, as for any change. Help's Options section mentions it.
 - *Claude's choices:* the button is blue and the same width as the page's others (the Options page's rule), under the list, with the hint "All four penalties back to 20%, 20%, 50% and 100%".
-- **To do (the user's decision, 28 October 2026; not built yet):** Reset should also put **Masters moves** back to its default (Top 5). It first left Masters moves alone (Claude's choice, which the user rejected). The hint will need to mention it too.
+- **Masters moves too** (the user's decision, 28 October 2026): Reset also puts Masters moves back to Top 5 (it first left it alone, Claude's choice, which the user rejected). The hint is "Penalties back to 20%, 20%, 50% and 100%, and Masters moves to Top 5"; Help says "Reset puts the penalties and Masters moves back to their defaults".
 
 ### Fewer words on the Options page (26 October 2026)
 
@@ -591,7 +593,7 @@ The user asked for the interface to be clean, consistent and natural; on Claude'
 ## Licence and attribution
 
 - **The user's decision (26 October 2026):** the app is licensed under the **GNU AGPL-3.0-or-later** (the licence Lichess uses; compatible with chessground and chessops, GPL-3.0-or-later, and the SFX sounds, AGPL-3.0-or-later), © 2026 David Sharman, with an **additional term under section 7(b)**: copies and modified versions, including ones offered over a network, must keep "Chess Opening Trainer by David Sharman" visible in the Help page, and modified versions must say they've been changed.
-- **Where it's stated:** `LICENSE` (the official AGPL text), `NOTICE.md` (copyright, the licence grant, the attribution term, the sample studies, and the third-party parts with their licences), a comment at the top of `index.html`, and the end of the Help page: "Chess Opening Trainer by David Sharman · © 2026 · Source code under the AGPL-3.0-or-later, with an attribution term (see NOTICE.md). Not affiliated with Lichess.org." followed by the credits.
+- **Where it's stated:** `LICENSE` (the official AGPL text), `NOTICE.md` (copyright, the licence grant, the attribution term, the sample studies, and the third-party parts with their licences), a comment at the top of `index.html`, and the Help page's last tile, **About** (Claude's suggested title, for the user to accept or reject; 28 October 2026, at the user's request to give it its own tile; also in the contents line): "Chess Opening Trainer by David Sharman · © 2026", then "Source code under the AGPL-3.0-or-later, with an attribution term (see NOTICE.md). Not affiliated with Lichess.org." followed by the credits.
 - A licence can't stop copying (the libraries' licences require the app to be open source); it requires copies to keep the notices and attribution and to publish their source under the same licence.
 
 ## Publishing on GitHub
@@ -604,9 +606,17 @@ The app is published on GitHub Pages (repository `david-s-apps-acct/chess-openin
 - **Trial database** (the user's decisions, 26 October 2026): `trial.json` holds the user's **Ruy Lopez** and **Queen's Gambit Declined** studies (10 chapters, 41 lines) and the Lichess and masters move statistics for all 366 of their positions, but none of the user's accuracy statistics, history, settings, presets or token. Its shape: `{ app: 'chess-opening-trainer', kind: 'trial', createdAt, library, moveStats }`, with `library` and `moveStats` as stored by the app. About 700 KB.
   - **How it was made:** the studies were downloaded from Lichess (Share → Download), which leaves out the `[Orientation]` tag, so each chapter's side was added: Black for both Queen's Gambit Declined chapters (confirmed by Lichess's own export of that public study) and for the Ruy Lopez Marshall Attack, Exchange Variation and Center Attack; White for Main Line (Chigorin), Berlin Defense, Archangel, Jaenisch gambit and Bird's defense (worked out from the user's history: every recorded move in each chapter is on that side). The statistics come from the user's backup of 26 October 2026; every position had both. The app's own code worked out the positions and checked the finished file.
   - The studies' moves and comments become public with the repository.
-- **Restore backup on the first-visit screen** (the user's choice, 26 October 2026, of two options; the other was to pause downloading after the token and ask): under Add token, "Used the app before? Restore your backup first, so the statistics needn't be downloaded again." and a **Restore backup** button (the same as the Options page's). Restoring before adding the token brings back the statistics, so nothing is downloaded when the studies are fetched; restoring later also works, since a running download skips what the backup brings. Without a token, the restore message ends "Now add your token." (Fix, 28 October 2026: tries restored before the studies were fetched had no points until the app was reopened, so no line could come up and the chooser wrongly said "Every line is untried, and Untried is at 0%"; fetching studies now works the points out, as opening the app does.) Help's Getting started mentions it.
+- **The welcome screen** (the user's design, 28 October 2026; it replaced the "Connect to Lichess" token screen, which had Add token, Restore backup and Try sample studies one under another):
+  - "Welcome to Chess Opening Trainer", then "Practice the openings in your Lichess studies. The app quizzes you on your moves, remembers which ones you know, and brings back the ones you don't."
+  - Two buttons: **Connect to Lichess** (the user's label; it does what Add token does: opens Lichess's token page and shows the box, with "Create the token on Lichess (the access needed is already chosen), copy it, and paste it here.") and **Try sample studies**. The Options page keeps "Add token" (the user's decision).
+  - A footnote: "Your studies stay in your browser; the app only talks to Lichess."
+  - While connecting, "Fetching your studies from Lichess…" and any error show on this screen.
+  - **Then, before anything downloads:** "Your 12 studies are ready." (or "Your study is ready."), "Used the app before? Restore your backup to bring back your stats and the move statistics.", and **Restore backup** and **Start**. Either opens the Studies page and starts downloading whatever statistics are still missing (after a restore, usually none). Closing the page instead is fine: the app opens normally next time and downloads as usual.
+  - Help's Getting started follows the same steps.
+  - *Claude's choices, for the user to accept or reject:* the wording of the welcome text, the token instruction, the footnote and the ready step; Try sample studies' hint "A Ruy Lopez and a Queen's Gambit Declined study, no account needed" (its line of explanation went); after Restore backup from the welcome screen there's no "Backup restored" message (the Studies page has none at the top).
+  - (Before, 26 October 2026: Restore backup sat on the first-visit screen under Add token, to be used before adding the token. Fix, 28 October 2026: tries restored before the studies were fetched had no points until the app was reopened, so no line could come up and the chooser wrongly said "Every line is untried, and Untried is at 0%"; fetching studies now works the points out, as opening the app does.)
 - **Try sample studies** (the user's design, 26 October 2026):
-  - On the first-visit screen, under Add token: "Or try the app with sample studies (Ruy Lopez and Queen's Gambit Declined), no account needed." and a **Try sample studies** button (the user's label). Hidden when the app is opened from disk, which can't read `trial.json`.
+  - On the welcome screen, beside Connect to Lichess: a **Try sample studies** button (the user's label). Hidden when the app is opened from disk, which can't read `trial.json`.
   - It loads `trial.json`: the studies become the library, marked `trial: true`; their statistics are added to any already stored; every chapter is ticked; the Studies page opens. No token is needed and nothing is downloaded.
   - Everything then works as usual (practice, accuracy, presets, backups). The sample is marked only on the Options page (the user's decision): "Sample studies" in place of "Lichess account: …", and no "Fetched …" line. Update studies asks for a token, as it does without one.
   - Adding a token (Options) fetches the user's own studies, which replace the sample; the usual clean-up after fetching drops the sample's stats.

@@ -249,7 +249,7 @@ async function runTrial(app) {
   await until(() => app.library, 'the sample studies');
   window.fetch = isolated;
   await wait(50);
-  check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length, $('trial-offer').classList.contains('hidden')], [true, 2, false]);
+  check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length, $('trial-btn').classList.contains('hidden')], [true, 2, false]);
   app.renderOptions();
   check('sample studies: the Options page says so (no account, no fetched line)', [$('opt-fetch-info').textContent, $('opt-fetched').textContent], ['Sample studies', '']);
   app.setLibrary(structuredClone(LIBRARY));
@@ -267,6 +267,27 @@ async function runTrial(app) {
   window.fetch = isolated;
   app.setToken(null);
   check('studies fetched after a restore: the tries get their points', app.history.moves['AAAAAAAA/BBBBBBBB|e4']?.[0]?.points, 8);
+
+  // The first connection, from the welcome screen: the studies are fetched, nothing downloads, and the
+  // screen offers Restore backup or Start; Start opens the Studies page and starts the downloads.
+  app.setLibrary(null);
+  app.setToken('lip_test');
+  window.fetch = async url => String(url).includes('/api/account') ? new Response(JSON.stringify({ username: 'tester' }))
+    : String(url).includes('export.pgn') ? new Response(ITALIAN + '\n\n' + SICILIAN) : new Response('', { status: 404 });
+  await app.fetchStudies({ welcome: true });
+  check('welcome: studies fetched, then Restore backup or Start, nothing downloading', [!$('token-screen').classList.contains('hidden'), $('welcome-ready').classList.contains('hidden'),
+    $('welcome-ready-title').textContent, app.downloading], [true, false, 'Your study is ready.', false]);
+  $('welcome-start-btn').click();
+  check('welcome: Start opens the Studies page and downloads', [!$('studies-screen').classList.contains('hidden'), app.downloading], [true, true]);
+  await until(() => !app.downloading, 'the downloads to finish');
+  window.fetch = isolated;
+  app.setToken(null);
+
+  // Options: Reset puts the penalties and Masters moves back to their defaults.
+  app.setSettings({ penalties: { error: 8 }, mastersTop: 2 });
+  $('penalties-reset').click();
+  check('options: Reset, penalties and Masters moves', [app.settings.penalties, app.settings.mastersTop], [{ alternative: 2, masters: 2, error: 5, hint: 10 }, 5]);
+  app.setSettings({});
 
   // A download skips positions whose statistics arrive meanwhile (e.g. from a restored backup).
   app.setMoveStats({});
@@ -440,12 +461,13 @@ async function runPractice(app) {
 
 // ---------- Spaced repetition, Test probabilities and the chooser ----------
 
-// A chapter with a side variation for the opponent: 1. e4 e5 (1... f6? 2. d4) 2. Nf3.
+// A chapter with a side variation for the opponent, from move 3 (positions start there):
+// 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 (3... f6? 4. d4) 4. Ba4.
 const SIDE_LINE = `[Event "Test Study: Side line"]
 [Site "https://lichess.org/study/AAAAAAAA/DDDDDDDD"]
 [Orientation "white"]
 
-1. e4 e5 ( 1... f6 $2 2. d4 ) 2. Nf3 *`;
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 ( 3... f6 $2 4. d4 ) 4. Ba4 *`;
 
 function runPositions(app) {
   const $ = id => document.getElementById(id);
@@ -474,13 +496,15 @@ function runPositions(app) {
   check('spaced repetition: a slider at 100% dominates', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 100, lastPlayed: 0, untried: 0 }))), [729, 1, 0]);
   const positionItems = app.practiceItems('positions');
   check('spaced repetition: the parts of a position tried once at 50%, time unknown', (({ accuracy, weakness, due, untried }) => [accuracy, weakness, due, untried])(app.itemFacts(positionItems)[0]), [0.5, 2, 3, false]);
+  check('positions: only your moves from move 3', [positionItems.every(({ line, i }) => line.moves[i].moveNumber >= 3), app.practiceItems('positions').map(({ line, i }) => line.moves[i].san)],
+    [true, ['Bb5', 'Ba4', 'd4']]);
   check('spaced repetition: all positions, including untried ones', [positionItems.length, (mainLinesOnly(false, true), app.practiceItems('positions').length)], [3, 2]);
   check('spaced repetition: all lines', [(app.setSettings({}), app.practiceItems('lines').length), (mainLinesOnly(true, false), app.practiceItems('lines').length)], [2, 1]);
   app.setSettings({});
   const linePriorities = app.priorities(app.practiceItems('lines'));
   check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
   const positionPriorities = app.priorities(positionItems);
-  check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === 0));
+  check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), positionItems.findIndex(item => item.i === Math.min(...positionItems.map(x => x.i))));
   // Test probabilities.
   const shown = kind => {
     $(`chooser-kind-${kind}`).click();
@@ -493,7 +517,7 @@ function runPositions(app) {
   app.setSettings({});
   const lineRows = shown('lines');
   check('test probabilities: lines, the one never played through first', lineRows.map(r => [r[0], r[2], r[3]]),
-    [['Test Study · Side line1. e4 f6 2. d4', '50%', '–'], ['Test Study · Side line1. e4 e5 2. ♘f3', '50%', 'Today']]);
+    [['Test Study · Side line… 1… e5 2. ♘f3 ♘c6 3. ♗b5 f6 4. d4', '50%', '–'], ['Test Study · Side line… 1… e5 2. ♘f3 ♘c6 3. ♗b5 a6 4. ♗a4', '50%', 'Today']]);
   check('test probabilities: chances to one decimal, adding up to 100%', [lineRows.every(r => /^\d+\.\d%$/.test(r[4])), Math.round(lineRows.reduce((sum, r) => sum + parseFloat(r[4]), 0))], [true, 100]);
   // More than 25: the rest in a last row, so the chances add up to 100%.
   const replies = ['a6', 'a5', 'b6', 'b5', 'c6', 'c5', 'd6', 'd5', 'e6', 'e5', 'f6', 'f5', 'g6', 'g5', 'h6', 'h5', 'Na6', 'Nc6', 'Nf6', 'Nh6'];
