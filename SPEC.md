@@ -481,7 +481,8 @@ A separate Options page, opened from the "Options" button in the header. (It was
 ### Reset for the error penalties (28 October 2026)
 
 - **The user's request:** a **Reset** button in the Error penalties card puts the four penalties back to their defaults (20%, 20%, 50%, 100%), and past tries are worked out again straight away, as for any change. Help's Options section mentions it.
-- *Claude's choices, for the user to accept or reject:* Masters moves (Top 5) isn't reset, since the request was for the percentages; the button is blue and the same width as the page's others (the Options page's rule), under the list, with the hint "All four penalties back to 20%, 20%, 50% and 100%".
+- *Claude's choices:* the button is blue and the same width as the page's others (the Options page's rule), under the list, with the hint "All four penalties back to 20%, 20%, 50% and 100%".
+- **To do (the user's decision, 28 October 2026; not built yet):** Reset should also put **Masters moves** back to its default (Top 5). It first left Masters moves alone (Claude's choice, which the user rejected). The hint will need to mention it too.
 
 ### Fewer words on the Options page (26 October 2026)
 
