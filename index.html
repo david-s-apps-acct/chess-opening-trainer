@@ -643,7 +643,7 @@
         <ul>
           <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
           <li><b>Lichess studies</b>: <b>Update studies</b> fetches your studies again after you change them on Lichess; your stats are kept. Below it: your account, when your studies were fetched, and how many positions have move statistics so far.</li>
-          <li><b>Lichess token</b>: <b>Add token</b> opens Lichess to create one; paste it into the box and it's saved. <b>Clear token</b> removes it from this browser (your studies stay).</li>
+          <li><b>Lichess connection</b>: <b>Connect to Lichess</b> logs in again, e.g. after about a year, when Lichess ends the connection; <b>Disconnect</b> removes it from this browser (your studies stay). Opened from disk, this is <b>Lichess token</b>: <b>Add token</b> opens Lichess to create one, to paste into the box; <b>Clear token</b> removes it.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
         </ul>
         <details>
@@ -702,8 +702,8 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="Needs the Read private studies (study:read) scope. A new token replaces the stored one.">Lichess token</span></h2>
-        <div class="actions"><button class="primary token-add" title="Opens Lichess to create a token">Add token</button></div>
+        <h2><span id="opt-token-heading" data-tip="Needs the Read private studies (study:read) scope. A new token replaces the stored one.">Lichess token</span></h2>
+        <div class="actions"><button id="opt-connect-btn" class="primary" title="Opens Lichess to create a token">Add token</button></div>
         <form id="opt-token-form" class="token-row hidden">
           <input id="opt-token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
         </form>
@@ -982,7 +982,7 @@ function quickTip(el, text, delay = 0) {
     quickTipTimer = setTimeout(() => {
       let tip = $('quick-tip');
       if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
-      tip.textContent = text;
+      tip.textContent = typeof text === 'function' ? text() : text;
       tip.classList.remove('hidden');
       placePopup(tip, el);
     }, delay);
@@ -994,7 +994,7 @@ function quickTip(el, text, delay = 0) {
 function hideQuickTip() { clearTimeout(quickTipTimer); $('quick-tip')?.classList.add('hidden'); }
 
 // The page's own explanations: any element with data-tip shows it on hover.
-for (const el of document.querySelectorAll('[data-tip]')) quickTip(el, el.dataset.tip);
+for (const el of document.querySelectorAll('[data-tip]')) quickTip(el, () => el.dataset.tip); // read when shown, so it can change
 window.addEventListener('scroll', hideQuickTip, { passive: true });
 
 // An icon button: a line through it when off; title is its hover text.
@@ -1060,7 +1060,7 @@ async function lichessFetch(url, tok) {
 // A request to the Lichess API, its answer as JSON (or text); LichessError on any failure.
 async function lichessRequest(path, tok, asText) {
   const res = await lichessFetch(LICHESS + path, tok);
-  if (res.status === 401) throw new LichessError('Lichess rejected the token. Add a new one on the Options page.', 401);
+  if (res.status === 401) throw new LichessError(canLogIn ? 'Lichess connection expired. Connect again on the Options page.' : 'Lichess rejected the token. Add a new one on the Options page.', 401);
   if (res.status === 429) throw new LichessError('Lichess is limiting requests. Try again in a minute.', 429);
   if (!res.ok) throw new LichessError(`Lichess returned an error (${res.status}).`, res.status);
   return asText ? res.text() : res.json();
@@ -1090,8 +1090,8 @@ const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, und
 
 function askForToken() {
   showOptions();
-  setUpdateStatus('Add a Lichess token first.', true);
-  showTokenBox($('opt-token-form'));
+  setUpdateStatus(canLogIn ? 'Connect to Lichess first.' : 'Add a Lichess token first.', true);
+  if (!canLogIn) showTokenBox($('opt-token-form'));
 }
 
 // Messages about fetching from Lichess appear on the Options page, under Update studies (and, before
@@ -1194,10 +1194,11 @@ async function loginAddress(verifier, state) {
 }
 
 // Back from Lichess (the address has ?code=… or ?error=…): exchanges the code for a token and saves
-// it. True when you've just logged in; on a failure the welcome screen says what went wrong.
+// it. True when you've just logged in, false when that failed (the welcome screen and the Options
+// page say why), null when the page wasn't opened on the way back from Lichess.
 async function finishLogIn() {
   const params = new URLSearchParams(location.search);
-  if (!params.has('code') && !params.has('error')) return false;
+  if (!params.has('code') && !params.has('error')) return null;
   window.history.replaceState(null, '', returnAddress()); // the code isn't left in the address bar (`history` is your practice history)
   let saved = null;
   try { saved = JSON.parse(sessionStorage.getItem('cot.login')); sessionStorage.removeItem('cot.login'); } catch {}
@@ -3062,7 +3063,7 @@ async function downloadExplorerPositions(kind, run) {
       continue;
     }
     if (res.status === 401) {
-      status('Lichess rejected the token. Replace it below to continue.');
+      status(canLogIn ? 'Lichess connection expired. Connect again below to continue.' : 'Lichess rejected the token. Replace it below to continue.');
       return;
     }
     if (res.ok) {
@@ -3173,7 +3174,8 @@ function renderOptions() {
   $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
   updateStatisticsInfo();
   const tokenSavedAt = store.get('tokenSavedAt', null);
-  $('opt-token-state').textContent = !token ? 'No token stored.' : tokenSavedAt ? `Token stored ${onDateAtTime(tokenSavedAt)}` : 'Token stored.';
+  $('opt-token-state').textContent = canLogIn ? (!token ? 'Not connected.' : tokenSavedAt ? `Connected ${onDateAtTime(tokenSavedAt)}` : 'Connected.')
+    : !token ? 'No token stored.' : tokenSavedAt ? `Token stored ${onDateAtTime(tokenSavedAt)}` : 'Token stored.';
   $('opt-token-error').textContent = '';
   $('token-clear-btn').disabled = !token;
 }
@@ -3214,7 +3216,16 @@ function openTokenPage(btn) {
   window.open(TOKEN_PAGE, '_blank', 'noopener');
   showTokenBox(btn.closest('.card').querySelector('.token-row'));
 }
-for (const btn of document.querySelectorAll('.token-add')) btn.addEventListener('click', () => openTokenPage(btn));
+// The Options card: online, "Lichess connection", connecting by logging in with Lichess (and back to
+// this page); from disk, "Lichess token", with Add token's paste box.
+if (canLogIn) {
+  $('opt-token-heading').textContent = 'Lichess connection';
+  $('opt-token-heading').dataset.tip = 'The app reads your studies through your Lichess account. Lichess ends the connection after about a year; connect again then.';
+  $('opt-connect-btn').textContent = 'Connect to Lichess';
+  $('opt-connect-btn').title = 'Sign in to Lichess and allow the app to read your studies';
+  $('token-clear-btn').textContent = 'Disconnect';
+}
+$('opt-connect-btn').addEventListener('click', () => canLogIn ? logInWithLichess() : openTokenPage($('opt-connect-btn')));
 
 // The welcome screen's Connect to Lichess: "Log in with Lichess" online; from disk, the token page.
 if (!canLogIn) $('connect-btn').title = 'Opens Lichess to create a token';
@@ -3250,7 +3261,7 @@ $('token-clear-btn').addEventListener('click', () => {
   store.remove('token');
   store.remove('tokenSavedAt');
   renderOptions();
-  showBanner('Token cleared.');
+  showBanner(canLogIn ? 'Disconnected.' : 'Token cleared.');
 });
 
 // ---------- Backup ----------
@@ -3390,7 +3401,13 @@ async function init() {
   updateSoundButton(); // the bell shows the saved setting
   rescoreHistory(); // attempts scored again with the current rules and data
   // Back from logging in with Lichess: on to the welcome screen's next step.
-  if ((!library || isTrial()) && await finishLogIn()) { showScreen('token'); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
+  const loggedIn = await finishLogIn();
+  if (loggedIn && (!library || isTrial())) { showScreen('token'); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
+  if (loggedIn !== null && library) { // connected again from the Options page (or that failed: it says why)
+    showOptions();
+    if (loggedIn) { showBanner('Connected.'); startDownloads(); }
+    return;
+  }
   // Open on the Studies page and resume any missing Lichess downloads.
   if (library) { showStudies(); startDownloads(); keepData(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }

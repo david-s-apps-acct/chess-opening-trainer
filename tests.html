@@ -258,6 +258,8 @@ async function runTrial(app) {
   app.setLibrary(structuredClone(LIBRARY));
   app.renderOptions();
   check('own studies: the account again', $('opt-fetch-info').textContent, 'Lichess account: tester');
+  check('options online: the Lichess connection card', [$('opt-token-heading').textContent, $('opt-connect-btn').textContent, $('opt-token-state').textContent, $('token-clear-btn').textContent],
+    ['Lichess connection', 'Connect to Lichess', 'Not connected.', 'Disconnect']);
   $('nav-studies').click();
   check('own studies: no Connect to Lichess in the header', $('nav-connect').classList.contains('hidden'), true);
 
