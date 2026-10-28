@@ -631,7 +631,7 @@
         <h2>Options</h2>
         <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
-          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away.</li>
+          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties back to their defaults.</li>
           <li><b>Lichess studies</b>: <b>Update studies</b> fetches your studies again after you change them on Lichess; your stats are kept. Below it: your account, when your studies were fetched, and how many positions have move statistics so far.</li>
           <li><b>Lichess token</b>: <b>Add token</b> opens Lichess to create one; paste it into the box and it's saved. <b>Clear token</b> removes it from this browser (your studies stay).</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
@@ -671,6 +671,7 @@
           <label for="masters-top" class="penalties-gap" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
           <select id="masters-top" class="penalties-gap"></select>
         </div>
+        <div class="actions"><button id="penalties-reset" class="primary" title="All four penalties back to 20%, 20%, 50% and 100%">Reset</button></div>
       </div>
 
       <div class="card">
@@ -1862,7 +1863,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // part: 0 ignores it, 50 (the default) counts it as it is, 100 raises it to the 6th power, so the
 // items highest in it take almost every pick. So by default the priority is frequency × weakness ×
 // due (frequency × 6 when untried). Untried at 0 leaves untried items out, and at 100 gives them all
-// the picks until none is left.
+// the picks until none are left.
 const UNTRIED_NEED = 6;
 const UNKNOWN_FREQUENCY = 0.6;
 const STRONGEST = 6; // the power at 100%
@@ -1873,7 +1874,7 @@ const WEIGHTS = [
   { key: 'frequency', name: 'Frequency', definition: 'How often the position is reached on Lichess (for a line, its final position). Higher: common ones come up more.' },
   { key: 'accuracy', name: 'Accuracy', definition: 'Move accuracy (line accuracy for a line). Higher: weak ones come up more.' },
   { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
-  { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none is left.' },
+  { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none are left.' },
 ];
 
 function weightedPick(items, weight) {
@@ -2627,15 +2628,16 @@ document.addEventListener('keydown', e => {
 
 // ---------- Practice: names and sounds ----------
 
-// The practice panel's heading, as in the positions table: the study and chapter (with the chapter's
-// introductory comment as a bubble), then the position reached, named by its opening and the moves
-// since (see positionName), e.g. "Italian Game: Giuoco Piano, 4. c3 ♘f6". The position line
+// The practice panel's heading, as in the positions table: the study and chapter ("(reversed)" after
+// it with Reverse sides; the chapter's introductory comment as a bubble), then the position reached,
+// named by its opening and the moves since (see positionName), e.g. "Italian Game: Giuoco Piano,
+// 4. c3 ♘f6". The position line
 // follows the board: the line as it's played, or an earlier position being looked at.
 function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  $('practice-title').replaceChildren(chapterTitle(ch), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '');
+  $('practice-title').replaceChildren(chapterTitle(ch) + (session.reversed ? ' (reversed)' : ''), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '');
   updatePositionName();
 }
 
@@ -3057,6 +3059,13 @@ for (const sel of document.querySelectorAll('.pen-select')) {
     rescoreHistory(); // past attempts are scored again with the new penalties
   });
 }
+// Reset: the four penalties back to their defaults (Masters moves is left as it is).
+$('penalties-reset').addEventListener('click', () => {
+  settings.penalties = { ...DEFAULT_SETTINGS.penalties };
+  saveSettings();
+  rescoreHistory();
+  renderPenalties();
+});
 for (const n of MASTERS_TOPS) $('masters-top').append(element('option', { value: String(n) }, `Top ${n}`));
 $('masters-top').addEventListener('change', e => {
   settings.mastersTop = +e.target.value;

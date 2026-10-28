@@ -257,6 +257,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - Hint and Show correct move point to the study's main reply.
   - The move list, hover boards, sounds, Skip and End practice work as usual.
 - **Choosing lines:** the Spaced repetition focus frame is greyed out while the option is ticked, since there's no accuracy to work with. Lines come up weighted by how often their final position is reached (the same frequency measure as the Frequency slider).
+- **The heading during practice** says "(reversed)" after the chapter, e.g. "Italian · Deutz Gambit (reversed)" (the user's request, 28 October 2026).
 - *Claude's choices, accepted by the user (before building):* lines are weighted by how often they're reached rather than picked purely at random; with Main lines only, another study reply is shown as a blue "Alternative move" error; the end-of-line summary leaves out line accuracy; the checkbox is remembered between visits, like Main lines only.
 - *Claude's choices, accepted by the user:*
   - The checkbox's tick is kept when switching to Positions and back.
@@ -477,6 +478,11 @@ A separate Options page, opened from the "Options" button in the header. (It was
 
 - **The user's decision:** nothing more is added to the Options page, to keep the trainer simple. Considered and not adopted: Reset statistics, Refresh move statistics (they're never downloaded again once saved), a Lichess rating range for move statistics, the opponent's move speed, and the masters move share (fixed at 10%).
 
+### Reset for the error penalties (28 October 2026)
+
+- **The user's request:** a **Reset** button in the Error penalties card puts the four penalties back to their defaults (20%, 20%, 50%, 100%), and past tries are worked out again straight away, as for any change. Help's Options section mentions it.
+- *Claude's choices, for the user to accept or reject:* Masters moves (Top 5) isn't reset, since the request was for the percentages; the button is blue and the same width as the page's others (the Options page's rule), under the list, with the hint "All four penalties back to 20%, 20%, 50% and 100%".
+
 ### Fewer words on the Options page (26 October 2026)
 
 - **The user's request:** use as few words as possible in each tile, and move the explanations to hover-overs or the Help page.
@@ -507,7 +513,7 @@ A separate Options page, opened from the "Options" button in the header. (It was
 
 - **The user's guideline** (see Overview): as few words as possible on screen; longer explanations in Help. Following it, the user asked for the long hover hints and messages to be shortened. Among them:
   - **Hints:** Skip "On to the next; the moves answered still count"; End practice "Stop and choose again; the moves answered still count"; Hint "Circles the piece to move (counts as an error)", then "Shows the move with an arrow (counts as an error)"; Lines "Whole lines, from move 1"; Positions "One of your moves at a time"; Main lines only "Only the opponent's main moves" (for positions, "Only positions reached by the opponent's main moves"); Show lines "What's most likely to come up next"; Reset "All sliders to 50%"; the presets' buttons ("Save the ticked chapters as a new preset", "Save the ticked chapters in this preset", "Delete this preset; the ticks stay"; Rename has none, its purpose being obvious); a study's eye "Hide this study (not practiced)".
-  - **The four sliders' definitions:** Frequency "How often the position is reached on Lichess (for a line, its final position). Higher: common ones come up more."; Accuracy "Move accuracy (line accuracy for a line). Higher: weak ones come up more."; Last played "Time since last tested, against how long you should remember it. Higher: overdue ones come up more."; Untried "Not tried yet. 0%: never; 100%: first, until none is left."
+  - **The four sliders' definitions:** Frequency "How often the position is reached on Lichess (for a line, its final position). Higher: common ones come up more."; Accuracy "Move accuracy (line accuracy for a line). Higher: weak ones come up more."; Last played "Time since last tested, against how long you should remember it. Higher: overdue ones come up more."; Untried "Not tried yet. 0%: never; 100%: first, until none are left." ("are", the user's correction, 28 October 2026)
   - **The Options page's hover explanations**, each a sentence or two; the detail is in Help's Options section.
   - **Messages:** "Lichess rejected the token. Add a new one on the Options page."; "Lichess is limiting requests. Try again in a minute."; "Lichess rejected this token. Check it's complete and has the study:read scope."; Restore's prompt and "Backup restored: history for N moves, and settings."; "This backup is from an earlier version and can't be restored."
 - *Claude's choices, accepted by the user:* the wording of each; status messages during practice ("Hint: move the circled piece.", "The move is 1. e4. Play it on the board.", "Opponent to move…") were already short and are unchanged.

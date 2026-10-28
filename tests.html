@@ -385,6 +385,7 @@ async function runPractice(app) {
   const playReversed = async (uci) => { await until(yourTurnReversed, 'your turn (reversed)'); await app.onYourMove(uci.slice(0, 2), uci.slice(2, 4)); };
   const savedHistory = JSON.stringify(app.storedHistory());
   app.startSession('lines', [{ line: main, i: null }], { mainLinesOnly: false });
+  check('reversed: the heading says so', document.getElementById('practice-title').textContent, 'Test Study · Italian (reversed)');
   await playReversed('a7a6');
   check('reversed: an error, with the usual message', statusLines()[0], ['Not your preferred move', 'red']);
   await playReversed('e7e5');
