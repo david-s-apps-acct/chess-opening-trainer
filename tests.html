@@ -55,8 +55,9 @@ export const app = {
   startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
-  onYourMove, renderOptions, downloadExplorer, allStudyPositions,
+  onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies,
   setToken(t) { token = t; },
+  get downloading() { return downloadsRunning; },
   get moveStats() { return moveStats; },
   get library() { return library; },
 };`;
@@ -254,6 +255,18 @@ async function runTrial(app) {
   app.setLibrary(structuredClone(LIBRARY));
   app.renderOptions();
   check('own studies: the account again', $('opt-fetch-info').textContent, 'Lichess account: tester');
+
+  // A backup restored before the studies are fetched: its tries get their points once they are.
+  app.setLibrary(null);
+  app.setHistory({ moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['d4', 'e4'], at: null }] }, lines: {} }); // as restored: no points
+  app.setToken('lip_test');
+  window.fetch = async url => String(url).includes('/api/account') ? new Response(JSON.stringify({ username: 'tester' }))
+    : String(url).includes('export.pgn') ? new Response(ITALIAN + '\n\n' + SICILIAN) : new Response('', { status: 404 });
+  await app.fetchStudies();
+  await until(() => !app.downloading, 'the downloads started by fetching to finish');
+  window.fetch = isolated;
+  app.setToken(null);
+  check('studies fetched after a restore: the tries get their points', app.history.moves['AAAAAAAA/BBBBBBBB|e4']?.[0]?.points, 8);
 
   // A download skips positions whose statistics arrive meanwhile (e.g. from a restored backup).
   app.setMoveStats({});

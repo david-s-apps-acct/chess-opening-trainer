@@ -1088,6 +1088,7 @@ async function fetchStudies() {
     await saveLibrary();
     forgetParsedChapters();
     pruneAfterRefresh();
+    rescoreHistory(); // your tries' points, from the studies just fetched (a backup restored before them has none yet)
     if (practice) endPractice(); // its lines may have changed: practice starts afresh
     startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Options page says what was fetched, and when
