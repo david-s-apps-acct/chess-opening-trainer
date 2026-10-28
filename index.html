@@ -786,6 +786,17 @@ async function loadLibrary() {
 async function saveLibrary() {
   try { await inDatabase('library', 'readwrite', s => s.put(library, 'library')); }
   catch (e) { console.warn('IndexedDB write failed', e); }
+  keepData();
+}
+
+// Asks the browser to keep the app's data (studies, stats, statistics) rather than clear it when space
+// runs low, or, in Safari, after 7 days without a visit. Browsers decide for themselves (Firefox may
+// ask you); asked once per visit, once there are studies to keep.
+let keepDataAsked = false;
+function keepData() {
+  if (keepDataAsked || !navigator.storage?.persist) return;
+  keepDataAsked = true;
+  navigator.storage.persisted().then(kept => kept || navigator.storage.persist()).catch(() => {});
 }
 
 async function loadMoveStats() {
@@ -3379,7 +3390,7 @@ async function init() {
   // Back from logging in with Lichess: on to the welcome screen's next step.
   if ((!library || isTrial()) && await finishLogIn()) { showScreen('token'); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
   // Open on the Studies page and resume any missing Lichess downloads.
-  if (library) { showStudies(); startDownloads(); }
+  if (library) { showStudies(); startDownloads(); keepData(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
 }
