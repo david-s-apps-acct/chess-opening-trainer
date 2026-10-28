@@ -276,7 +276,7 @@ The last selection is remembered between visits (stored in the browser, like the
 ### Positions from move 3 (to do)
 
 - **The user's decision (28 October 2026; not built yet):** Positions practice only uses positions where your move is move 3 or later; your moves 1 and 2 aren't practiced as single positions. Lines are unchanged.
-- *Claude's assumptions, for the user to confirm:* "move 3" is the full move number, as written in the moves (3. Bb5 for White, 3… a6 for Black); the Show positions table follows, since it lists what can come up.
+- *Claude's assumptions, confirmed by the user:* "move 3" is the full move number, as written in the moves (3. Bb5 for White, 3… a6 for Black); the Show positions table follows, since it lists what can come up.
 
 ### Spaced repetition and its sliders
 
