@@ -86,6 +86,8 @@
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
+  /* With the sample studies: blue too, but outlined, so it doesn't look like the current page */
+  header nav .nav-connect, header nav .nav-connect:hover:not(:disabled) { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
   .banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); background: var(--surface); }
@@ -336,6 +338,7 @@
 <header>
   <h1>Opening Trainer</h1>
   <nav>
+    <button id="nav-connect" class="nav-connect hidden" title="Sign in to Lichess to use your own studies instead of the sample ones">Connect to Lichess</button>
     <button id="nav-studies">Studies</button>
     <button id="nav-practice">Practice</button>
     <button id="nav-options">Options</button>
@@ -497,7 +500,7 @@
           <li><b>Practice</b>: choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile.</p>
-        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Add a token later (Options) and your own studies replace them.</p>
+        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Press <b>Connect to Lichess</b> at the top later, and your own studies replace them.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -932,7 +935,9 @@ function showScreen(name) {
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
   for (const s of ['token', 'studies', 'practice', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
-  // The header buttons are always shown; the current page's button is highlighted.
+  // The header buttons are always shown; the current page's button is highlighted. With the sample
+  // studies, Connect to Lichess comes first.
+  $('nav-connect').classList.toggle('hidden', !isTrial());
   const current = name === 'token' ? 'studies' : name;
   for (const b of ['studies', 'practice', 'options', 'help']) {
     $('nav-' + b).classList.toggle('current', b === current);
@@ -3353,6 +3358,9 @@ $('nav-studies').addEventListener('click', () => {
 
 $('nav-options').addEventListener('click', showOptions);
 
+// With the sample studies: log in with Lichess; your own studies then replace the sample ones.
+$('nav-connect').addEventListener('click', () => canLogIn ? logInWithLichess() : askForToken());
+
 $('nav-help').addEventListener('click', () => {
   showScreen('help'); // a line in progress is kept
   window.scrollTo(0, 0);
@@ -3369,7 +3377,7 @@ async function init() {
   updateSoundButton(); // the bell shows the saved setting
   rescoreHistory(); // attempts scored again with the current rules and data
   // Back from logging in with Lichess: on to the welcome screen's next step.
-  if (!library && await finishLogIn()) { showScreen('token'); return fetchStudies({ welcome: true }); }
+  if ((!library || isTrial()) && await finishLogIn()) { showScreen('token'); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
   // Open on the Studies page and resume any missing Lichess downloads.
   if (library) { showStudies(); startDownloads(); }
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }

@@ -252,11 +252,14 @@ async function runTrial(app) {
   window.fetch = isolated;
   await wait(50);
   check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length, $('trial-btn').classList.contains('hidden')], [true, 2, false]);
+  check('sample studies: Connect to Lichess in the header', $('nav-connect').classList.contains('hidden'), false);
   app.renderOptions();
   check('sample studies: the Options page says so (no account, no fetched line)', [$('opt-fetch-info').textContent, $('opt-fetched').textContent], ['Sample studies', '']);
   app.setLibrary(structuredClone(LIBRARY));
   app.renderOptions();
   check('own studies: the account again', $('opt-fetch-info').textContent, 'Lichess account: tester');
+  $('nav-studies').click();
+  check('own studies: no Connect to Lichess in the header', $('nav-connect').classList.contains('hidden'), true);
 
   // A backup restored before the studies are fetched: its tries get their points once they are.
   app.setLibrary(null);
