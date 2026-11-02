@@ -102,9 +102,14 @@ The last selection is remembered between visits (stored in the browser, like the
 - **To do (the user's decision, 2 November 2026; not built yet), Connect / Disconnect:** the connected view shows **Connect to Lichess** at all times, which reads as if you're not connected (and pressing it leads to Lichess's page, where the browser's Back may not work). Instead:
   - **Connected and working:** "Connected on …" and a **Disconnect** button, which forgets the connection in the app and asks Lichess to cancel it (revoking the token); studies and stats stay, they just stop updating until you connect again.
   - **Not connected, or the connection has expired:** **Connect to Lichess** (an expired connection already shows the red dot and a message).
-  - **The header:** "Lichess" while connected, "Connect" otherwise (also with your own studies but no connection).
+  - **The header:** always "Lichess", with the red dot for a problem (see the welcome splash to-do below, which replaced "Connect" when not connected).
   - **Opened from disk:** the same, with **Add token** and **Clear token**; Clear token only forgets the token in the app (a token you made on Lichess may be used elsewhere).
   - This brings back the Disconnect button removed earlier on 2 November 2026 (the user's choice).
+- **To do (the user's design, 2 November 2026; not built yet), the welcome splash:**
+  - **A splash for a new user:** the Lichess page opens with a splash over it, in the Test probabilities table's style (dimmed page, a card in front): "Welcome to Chess Opening Trainer", the sentence about the app, the footnote "Your studies stay in your browser; the app only talks to Lichess.", and a **Get started** button; × and Esc close it too. It shows each time the app opens until the user has started (connected or tried the sample studies).
+  - **Closing it** leaves the Lichess page's not-connected view: **Connect to Lichess**, and **Try sample studies** below it as the alternative, offered only when there are no studies of your own (after Disconnect, your studies stay, and the sample would replace them).
+  - **The header button always reads "Lichess"** (no more "Connect"), keeping the red dot for a problem (the user's decisions).
+  - *Claude's details, for the user to accept or reject:* the "Get started" label; the welcome text moves from the page to the splash, so the not-connected view itself just has its buttons (with "Sample studies …" when they're loaded).
 - Help has a **Lichess** section (after Options): the button, the page, connecting again, the automatic updates, and the Move statistics drop-down.
 - *Claude's choices, accepted by the user:* the wordings above; the "Connect" label (rather than "Connect to Lichess") to keep the header short; the problem dot's hover text "A problem with Lichess: see the Lichess page".
 
