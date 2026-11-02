@@ -100,7 +100,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - Opened from disk, both Connect buttons are **Add token**, with the paste box.
 - Before any studies are fetched, Practice and Studies lead to this page (as they led to the welcome screen).
 - Help has a **Lichess** section (after Options): the button, the page, connecting again, the automatic updates, and the Move statistics drop-down.
-- *Claude's choices, for the user to accept or reject:* the wordings above; the "Connect" label (rather than "Connect to Lichess") to keep the header short; the problem dot's hover text "A problem with Lichess: see the Lichess page".
+- *Claude's choices, accepted by the user:* the wordings above; the "Connect" label (rather than "Connect to Lichess") to keep the header short; the problem dot's hover text "A problem with Lichess: see the Lichess page".
 
 ### The Lichess status (2 November 2026; replaced the same day by the Lichess page)
 
