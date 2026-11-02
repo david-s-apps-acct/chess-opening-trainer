@@ -103,7 +103,7 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
-  #opt-fetch-info:empty, #opt-fetched:empty, #opt-stats-info:empty, #opt-masters-info:empty, #opt-token-error:empty, #token-error:empty { display: none; }
+  #opt-token-error:empty, #token-error:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   #options-screen button.primary, #token-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options (and first-visit) button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
@@ -155,11 +155,17 @@
   .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
   .selection-bar select.changed { color: var(--faint); } /* the ticks differ from the chosen preset, or "None chosen" */
   .selection-bar select option { color: var(--text); }
-  .selection-bar #sel-summary { margin-left: auto; }
   #preset-edit-btn[aria-expanded=true] { color: var(--text-strong); }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
   .preset-edit-row { display: flex; align-items: center; gap: 6px; }
-  .preset-edit-row #preset-edit-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; }
+  .preset-edit-row .panel-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; align-self: flex-start; }
+  /* The Lichess status after "10 chapters selected", opening the Lichess panel under the bar */
+  .bar-status { margin-left: auto; color: var(--muted); }
+  .status-btn { border: none; background: none; box-shadow: none; padding: 0; color: var(--muted); font: inherit; }
+  .status-btn:hover:not(:disabled) { background: none; color: var(--text); text-decoration: underline; }
+  .status-btn.problem { color: var(--bad); }
+  .lichess-lines p { margin: 2px 0; font-size: 13px; }
+  #lichess-account:empty, #lichess-fetched:empty, #lichess-moves:empty, #lichess-masters:empty { display: none; }
   .preset-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
   .preset-name-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .preset-name-form input { flex: 1 1 240px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
@@ -327,7 +333,7 @@
   .promo button { position: relative; width: 64px; height: 64px; padding: 0; }
 
   @media (max-width: 800px) {
-    .selection-bar #sel-summary { margin-left: 0; flex-basis: 100%; }
+    .selection-bar .bar-status { margin-left: 0; flex-basis: 100%; }
   }
   @media (max-width: 640px) {
     header nav { width: 100%; gap: 4px; flex-wrap: nowrap; }
@@ -393,7 +399,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
       </button>
       <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
-      <span id="sel-summary" class="muted"></span>
+      <span class="bar-status"><span id="sel-summary" class="muted"></span> · <button id="lichess-btn" class="status-btn" aria-expanded="false" aria-controls="lichess-panel"></button></span>
     </div>
     <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
       <div class="preset-edit-row">
@@ -403,13 +409,27 @@
           <button id="preset-rename-btn" class="small">Rename</button>
           <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
         </div>
-        <button id="preset-edit-close" class="icon-btn" aria-label="Close" title="Close (Esc)">×</button>
+        <button id="preset-edit-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
       </div>
       <form id="preset-name-form" class="preset-name-form hidden">
         <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
         <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
         <div id="preset-name-error" class="form-error"></div>
       </form>
+    </div>
+    <div id="lichess-panel" class="preset-edit hidden" aria-label="Lichess">
+      <div class="preset-edit-row">
+        <div class="lichess-lines">
+          <p id="lichess-account" class="muted"></p>
+          <p id="lichess-fetched" class="muted"></p>
+          <p id="lichess-moves" class="muted"></p>
+          <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
+          <p id="lichess-masters" class="muted"></p>
+          <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
+          <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
+        </div>
+        <button id="lichess-panel-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
+      </div>
     </div>
     <div class="studies">
       <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
@@ -617,7 +637,13 @@
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
+          <li><b>Lichess</b>, after the count at the top right, says how things stand with Lichess (e.g. "Lichess: downloading 120/850", or a problem in red); click it for your account, when your studies were last fetched, and how many positions have their statistics so far.</li>
+          <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
         </ul>
+        <details>
+          <summary>Move statistics</summary>
+          <p>How often each move is played in rated Lichess games and in master games. They download in the background whenever the app opens (after your studies are updated), and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the Options page's Backup card suggests a backup, so they needn't be downloaded again.</p>
+        </details>
         <details>
           <summary>Presets</summary>
           <ul>
@@ -647,14 +673,9 @@
         <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
           <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
-          <li><b>Lichess studies</b>: your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies. The card shows your account, when your studies were last fetched, and how many positions have move statistics so far.</li>
           <li><b>Lichess connection</b>: <b>Connect to Lichess</b> logs in again, e.g. after about a year, when Lichess ends the connection; <b>Disconnect</b> removes it from this browser (your studies stay). Opened from disk, this is <b>Lichess token</b>: <b>Add token</b> opens Lichess to create one, to paste into the box; <b>Clear token</b> removes it.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
         </ul>
-        <details>
-          <summary>Move statistics</summary>
-          <p>How often each move is played in rated Lichess games and in master games. They download in the background whenever the app opens (after your studies are updated), and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the app suggests a backup, so they needn't be downloaded again.</p>
-        </details>
         <details>
           <summary>Backups</summary>
           <ul>
@@ -695,17 +716,6 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="Your studies are updated from Lichess each time the app opens (reload the page to update them now); your stats are kept. Move and masters statistics then download in the background.">Lichess studies</span></h2>
-        <p id="opt-fetch-info" class="muted"></p>
-        <p id="opt-fetched" class="muted"></p>
-        <p id="opt-stats-info" class="muted"></p>
-        <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
-        <p id="opt-masters-info" class="muted"></p>
-        <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
-        <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
-      </div>
-
-      <div class="card">
         <h2><span id="opt-token-heading" data-tip="Needs the Read private studies (study:read) scope. A new token replaces the stored one.">Lichess token</span></h2>
         <div class="actions"><button id="opt-connect-btn" class="primary" title="Opens Lichess to create a token">Add token</button></div>
         <form id="opt-token-form" class="token-row hidden">
@@ -724,6 +734,7 @@
           <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
         </div>
         <p id="opt-backup-info" class="muted after-actions"></p>
+        <div id="backup-suggestion" class="update-status"></div>
       </div>
     </div>
   </section>
@@ -1094,13 +1105,13 @@ const sortStudies = list => list.sort((a, b) => a.name.localeCompare(b.name, und
 
 function askForToken() {
   showOptions();
-  setUpdateStatus(canLogIn ? 'Connect to Lichess first.' : 'Add a Lichess token first.', true);
+  showBanner(canLogIn ? 'Connect to Lichess first.' : 'Add a Lichess token first.', true);
   if (!canLogIn) showTokenBox($('opt-token-form'));
 }
 
-// Messages about fetching from Lichess appear on the Options page, in the Lichess studies card (and,
-// while connecting, on the welcome screen; before any studies have been fetched, in the Studies page's
-// empty list).
+// Messages about fetching from Lichess appear in the Studies page's Lichess panel, with the status in
+// the bar turning red for a problem (and, while connecting, on the welcome screen; before any studies
+// have been fetched, in the Studies page's empty list; a problem on the Options page as a banner).
 function setUpdateStatus(message, isError = false) {
   const parts = [].concat(message).filter(part => part !== ''); // '' clears it
   const box = $('update-status');
@@ -1110,6 +1121,8 @@ function setUpdateStatus(message, isError = false) {
   $('welcome-status').className = box.className;
   $('welcome-status').replaceChildren(...parts.filter(part => typeof part === 'string'));
   if (!library && parts.length) $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
+  if (isError && currentScreen === 'options') showBanner(parts.join(''), true); // e.g. connecting from the Options page
+  updateLichessStatus();
 }
 
 // All your studies from Lichess (one export), parsed; a LichessError if that fails.
@@ -1838,10 +1851,45 @@ function updateSelectionPanel() {
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
   $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected`;
+  renderLichess();
   renderPresets();
   // The top eye: a line through it while hidden studies are out of sight.
   setToggle('show-hidden-btn', showHiddenStudies, showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies');
 }
+
+// The Lichess status, after "10 chapters selected": a word or two ("Lichess", "Lichess: downloading
+// 120/850", "Lichess: connection expired" in red, "Sample studies"), opening the Lichess panel under
+// the bar: your account, when your studies were last fetched, the statistics downloaded so far, and
+// any message about fetching or downloading.
+function renderLichess() {
+  $('lichess-account').textContent = isTrial() ? 'Sample studies' : library ? `Lichess account: ${library.username}` : '';
+  $('lichess-fetched').textContent = isTrial() || !library ? '' : `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}`;
+  updateStatisticsInfo(); // the statistics lines, and the status
+}
+
+function updateLichessStatus(studied = library ? [...allStudyPositions().keys()] : []) {
+  const messages = ['update-status', 'lichess-status', 'masters-status'].map(id => $(id).textContent).join(' ');
+  const problem = /expired|rejected/.test(messages) ? 'connection expired' : /slow down/.test(messages) ? 'waiting for Lichess'
+    : /Couldn't reach/.test(messages) ? "can't reach Lichess" : $('update-status').classList.contains('error') && messages.trim() ? 'see details' : null;
+  const kind = ['lichess', 'masters'].find(k => explorerDownloads[k]);
+  const done = kind ? studied.filter(epd => moveStats[epd]?.[kind]).length : 0;
+  $('lichess-btn').textContent = (isTrial() ? 'Sample studies' : problem ? `Lichess: ${problem}`
+    : kind && done < studied.length ? `Lichess: downloading ${done}/${studied.length}` : 'Lichess') + (lichessPanelOpen ? ' ▾' : ' ▸');
+  $('lichess-btn').classList.toggle('problem', !!problem);
+  $('lichess-btn').title = lichessPanelOpen ? 'Hide the details' : 'Your Lichess account, when your studies were fetched, and the statistics';
+}
+
+let lichessPanelOpen = false;
+function showLichessPanel(open) {
+  lichessPanelOpen = open;
+  if (open) showPresetEdit(false); // one panel at a time
+  $('lichess-panel').classList.toggle('hidden', !open);
+  $('lichess-btn').setAttribute('aria-expanded', String(open));
+  updateLichessStatus();
+}
+$('lichess-btn').addEventListener('click', () => showLichessPanel(!lichessPanelOpen));
+$('lichess-panel-close').addEventListener('click', () => showLichessPanel(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && lichessPanelOpen) showLichessPanel(false); });
 
 $('all-box').addEventListener('change', e => setTicked(visibleChapters().map(c => c.key), e.target.checked));
 
@@ -1943,6 +1991,7 @@ function hideNameForm() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('preset-edit').classList.contains('hidden')) showPresetEdit(false); });
 
 function showPresetEdit(open) {
+  if (open && lichessPanelOpen) showLichessPanel(false); // one panel at a time
   $('preset-edit').classList.toggle('hidden', !open);
   $('preset-edit-btn').setAttribute('aria-expanded', String(open));
   if (!open) hideNameForm();
@@ -3016,11 +3065,12 @@ function allStudyPositions() {
   return found;
 }
 
-// After a download completes: suggest saving a backup (the downloads took a while), in the Lichess studies card.
+// After a download completes: suggest saving a backup (the downloads took a while), in the Options page's Backup card.
 function suggestBackup(what) {
-  setUpdateStatus([`${what} downloaded. Save a backup? `,
-    element('button', { class: 'small', onclick: () => { setUpdateStatus(''); $('backup-btn').click(); } }, 'Save backup'), ' ',
-    element('button', { class: 'small', onclick: () => setUpdateStatus('') }, 'Not now')]);
+  const box = $('backup-suggestion'), clear = () => box.replaceChildren();
+  box.replaceChildren(`${what} downloaded. Save a backup? `,
+    element('button', { class: 'small', onclick: () => { clear(); $('backup-btn').click(); } }, 'Save backup'), ' ',
+    element('button', { class: 'small', onclick: clear }, 'Not now'));
 }
 
 // moveStats[epd].lichess and .masters: the Opening Explorer's answer exactly as Lichess sends it
@@ -3043,14 +3093,14 @@ const EXPLORER_DATABASES = {
   lichess: {
     Label: 'Move statistics',
     url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
-    status: 'lichess-status', info: 'opt-stats-info',
+    status: 'lichess-status', info: 'lichess-moves',
     keep: (answer, position) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(withoutCheckMarks(m.san))), at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, at: Date.now() }),
   },
   masters: {
     Label: 'Masters statistics',
     url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
-    status: 'masters-status', info: 'opt-masters-info',
+    status: 'masters-status', info: 'lichess-masters',
     keep: answer => ({ ...answer, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, at: Date.now() }),
   },
@@ -3072,6 +3122,7 @@ function setExplorerStatus(kind, text) {
   const el = $(EXPLORER_DATABASES[kind].status);
   el.textContent = text;
   el.classList.toggle('hidden', !text);
+  updateLichessStatus();
 }
 
 async function downloadExplorer(kind) {
@@ -3080,7 +3131,7 @@ async function downloadExplorer(kind) {
   try { await downloadExplorerPositions(kind, run); }
   finally {
     if (explorerDownloads[kind] === run) explorerDownloads[kind] = null; // finished or stopped
-    if (currentScreen === 'options') updateStatisticsInfo();
+    if (currentScreen === 'studies') updateStatisticsInfo();
   }
 }
 
@@ -3098,7 +3149,7 @@ async function downloadExplorerPositions(kind, run) {
   // The progress shows in the Options page's "Move statistics: 3 of 10 positions (downloading…)"; the
   // status line under it is only for problems.
   status('');
-  if (currentScreen === 'options') updateStatisticsInfo();
+  if (currentScreen === 'studies') updateStatisticsInfo();
   let fetched = 0;
   for (let i = 0; i < todo.length; ) {
     if (explorerDownloads[kind] !== run) return; // a newer download took over
@@ -3134,7 +3185,7 @@ async function downloadExplorerPositions(kind, run) {
       fetched++;
     }
     i++;
-    if (currentScreen === 'options') updateStatisticsInfo();
+    if (currentScreen === 'studies') updateStatisticsInfo();
   }
   if (explorerDownloads[kind] !== run) return;
   // Only once every position has these statistics (a request Lichess refused leaves a gap), and only
@@ -3142,7 +3193,8 @@ async function downloadExplorerPositions(kind, run) {
   if (fetched && todo.every(([epd]) => saved(epd))) suggestBackup(explorer.Label);
 }
 
-// The Options page's "Move statistics: 3 of 10 positions (downloading…)" and "Masters statistics: …" lines.
+// The Lichess panel's "Move statistics: 3 of 10 positions (downloading…)" and "Masters statistics: …"
+// lines (on the Studies page), and the status in the bar.
 function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
@@ -3151,6 +3203,7 @@ function updateStatisticsInfo() {
     const done = studied.filter(epd => moveStats[epd]?.[kind]).length;
     el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
   }
+  updateLichessStatus(studied);
 }
 
 // "Position reached 950 / 23k / 1.2M / 1.8bn times" (the same short counts as everywhere), or
@@ -3231,11 +3284,8 @@ function renderPenalties() {
 
 function renderOptions() {
   renderPenalties();
-  $('opt-fetch-info').textContent = isTrial() ? 'Sample studies' : library ? `Lichess account: ${library.username}` : '';
-  $('opt-fetched').textContent = isTrial() ? '' : library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
   const lastBackup = store.get('lastBackup', null);
   $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
-  updateStatisticsInfo();
   const tokenSavedAt = store.get('tokenSavedAt', null);
   $('opt-token-state').textContent = canLogIn ? (!token ? 'Not connected.' : tokenSavedAt ? `Connected ${onDateAtTime(tokenSavedAt)}` : 'Connected.')
     : !token ? 'No token stored.' : tokenSavedAt ? `Token stored ${onDateAtTime(tokenSavedAt)}` : 'Token stored.';
