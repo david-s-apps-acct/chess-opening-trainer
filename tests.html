@@ -252,15 +252,32 @@ async function runTrial(app) {
   window.fetch = isolated;
   await wait(50);
   check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length], [true, 2]);
-  check('sample studies: the header\'s Lichess button says Connect', [$('nav-lichess').textContent, $('nav-lichess').classList.contains('nav-connect')], ['Connect', true]);
+  check('sample studies: the header\'s button still says Lichess', $('nav-lichess').textContent, 'Lichess');
   $('nav-lichess').click();
   check('sample studies: the Lichess page says so, with Connect and no Try sample studies', [$('welcome-start').classList.contains('hidden'), $('welcome-title').textContent,
-    $('trial-btn').classList.contains('hidden'), $('lichess-info').classList.contains('hidden')], [false, 'Sample studies', true, true]);
+    $('trial-offer').classList.contains('hidden'), $('lichess-info').classList.contains('hidden')], [false, 'Sample studies', true, true]);
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-lichess').click();
-  check('own studies: the header says Lichess; the page shows the account and Connect to Lichess, no Disconnect', [$('nav-lichess').textContent, $('lichess-info').classList.contains('hidden'),
-    $('lichess-account').textContent, $('lichess-connected').textContent, $('reconnect-btn').textContent, !!$('token-clear-btn')],
-    ['Lichess', false, 'Lichess account: tester', 'Not connected.', 'Connect to Lichess', false]);
+  check('own studies, not connected: the account, Connect to Lichess and no Disconnect', [$('lichess-info').classList.contains('hidden'),
+    $('lichess-account').textContent, $('lichess-connected').textContent, $('reconnect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden')],
+    [false, 'Lichess account: tester', 'Not connected.', false, true]);
+  // Connected: Disconnect, not Connect; Disconnect cancels a login's connection on Lichess and forgets it.
+  app.setToken('lio_login');
+  $('nav-lichess').click();
+  check('connected: Disconnect, not Connect', [$('reconnect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden'), $('disconnect-btn').textContent], [true, false, 'Disconnect']);
+  let revoked = null;
+  window.fetch = async (url, init) => { revoked = [String(url), init.method, init.headers.Authorization]; return new Response(null, { status: 204 }); };
+  $('disconnect-btn').click();
+  window.fetch = isolated;
+  check('Disconnect: cancelled on Lichess, forgotten here, Connect again', [revoked, app.token, $('lichess-connected').textContent, $('reconnect-btn').classList.contains('hidden')],
+    [['https://lichess.org/api/token', 'DELETE', 'Bearer lio_login'], null, 'Not connected.', false]);
+  app.setToken('lip_pasted');
+  revoked = null;
+  window.fetch = async () => { revoked = 'called'; return new Response(null, { status: 204 }); };
+  $('nav-lichess').click();
+  $('disconnect-btn').click();
+  window.fetch = isolated;
+  check('Disconnect: a pasted token is only forgotten here', [revoked, app.token], [null, null]);
 
   // A backup restored before the studies are fetched: its tries get their points once they are.
   app.setLibrary(null);

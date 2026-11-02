@@ -86,8 +86,6 @@
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  /* The Lichess button while not connected ("Connect"): blue too, but outlined, so it doesn't look like the current page */
-  header nav .nav-connect:not(.current), header nav .nav-connect:not(.current):hover:not(:disabled) { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   header nav .problem-dot { color: var(--bad); }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
@@ -300,6 +298,7 @@
   .practice-chooser p:empty { display: none; }
   .table-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; overflow-y: auto; }
   .table-overlay .table-card { width: 100%; max-width: 960px; }
+  .table-overlay .welcome-card { width: 100%; max-width: 520px; }
   .overlay-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .overlay-head h2 { margin: 0; }
   .overlay-close { font-size: 26px; line-height: 1; padding: 0 6px; }
@@ -359,10 +358,7 @@
       <div id="welcome-start" class="hidden">
         <h2 id="welcome-title"></h2>
         <p id="welcome-text"></p>
-        <div class="actions">
-          <button id="connect-btn" class="primary connect-btn">Connect to Lichess</button>
-          <button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button>
-        </div>
+        <div class="actions"><button id="connect-btn" class="primary connect-btn">Connect to Lichess</button></div>
         <div class="token-box hidden">
           <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
           <form id="token-form" class="token-row">
@@ -371,7 +367,10 @@
         </div>
         <div id="token-error" class="form-error"></div>
         <div id="welcome-status" class="update-status"></div>
-        <p class="muted">Your studies stay in your browser; the app only talks to Lichess.</p>
+        <div id="trial-offer">
+          <p class="muted after-actions">Or try the app without an account:</p>
+          <div class="actions"><button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button></div>
+        </div>
       </div>
       <div id="welcome-ready" class="hidden">
         <h2 id="welcome-ready-title"></h2>
@@ -393,7 +392,10 @@
           <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
           <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
         </div>
-        <div class="actions"><button id="reconnect-btn" class="primary connect-btn">Connect to Lichess</button></div>
+        <div class="actions">
+          <button id="reconnect-btn" class="primary connect-btn">Connect to Lichess</button>
+          <button id="disconnect-btn" class="primary">Disconnect</button>
+        </div>
         <form id="reconnect-token-form" class="token-row hidden">
           <input id="reconnect-token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
         </form>
@@ -491,6 +493,16 @@
     </div>
   </section>
 
+  <!-- The welcome, over the Lichess page, until a new user has started -->
+  <div id="welcome-splash" class="table-overlay hidden">
+    <div class="card welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcome-splash-title">
+      <div class="overlay-head"><h2 id="welcome-splash-title">Welcome to Chess Opening Trainer</h2><button id="welcome-splash-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
+      <p>Practice the openings in your Lichess studies. The app quizzes you on your moves, remembers which ones you know, and brings back the ones you don't.</p>
+      <p class="muted">Your studies stay in your browser; the app only talks to Lichess.</p>
+      <div class="actions"><button id="welcome-splash-start" class="primary">Get started</button></div>
+    </div>
+  </div>
+
   <!-- Test probabilities: a table shown over the Options page -->
   <div id="probabilities" class="table-overlay hidden">
     <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="probabilities-title">
@@ -515,7 +527,7 @@
           <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some on the <b>Studies</b> page.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
-        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Press <b>Connect</b> at the top later, and your own studies replace them.</p>
+        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Press <b>Connect to Lichess</b> on the Lichess page later, and your own studies replace them.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -539,7 +551,7 @@
         <h2>Practice</h2>
         <ul>
           <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters ticked on the Studies page. <b>Main lines only</b> leaves out the opponent's side variations.</li>
-          <li>Spaced repetition chooses what comes next; the sliders on the Options page (<b>Spaced repetition focus</b>) change the balance, and <b>Show lines</b> there lists what's most likely next.</li>
+          <li>Spaced repetition chooses what comes next; the sliders on the Options page (<b>Spaced repetition focus</b>) change the balance, and <b>Show lines</b> there lists what's most likely to be tested next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
           <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
@@ -593,7 +605,7 @@
           <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
             <li>The four sliders, on the Options page, set how much each counts (not with Reverse sides): <b>Frequency</b> (how often the position is reached on Lichess), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones) and <b>Untried</b>. 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
-            <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely next, with their position reached, accuracy, when last tested and chance of coming up next.</li>
+            <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely to be tested next, with their position reached, accuracy, when last tested and chance of coming up next.</li>
           </ul>
           <details>
             <summary>How the priority is worked out</summary>
@@ -672,9 +684,9 @@
       <div class="card" id="help-lichess">
         <h2>Lichess</h2>
         <ul>
-          <li>The header's <b>Lichess</b> button shows how things stand: <b>Connect</b> when you're not connected, a red dot when there's a problem (e.g. Lichess has ended the connection).</li>
+          <li>The header's <b>Lichess</b> button shows a red dot when there's a problem (e.g. Lichess has ended the connection).</li>
           <li>The Lichess page shows your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading.</li>
-          <li><b>Connect to Lichess</b> logs in again, e.g. after about a year, when Lichess ends the connection. Opened from disk, it's <b>Add token</b>: Lichess opens to create one, to paste into the box.</li>
+          <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
         </ul>
         <details>
@@ -700,8 +712,8 @@
         <h2><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition focus</span></h2>
         <div id="weight-rows" class="weight-rows"></div>
         <div class="actions">
-          <button id="show-lines-btn" class="primary" title="The lines most likely to come up next">Show lines</button>
-          <button id="show-positions-btn" class="primary" title="The positions most likely to come up next">Show positions</button>
+          <button id="show-lines-btn" class="primary" title="The lines most likely to be tested next">Show lines</button>
+          <button id="show-positions-btn" class="primary" title="The positions most likely to be tested next">Show positions</button>
           <button id="weights-reset" class="primary" title="All sliders to 50%">Reset</button>
         </div>
       </div>
@@ -3233,15 +3245,15 @@ function renderOptions() {
 
 // ---------- Lichess page ----------
 // Everything to do with Lichess, in one place, shown as whichever applies:
-// - welcome (a new user, or the sample studies without a connection): the welcome (or "You're using
-//   the sample studies"), Connect to Lichess and Try sample studies;
+// - not connected (a new user, or the sample studies without a connection): Connect to Lichess, and
+//   for a new user Try sample studies (or "You're using the sample studies");
 // - ready (just after the first connection): "Your 12 studies are ready", Restore backup or Start;
 // - connected: your account, when you connected, when your studies were last fetched, the statistics
-//   downloaded so far, any message about fetching or downloading, and Connect to Lichess (to connect
-//   again, e.g. when Lichess ends the connection after about a year).
+//   downloaded so far, any message about fetching or downloading, and Disconnect (or, once Lichess has
+//   ended the connection, after about a year, Connect to Lichess).
 // Connecting logs in with Lichess online; opened from disk it's Add token and a box to paste it into.
-// The header's Lichess button says how things stand: "Connect" (outlined) when not connected,
-// "Lichess" otherwise, with a red dot for a problem.
+// A new user gets the welcome splash over it. The header's Lichess button always reads "Lichess", with
+// a red dot for a problem.
 let welcomeReady = false; // showing "Your studies are ready"
 
 function showLichess() {
@@ -3254,27 +3266,31 @@ function renderLichessPage() {
   $('welcome-start').classList.toggle('hidden', !welcome);
   $('welcome-ready').classList.toggle('hidden', !welcomeReady);
   $('lichess-info').classList.toggle('hidden', welcome || welcomeReady);
-  $('welcome-title').textContent = isTrial() ? 'Sample studies' : 'Welcome to Chess Opening Trainer';
+  $('welcome-title').textContent = isTrial() ? 'Sample studies' : 'Lichess';
   $('welcome-text').textContent = isTrial() ? "You're using the sample studies (Ruy Lopez and Queen's Gambit Declined). Connect to Lichess to use your own."
-    : "Practice the openings in your Lichess studies. The app quizzes you on your moves, remembers which ones you know, and brings back the ones you don't.";
-  $('trial-btn').classList.toggle('hidden', isTrial() || !canLogIn); // a page opened from disk can't read trial.json
+    : 'Connect to Lichess to practice your own studies.';
+  // The sample only without studies of your own (it would replace them); a page opened from disk can't read trial.json.
+  $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
   $('lichess-account').textContent = library && !isTrial() ? `Lichess account: ${library.username}` : '';
   const savedAt = store.get('tokenSavedAt', null), when = savedAt ? ' ' + onDateAtTime(savedAt) : '';
   $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Token stored${when}` : 'No token stored.');
   $('lichess-fetched').textContent = library && !isTrial() ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : '';
+  // Connect when not connected, or when Lichess has ended the connection; Disconnect when connected.
+  $('reconnect-btn').classList.toggle('hidden', !!token && !connectionExpired());
+  $('disconnect-btn').classList.toggle('hidden', !token);
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
-// The header's Lichess button: "Connect" (outlined) when not connected; "Lichess", with a red dot
-// when there's a problem (an expired connection, Lichess unreachable or asking to slow down).
+const lichessMessages = () => ['update-status', 'lichess-status', 'masters-status'].map(id => $(id).textContent).join(' ').trim();
+const connectionExpired = () => /expired|rejected/.test(lichessMessages());
+
+// The header's Lichess button: always "Lichess", with a red dot when there's a problem (an expired
+// connection, Lichess unreachable or asking to slow down, any other error).
 function updateLichessStatus() {
-  const notConnected = !token && (!library || isTrial());
-  const messages = ['update-status', 'lichess-status', 'masters-status'].map(id => $(id).textContent).join(' ').trim();
-  const problem = !notConnected && (/expired|rejected|slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages));
-  const btn = $('nav-lichess');
-  btn.classList.toggle('nav-connect', notConnected);
-  btn.replaceChildren(notConnected ? 'Connect' : 'Lichess', ...problem ? [' ', element('span', { class: 'problem-dot', 'aria-label': 'problem' }, '●')] : []);
-  btn.title = notConnected ? 'Connect to Lichess to use your own studies' : problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
+  const messages = lichessMessages();
+  const problem = /expired|rejected|slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages);
+  $('nav-lichess').replaceChildren('Lichess', ...problem ? [' ', element('span', { class: 'problem-dot', 'aria-label': 'problem' }, '●')] : []);
+  $('nav-lichess').title = problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
 }
 
 // Adding a token (opened from disk): Add token opens Lichess's page for creating one, with the scope
@@ -3319,6 +3335,29 @@ for (const btn of document.querySelectorAll('.connect-btn')) {
   btn.title = canLogIn ? 'Sign in to Lichess and allow the app to read your studies' : 'Opens Lichess to create a token';
   btn.addEventListener('click', () => canLogIn ? logInWithLichess() : openTokenPage(btn));
 }
+// Disconnect (online) or Clear token (from disk): the app forgets the connection; your studies and stats
+// stay, but stop updating until you connect again. A connection made by logging in (its token starts
+// "lio_") is also cancelled on Lichess; a token you pasted ("lip_…") may be used elsewhere, so it's
+// only forgotten here.
+if (!canLogIn) $('disconnect-btn').textContent = 'Clear token';
+$('disconnect-btn').title = canLogIn ? 'Disconnect from Lichess; your studies and stats stay' : 'Forget the token; your studies and stats stay';
+$('disconnect-btn').addEventListener('click', () => {
+  if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
+  token = null;
+  store.remove('token');
+  store.remove('tokenSavedAt');
+  setUpdateStatus('');
+  renderLichessPage();
+  showBanner(canLogIn ? 'Disconnected.' : 'Token cleared.');
+});
+
+// The welcome splash: over the Lichess page each time the app opens until you've started (connected or
+// tried the sample studies). Get started, × or Esc closes it.
+const showSplash = open => $('welcome-splash').classList.toggle('hidden', !open);
+for (const id of ['welcome-splash-start', 'welcome-splash-close']) $(id).addEventListener('click', () => showSplash(false));
+$('welcome-splash').addEventListener('click', e => { if (e.target === $('welcome-splash')) showSplash(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('welcome-splash').classList.contains('hidden')) showSplash(false); });
+
 $('lichess-heading').dataset.tip = canLogIn
   ? 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). Lichess ends the connection after about a year; connect again then.'
   : 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). The token needs the Read private studies (study:read) scope; a new one replaces the stored one.';
@@ -3494,7 +3533,7 @@ async function init() {
   // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
   if (library) { showChooser(); keepData(); syncStudies().then(startDownloads); } // the Practice page
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
-  else showLichess();
+  else { showLichess(); showSplash(true); } // not started yet: the welcome
 }
 
 init();
