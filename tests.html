@@ -364,6 +364,18 @@ async function runTrial(app) {
      "Replace your history and settings with the backup (2 moves with results)? This can't be undone.",
      "Replace your history and settings with the backup (2 moves with results)? This can't be undone."]);
 
+  // A whole restore (a file chosen, "Are you sure?" answered yes): the backup's history, and the message.
+  const before = { history: app.history, selection: app.selection, presets: app.presets, confirm: window.confirm };
+  window.confirm = () => true;
+  const chosen = new DataTransfer();
+  chosen.items.add(new File([JSON.stringify({ app: 'chess-opening-trainer', version: 5, settings: {}, history: { moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['e4'], at: null }] }, lines: {} } })], 'backup.json'));
+  $('restore-file').files = chosen.files;
+  $('restore-file').dispatchEvent(new Event('change'));
+  await until(() => $('banner').textContent.startsWith('Backup restored'), 'the restore to finish');
+  check('restore: the backup restored', [Object.keys(app.history.moves), $('banner').textContent.split('.')[0]], [['AAAAAAAA/BBBBBBBB|e4'], 'Backup restored: history for 1 move, and settings']);
+  window.confirm = before.confirm;
+  app.setHistory(before.history); app.setSelection(before.selection); app.setPresets(before.presets); app.setSettings({});
+
   // Options: Reset puts the penalties and Masters moves back to their defaults.
   app.setSettings({ errorPenalties: { error: 85 }, mastersTop: 2 });
   $('penalties-reset').click();

@@ -86,7 +86,7 @@
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  /* The Lichess button's red dot (not connected, or a problem): small and raised, like a notification dot */
+  /* The Lichess button's red dot (not connected, or a problem): small, centred on the lowercase letters */
   header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: middle; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
@@ -94,8 +94,8 @@
   .banner.error { border-color: var(--bad); color: var(--bad); }
   .bg-status { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
 
-  /* Token screen */
-  .card { background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 20px; max-width: 560px; }
+  /* Cards (Lichess, Options and Help pages, and the overlays) */
+  .card { background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); padding: 20px; }
   .card h2 { margin-top: 0; font-size: 18px; }
   .token-row { display: flex; gap: 8px; margin-top: 12px; }
   .token-row input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
@@ -103,12 +103,12 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
-  #token-error:empty, #getting-started-ready:empty, #opt-backup-info:empty { display: none; }
+  #token-error:empty, #getting-started-ready:empty, #backup-info:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   #options-screen button.primary, #lichess-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options and Lichess page button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
   .update-status.error { color: var(--bad); }
-  select { font: inherit; color: inherit; flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); }
+  select { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
 
   /* Help screen */
   .help { max-width: 760px; }
@@ -279,7 +279,7 @@
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
   #practice-title:empty, #practice-position:empty { display: none; } /* nothing above the chooser */
   .practice-chooser label { display: flex; align-items: center; gap: 6px; }
-  .practice-chooser input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .practice-chooser input[type=checkbox] { margin: 0; }
   /* Lines or Positions: two halves of one switch, the chosen one blue. */
   .kind-switch { display: flex; }
   .kind-switch button { flex: 1; padding: 9px 12px; font-size: 15px; font-weight: 600; border-radius: 0; }
@@ -360,8 +360,8 @@
 <main>
   <div id="banner" class="banner hidden"></div>
 
-  <!-- Lichess: for a new user (or with the sample studies) the welcome and Connect to Lichess, then (after
-       the first connection) the offer to restore a backup; once connected, your account, studies and statistics. -->
+  <!-- Lichess: Status, Connection and Backup for everyone, and Getting started until you've started
+       (see the Lichess page section of the script). -->
   <section id="lichess-screen" class="hidden">
     <div class="cards">
       <div class="card">
@@ -384,7 +384,7 @@
           <button id="connect-btn" class="primary">Connect to Lichess</button>
           <button id="disconnect-btn" class="primary">Disconnect</button>
         </div>
-        <div class="token-box hidden">
+        <div id="token-box" class="hidden">
           <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
           <form id="token-form" class="token-row">
             <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
@@ -400,7 +400,7 @@
           <button id="restore-btn" class="primary">Restore backup</button>
           <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
         </div>
-        <p id="opt-backup-info" class="muted after-actions"></p>
+        <p id="backup-info" class="muted after-actions"></p>
         <div id="backup-suggestion" class="update-status"></div>
       </div>
 
@@ -1029,6 +1029,31 @@ function setToggle(id, on, title) {
   btn.setAttribute('aria-pressed', String(on));
 }
 
+// When something happened, in this computer's time zone and the browser's date format, without the
+// zone: "on 10/26/26 at 12:01 PM".
+const onDateAtTime = ts => `on ${new Date(ts).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })} at ${new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+
+// The Options page's sliders, 0%–100% in steps of 5, in a grid: for each row ({ key, name, definition }),
+// its name (with its definition on hover), the slider (id prefix-key) and its value. onChange(key, value)
+// when one is let go.
+function addSliders(grid, prefix, rows, onChange) {
+  grid.replaceChildren(...rows.flatMap(({ key, name, definition }) => [
+    quickTip(element('label', { for: `${prefix}-${key}` }, name), definition),
+    element('input', { type: 'range', id: `${prefix}-${key}`, min: '0', max: '100', step: '5' }),
+    element('output', { id: `${prefix}-${key}-value`, for: `${prefix}-${key}` }),
+  ]));
+  for (const { key } of rows) {
+    $(`${prefix}-${key}`).addEventListener('input', e => { $(`${prefix}-${key}-value`).textContent = `${e.target.value}%`; });
+    $(`${prefix}-${key}`).addEventListener('change', e => onChange(key, +e.target.value));
+  }
+}
+function showSliders(prefix, rows, values) {
+  for (const { key } of rows) {
+    $(`${prefix}-${key}`).value = String(values[key]);
+    $(`${prefix}-${key}-value`).textContent = `${values[key]}%`;
+  }
+}
+
 // How long ago a move was last tested, in calendar days: "Today", "1 day", "5 days"; "–" when it
 // isn't known (moves last tested before these times were recorded).
 function daysAgo(time) {
@@ -1084,7 +1109,7 @@ async function lichessFetch(url, tok) {
 // A request to the Lichess API, its answer as JSON (or text); LichessError on any failure.
 async function lichessRequest(path, tok, asText) {
   const res = await lichessFetch(LICHESS + path, tok);
-  if (res.status === 401) throw new LichessError(canLogIn ? 'Lichess connection expired. Connect again on the Options page.' : 'Lichess rejected the token. Add a new one on the Options page.', 401);
+  if (res.status === 401) throw new LichessError(canLogIn ? 'Lichess connection expired. Connect again on the Lichess page.' : 'Lichess rejected the token. Add a new one on the Lichess page.', 401);
   if (res.status === 429) throw new LichessError('Lichess is limiting requests. Try again in a minute.', 429);
   if (!res.ok) throw new LichessError(`Lichess returned an error (${res.status}).`, res.status);
   return asText ? res.text() : res.json();
@@ -1147,9 +1172,9 @@ async function useStudies(fetched) {
 }
 
 // Fetching your studies when there are none yet, or the sample ones (connecting), with "Fetching…"
-// and any error shown. With welcome (the first connection, from the welcome screen), every chapter
-// is ticked and the statistics don't download yet: the welcome screen offers to restore a backup
-// first (see showWelcomeReady). (Once you have your own studies, syncStudies keeps them up to date.)
+// and any error shown. With welcome (the first connection), every chapter is ticked and the
+// statistics don't download yet: Getting started waits for Start or Restore backup (see
+// showWelcomeReady). (Once you have your own studies, syncStudies keeps them up to date.)
 async function fetchStudies({ welcome = false } = {}) {
   if (!token) return askForToken();
   setUpdateStatus('Fetching your studies from Lichess…');
@@ -1159,7 +1184,7 @@ async function fetchStudies({ welcome = false } = {}) {
     await useStudies(fetched);
     if (welcome) { selection = new Set(allChapters().map(c => c.key)); saveSelection(); } // first import: everything ticked, ready to practice
     else startDownloads(); // missing Lichess data, quietly in the background
-    setUpdateStatus(''); // the Options page says what was fetched, and when
+    setUpdateStatus(''); // the Status card says what was fetched, and when
     if (welcome) showWelcomeReady();
     else if (currentScreen === 'lichess') renderLichessPage(); else showStudies();
   } catch (e) {
@@ -1170,7 +1195,7 @@ async function fetchStudies({ welcome = false } = {}) {
 // Each time the app opens (online and connected, with your own studies), your studies are fetched
 // again, quietly. If they've changed on Lichess, they replace the stored ones, straight away or, if
 // you're in the middle of practice, when it ends (waitingStudies). Errors are quiet too, except an
-// expired connection, which the Options page reports. Resolves when done (then the downloads start).
+// expired connection, which the Lichess page reports. Resolves when done (then the downloads start).
 let waitingStudies = null;
 async function syncStudies() {
   if (!token || !library || isTrial() || !navigator.onLine) return;
@@ -1189,10 +1214,11 @@ async function syncStudies() {
   }
 }
 
-// After the studies change under the page you're on: it's drawn again.
+// After the studies or settings change under the page you're on: it's drawn again.
 function refreshPage() {
   if (currentScreen === 'studies') renderStudies();
   else if (currentScreen === 'lichess') renderLichessPage();
+  else if (currentScreen === 'options') renderOptions();
   else if (currentScreen === 'practice' && !practice) renderChooser();
 }
 
@@ -1210,23 +1236,20 @@ function pruneAfterRefresh() {
   saveSelection(); saveHistory();
 }
 
-async function checkAndSaveToken(value, errorEl) {
-  const tok = value.trim();
-  if (!tok) { errorEl.textContent = 'Paste a token first.'; return false; }
-  errorEl.textContent = 'Checking token…';
-  try {
-    await lichessRequest('/api/account', tok);
-  } catch (e) {
-    errorEl.textContent = e.status === 401
-      ? 'Lichess rejected this token. Check it\'s complete and has the study:read scope.'
-      : errorText(e);
-    return false;
-  }
-  errorEl.textContent = '';
+// The token (from logging in, or pasted) saved, with when (shown on the Lichess page); null forgets it.
+function saveToken(tok) {
   token = tok;
-  store.set('token', token);
-  store.set('tokenSavedAt', Date.now()); // shown on the Options page
-  return true;
+  if (tok) { store.set('token', tok); store.set('tokenSavedAt', Date.now()); }
+  else { store.remove('token'); store.remove('tokenSavedAt'); }
+}
+
+// Once connected (logged in, or a token pasted): the first connection (or replacing the sample
+// studies) fetches your studies; otherwise they just update, and a download stopped by an expired
+// connection continues. The Status card shows the connection (no banner).
+function connected() {
+  showLichess();
+  if (!library || isTrial()) return fetchStudies({ welcome: true });
+  syncStudies().then(startDownloads);
 }
 
 // ---------- Lichess login (OAuth) ----------
@@ -1256,8 +1279,8 @@ async function loginAddress(verifier, state) {
 }
 
 // Back from Lichess (the address has ?code=… or ?error=…): exchanges the code for a token and saves
-// it. True when you've just logged in, false when that failed (the welcome screen and the Options
-// page say why), null when the page wasn't opened on the way back from Lichess.
+// it. True when you've just logged in, false when that failed (the Lichess page says why), null when
+// the page wasn't opened on the way back from Lichess.
 async function finishLogIn() {
   const params = new URLSearchParams(location.search);
   if (!params.has('code') && !params.has('error')) return null;
@@ -1272,18 +1295,16 @@ async function finishLogIn() {
     const res = await fetch(`${LICHESS}/api/token`, { method: 'POST', body: new URLSearchParams({ grant_type: 'authorization_code',
       code: params.get('code'), code_verifier: saved.verifier, redirect_uri: returnAddress(), client_id: OAUTH_CLIENT }) });
     if (!res.ok) return fail(`Lichess couldn't connect (${res.status}). Please try again.`);
-    token = (await res.json()).access_token;
+    saveToken((await res.json()).access_token);
   } catch (e) { return fail(errorText(e)); }
-  store.set('token', token);
-  store.set('tokenSavedAt', Date.now());
   return true;
 }
 
 // ---------- Sample studies ----------
-// "Try sample studies" on the first-visit screen loads trial.json, published with the app: two
+// "Try sample studies" on the Getting started card loads trial.json, published with the app: two
 // studies and their move statistics ({ library, moveStats }, as stored by the app), so the app can be
-// tried without a Lichess account. Its library is marked trial: true, which the Options page shows.
-// Adding a token then fetches the user's own studies, which replace it (and the clean-up after
+// tried without a Lichess account. Its library is marked trial: true, which the Status card shows.
+// Connecting then fetches the user's own studies, which replace it (and the clean-up after
 // fetching drops the sample's stats). A page opened from disk can't read trial.json, so the offer is
 // hidden there.
 const isTrial = () => !!library?.trial;
@@ -2236,12 +2257,6 @@ const KINDS = {
   },
 };
 
-// The sliders' rows: each slider's name (with its definition on hover), the slider and its value.
-$('weight-rows').replaceChildren(...WEIGHTS.flatMap(({ key, name, definition }) => [
-  quickTip(element('label', { for: `weight-${key}` }, name), definition),
-  element('input', { type: 'range', id: `weight-${key}`, min: '0', max: '100', step: '5' }),
-  element('output', { id: `weight-${key}-value`, for: `weight-${key}` }),
-]));
 
 // The Practice page with nothing in progress: the chooser.
 function showChooser() {
@@ -2288,12 +2303,7 @@ function renderChooser() {
 }
 
 // The Options page's Spaced repetition focus card: the sliders' values.
-function renderWeights() {
-  for (const { key } of WEIGHTS) {
-    $(`weight-${key}`).value = String(settings.practice.weights[key]);
-    $(`weight-${key}-value`).textContent = `${settings.practice.weights[key]}%`;
-  }
-}
+const renderWeights = () => showSliders('weight', WEIGHTS, settings.practice.weights);
 
 // A change to the practice settings: saved, and the chooser and sliders shown again.
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); renderWeights(); };
@@ -2301,10 +2311,7 @@ const changePractice = change => { change(settings.practice); saveSettings(); re
 for (const kind of Object.keys(KINDS)) $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
 $('chooser-main').addEventListener('change', e => changePractice(p => { p.mainLinesOnly[p.kind] = e.target.checked; }));
 $('chooser-reversed').addEventListener('change', e => changePractice(p => { p.reversed = e.target.checked; }));
-for (const { key } of WEIGHTS) {
-  $(`weight-${key}`).addEventListener('input', e => { $(`weight-${key}-value`).textContent = `${e.target.value}%`; });
-  $(`weight-${key}`).addEventListener('change', e => changePractice(p => { p.weights[key] = +e.target.value; }));
-}
+addSliders($('weight-rows'), 'weight', WEIGHTS, (key, value) => changePractice(p => { p.weights[key] = value; }));
 $('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
 $('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items, reversedSides()));
 for (const kind of Object.keys(KINDS)) $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind));
@@ -3099,7 +3106,7 @@ async function downloadExplorerPositions(kind, run) {
   const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   if (!todo.length) return; // nothing missing: nothing to say
-  // The progress shows in the Options page's "Move statistics: 3 of 10 positions (downloading…)"; the
+  // The progress shows in the Lichess page's "Move statistics: 3 of 10 positions (downloading…)"; the
   // status line under it is only for problems.
   status('');
   if (currentScreen === 'lichess') updateStatisticsInfo();
@@ -3195,17 +3202,13 @@ function rankAndShareText(stats, moveSan, who, none) {
   return r ? `#${r} ${who} move (${s})` : none;
 }
 
-// ---------- Options page and token ----------
+// ---------- Options page ----------
 
 function showOptions() {
   // A line in progress is kept; the Practice button returns to it.
   showScreen('options');
   renderOptions();
 }
-
-// When something happened, in this computer's time zone and the browser's date format, without the
-// zone: "on 10/26/26 at 12:01 PM".
-const onDateAtTime = ts => `on ${new Date(ts).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })} at ${new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
 // The Error penalties card: a slider for each penalty, 0%–100% in steps of 5, like the Spaced
 // repetition focus sliders (each name explains itself on hover), then the Masters moves drop-down.
@@ -3215,38 +3218,18 @@ const PENALTIES = [
   { key: 'error', name: 'Error', definition: 'Any other move, or an alternative marked ?, ?? or ?!.' },
   { key: 'hint', name: 'Hint', definition: 'Hint, and Show correct move.' },
 ];
-$('penalty-rows').replaceChildren(...PENALTIES.flatMap(({ key, name, definition }) => [
-  quickTip(element('label', { for: `pen-${key}` }, name), definition),
-  element('input', { type: 'range', id: `pen-${key}`, min: '0', max: '100', step: '5' }),
-  element('output', { id: `pen-${key}-value`, for: `pen-${key}` }),
-]));
-for (const { key } of PENALTIES) {
-  $(`pen-${key}`).addEventListener('input', e => { $(`pen-${key}-value`).textContent = `${e.target.value}%`; });
-  $(`pen-${key}`).addEventListener('change', e => {
-    settings.errorPenalties = { ...settings.errorPenalties, [key]: +e.target.value };
-    saveSettings();
-    rescoreHistory(); // past attempts are scored again with the new penalties
-  });
-}
+// A change to the scoring settings: saved, and past attempts scored again with them.
+const changeScoring = change => { change(); saveSettings(); rescoreHistory(); };
+addSliders($('penalty-rows'), 'pen', PENALTIES, (key, value) => changeScoring(() => { settings.errorPenalties = { ...settings.errorPenalties, [key]: value }; }));
+for (const n of MASTERS_TOPS) $('masters-top').append(element('option', { value: String(n) }, `Top ${n}`));
+$('masters-top').addEventListener('change', e => changeScoring(() => { settings.mastersTop = +e.target.value; }));
 // Reset: the four penalties and Masters moves back to their defaults.
 $('penalties-reset').addEventListener('click', () => {
-  settings.errorPenalties = { ...DEFAULT_SETTINGS.errorPenalties };
-  settings.mastersTop = DEFAULT_SETTINGS.mastersTop;
-  saveSettings();
-  rescoreHistory();
+  changeScoring(() => { settings.errorPenalties = { ...DEFAULT_SETTINGS.errorPenalties }; settings.mastersTop = DEFAULT_SETTINGS.mastersTop; });
   renderPenalties();
 });
-for (const n of MASTERS_TOPS) $('masters-top').append(element('option', { value: String(n) }, `Top ${n}`));
-$('masters-top').addEventListener('change', e => {
-  settings.mastersTop = +e.target.value;
-  saveSettings();
-  rescoreHistory();
-});
 function renderPenalties() {
-  for (const { key } of PENALTIES) {
-    $(`pen-${key}`).value = String(settings.errorPenalties[key]);
-    $(`pen-${key}-value`).textContent = `${settings.errorPenalties[key]}%`;
-  }
+  showSliders('pen', PENALTIES, settings.errorPenalties);
   $('masters-top').value = String(settings.mastersTop);
 }
 
@@ -3254,7 +3237,6 @@ function renderOptions() {
   renderPenalties();
   renderWeights();
 }
-
 
 // ---------- Lichess page ----------
 // Everything to do with Lichess, and backups, in one place:
@@ -3264,9 +3246,9 @@ function renderOptions() {
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
 //   about a year), Disconnect when connected (the same for everyone);
 // - Backup: Save backup (greyed out until you've started) and Restore backup;
-// - Getting started (new users only, until they start): Start once the studies
-//   have been fetched (nothing downloads until one is pressed); and, without studies of your own, Try
-//   sample studies.
+// - Getting started (new users only, until they start): Start once the studies have been fetched
+//   (nothing downloads until Start or Restore backup is pressed); and, without studies of your own,
+//   Try sample studies.
 // Connecting logs in with Lichess online; opened from disk it's Add token (with a box to paste it into)
 // and Clear token. A new user gets the welcome splash over the page. The header's Lichess button
 // always reads "Lichess", with a red dot for a problem.
@@ -3299,7 +3281,7 @@ function renderLichessPage() {
   $('backup-btn').disabled = notStarted;
   $('backup-btn').title = notStarted ? 'Nothing to save yet' : '';
   const lastBackup = store.get('lastBackup', null);
-  $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
+  $('backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
@@ -3311,7 +3293,7 @@ const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 // down, any other error).
 function updateLichessStatus() {
   const messages = lichessMessages();
-  const problem = /expired|rejected|slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages);
+  const problem = connectionExpired() || /slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages);
   $('nav-lichess').replaceChildren('Lichess', ...!token || problem ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'needs attention' })] : []);
   $('nav-lichess').title = !token ? 'Not connected to Lichess' : problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
 }
@@ -3321,28 +3303,27 @@ function updateLichessStatus() {
 // pressing Enter) checks it with Lichess and saves it.
 const TOKEN_PAGE = 'https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer';
 
-function showTokenBox() {
-  $('token-form').closest('.token-box').classList.remove('hidden');
-  $('token-input').focus();
+let checkingToken = false;
+async function savePastedToken() {
+  const tok = $('token-input').value.trim(), errorEl = $('token-error');
+  if (checkingToken) return;
+  if (!tok) { errorEl.textContent = 'Paste a token first.'; return; }
+  checkingToken = true;
+  errorEl.textContent = 'Checking token…';
+  try {
+    await lichessRequest('/api/account', tok);
+  } catch (e) {
+    errorEl.textContent = e.status === 401 ? 'Lichess rejected this token. Check it\'s complete and has the study:read scope.' : errorText(e);
+    return;
+  } finally { checkingToken = false; }
+  errorEl.textContent = '';
+  $('token-input').value = '';
+  $('token-box').classList.add('hidden');
+  saveToken(tok);
+  connected();
 }
-
-function setUpTokenBox(form, errorEl, onSaved) {
-  const input = form.querySelector('input');
-  let checking = false;
-  const save = async () => {
-    if (checking) return;
-    checking = true;
-    try {
-      if (await checkAndSaveToken(input.value, errorEl)) {
-        input.value = '';
-        form.closest('.token-box').classList.add('hidden');
-        onSaved();
-      }
-    } finally { checking = false; }
-  };
-  form.addEventListener('submit', e => { e.preventDefault(); save(); });
-  input.addEventListener('paste', () => setTimeout(save)); // once the pasted text is in the box
-}
+$('token-form').addEventListener('submit', e => { e.preventDefault(); savePastedToken(); });
+$('token-input').addEventListener('paste', () => setTimeout(savePastedToken)); // once the pasted text is in the box
 
 // Connect to Lichess: log in with Lichess online; from disk, Add token: Lichess's token page in a new
 // tab, and the box to paste the token into.
@@ -3351,15 +3332,8 @@ $('connect-btn').title = canLogIn ? 'Sign in to Lichess and allow the app to rea
 $('connect-btn').addEventListener('click', () => {
   if (canLogIn) return logInWithLichess();
   window.open(TOKEN_PAGE, '_blank', 'noopener');
-  showTokenBox();
-});
-
-// A token pasted (from disk): the first connection (or replacing the sample studies) fetches your
-// studies, as logging in does; otherwise the studies just update.
-setUpTokenBox($('token-form'), $('token-error'), () => {
-  if (!library || isTrial()) return fetchStudies({ welcome: true });
-  renderLichessPage(); // the Status card shows the token (no banner)
-  syncStudies().then(startDownloads); // a download stopped by a rejected token continues
+  $('token-box').classList.remove('hidden');
+  $('token-input').focus();
 });
 
 // Disconnect (online) or Clear token (from disk), after "Are you sure?": the app forgets the
@@ -3371,9 +3345,7 @@ $('disconnect-btn').title = canLogIn ? 'Disconnect from Lichess; your studies an
 $('disconnect-btn').addEventListener('click', () => {
   if (!confirm(canLogIn ? 'Disconnect from Lichess? Your studies and stats stay.' : 'Clear the token? Your studies and stats stay.')) return;
   if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
-  token = null;
-  store.remove('token');
-  store.remove('tokenSavedAt');
+  saveToken(null);
   setUpdateStatus('');
   renderLichessPage(); // the Status card shows it (no banner)
 });
@@ -3421,11 +3393,15 @@ $('welcome-start-btn').addEventListener('click', leaveWelcome);
 const BACKUP_APP = 'chess-opening-trainer';
 const BACKUP_VERSION = 5; // backups from earlier versions can't be restored
 
+// The Lichess account whose studies these are (none for the sample studies): recorded in backups, to
+// warn when one is restored under another.
+const ownAccount = () => library && !isTrial() ? library.username : null;
+
 $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
-    account: library && !isTrial() ? library.username : null, // the Lichess account, to warn when it's restored under another
+    account: ownAccount(),
     settings, selection: [...selection], presets, hiddenStudies: [...hiddenStudies],
     history: storedHistory(),
     moveStats, // they take a long time to download, so they're included
@@ -3466,7 +3442,7 @@ function backupSaved() {
 // Restore's "Are you sure?": from another Lichess account (recorded in the backup; you're connected to,
 // or have the studies of, a different one), it says so; otherwise the usual question.
 function restoreQuestion(b) {
-  const here = library && !isTrial() ? library.username : null;
+  const here = ownAccount();
   if (b.account && here && b.account !== here) return `This backup is from ${b.account}'s account, but you're connected as ${here}. Restore anyway? Your stats would be replaced.`;
   const n = Object.keys(b.history.moves).length;
   const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
@@ -3511,10 +3487,9 @@ $('restore-file').addEventListener('change', async e => {
   await saveMoveStats();
   saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
   updateSoundButton();
-  renderOptions();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Start does
-  if (currentScreen === 'lichess') renderLichessPage();
-  showBanner(`Backup restored: history for ${plural(n, 'move')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
+  refreshPage();
+  showBanner(`Backup restored: history for ${plural(Object.keys(history.moves).length, 'move')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
 });
 
 // ---------- Navigation ----------
@@ -3560,14 +3535,10 @@ async function init() {
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting
   rescoreHistory(); // attempts scored again with the current rules and data
-  // Back from logging in with Lichess: the first connection goes on to "Your studies are ready".
+  // Back from logging in with Lichess (if that failed, the Lichess page says why).
   const loggedIn = await finishLogIn();
-  if (loggedIn && (!library || isTrial())) { showLichess(); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
-  if (loggedIn !== null && library) { // connected again (or that failed: the Lichess page says why)
-    showLichess();
-    if (loggedIn) syncStudies().then(startDownloads); // the Status card shows it (no banner)
-    return;
-  }
+  if (loggedIn) return connected();
+  if (loggedIn === false && library) return showLichess();
   // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
   if (library) { showChooser(); keepData(); syncStudies().then(startDownloads); } // the Practice page
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
