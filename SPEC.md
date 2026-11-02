@@ -99,6 +99,12 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Connected:** "Lichess" (its hover explanation: studies update each time the app opens; Lichess ends the connection after about a year), then "Lichess account: david", "Connected on …" (or "Not connected."; from disk "Token stored on …"), "Fetched 15 studies on …", the move and masters statistics lines, any message about fetching or downloading, and **Connect to Lichess** to connect again.
   - Opened from disk, both Connect buttons are **Add token**, with the paste box.
 - Before any studies are fetched, Practice and Studies lead to this page (as they led to the welcome screen).
+- **To do (the user's decision, 2 November 2026; not built yet), Connect / Disconnect:** the connected view shows **Connect to Lichess** at all times, which reads as if you're not connected (and pressing it leads to Lichess's page, where the browser's Back may not work). Instead:
+  - **Connected and working:** "Connected on …" and a **Disconnect** button, which forgets the connection in the app and asks Lichess to cancel it (revoking the token); studies and stats stay, they just stop updating until you connect again.
+  - **Not connected, or the connection has expired:** **Connect to Lichess** (an expired connection already shows the red dot and a message).
+  - **The header:** "Lichess" while connected, "Connect" otherwise (also with your own studies but no connection).
+  - **Opened from disk:** the same, with **Add token** and **Clear token**; Clear token only forgets the token in the app (a token you made on Lichess may be used elsewhere).
+  - This brings back the Disconnect button removed earlier on 2 November 2026 (the user's choice).
 - Help has a **Lichess** section (after Options): the button, the page, connecting again, the automatic updates, and the Move statistics drop-down.
 - *Claude's choices, accepted by the user:* the wordings above; the "Connect" label (rather than "Connect to Lichess") to keep the header short; the problem dot's hover text "A problem with Lichess: see the Lichess page".
 
