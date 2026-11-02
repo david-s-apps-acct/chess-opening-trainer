@@ -112,7 +112,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - *Claude's details, accepted by the user:* the "Get started" label; the welcome text moves from the page to the splash, so the not-connected view itself just has its buttons (with "Sample studies …" when they're loaded).
   - As built: the not-connected view is headed "Lichess", with "Connect to Lichess to practice your own studies." and Connect to Lichess, then "Or try the app without an account:" and Try sample studies (with the sample loaded: "Sample studies", "You're using the sample studies … Connect to Lichess to use your own.").
   - Disconnect cancels the connection on Lichess only for one made by logging in (its token starts `lio_`); a pasted token (`lip_…`) may be used elsewhere, so it's only forgotten in the app. Disconnect's hint: "Disconnect from Lichess; your studies and stats stay". Help's Lichess section describes Disconnect.
-  - *Claude's choices, for the user to accept or reject:* the not-connected view's wording above ("Connect to Lichess to practice your own studies.", "Or try the app without an account:"); the hints.
+  - *Claude's choices, accepted by the user:* the not-connected view's wording above ("Connect to Lichess to practice your own studies.", "Or try the app without an account:"); the hints.
 - Help has a **Lichess** section (after Options): the button, the page, connecting again, the automatic updates, and the Move statistics drop-down.
 - *Claude's choices, accepted by the user:* the wordings above; the "Connect" label (rather than "Connect to Lichess") to keep the header short; the problem dot's hover text "A problem with Lichess: see the Lichess page".
 
