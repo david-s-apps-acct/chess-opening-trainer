@@ -381,10 +381,6 @@
           </form>
         </div>
         <div id="token-error" class="form-error"></div>
-        <div id="trial-offer">
-          <p class="muted after-actions">Or try the app without an account:</p>
-          <div class="actions"><button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button></div>
-        </div>
       </div>
 
       <div id="getting-started" class="card">
@@ -394,6 +390,10 @@
         <div class="actions">
           <button id="first-restore-btn" class="primary">Restore backup</button>
           <button id="welcome-start-btn" class="primary" title="Your studies first need fetching: Connect to Lichess">Start</button>
+        </div>
+        <div id="trial-offer">
+          <p class="after-actions">No Lichess account? Try the sample studies.</p>
+          <div class="actions"><button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button></div>
         </div>
       </div>
     </div>
@@ -492,8 +492,7 @@
   <div id="welcome-splash" class="table-overlay hidden">
     <div class="card welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcome-splash-title">
       <div class="overlay-head"><h2 id="welcome-splash-title">Welcome to Chess Opening Trainer</h2><button id="welcome-splash-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
-      <p>Practice the openings in your Lichess studies. The app quizzes you on your moves, remembers which ones you know, and brings back the ones you don't.</p>
-      <p class="muted">Your studies stay in your browser; the app only talks to Lichess.</p>
+      <p>Practice the openings in your Lichess studies using spaced repetition.</p>
       <div class="actions"><button id="welcome-splash-start" class="primary">Get started</button></div>
     </div>
   </div>
@@ -679,8 +678,8 @@
       <div class="card" id="help-lichess">
         <h2>Lichess</h2>
         <ul>
-          <li>The header's <b>Lichess</b> button shows a red dot when there's a problem (e.g. Lichess has ended the connection).</li>
-          <li>The Lichess page has three cards: <b>Status</b> (your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect, and for a new user Try sample studies) and, until you've started, <b>Getting started</b> (Restore backup, and Start once your studies have been fetched).</li>
+          <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
+          <li>The Lichess page has three cards: <b>Status</b> (your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect) and, until you've started, <b>Getting started</b> (Restore backup, Start once your studies have been fetched, and Try sample studies).</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
         </ul>
@@ -3251,9 +3250,10 @@ function renderOptions() {
 //   studies were last fetched, the statistics downloaded so far, and any message about fetching or
 //   downloading;
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
-//   about a year), Disconnect when connected; for a new user, Try sample studies too;
+//   about a year), Disconnect when connected (the same for everyone);
 // - Getting started (new users only, until they start): Restore backup, and Start once the studies
-//   have been fetched (nothing downloads until one is pressed).
+//   have been fetched (nothing downloads until one is pressed); and, without studies of your own, Try
+//   sample studies.
 // Connecting logs in with Lichess online; opened from disk it's Add token (with a box to paste it into)
 // and Clear token. A new user gets the welcome splash over the page. The header's Lichess button
 // always reads "Lichess", with a red dot for a problem.
@@ -3271,29 +3271,30 @@ function renderLichessPage() {
   $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Token stored${when}` : 'No token stored.');
   $('lichess-fetched').textContent = isTrial() ? '' : library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
   // Connection: Connect when not connected, or when Lichess has ended the connection; Disconnect when
-  // connected; the sample only without studies of your own (it would replace them; a page opened from
-  // disk can't read trial.json).
+  // connected.
   $('connect-btn').classList.toggle('hidden', !!token && !connectionExpired());
   $('disconnect-btn').classList.toggle('hidden', !token);
-  $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
-  // Getting started: until you've started; Start once your studies are here.
+  // Getting started: until you've started; Start once your studies are here; the sample only without
+  // studies of your own (it would replace them; a page opened from disk can't read trial.json).
   $('getting-started').classList.toggle('hidden', !!library && !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
   $('welcome-start-btn').disabled = !welcomeReady;
   $('welcome-start-btn').title = welcomeReady ? 'On to practice; the statistics download meanwhile' : 'Your studies first need fetching: Connect to Lichess';
+  $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
 const lichessMessages = () => ['update-status', 'lichess-status', 'masters-status'].map(id => $(id).textContent).join(' ').trim();
 const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 
-// The header's Lichess button: always "Lichess", with a red dot when there's a problem (an expired
-// connection, Lichess unreachable or asking to slow down, any other error).
+// The header's Lichess button: always "Lichess", with a red dot when you're not connected (for
+// whatever reason) or there's a problem (an expired connection, Lichess unreachable or asking to slow
+// down, any other error).
 function updateLichessStatus() {
   const messages = lichessMessages();
   const problem = /expired|rejected|slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages);
-  $('nav-lichess').replaceChildren('Lichess', ...problem ? [' ', element('span', { class: 'problem-dot', 'aria-label': 'problem' }, '●')] : []);
-  $('nav-lichess').title = problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
+  $('nav-lichess').replaceChildren('Lichess', ...!token || problem ? [' ', element('span', { class: 'problem-dot', 'aria-label': 'needs attention' }, '●')] : []);
+  $('nav-lichess').title = !token ? 'Not connected to Lichess' : problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
 }
 
 // Adding a token (opened from disk): Add token opens Lichess's page for creating one, with the scope
@@ -3338,8 +3339,7 @@ $('connect-btn').addEventListener('click', () => {
 // studies, as logging in does; otherwise the studies just update.
 setUpTokenBox($('token-form'), $('token-error'), () => {
   if (!library || isTrial()) return fetchStudies({ welcome: true });
-  renderLichessPage();
-  showBanner('Token saved.');
+  renderLichessPage(); // the Status card shows the token (no banner)
   syncStudies().then(startDownloads); // a download stopped by a rejected token continues
 });
 
@@ -3356,8 +3356,7 @@ $('disconnect-btn').addEventListener('click', () => {
   store.remove('token');
   store.remove('tokenSavedAt');
   setUpdateStatus('');
-  renderLichessPage();
-  showBanner(canLogIn ? 'Disconnected.' : 'Token cleared.');
+  renderLichessPage(); // the Status card shows it (no banner)
 });
 
 // The welcome splash: over the Lichess page each time the app opens until you've started (connected or
@@ -3528,7 +3527,7 @@ async function init() {
   if (loggedIn && (!library || isTrial())) { showLichess(); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
   if (loggedIn !== null && library) { // connected again (or that failed: the Lichess page says why)
     showLichess();
-    if (loggedIn) { showBanner('Connected.'); syncStudies().then(startDownloads); }
+    if (loggedIn) syncStudies().then(startDownloads); // the Status card shows it (no banner)
     return;
   }
   // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
