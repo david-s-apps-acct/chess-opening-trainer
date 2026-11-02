@@ -160,11 +160,11 @@ function run(app) {
   app.setSettings({});
 
   // Settings
-  check('settings: defaults', app.checkedSettings({}), { sounds: false, penalties: { alternative: 2, masters: 2, error: 5, hint: 10 }, mastersTop: 5,
+  check('settings: defaults', app.checkedSettings({}), { sounds: false, errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 }, mastersTop: 5,
     practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
-  check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9 }).mastersTop, app.checkedSettings({ penalties: { alternative: 11, hint: 4 } }).penalties,
+  check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9 }).mastersTop, app.checkedSettings({ errorPenalties: { alternative: 110, masters: 7, hint: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [5, { alternative: 2, masters: 2, error: 5, hint: 4 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
+    [5, { alternative: 20, masters: 20, error: 50, hint: 40 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
 
   // Masters moves: top N and 10% or more
   const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
@@ -188,8 +188,8 @@ function run(app) {
   check('points: alternative', app.pointsFor(['Nc3', 'Nf3'], nf3), 8);
   check('points: marked alternative', app.pointsFor(['Bb5', 'Bc4'], bc4), 5);
   check('points: + and # ignored', app.pointsFor(['e4'], { ...e4, san: 'e4+' }), 10);
-  app.setSettings({ penalties: { alternative: 0, masters: 1, error: 3, hint: 4 } });
-  check('points: custom penalties', [app.pointsFor(['Nc3', 'Nf3'], nf3), app.pointsFor(['d4', 'e4'], e4), app.pointsFor(['g3', 'e4'], e4), app.pointsFor(['hint', 'e4'], e4)], [10, 9, 7, 6]);
+  app.setSettings({ errorPenalties: { alternative: 0, masters: 15, error: 35, hint: 40 } });
+  check('points: custom penalties, in 5% steps', [app.pointsFor(['Nc3', 'Nf3'], nf3), app.pointsFor(['d4', 'e4'], e4), app.pointsFor(['g3', 'e4'], e4), app.pointsFor(['hint', 'e4'], e4)], [10, 8.5, 6.5, 6]);
   app.setSettings({});
   check('error kinds', [app.errorKind(nf3, 'Nc3'), app.errorKind(bc4, 'Bb5'), app.errorKind(e4, 'd4'), app.errorKind(e4, 'g3')], ['alternative', 'marked', 'masters', 'wrong']);
 
@@ -254,22 +254,27 @@ async function runTrial(app) {
   check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length], [true, 2]);
   check('sample studies: the header\'s button still says Lichess', $('nav-lichess').textContent, 'Lichess');
   $('nav-lichess').click();
-  check('sample studies: the Lichess page says so, with Connect and no Try sample studies', [$('welcome-start').classList.contains('hidden'), $('welcome-title').textContent,
-    $('trial-offer').classList.contains('hidden'), $('lichess-info').classList.contains('hidden')], [false, 'Sample studies', true, true]);
+  check('sample studies: the Lichess page says so, with Connect and no Try sample studies or Getting started', [$('lichess-account').textContent, $('connect-btn').classList.contains('hidden'),
+    $('trial-offer').classList.contains('hidden'), $('getting-started').classList.contains('hidden')], ['Sample studies', false, true, true]);
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-lichess').click();
-  check('own studies, not connected: the account, Connect to Lichess and no Disconnect', [$('lichess-info').classList.contains('hidden'),
-    $('lichess-account').textContent, $('lichess-connected').textContent, $('reconnect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden')],
-    [false, 'Lichess account: tester', 'Not connected.', false, true]);
+  check('own studies, not connected: Status, Connect to Lichess and no Disconnect', [$('lichess-heading').textContent,
+    $('lichess-account').textContent, $('lichess-connected').textContent, $('connect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden')],
+    ['Status', 'Lichess account: tester', 'Not connected.', false, true]);
   // Connected: Disconnect, not Connect; Disconnect cancels a login's connection on Lichess and forgets it.
   app.setToken('lio_login');
   $('nav-lichess').click();
-  check('connected: Disconnect, not Connect', [$('reconnect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden'), $('disconnect-btn').textContent], [true, false, 'Disconnect']);
-  let revoked = null;
+  check('connected: Disconnect, not Connect', [$('connect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden'), $('disconnect-btn').textContent], [true, false, 'Disconnect']);
+  let revoked = null, asked = null;
+  const realConfirm = window.confirm;
+  window.confirm = question => { asked = question; return false; };
+  $('disconnect-btn').click();
+  check('Disconnect asks first, and Cancel keeps the connection', [asked, app.token], ['Disconnect from Lichess? Your studies and stats stay.', 'lio_login']);
+  window.confirm = () => true;
   window.fetch = async (url, init) => { revoked = [String(url), init.method, init.headers.Authorization]; return new Response(null, { status: 204 }); };
   $('disconnect-btn').click();
   window.fetch = isolated;
-  check('Disconnect: cancelled on Lichess, forgotten here, Connect again', [revoked, app.token, $('lichess-connected').textContent, $('reconnect-btn').classList.contains('hidden')],
+  check('Disconnect: cancelled on Lichess, forgotten here, Connect again', [revoked, app.token, $('lichess-connected').textContent, $('connect-btn').classList.contains('hidden')],
     [['https://lichess.org/api/token', 'DELETE', 'Bearer lio_login'], null, 'Not connected.', false]);
   app.setToken('lip_pasted');
   revoked = null;
@@ -277,6 +282,7 @@ async function runTrial(app) {
   $('nav-lichess').click();
   $('disconnect-btn').click();
   window.fetch = isolated;
+  window.confirm = realConfirm;
   check('Disconnect: a pasted token is only forgotten here', [revoked, app.token], [null, null]);
 
   // A backup restored before the studies are fetched: its tries get their points once they are.
@@ -298,8 +304,8 @@ async function runTrial(app) {
   window.fetch = async url => String(url).includes('/api/account') ? new Response(JSON.stringify({ username: 'tester' }))
     : String(url).includes('export.pgn') ? new Response(ITALIAN + '\n\n' + SICILIAN) : new Response('', { status: 404 });
   await app.fetchStudies({ welcome: true });
-  check('welcome: studies fetched, then Restore backup or Start, nothing downloading', [!$('lichess-screen').classList.contains('hidden'), $('welcome-ready').classList.contains('hidden'),
-    $('welcome-ready-title').textContent, app.downloading], [true, false, 'Your study is ready.', false]);
+  check('welcome: studies fetched, then Getting started with Start enabled, nothing downloading', [!$('lichess-screen').classList.contains('hidden'), $('getting-started').classList.contains('hidden'),
+    $('getting-started-ready').textContent, $('welcome-start-btn').disabled, app.downloading], [true, false, 'Your study is ready.', false, false]);
   $('welcome-start-btn').click();
   check('welcome: every chapter ticked; Start opens the Practice page and downloads', [app.selection.length, !$('practice-screen').classList.contains('hidden'), app.downloading], [2, true, true]);
   await until(() => !app.downloading, 'the downloads to finish');
@@ -321,7 +327,7 @@ async function runTrial(app) {
     [true, 'lio_new', 'https://lichess.org/api/token', 'liu_code', 'v3rifier', '', null]);
   sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
   history.replaceState(null, '', location.pathname + '?error=access_denied&state=st4te');
-  check('login: cancelled on Lichess', [await app.finishLogIn(), $('welcome-status').textContent], [false, 'Connecting was cancelled on Lichess.']);
+  check('login: cancelled on Lichess', [await app.finishLogIn(), $('update-status').textContent], [false, 'Connecting was cancelled on Lichess.']);
   sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
   history.replaceState(null, '', location.pathname + '?code=liu_code&state=other');
   check('login: a state that doesn\'t match is refused', await app.finishLogIn(), false);
@@ -350,9 +356,9 @@ async function runTrial(app) {
   window.fetch = isolated;
 
   // Options: Reset puts the penalties and Masters moves back to their defaults.
-  app.setSettings({ penalties: { error: 8 }, mastersTop: 2 });
+  app.setSettings({ errorPenalties: { error: 85 }, mastersTop: 2 });
   $('penalties-reset').click();
-  check('options: Reset, penalties and Masters moves', [app.settings.penalties, app.settings.mastersTop], [{ alternative: 2, masters: 2, error: 5, hint: 10 }, 5]);
+  check('options: Reset, penalties and Masters moves', [app.settings.errorPenalties, app.settings.mastersTop, $('pen-error-value').textContent], [{ alternative: 20, masters: 20, error: 50, hint: 100 }, 5, '50%']);
   app.setSettings({});
 
   // A download skips positions whose statistics arrive meanwhile (e.g. from a restored backup).

@@ -102,7 +102,7 @@
   .form-error { color: var(--bad); margin-top: 8px; min-height: 1.4em; }
   .update-status { margin-top: 10px; }
   .update-status:empty { display: none; }
-  #reconnect-error:empty, #token-error:empty { display: none; }
+  #token-error:empty, #getting-started-ready:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   #options-screen button.primary, #lichess-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options and Lichess page button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
@@ -132,9 +132,8 @@
   .cards p { margin: 4px 0; }
 
   /* Options page: error penalties */
-  .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 10px; }
+  .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 4px; font-size: 14px; }
   .penalties select { flex: none; width: auto; padding: 3px 6px; }
-  .penalties .penalties-gap { margin-top: 8px; } /* Masters moves, apart from the penalties */
   .card h3 { font-size: 14px; margin: 16px 0 0; }
 
   /* The Test probabilities table, shown by "Show lines" / "Show positions" on the Options page */
@@ -354,34 +353,9 @@
   <!-- Lichess: for a new user (or with the sample studies) the welcome and Connect to Lichess, then (after
        the first connection) the offer to restore a backup; once connected, your account, studies and statistics. -->
   <section id="lichess-screen" class="hidden">
-    <div class="card welcome">
-      <div id="welcome-start" class="hidden">
-        <h2 id="welcome-title"></h2>
-        <p id="welcome-text"></p>
-        <div class="actions"><button id="connect-btn" class="primary connect-btn">Connect to Lichess</button></div>
-        <div class="token-box hidden">
-          <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
-          <form id="token-form" class="token-row">
-            <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
-          </form>
-        </div>
-        <div id="token-error" class="form-error"></div>
-        <div id="welcome-status" class="update-status"></div>
-        <div id="trial-offer">
-          <p class="muted after-actions">Or try the app without an account:</p>
-          <div class="actions"><button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button></div>
-        </div>
-      </div>
-      <div id="welcome-ready" class="hidden">
-        <h2 id="welcome-ready-title"></h2>
-        <p>Used the app before? Restore your backup to bring back your stats and the move statistics.</p>
-        <div class="actions">
-          <button id="first-restore-btn" class="primary">Restore backup</button>
-          <button id="welcome-start-btn" class="primary">Start</button>
-        </div>
-      </div>
-      <div id="lichess-info" class="hidden">
-        <h2><span id="lichess-heading">Lichess</span></h2>
+    <div class="cards">
+      <div class="card">
+        <h2><span id="lichess-heading">Status</span></h2>
         <div class="lichess-lines">
           <p id="lichess-account" class="muted"></p>
           <p id="lichess-connected" class="muted"></p>
@@ -392,14 +366,35 @@
           <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
           <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <h2>Connection</h2>
         <div class="actions">
-          <button id="reconnect-btn" class="primary connect-btn">Connect to Lichess</button>
+          <button id="connect-btn" class="primary">Connect to Lichess</button>
           <button id="disconnect-btn" class="primary">Disconnect</button>
         </div>
-        <form id="reconnect-token-form" class="token-row hidden">
-          <input id="reconnect-token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
-        </form>
-        <div id="reconnect-error" class="form-error"></div>
+        <div class="token-box hidden">
+          <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
+          <form id="token-form" class="token-row">
+            <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
+          </form>
+        </div>
+        <div id="token-error" class="form-error"></div>
+        <div id="trial-offer">
+          <p class="muted after-actions">Or try the app without an account:</p>
+          <div class="actions"><button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button></div>
+        </div>
+      </div>
+
+      <div id="getting-started" class="card">
+        <h2>Getting started</h2>
+        <p id="getting-started-ready"></p>
+        <p>Used the app before? Restore your backup to bring back your stats and the move statistics.</p>
+        <div class="actions">
+          <button id="first-restore-btn" class="primary">Restore backup</button>
+          <button id="welcome-start-btn" class="primary" title="Your studies first need fetching: Connect to Lichess">Start</button>
+        </div>
       </div>
     </div>
   </section>
@@ -685,7 +680,7 @@
         <h2>Lichess</h2>
         <ul>
           <li>The header's <b>Lichess</b> button shows a red dot when there's a problem (e.g. Lichess has ended the connection).</li>
-          <li>The Lichess page shows your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading.</li>
+          <li>The Lichess page has three cards: <b>Status</b> (your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect, and for a new user Try sample studies) and, until you've started, <b>Getting started</b> (Restore backup, and Start once your studies have been fetched).</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
         </ul>
@@ -720,17 +715,10 @@
 
       <div class="card">
         <h2><span data-tip="Move accuracy lost for each error before the right move (never below 0%). Changes apply to past tries too.">Error penalties</span></h2>
+        <div id="penalty-rows" class="weight-rows"></div>
         <div class="penalties">
-          <label for="pen-alternative" data-tip="An unmarked alternative in your study.">Alternative move</label>
-          <select id="pen-alternative" class="pen-select"></select>
-          <label for="pen-masters" data-tip="A masters move not in your study.">Masters move</label>
-          <select id="pen-masters" class="pen-select"></select>
-          <label for="pen-error" data-tip="Any other move, or an alternative marked ?, ?? or ?!.">Error</label>
-          <select id="pen-error" class="pen-select"></select>
-          <label for="pen-hint" data-tip="Hint, and Show correct move.">Hint</label>
-          <select id="pen-hint" class="pen-select"></select>
-          <label for="masters-top" class="penalties-gap" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
-          <select id="masters-top" class="penalties-gap"></select>
+          <label for="masters-top" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
+          <select id="masters-top"></select>
         </div>
         <div class="actions"><button id="penalties-reset" class="primary" title="Penalties back to 20%, 20%, 50% and 100%, and Masters moves to Top 5">Reset</button></div>
       </div>
@@ -878,11 +866,12 @@ const saveHistory = () => store.set('history', storedHistory());
 let moveStats = {};
 
 // Settings (chosen on the Practice and Options pages).
-// Error penalties are in points: 1 point = 10% of an attempt's score.
+// Error penalties are percentages of an attempt's move accuracy, in steps of 5. (They were points,
+// 0–10, called "penalties", until 2 November 2026; those are ignored, and the defaults used once.)
 const MASTERS_TOPS = [1, 2, 3, 4, 5];
 const DEFAULT_SETTINGS = {
   sounds: false,
-  penalties: { alternative: 2, masters: 2, error: 5, hint: 10 },
+  errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 },
   mastersTop: 5, // a masters move is within this many top master moves
   // The Practice page: lines or positions; main lines only, for each; reverse sides (lines only: you
   // play the opponent's moves, not scored); and the four spaced-repetition sliders (0–100, shared; see
@@ -904,7 +893,7 @@ function checkedSettings(saved) {
   const isBetween = (lo, hi) => x => Number.isInteger(x) && x >= lo && x <= hi;
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
-    penalties: valuesOf(d.penalties, v.penalties, isBetween(0, 10)),
+    errorPenalties: valuesOf(d.errorPenalties, v.errorPenalties, x => isBetween(0, 100)(x) && x % 5 === 0),
     mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
     practice: {
       kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
@@ -1123,9 +1112,6 @@ function setUpdateStatus(message, isError = false) {
   const box = $('update-status');
   box.className = 'update-status' + (isError ? ' error' : '');
   box.replaceChildren(...parts);
-  // The welcome screen shows the same while connecting ("Fetching…", errors): text only.
-  $('welcome-status').className = box.className;
-  $('welcome-status').replaceChildren(...parts.filter(part => typeof part === 'string'));
   if (!library && parts.length) $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
   updateLichessStatus();
 }
@@ -1565,15 +1551,16 @@ function isMasterMove(epd, s) {
 }
 
 function pointsFor(tried, yourMove) {
+  const penalty = kind => settings.errorPenalties[kind] / 10; // a percentage, in points
   let points = 10;
   for (const step of tried) {
-    if (step === 'hint' || step === 'show') { points -= settings.penalties.hint; continue; }
+    if (step === 'hint' || step === 'show') { points -= penalty('hint'); continue; }
     if (withoutCheckMarks(step) === withoutCheckMarks(yourMove.san)) break; // the correct move ends the attempt
     const alt = yourMove.alternatives?.[step];
-    if (isMistake(alt)) points -= settings.penalties.error; // the study's marking wins
-    else if (alt) points -= settings.penalties.alternative;
-    else if (isMasterMove(yourMove.epdBefore, step)) points -= settings.penalties.masters;
-    else points -= settings.penalties.error;
+    if (isMistake(alt)) points -= penalty('error'); // the study's marking wins
+    else if (alt) points -= penalty('alternative');
+    else if (isMasterMove(yourMove.epdBefore, step)) points -= penalty('masters');
+    else points -= penalty('error');
   }
   return Math.max(0, points);
 }
@@ -3152,7 +3139,7 @@ function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
     const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
-    if (!library) { el.textContent = ''; continue; }
+    if (!library) { el.textContent = `${explorer.Label}: no positions downloaded`; continue; }
     const done = studied.filter(epd => moveStats[epd]?.[kind]).length;
     el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
   }
@@ -3207,18 +3194,30 @@ function showOptions() {
 // zone: "on 10/26/26 at 12:01 PM".
 const onDateAtTime = ts => `on ${new Date(ts).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })} at ${new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
-// The Error penalties card: each drop-down 0%–100% in steps of 10 (1 point each).
-for (const sel of document.querySelectorAll('.pen-select')) {
-  for (let pts = 0; pts <= 10; pts++) sel.append(element('option', { value: String(pts) }, `${pts * 10}%`));
-  sel.addEventListener('change', () => {
-    settings.penalties = { ...settings.penalties, [sel.id.slice(4)]: +sel.value };
+// The Error penalties card: a slider for each penalty, 0%–100% in steps of 5, like the Spaced
+// repetition focus sliders (each name explains itself on hover), then the Masters moves drop-down.
+const PENALTIES = [
+  { key: 'alternative', name: 'Alternative move', definition: 'An unmarked alternative in your study.' },
+  { key: 'masters', name: 'Masters move', definition: 'A masters move not in your study.' },
+  { key: 'error', name: 'Error', definition: 'Any other move, or an alternative marked ?, ?? or ?!.' },
+  { key: 'hint', name: 'Hint', definition: 'Hint, and Show correct move.' },
+];
+$('penalty-rows').replaceChildren(...PENALTIES.flatMap(({ key, name, definition }) => [
+  quickTip(element('label', { for: `pen-${key}` }, name), definition),
+  element('input', { type: 'range', id: `pen-${key}`, min: '0', max: '100', step: '5' }),
+  element('output', { id: `pen-${key}-value`, for: `pen-${key}` }),
+]));
+for (const { key } of PENALTIES) {
+  $(`pen-${key}`).addEventListener('input', e => { $(`pen-${key}-value`).textContent = `${e.target.value}%`; });
+  $(`pen-${key}`).addEventListener('change', e => {
+    settings.errorPenalties = { ...settings.errorPenalties, [key]: +e.target.value };
     saveSettings();
     rescoreHistory(); // past attempts are scored again with the new penalties
   });
 }
 // Reset: the four penalties and Masters moves back to their defaults.
 $('penalties-reset').addEventListener('click', () => {
-  settings.penalties = { ...DEFAULT_SETTINGS.penalties };
+  settings.errorPenalties = { ...DEFAULT_SETTINGS.errorPenalties };
   settings.mastersTop = DEFAULT_SETTINGS.mastersTop;
   saveSettings();
   rescoreHistory();
@@ -3231,7 +3230,10 @@ $('masters-top').addEventListener('change', e => {
   rescoreHistory();
 });
 function renderPenalties() {
-  for (const k of Object.keys(DEFAULT_SETTINGS.penalties)) $('pen-' + k).value = String(settings.penalties[k]);
+  for (const { key } of PENALTIES) {
+    $(`pen-${key}`).value = String(settings.errorPenalties[key]);
+    $(`pen-${key}-value`).textContent = `${settings.errorPenalties[key]}%`;
+  }
   $('masters-top').value = String(settings.mastersTop);
 }
 
@@ -3244,17 +3246,18 @@ function renderOptions() {
 
 
 // ---------- Lichess page ----------
-// Everything to do with Lichess, in one place, shown as whichever applies:
-// - not connected (a new user, or the sample studies without a connection): Connect to Lichess, and
-//   for a new user Try sample studies (or "You're using the sample studies");
-// - ready (just after the first connection): "Your 12 studies are ready", Restore backup or Start;
-// - connected: your account, when you connected, when your studies were last fetched, the statistics
-//   downloaded so far, any message about fetching or downloading, and Disconnect (or, once Lichess has
-//   ended the connection, after about a year, Connect to Lichess).
-// Connecting logs in with Lichess online; opened from disk it's Add token and a box to paste it into.
-// A new user gets the welcome splash over it. The header's Lichess button always reads "Lichess", with
-// a red dot for a problem.
-let welcomeReady = false; // showing "Your studies are ready"
+// Everything to do with Lichess, in one place, the same three cards for everyone:
+// - Status: your account (or "Sample studies"), when you connected (or "Not connected."), when your
+//   studies were last fetched, the statistics downloaded so far, and any message about fetching or
+//   downloading;
+// - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
+//   about a year), Disconnect when connected; for a new user, Try sample studies too;
+// - Getting started (new users only, until they start): Restore backup, and Start once the studies
+//   have been fetched (nothing downloads until one is pressed).
+// Connecting logs in with Lichess online; opened from disk it's Add token (with a box to paste it into)
+// and Clear token. A new user gets the welcome splash over the page. The header's Lichess button
+// always reads "Lichess", with a red dot for a problem.
+let welcomeReady = false; // the first connection is done: waiting for Restore backup or Start
 
 function showLichess() {
   showScreen('lichess');
@@ -3262,22 +3265,22 @@ function showLichess() {
 }
 
 function renderLichessPage() {
-  const welcome = !welcomeReady && (!library || (isTrial() && !token));
-  $('welcome-start').classList.toggle('hidden', !welcome);
-  $('welcome-ready').classList.toggle('hidden', !welcomeReady);
-  $('lichess-info').classList.toggle('hidden', welcome || welcomeReady);
-  $('welcome-title').textContent = isTrial() ? 'Sample studies' : 'Lichess';
-  $('welcome-text').textContent = isTrial() ? "You're using the sample studies (Ruy Lopez and Queen's Gambit Declined). Connect to Lichess to use your own."
-    : 'Connect to Lichess to practice your own studies.';
-  // The sample only without studies of your own (it would replace them); a page opened from disk can't read trial.json.
-  $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
-  $('lichess-account').textContent = library && !isTrial() ? `Lichess account: ${library.username}` : '';
+  // Status
+  $('lichess-account').textContent = isTrial() ? 'Sample studies' : library ? `Lichess account: ${library.username}` : '';
   const savedAt = store.get('tokenSavedAt', null), when = savedAt ? ' ' + onDateAtTime(savedAt) : '';
   $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Token stored${when}` : 'No token stored.');
-  $('lichess-fetched').textContent = library && !isTrial() ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : '';
-  // Connect when not connected, or when Lichess has ended the connection; Disconnect when connected.
-  $('reconnect-btn').classList.toggle('hidden', !!token && !connectionExpired());
+  $('lichess-fetched').textContent = isTrial() ? '' : library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
+  // Connection: Connect when not connected, or when Lichess has ended the connection; Disconnect when
+  // connected; the sample only without studies of your own (it would replace them; a page opened from
+  // disk can't read trial.json).
+  $('connect-btn').classList.toggle('hidden', !!token && !connectionExpired());
   $('disconnect-btn').classList.toggle('hidden', !token);
+  $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
+  // Getting started: until you've started; Start once your studies are here.
+  $('getting-started').classList.toggle('hidden', !!library && !welcomeReady);
+  $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
+  $('welcome-start-btn').disabled = !welcomeReady;
+  $('welcome-start-btn').title = welcomeReady ? 'On to practice; the statistics download meanwhile' : 'Your studies first need fetching: Connect to Lichess';
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
@@ -3298,10 +3301,9 @@ function updateLichessStatus() {
 // pressing Enter) checks it with Lichess and saves it.
 const TOKEN_PAGE = 'https://lichess.org/account/oauth/token/create?scopes[]=study:read&description=Opening+Trainer';
 
-function showTokenBox(form) {
-  form.classList.remove('hidden');
-  form.closest('.token-box')?.classList.remove('hidden'); // in the welcome, with its instruction
-  form.querySelector('input').focus();
+function showTokenBox() {
+  $('token-form').closest('.token-box').classList.remove('hidden');
+  $('token-input').focus();
 }
 
 function setUpTokenBox(form, errorEl, onSaved) {
@@ -3313,7 +3315,7 @@ function setUpTokenBox(form, errorEl, onSaved) {
     try {
       if (await checkAndSaveToken(input.value, errorEl)) {
         input.value = '';
-        form.classList.add('hidden');
+        form.closest('.token-box').classList.add('hidden');
         onSaved();
       }
     } finally { checking = false; }
@@ -3322,26 +3324,33 @@ function setUpTokenBox(form, errorEl, onSaved) {
   input.addEventListener('paste', () => setTimeout(save)); // once the pasted text is in the box
 }
 
-// Lichess's token page in a new tab, and the box beside the button to paste the token into.
-function openTokenPage(btn) {
+// Connect to Lichess: log in with Lichess online; from disk, Add token: Lichess's token page in a new
+// tab, and the box to paste the token into.
+if (!canLogIn) $('connect-btn').textContent = 'Add token';
+$('connect-btn').title = canLogIn ? 'Sign in to Lichess and allow the app to read your studies' : 'Opens Lichess to create a token';
+$('connect-btn').addEventListener('click', () => {
+  if (canLogIn) return logInWithLichess();
   window.open(TOKEN_PAGE, '_blank', 'noopener');
-  showTokenBox(btn.closest('.card').querySelector('.token-row'));
-}
+  showTokenBox();
+});
 
-// The two Connect to Lichess buttons (the welcome's, and the connected view's, to connect again): log
-// in with Lichess online; from disk, Add token.
-for (const btn of document.querySelectorAll('.connect-btn')) {
-  if (!canLogIn) btn.textContent = 'Add token';
-  btn.title = canLogIn ? 'Sign in to Lichess and allow the app to read your studies' : 'Opens Lichess to create a token';
-  btn.addEventListener('click', () => canLogIn ? logInWithLichess() : openTokenPage(btn));
-}
-// Disconnect (online) or Clear token (from disk): the app forgets the connection; your studies and stats
-// stay, but stop updating until you connect again. A connection made by logging in (its token starts
-// "lio_") is also cancelled on Lichess; a token you pasted ("lip_…") may be used elsewhere, so it's
-// only forgotten here.
+// A token pasted (from disk): the first connection (or replacing the sample studies) fetches your
+// studies, as logging in does; otherwise the studies just update.
+setUpTokenBox($('token-form'), $('token-error'), () => {
+  if (!library || isTrial()) return fetchStudies({ welcome: true });
+  renderLichessPage();
+  showBanner('Token saved.');
+  syncStudies().then(startDownloads); // a download stopped by a rejected token continues
+});
+
+// Disconnect (online) or Clear token (from disk), after "Are you sure?": the app forgets the
+// connection; your studies and stats stay, but stop updating until you connect again. A connection made
+// by logging in (its token starts "lio_") is also cancelled on Lichess; a token you pasted ("lip_…")
+// may be used elsewhere, so it's only forgotten here.
 if (!canLogIn) $('disconnect-btn').textContent = 'Clear token';
 $('disconnect-btn').title = canLogIn ? 'Disconnect from Lichess; your studies and stats stay' : 'Forget the token; your studies and stats stay';
 $('disconnect-btn').addEventListener('click', () => {
+  if (!confirm(canLogIn ? 'Disconnect from Lichess? Your studies and stats stay.' : 'Clear the token? Your studies and stats stay.')) return;
   if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
   token = null;
   store.remove('token');
@@ -3362,19 +3371,10 @@ $('lichess-heading').dataset.tip = canLogIn
   ? 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). Lichess ends the connection after about a year; connect again then.'
   : 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). The token needs the Read private studies (study:read) scope; a new one replaces the stored one.';
 
-setUpTokenBox($('token-form'), $('token-error'), () => fetchStudies({ welcome: true })); // the first connection, from disk
-setUpTokenBox($('reconnect-token-form'), $('reconnect-error'), () => {
-  renderLichessPage();
-  showBanner('Token saved.');
-  syncStudies().then(startDownloads); // a download stopped by a rejected token continues
-});
-
 // After the first connection (every chapter ticked): restore a backup (stats, move statistics and your
 // ticks, so they needn't be downloaded), or start. Either way the Practice page opens and the missing
 // statistics download. (Closing the page instead is fine: the app opens normally.)
 function showWelcomeReady() {
-  const n = library.studies.length;
-  $('welcome-ready-title').textContent = n === 1 ? 'Your study is ready.' : `Your ${n} studies are ready.`;
   welcomeReady = true;
   showLichess();
 }
@@ -3475,8 +3475,9 @@ $('restore-file').addEventListener('change', async e => {
   saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
   updateSoundButton();
   renderOptions();
-  if (welcomeReady) return leaveWelcome(); // from "Your studies are ready": on to practice
-  showBanner(`Backup restored: history for ${plural(n, 'move')}, and settings.` + (token ? '' : ' Now add your token.'));
+  if (welcomeReady) return leaveWelcome(); // from Getting started, after connecting: on to practice
+  if (currentScreen === 'lichess') renderLichessPage();
+  showBanner(`Backup restored: history for ${plural(n, 'move')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
 });
 
 // ---------- Navigation ----------
