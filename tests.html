@@ -55,7 +55,7 @@ export const app = {
   startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
-  onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies,
+  onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
   get token() { return token; },
   loginAddress, finishLogIn,
@@ -311,6 +311,27 @@ async function runTrial(app) {
   check('login: a state that doesn\'t match is refused', await app.finishLogIn(), false);
   window.fetch = isolated;
   app.setToken(null);
+
+  // Each time the app opens, your studies are updated from Lichess: unchanged, only when they were
+  // fetched; changed, replaced, or during practice, replaced when it ends.
+  const exportOf = text => async url => String(url).includes('/api/account') ? new Response(JSON.stringify({ username: 'tester' }))
+    : String(url).includes('export.pgn') ? new Response(text) : new Response('', { status: 404 });
+  app.setLibrary({ ...app.parseStudyExport(ITALIAN + '\n\n' + SICILIAN, 'tester'), fetchedAt: 0 });
+  app.setToken('lip_test');
+  window.fetch = exportOf(ITALIAN + '\n\n' + SICILIAN);
+  await app.syncStudies();
+  check('update: unchanged studies, only the time fetched', [app.library.studies[0].chapters.length, app.library.fetchedAt > 0], [2, true]);
+  window.fetch = exportOf(ITALIAN);
+  app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/BBBBBBBB'))[0]);
+  await app.syncStudies();
+  const duringPractice = app.library.studies[0].chapters.length;
+  app.endSession();
+  app.setToken(null); // so the downloads that follow do nothing here
+  await until(() => app.library.studies[0].chapters.length === 1, 'the waiting studies to replace the old ones');
+  check('update: changed during practice, replaced when it ends', [duringPractice, app.library.studies[0].chapters.length], [2, 1]);
+  await wait(100);
+  await until(() => !app.downloading, 'the downloads to finish');
+  window.fetch = isolated;
 
   // Options: Reset puts the penalties and Masters moves back to their defaults.
   app.setSettings({ penalties: { error: 8 }, mastersTop: 2 });

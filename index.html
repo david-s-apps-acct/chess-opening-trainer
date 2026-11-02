@@ -574,7 +574,7 @@
               <li>Each of your moves in a line, and the move in a single position.</li>
               <li>With Skip or End practice: the moves answered so far, and the move you're on if you'd already tried something there.</li>
               <li>Every line through the same point in a chapter shares that move's accuracy. The same position in another chapter, or by another move order, has its own.</li>
-              <li>After Update studies, accuracies of moves no longer in your studies are dropped.</li>
+              <li>When your studies are updated, accuracies of moves no longer in them are dropped.</li>
             </ul>
           </details>
         </details>
@@ -647,13 +647,13 @@
         <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
           <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
-          <li><b>Lichess studies</b>: <b>Update studies</b> fetches your studies again after you change them on Lichess; your stats are kept. Below it: your account, when your studies were fetched, and how many positions have move statistics so far.</li>
+          <li><b>Lichess studies</b>: your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies. The card shows your account, when your studies were last fetched, and how many positions have move statistics so far.</li>
           <li><b>Lichess connection</b>: <b>Connect to Lichess</b> logs in again, e.g. after about a year, when Lichess ends the connection; <b>Disconnect</b> removes it from this browser (your studies stay). Opened from disk, this is <b>Lichess token</b>: <b>Add token</b> opens Lichess to create one, to paste into the box; <b>Clear token</b> removes it.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
         </ul>
         <details>
           <summary>Move statistics</summary>
-          <p>How often each move is played in rated Lichess games and in master games. They download in the background after Update studies and whenever the app opens, and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the app suggests a backup, so they needn't be downloaded again.</p>
+          <p>How often each move is played in rated Lichess games and in master games. They download in the background whenever the app opens (after your studies are updated), and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the app suggests a backup, so they needn't be downloaded again.</p>
         </details>
         <details>
           <summary>Backups</summary>
@@ -695,9 +695,8 @@
       </div>
 
       <div class="card">
-        <h2><span data-tip="Update studies downloads all your studies again; your stats are kept. Move and masters statistics then download in the background.">Lichess studies</span></h2>
-        <div class="actions"><button id="update-studies-btn" class="primary">Update studies</button></div>
-        <p id="opt-fetch-info" class="muted after-actions"></p>
+        <h2><span data-tip="Your studies are updated from Lichess each time the app opens (reload the page to update them now); your stats are kept. Move and masters statistics then download in the background.">Lichess studies</span></h2>
+        <p id="opt-fetch-info" class="muted"></p>
         <p id="opt-fetched" class="muted"></p>
         <p id="opt-stats-info" class="muted"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
@@ -1099,8 +1098,9 @@ function askForToken() {
   if (!canLogIn) showTokenBox($('opt-token-form'));
 }
 
-// Messages about fetching from Lichess appear on the Options page, under Update studies (and, before
-// any studies have been fetched, in the Studies page's empty list).
+// Messages about fetching from Lichess appear on the Options page, in the Lichess studies card (and,
+// while connecting, on the welcome screen; before any studies have been fetched, in the Studies page's
+// empty list).
 function setUpdateStatus(message, isError = false) {
   const parts = [].concat(message).filter(part => part !== ''); // '' clears it
   const box = $('update-status');
@@ -1112,32 +1112,71 @@ function setUpdateStatus(message, isError = false) {
   if (!library && parts.length) $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
 }
 
-// With welcome (the first connection, from the welcome screen), the statistics don't download yet:
-// the welcome screen offers to restore a backup first (see showWelcomeReady).
+// All your studies from Lichess (one export), parsed; a LichessError if that fails.
+async function downloadStudies() {
+  const account = await lichessRequest('/api/account', token);
+  const text = await lichessRequest(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
+  return parseStudyExport(text, account.username);
+}
+
+// Puts studies just fetched in place of the stored ones: saved, and your stats for moves no longer
+// in them dropped; the tries' points worked out again (a backup restored before them has none yet).
+async function useStudies(fetched) {
+  library = fetched;
+  await saveLibrary();
+  forgetParsedChapters();
+  pruneAfterRefresh();
+  rescoreHistory();
+}
+
+// Fetching your studies when there are none yet, or the sample ones (connecting), with "Fetching…"
+// and any error shown. With welcome (the first connection, from the welcome screen), every chapter
+// is ticked and the statistics don't download yet: the welcome screen offers to restore a backup
+// first (see showWelcomeReady). (Once you have your own studies, syncStudies keeps them up to date.)
 async function fetchStudies({ welcome = false } = {}) {
   if (!token) return askForToken();
-  const btn = $('update-studies-btn');
-  btn.disabled = true;
   setUpdateStatus('Fetching your studies from Lichess…');
   try {
-    const account = await lichessRequest('/api/account', token);
-    const text = await lichessRequest(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
-    library = parseStudyExport(text, account.username);
+    const fetched = await downloadStudies();
+    if (session) endPractice(); // the sample studies' practice, say: it starts afresh
+    await useStudies(fetched);
     if (welcome) { selection = new Set(allChapters().map(c => c.key)); saveSelection(); } // first import: everything ticked, ready to practice
-    await saveLibrary();
-    forgetParsedChapters();
-    pruneAfterRefresh();
-    rescoreHistory(); // your tries' points, from the studies just fetched (a backup restored before them has none yet)
-    if (practice) endPractice(); // its lines may have changed: practice starts afresh
-    if (!welcome) startDownloads(); // missing Lichess data, quietly in the background
+    else startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Options page says what was fetched, and when
     if (welcome) showWelcomeReady();
     else if (currentScreen === 'options') renderOptions(); else showStudies();
   } catch (e) {
     setUpdateStatus(errorText(e), true);
-  } finally {
-    btn.disabled = false;
   }
+}
+
+// Each time the app opens (online and connected, with your own studies), your studies are fetched
+// again, quietly. If they've changed on Lichess, they replace the stored ones, straight away or, if
+// you're in the middle of practice, when it ends (waitingStudies). Errors are quiet too, except an
+// expired connection, which the Options page reports. Resolves when done (then the downloads start).
+let waitingStudies = null;
+async function syncStudies() {
+  if (!token || !library || isTrial() || !navigator.onLine) return;
+  try {
+    const fetched = await downloadStudies();
+    if (fetched.username === library.username && JSON.stringify(fetched.studies) === JSON.stringify(library.studies)) {
+      library.fetchedAt = fetched.fetchedAt; // nothing changed: just when they were last fetched
+      await saveLibrary();
+    } else if (session) {
+      waitingStudies = fetched;
+      return;
+    } else await useStudies(fetched);
+    refreshPage();
+  } catch (e) {
+    if (e.status === 401) setUpdateStatus(e.message, true);
+  }
+}
+
+// After the studies change under the page you're on: it's drawn again.
+function refreshPage() {
+  if (currentScreen === 'studies') renderStudies();
+  else if (currentScreen === 'options') renderOptions();
+  else if (currentScreen === 'practice' && !practice) renderChooser();
 }
 
 // Drop selection entries and history that no longer match anything.
@@ -2564,6 +2603,11 @@ $('end-practice-btn').addEventListener('click', () => {
 function endPractice() {
   practice = null;
   session = null;
+  if (waitingStudies) { // updated studies that arrived during practice (see syncStudies)
+    const fetched = waitingStudies;
+    waitingStudies = null;
+    useStudies(fetched).then(() => { refreshPage(); startDownloads(); });
+  }
   hideBoardNotice(true);
   $('next-btn').classList.add('hidden');
   hideLineButtons();
@@ -2933,8 +2977,8 @@ window.addEventListener('scroll', hideHoverBoard, { passive: true });
 // ---------- Lichess downloads (move statistics and masters statistics) ----------
 // For every position in the studies, how often each move is played in all rated Lichess games and in
 // master games, from the Lichess Opening Explorer: downloaded in the background, new positions only,
-// and saved. The downloads run by themselves, in the background, after Update studies and when the
-// app opens (so an interrupted download resumes): missing move statistics (they need the token),
+// and saved. The downloads run by themselves, in the background, when the app opens (after your
+// studies are updated; an interrupted download resumes) and after studies are fetched or replaced: missing move statistics (they need the token),
 // then missing Masters statistics. Each fetches only what's missing, and says nothing if nothing is.
 let downloadsRunning = false;
 
@@ -2972,7 +3016,7 @@ function allStudyPositions() {
   return found;
 }
 
-// After a download completes: suggest saving a backup (the downloads took a while), under Update studies.
+// After a download completes: suggest saving a backup (the downloads took a while), in the Lichess studies card.
 function suggestBackup(what) {
   setUpdateStatus([`${what} downloaded. Save a backup? `,
     element('button', { class: 'small', onclick: () => { setUpdateStatus(''); $('backup-btn').click(); } }, 'Save backup'), ' ',
@@ -3199,7 +3243,6 @@ function renderOptions() {
   $('token-clear-btn').disabled = !token;
 }
 
-$('update-studies-btn').addEventListener('click', fetchStudies);
 
 // Adding a token (on the first visit and the Options page): Add token opens Lichess's page for
 // creating one, with the scope the app needs, in a new tab, and shows the box; pasting a token into
@@ -3272,7 +3315,7 @@ $('welcome-start-btn').addEventListener('click', leaveWelcome);
 setUpTokenBox($('opt-token-form'), $('opt-token-error'), () => {
   renderOptions();
   if (!library || isTrial()) fetchStudies(); // your own studies, replacing the sample ones
-  else { showBanner('Token saved.'); startDownloads(); } // a download stopped by a rejected token continues
+  else { showBanner('Token saved.'); syncStudies().then(startDownloads); } // a download stopped by a rejected token continues
 });
 
 $('token-clear-btn').addEventListener('click', () => {
@@ -3424,11 +3467,11 @@ async function init() {
   if (loggedIn && (!library || isTrial())) { showScreen('token'); return fetchStudies({ welcome: true }); } // your studies replace the sample ones
   if (loggedIn !== null && library) { // connected again from the Options page (or that failed: it says why)
     showOptions();
-    if (loggedIn) { showBanner('Connected.'); startDownloads(); }
+    if (loggedIn) { showBanner('Connected.'); syncStudies().then(startDownloads); }
     return;
   }
-  // Open on the Practice page and resume any missing Lichess downloads.
-  if (library) { showChooser(); startDownloads(); keepData(); } // the Practice page
+  // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
+  if (library) { showChooser(); keepData(); syncStudies().then(startDownloads); } // the Practice page
   else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
   else showScreen('token');
 }
