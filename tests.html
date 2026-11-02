@@ -567,7 +567,10 @@ function runPositions(app) {
     [false, 'Test probabilities', 'Positions · Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%']);
   $('probabilities-close').click();
   check('test probabilities: × closes it', $('probabilities').classList.contains('hidden'), true);
-  // The chooser and its sliders.
+  // The chooser and its sliders: closed to start with; the heading (or ▸) opens them.
+  check('chooser: the sliders start closed', [$('weights-body').classList.contains('hidden'), $('weights-toggle').textContent], [true, '▸']);
+  $('weights-heading').click();
+  check('chooser: the heading opens them', [$('weights-body').classList.contains('hidden'), $('weights-toggle').textContent, $('weights-toggle').getAttribute('aria-expanded')], [false, '▾', 'true']);
   $('weight-accuracy').value = '80';
   $('weight-accuracy').dispatchEvent(new Event('change'));
   check('chooser: a slider changes its setting', [app.settings.practice.weights.accuracy, $('weight-accuracy-value').textContent], [80, '80%']);

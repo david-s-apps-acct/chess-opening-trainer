@@ -287,7 +287,11 @@
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .chooser-frame { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--muted); border-radius: 4px; padding: 10px 12px; }
   .chooser-frame > button { align-self: flex-start; }
-  .weights h3 { margin: 0; font-size: 14px; }
+  .weights h3 { margin: 0; font-size: 14px; display: flex; align-items: center; margin-left: -6px; }
+  .weights h3 .toggle { width: 20px; } /* the ▸ / ▾ that opens and closes the sliders, as on the Studies page */
+  #weights-heading { cursor: pointer; } /* clicked to open and close, like a study's name; explained on hover */
+  .weights-body { display: flex; flex-direction: column; gap: 8px; }
+  .weights-body > button { align-self: flex-start; }
   .chooser-frame.off { opacity: .45; } /* not used when playing the reversed sides */
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
@@ -457,10 +461,12 @@
             <label id="chooser-reversed-label" title="You play the opponent's moves; the app plays yours"><input type="checkbox" id="chooser-reversed"> Reverse sides (not scored)</label>
           </div>
           <div id="chooser-weights" class="chooser-frame weights">
-            <h3><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates.">Spaced repetition focus</span></h3>
-            <div id="weight-rows" class="weight-rows"></div>
-            <button id="probabilities-btn" class="small" title="What's most likely to come up next">Show lines</button>
-            <button id="weights-reset" class="small" title="All sliders to 50%">Reset</button>
+            <h3><button id="weights-toggle" class="toggle" aria-expanded="false" aria-controls="weights-body">▸</button><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates.">Spaced repetition focus</span></h3>
+            <div id="weights-body" class="weights-body hidden">
+              <div id="weight-rows" class="weight-rows"></div>
+              <button id="probabilities-btn" class="small" title="What's most likely to come up next">Show lines</button>
+              <button id="weights-reset" class="small" title="All sliders to 50%">Reset</button>
+            </div>
           </div>
           <p id="chooser-note" class="muted"></p>
           <button id="chooser-start" class="primary chooser-start">Start practice</button>
@@ -2228,7 +2234,7 @@ function renderChooser() {
   const reversed = reversedSides();
   $('chooser-weights').classList.toggle('off', !!reversed);
   $('chooser-weights').title = reversed ? 'Not used with Reverse sides' : '';
-  for (const el of $('chooser-weights').querySelectorAll('input, button')) el.disabled = !!reversed;
+  for (const el of $('weights-body').querySelectorAll('input, button')) el.disabled = !!reversed; // the ▸ / ▾ still works
   const { items, note } = practicable(kind);
   $('chooser-start').disabled = !items.length;
   $('probabilities-btn').disabled = !!reversed || !items.length;
@@ -2245,6 +2251,19 @@ for (const { key } of WEIGHTS) {
   $(`weight-${key}`).addEventListener('input', e => { $(`weight-${key}-value`).textContent = `${e.target.value}%`; });
   $(`weight-${key}`).addEventListener('change', e => changePractice(p => { p.weights[key] = +e.target.value; }));
 }
+// The sliders open and close with the ▸ / ▾ or by clicking the heading: closed whenever the app opens,
+// then as you leave them while you use it.
+let weightsOpen = false;
+function showWeights(open) {
+  weightsOpen = open;
+  $('weights-body').classList.toggle('hidden', !open);
+  $('weights-toggle').textContent = open ? '▾' : '▸';
+  $('weights-toggle').setAttribute('aria-expanded', String(open));
+  $('weights-toggle').title = open ? 'Hide the sliders' : 'Show the sliders';
+}
+showWeights(false);
+for (const id of ['weights-toggle', 'weights-heading']) $(id).addEventListener('click', () => showWeights(!weightsOpen));
+
 $('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
 $('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items, reversedSides()));
 $('probabilities-btn').addEventListener('click', () => showProbabilities(settings.practice.kind));
