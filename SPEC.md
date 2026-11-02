@@ -317,6 +317,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Reset** (all sliders to 50%) stays with them in the card, blue and the same width as the page's other buttons.
   - **Show lines** and **Show positions** (the Test probabilities table) both go in the card, each using its own kind's main-lines tick from the Practice page.
   - "Not used with Reverse sides" goes in the card heading's hover explanation and in Help; the Practice page no longer greys anything out when Reverse sides is ticked.
+  - **To do (the user's decision, 2 November 2026; not built yet):** the hover hints of Show lines and Show positions say "…most likely to be tested next" instead of "…most likely to come up next" (e.g. "The lines most likely to be tested next").
 
 - **Practice lines** practises every line of the chapters ticked on the Studies page, filtered by **Main lines only**, each from move 1, including lines never tried. **Practice positions** practises every move of the user's in the ticked chapters (once each), filtered by **Positions from main lines only**, each as a single position, including moves never tried. Neither uses the table's count and accuracy drop-downs (the user's decision). (These were first the Lines and Positions pages' "Practice all lines/positions" buttons.)
 - The user asked for a bias towards new and untested items, items with low accuracy and items not tested in a while, and across all of these towards more frequent positions. *Claude's algorithm, accepted by the user:*
