@@ -9,7 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Opening Trainer</title>
+<title>Chess Opening Trainer</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/600.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/700.css">
@@ -86,7 +86,8 @@
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  header nav .problem-dot { color: var(--bad); }
+  /* The Lichess button's red dot (not connected, or a problem): small and raised, like a notification dot */
+  header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: top; margin-top: 2px; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
   .banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); background: var(--surface); }
@@ -297,7 +298,16 @@
   .practice-chooser p:empty { display: none; }
   .table-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; overflow-y: auto; }
   .table-overlay .table-card { width: 100%; max-width: 960px; }
-  .table-overlay .welcome-card { width: 100%; max-width: 520px; }
+  .table-overlay .welcome-card { width: 100%; max-width: 560px; padding: 0; overflow: hidden; }
+  /* The welcome splash: a blue band with the title, then a small board (the Ruy Lopez) beside the text (above it on a phone) */
+  .splash-band { background: var(--accent); padding: 14px 20px; align-items: center; }
+  .splash-band h2, .splash-band .overlay-close, .splash-band .overlay-close:hover:not(:disabled) { color: var(--accent-text); }
+  .splash-body { display: flex; gap: 20px; align-items: center; padding: 20px; }
+  .splash-body p { margin-top: 0; }
+  .splash-body .actions { margin-top: 12px; }
+  .splash-board { flex: none; width: 200px; height: 200px; }
+  .splash-board .cg-wrap { width: 100%; height: 100%; }
+  @media (max-width: 520px) { .splash-body { flex-direction: column; align-items: flex-start; } }
   .overlay-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .overlay-head h2 { margin: 0; }
   .overlay-close { font-size: 26px; line-height: 1; padding: 0 6px; }
@@ -337,7 +347,7 @@
 </head>
 <body>
 <header>
-  <h1>Opening Trainer</h1>
+  <h1>Chess Opening Trainer</h1>
   <nav>
     <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
@@ -386,7 +396,7 @@
       <div id="getting-started" class="card">
         <h2>Getting started</h2>
         <p id="getting-started-ready"></p>
-        <p>Used the app before? Restore your backup to bring back your stats and the move statistics.</p>
+        <p>Used the app before? Restore a backup.</p>
         <div class="actions">
           <button id="first-restore-btn" class="primary">Restore backup</button>
           <button id="welcome-start-btn" class="primary" title="Your studies first need fetching: Connect to Lichess">Start</button>
@@ -491,9 +501,14 @@
   <!-- The welcome, over the Lichess page, until a new user has started -->
   <div id="welcome-splash" class="table-overlay hidden">
     <div class="card welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcome-splash-title">
-      <div class="overlay-head"><h2 id="welcome-splash-title">Welcome to Chess Opening Trainer</h2><button id="welcome-splash-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
-      <p>Practice the openings in your Lichess studies using spaced repetition.</p>
-      <div class="actions"><button id="welcome-splash-start" class="primary">Get started</button></div>
+      <div class="overlay-head splash-band"><h2 id="welcome-splash-title">Welcome to Chess Opening Trainer</h2><button id="welcome-splash-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
+      <div class="splash-body">
+        <div class="splash-board" aria-label="The Ruy Lopez after 3. Bb5, with arrows for 3… a6 and 3… Nf6" role="img"><div class="cg-wrap"></div></div>
+        <div>
+          <p>Practice the openings in your Lichess studies using spaced repetition.</p>
+          <div class="actions"><button id="welcome-splash-start" class="primary">Get started</button></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3293,7 +3308,7 @@ const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 function updateLichessStatus() {
   const messages = lichessMessages();
   const problem = /expired|rejected|slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages);
-  $('nav-lichess').replaceChildren('Lichess', ...!token || problem ? [' ', element('span', { class: 'problem-dot', 'aria-label': 'needs attention' }, '●')] : []);
+  $('nav-lichess').replaceChildren('Lichess', ...!token || problem ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'needs attention' })] : []);
   $('nav-lichess').title = !token ? 'Not connected to Lichess' : problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
 }
 
@@ -3361,7 +3376,18 @@ $('disconnect-btn').addEventListener('click', () => {
 
 // The welcome splash: over the Lichess page each time the app opens until you've started (connected or
 // tried the sample studies). Get started, × or Esc closes it.
-const showSplash = open => $('welcome-splash').classList.toggle('hidden', !open);
+// Its board: the Ruy Lopez after 1. e4 e5 2. Nf3 Nc6 3. Bb5, with the app's own arrows: green for the
+// study's move (3… a6), blue for an alternative (3… Nf6, the Berlin). Not playable.
+let splashBoard = null;
+function showSplash(open) {
+  $('welcome-splash').classList.toggle('hidden', !open);
+  if (!open || splashBoard) return;
+  splashBoard = Chessground(document.querySelector('.splash-board .cg-wrap'), {
+    fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', lastMove: ['f1', 'b5'],
+    viewOnly: true, coordinates: false, animation: { enabled: false },
+    drawable: { enabled: false, visible: true, autoShapes: [{ orig: 'a7', dest: 'a6', brush: 'green' }, { orig: 'g8', dest: 'f6', brush: 'blue' }] },
+  });
+}
 for (const id of ['welcome-splash-start', 'welcome-splash-close']) $(id).addEventListener('click', () => showSplash(false));
 $('welcome-splash').addEventListener('click', e => { if (e.target === $('welcome-splash')) showSplash(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('welcome-splash').classList.contains('hidden')) showSplash(false); });
@@ -3395,6 +3421,7 @@ $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
+    account: library && !isTrial() ? library.username : null, // the Lichess account, to warn when it's restored under another
     settings, selection: [...selection], presets, hiddenStudies: [...hiddenStudies],
     history: storedHistory(),
     moveStats, // they take a long time to download, so they're included
@@ -3432,6 +3459,16 @@ function backupSaved() {
   renderOptions();
 }
 
+// Restore's "Are you sure?": from another Lichess account (recorded in the backup; you're connected to,
+// or have the studies of, a different one), it says so; otherwise the usual question.
+function restoreQuestion(b) {
+  const here = library && !isTrial() ? library.username : null;
+  if (b.account && here && b.account !== here) return `This backup is from ${b.account}'s account, but you're connected as ${here}. Restore anyway? Your stats would be replaced.`;
+  const n = Object.keys(b.history.moves).length;
+  const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
+  return `Replace your history and settings with the backup${when} (${plural(n, 'move')} with results)? This can't be undone.`;
+}
+
 $('restore-btn').addEventListener('click', () => $('restore-file').click());
 $('first-restore-btn').addEventListener('click', () => $('restore-file').click()); // on the first-visit screen
 
@@ -3449,9 +3486,7 @@ $('restore-file').addEventListener('change', async e => {
     showBanner('This backup is from an earlier version and can\'t be restored.', true);
     return;
   }
-  const n = Object.keys(b.history.moves).length;
-  const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
-  if (!confirm(`Replace your history and settings with the backup${when} (${plural(n, 'move')} with results)? This can't be undone.`)) return;
+  if (!confirm(restoreQuestion(b))) return;
 
   history = b.history;
   settings = checkedSettings(b.settings);

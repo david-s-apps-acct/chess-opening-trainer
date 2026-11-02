@@ -57,6 +57,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
+  restoreQuestion,
   get token() { return token; },
   loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
@@ -252,7 +253,7 @@ async function runTrial(app) {
   window.fetch = isolated;
   await wait(50);
   check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length], [true, 2]);
-  check('sample studies: the header\'s Lichess button, with the red dot (not connected)', $('nav-lichess').textContent, 'Lichess ●');
+  check('sample studies: the header\'s Lichess button, with the red dot (not connected)', [$('nav-lichess').textContent, !!$('nav-lichess').querySelector('.problem-dot')], ['Lichess', true]);
   $('nav-lichess').click();
   check('sample studies: the Lichess page says so, with Connect and no Try sample studies or Getting started', [$('lichess-account').textContent, $('connect-btn').classList.contains('hidden'),
     $('trial-offer').classList.contains('hidden'), $('getting-started').classList.contains('hidden')], ['Sample studies', false, true, true]);
@@ -264,7 +265,7 @@ async function runTrial(app) {
   // Connected: Disconnect, not Connect; Disconnect cancels a login's connection on Lichess and forgets it.
   app.setToken('lio_login');
   $('nav-lichess').click();
-  check('connected: Disconnect, not Connect; no red dot', [$('connect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden'), $('disconnect-btn').textContent, $('nav-lichess').textContent], [true, false, 'Disconnect', 'Lichess']);
+  check('connected: Disconnect, not Connect; no red dot', [$('connect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden'), $('disconnect-btn').textContent, !!$('nav-lichess').querySelector('.problem-dot')], [true, false, 'Disconnect', false]);
   let revoked = null, asked = null;
   const realConfirm = window.confirm;
   window.confirm = question => { asked = question; return false; };
@@ -354,6 +355,14 @@ async function runTrial(app) {
   await wait(100);
   await until(() => !app.downloading, 'the downloads to finish');
   window.fetch = isolated;
+
+  // Restoring a backup from another Lichess account asks so; otherwise (or with no account recorded) the usual question.
+  app.setLibrary(structuredClone(LIBRARY)); // tester's studies
+  const backupOf = account => ({ account, exportedAt: null, history: { moves: { a: [], b: [] }, lines: {} } });
+  check('restore: another account\'s backup, the usual question otherwise', [app.restoreQuestion(backupOf('someone')), app.restoreQuestion(backupOf('tester')), app.restoreQuestion(backupOf(undefined))],
+    ["This backup is from someone's account, but you're connected as tester. Restore anyway? Your stats would be replaced.",
+     "Replace your history and settings with the backup (2 moves with results)? This can't be undone.",
+     "Replace your history and settings with the backup (2 moves with results)? This can't be undone."]);
 
   // Options: Reset puts the penalties and Masters moves back to their defaults.
   app.setSettings({ errorPenalties: { error: 85 }, mastersTop: 2 });
