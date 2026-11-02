@@ -263,8 +263,8 @@ async function runTrial(app) {
   check('own studies: the Lichess status opens the panel, with the account', [$('lichess-btn').textContent, $('lichess-panel').classList.contains('hidden'), $('lichess-account').textContent],
     ['Lichess ▾', false, 'Lichess account: tester']);
   $('lichess-panel-close').click();
-  check('options online: the Lichess connection card', [$('opt-token-heading').textContent, $('opt-connect-btn').textContent, $('opt-token-state').textContent, $('token-clear-btn').textContent],
-    ['Lichess connection', 'Connect to Lichess', 'Not connected.', 'Disconnect']);
+  check('options online: the Lichess connection card, with no Disconnect', [$('opt-token-heading').textContent, $('opt-connect-btn').textContent, $('opt-token-state').textContent, !!$('token-clear-btn')],
+    ['Lichess connection', 'Connect to Lichess', 'Not connected.', false]);
   $('nav-studies').click();
   check('own studies: no Connect to Lichess in the header', $('nav-connect').classList.contains('hidden'), true);
 

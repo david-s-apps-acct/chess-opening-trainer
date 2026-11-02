@@ -673,7 +673,7 @@
         <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
           <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
-          <li><b>Lichess connection</b>: <b>Connect to Lichess</b> logs in again, e.g. after about a year, when Lichess ends the connection; <b>Disconnect</b> removes it from this browser (your studies stay). Opened from disk, this is <b>Lichess token</b>: <b>Add token</b> opens Lichess to create one, to paste into the box; <b>Clear token</b> removes it.</li>
+          <li><b>Lichess connection</b>: <b>Connect to Lichess</b> logs in again, e.g. after about a year, when Lichess ends the connection. Opened from disk, this is <b>Lichess token</b>: <b>Add token</b> opens Lichess to create one, to paste into the box.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
         </ul>
         <details>
@@ -723,7 +723,6 @@
         </form>
         <p id="opt-token-state" class="muted after-actions"></p>
         <div id="opt-token-error" class="form-error"></div>
-        <div class="actions"><button id="token-clear-btn" class="primary">Clear token</button></div>
       </div>
 
       <div class="card">
@@ -3290,7 +3289,6 @@ function renderOptions() {
   $('opt-token-state').textContent = canLogIn ? (!token ? 'Not connected.' : tokenSavedAt ? `Connected ${onDateAtTime(tokenSavedAt)}` : 'Connected.')
     : !token ? 'No token stored.' : tokenSavedAt ? `Token stored ${onDateAtTime(tokenSavedAt)}` : 'Token stored.';
   $('opt-token-error').textContent = '';
-  $('token-clear-btn').disabled = !token;
 }
 
 
@@ -3335,7 +3333,6 @@ if (canLogIn) {
   $('opt-token-heading').dataset.tip = 'The app reads your studies through your Lichess account. Lichess ends the connection after about a year; connect again then.';
   $('opt-connect-btn').textContent = 'Connect to Lichess';
   $('opt-connect-btn').title = 'Sign in to Lichess and allow the app to read your studies';
-  $('token-clear-btn').textContent = 'Disconnect';
 }
 $('opt-connect-btn').addEventListener('click', () => canLogIn ? logInWithLichess() : openTokenPage($('opt-connect-btn')));
 
@@ -3366,14 +3363,6 @@ setUpTokenBox($('opt-token-form'), $('opt-token-error'), () => {
   renderOptions();
   if (!library || isTrial()) fetchStudies(); // your own studies, replacing the sample ones
   else { showBanner('Token saved.'); syncStudies().then(startDownloads); } // a download stopped by a rejected token continues
-});
-
-$('token-clear-btn').addEventListener('click', () => {
-  token = null;
-  store.remove('token');
-  store.remove('tokenSavedAt');
-  renderOptions();
-  showBanner(canLogIn ? 'Disconnected.' : 'Token cleared.');
 });
 
 // ---------- Backup ----------
