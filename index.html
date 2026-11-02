@@ -87,7 +87,7 @@
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   /* The Lichess button's red dot (not connected, or a problem): small and raised, like a notification dot */
-  header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: top; margin-top: 2px; }
+  header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: middle; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
   .banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border); background: var(--surface); }
@@ -393,6 +393,17 @@
         <div id="token-error" class="form-error"></div>
       </div>
 
+      <div id="backup-card" class="card">
+        <h2><span data-tip="Your stats, settings and Lichess data are kept only in this browser. Backups never include your token.">Backup</span></h2>
+        <div class="actions stacked">
+          <button id="backup-btn" class="primary">Save backup</button>
+          <button id="restore-btn" class="primary">Restore backup</button>
+          <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
+        </div>
+        <p id="opt-backup-info" class="muted after-actions"></p>
+        <div id="backup-suggestion" class="update-status"></div>
+      </div>
+
       <div id="getting-started" class="card">
         <h2>Getting started</h2>
         <p id="getting-started-ready"></p>
@@ -552,7 +563,7 @@
         </details>
         <details>
           <summary>Where your data is kept</summary>
-          <p>Everything (your token, studies, stats and settings) stays in this browser. The app only talks to Lichess, to fetch your studies and move statistics. To keep your stats safe or move them to another browser, save a backup (see Options).</p>
+          <p>Everything (your token, studies, stats and settings) stays in this browser. The app only talks to Lichess, to fetch your studies and move statistics. To keep your stats safe or move them to another browser, save a backup (see the Lichess page).</p>
         </details>
       </div>
 
@@ -679,7 +690,17 @@
         <ul>
           <li><b>Spaced repetition focus</b>: the four sliders that decide what comes up next (see Practice, Spaced repetition), with <b>Show lines</b> and <b>Show positions</b> to see what's most likely, and <b>Reset</b>. Not used with Reverse sides.</li>
           <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
+        </ul>
+      </div>
+
+      <div class="card" id="help-lichess">
+        <h2>Lichess</h2>
+        <ul>
+          <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
+          <li>The Lichess page's cards: <b>Status</b> (your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Backup</b> and, until you've started, <b>Getting started</b> (Restore backup, Start once your studies have been fetched, and Try sample studies) instead of Backup.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
+          <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
+          <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
         </ul>
         <details>
           <summary>Backups</summary>
@@ -688,19 +709,9 @@
             <li>Restoring replaces your stats and settings, and merges the Lichess statistics with those already here (the newer copy of each wins). Backups from earlier versions of the app can't be restored.</li>
           </ul>
         </details>
-      </div>
-
-      <div class="card" id="help-lichess">
-        <h2>Lichess</h2>
-        <ul>
-          <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
-          <li>The Lichess page has three cards: <b>Status</b> (your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect) and, until you've started, <b>Getting started</b> (Restore backup, Start once your studies have been fetched, and Try sample studies).</li>
-          <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
-          <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
-        </ul>
         <details>
           <summary>Move statistics</summary>
-          <p>How often each move is played in rated Lichess games and in master games. They download in the background whenever the app opens (after your studies are updated), and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the Options page's Backup card suggests a backup, so they needn't be downloaded again.</p>
+          <p>How often each move is played in rated Lichess games and in master games. They download in the background whenever the app opens (after your studies are updated), and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the Lichess page's Backup card suggests a backup, so they needn't be downloaded again.</p>
         </details>
       </div>
 
@@ -735,17 +746,6 @@
           <select id="masters-top"></select>
         </div>
         <div class="actions"><button id="penalties-reset" class="primary" title="Penalties back to 20%, 20%, 50% and 100%, and Masters moves to Top 5">Reset</button></div>
-      </div>
-
-      <div class="card">
-        <h2><span data-tip="Your stats, settings and Lichess data are kept only in this browser. Backups never include your token.">Backup</span></h2>
-        <div class="actions stacked">
-          <button id="backup-btn" class="primary">Save backup</button>
-          <button id="restore-btn" class="primary">Restore backup</button>
-          <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
-        </div>
-        <p id="opt-backup-info" class="muted after-actions"></p>
-        <div id="backup-suggestion" class="update-status"></div>
       </div>
     </div>
   </section>
@@ -3019,7 +3019,7 @@ function allStudyPositions() {
   return found;
 }
 
-// After a download completes: suggest saving a backup (the downloads took a while), in the Options page's Backup card.
+// After a download completes: suggest saving a backup (the downloads took a while), in the Lichess page's Backup card.
 function suggestBackup(what) {
   const box = $('backup-suggestion'), clear = () => box.replaceChildren();
   box.replaceChildren(`${what} downloaded. Save a backup? `,
@@ -3253,19 +3253,18 @@ function renderPenalties() {
 
 function renderOptions() {
   renderPenalties();
-  const lastBackup = store.get('lastBackup', null);
-  $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
   renderWeights();
 }
 
 
 // ---------- Lichess page ----------
-// Everything to do with Lichess, in one place, the same three cards for everyone:
+// Everything to do with Lichess, and backups, in one place:
 // - Status: your account (or "Sample studies"), when you connected (or "Not connected."), when your
 //   studies were last fetched, the statistics downloaded so far, and any message about fetching or
 //   downloading;
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
 //   about a year), Disconnect when connected (the same for everyone);
+// - Backup: Save backup and Restore backup, once you've started;
 // - Getting started (new users only, until they start): Restore backup, and Start once the studies
 //   have been fetched (nothing downloads until one is pressed); and, without studies of your own, Try
 //   sample studies.
@@ -3296,6 +3295,10 @@ function renderLichessPage() {
   $('welcome-start-btn').disabled = !welcomeReady;
   $('welcome-start-btn').title = welcomeReady ? 'On to practice; the statistics download meanwhile' : 'Your studies first need fetching: Connect to Lichess';
   $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
+  // Backup: not while Getting started shows (it has Restore backup, and there's nothing to save yet).
+  $('backup-card').classList.toggle('hidden', !$('getting-started').classList.contains('hidden'));
+  const lastBackup = store.get('lastBackup', null);
+  $('opt-backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : 'No backup saved.';
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
@@ -3453,10 +3456,10 @@ $('backup-btn').addEventListener('click', async () => {
   showBanner(`Backup saved as ${name} in your download folder.`);
 });
 
-// When the last backup was saved from this browser (not itself in backups), shown on the Options page.
+// When the last backup was saved from this browser (not itself in backups), shown on the Lichess page.
 function backupSaved() {
   store.set('lastBackup', Date.now());
-  renderOptions();
+  renderLichessPage();
 }
 
 // Restore's "Are you sure?": from another Lichess account (recorded in the backup; you're connected to,
