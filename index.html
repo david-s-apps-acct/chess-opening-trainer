@@ -233,7 +233,6 @@
   .glyph.mistake, .quality-mistake { color: #e69d00 !important; }
   .glyph.blunder, .quality-blunder { color: #df5353 !important; }
   .tree-move { cursor: pointer; border-radius: 2px; }
-  .tree-move.line-end { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .tree-move:hover, .tree-move:focus { background: var(--surface-3); outline: none; }
   .move-preview { position: fixed; z-index: 50; width: 216px; padding: 8px; background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 13px; pointer-events: none; }
   .preview-text { margin-bottom: 6px; }
@@ -1859,9 +1858,9 @@ function openingName(parsed) {
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
 // Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
-// are italics; moves with a move-quality glyph take its color; each practiced line's last move is
-// underlined. On the Review page, clicking a move shows it (pick; current, highlighted). Branches open
-// and close in openSet, and the tree is drawn again by redraw.
+// are italics; moves with a move-quality glyph take its color. On the Review page, clicking a move
+// shows it (pick; current, highlighted). Branches open and close in openSet, and the tree is drawn
+// again by redraw.
 function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
   const parsed = parseChapter(ch);
   const box = element('div', { class: 'tree' });
@@ -1870,10 +1869,8 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   const moveEls = (node, path, showNo) => {
     const moves = [...path, node];
     const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(node))) : node.untested ? 'untested-move' : 'opp';
-    // The last move of a line you practice is underlined.
-    const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
     const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
-    const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + lineEnd + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
+    const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
     if (pick) el.addEventListener('click', () => pick(node));
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
