@@ -284,6 +284,7 @@
   .review-info div + div { margin-top: 3px; }
   .review-info .review-stats { margin-top: 10px; font-size: 13px; }
   .row .review-btn { margin-left: 4px; vertical-align: -2px; }
+  #practice-title .review-btn { margin-left: 6px; vertical-align: -1px; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
   .moves .mv { padding: 3px 10px; cursor: pointer; color: var(--text); }
@@ -726,7 +727,7 @@
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
+          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). On the Practice page, the same icon after the study's name ends practice and opens the line's study at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -1051,7 +1052,7 @@ function showScreen(name) {
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
   // Each page, and its header button (always shown; the current page's is highlighted; reviewing a
   // study belongs to Studies).
-  const navName = name === 'review' ? 'studies' : name;
+  const navName = name === 'review' ? (review?.back === 'practice' ? 'practice' : 'studies') : name;
   for (const s of ['practice', 'studies', 'options', 'lichess', 'help', 'review']) $(s + '-screen').classList.toggle('hidden', s !== name);
   for (const s of ['practice', 'studies', 'options', 'lichess', 'help']) {
     $('nav-' + s).classList.toggle('current', s === navName);
@@ -2094,17 +2095,20 @@ let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the Studies page's) }
 
 // The small board icon on a study's or chapter's row (for a study, its first chapter that can be shown).
-function reviewButton(ch) {
+// (On the Practice page, the same icon ends practice and reviews the line's study: see reviewFromPractice.)
+function reviewButton(ch, title = 'Review on a board', open = () => openReview(ch)) {
   if (!ch) return null;
-  const btn = element('button', { class: 'icon-btn review-btn', title: 'Review on a board', 'aria-label': 'Review on a board', onclick: e => { e.stopPropagation(); openReview(ch); } });
+  const btn = element('button', { class: 'icon-btn review-btn', title, 'aria-label': title, onclick: e => { e.stopPropagation(); open(); } });
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 3h6v6H3zM9 9h6v6H9zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" fill="currentColor"/></svg>';
   return btn;
 }
 
-function openReview(ch) {
+// Opens a chapter, at its start or at a position (at: the moves to it, as SANs). back: the page Close
+// returns to, 'studies' or 'practice' (kept when changing chapter).
+function openReview(ch, { at = [], back = review?.back ?? 'studies' } = {}) {
   const parsed = parseChapter(ch);
   if (parsed.error) return;
-  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY: review?.scrollY ?? window.scrollY };
+  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY: review?.scrollY ?? window.scrollY, back };
   showScreen('review');
   if (!reviewBoard) {
     reviewBoard = Chessground($('review-board'), {
@@ -2127,7 +2131,9 @@ function openReview(ch) {
   const list = $('review-chapters'), row = list.querySelector('.current');
   list.scrollTop = Math.max(0, Math.min(list.scrollTop, row.offsetTop - list.offsetTop), row.offsetTop - list.offsetTop + row.offsetHeight - list.clientHeight); // in view
   reviewBoard.set({ orientation: parsed.yourColor });
-  showReviewNode(parsed.root);
+  let node = parsed.root;
+  for (const x of at) node = node.children.find(c => c.san === x) || node;
+  showReviewNode(node);
   reviewBoard.redrawAll();
 }
 
@@ -2138,11 +2144,25 @@ function stepChapter(d) {
   if (next) openReview(next);
 }
 
+// Close (or Esc): back to the Studies page as it was, or to the Practice page's chooser when the study
+// was opened from practice.
 function closeReview() {
-  const y = review?.scrollY ?? 0;
+  const { scrollY = 0, back = 'studies' } = review ?? {};
   review = null;
+  if (back === 'practice') return showChooser();
   showStudies(); // open and closed studies as they were
-  window.scrollTo(0, y);
+  window.scrollTo(0, scrollY);
+}
+
+// From the Practice page, while a line or position is tested (or after it, while Next waits): practice
+// ends as with End practice, and the line's study opens on the review page at the position on the board
+// (the live one, or an earlier one being looked at).
+function reviewFromPractice() {
+  const { line } = practice, shown = practice.viewing ?? practice.movesPlayed;
+  const at = line.moves.slice(0, shown).map(m => m.san); // by SAN, as the studies may be replaced when practice ends
+  if (!practice.isOver) { addAttemptOnCurrentMove(); saveAttempts(); }
+  endPractice();
+  openReview(chapterByKey(line.chapterKey), { at, back: 'practice' });
 }
 $('review-close').addEventListener('click', closeReview);
 
@@ -3002,7 +3022,8 @@ function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  $('practice-title').replaceChildren(chapterTitle(ch) + (session.reversed ? ' (reversed)' : ''), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '');
+  $('practice-title').replaceChildren(chapterTitle(ch) + (session.reversed ? ' (reversed)' : ''), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
+    reviewButton(ch, 'End practice and review this study', reviewFromPractice));
   updatePositionName();
 }
 

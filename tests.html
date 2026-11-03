@@ -468,6 +468,15 @@ async function runLichessPage(app) {
     [['e2e4 green'], ['e7e5 white'], ['g1f3 green', 'b1c3 blue'], ['f1c4 green', 'f1b5 yellow']]);
   key('Escape');
   check('review: Esc goes back to the Studies page', !$('studies-screen').classList.contains('hidden'), true);
+  // From Practice: the icon by the study's name ends practice and opens the study at the position on the
+  // board; Close goes back to the Practice page's chooser.
+  app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC'))[0]); // the Sicilian: you're Black, so 1. e4 is played first
+  await until(() => app.practice?.movesPlayed === 1, 'the opponent\'s first move');
+  $('practice-title').querySelector('.review-btn').click();
+  check('practice → review: practice ended, the study at the position, Practice highlighted', [app.practice, !$('review-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-practice').classList.contains('current')],
+    [null, true, '2. Sicilian', 'e4', true]);
+  $('review-close').click();
+  check('practice → review: Close goes back to the Practice page\'s chooser', [!$('practice-screen').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden')], [true, true]);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
