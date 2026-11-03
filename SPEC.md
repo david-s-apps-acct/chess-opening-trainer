@@ -91,7 +91,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board (to do)
 
-- **To do (the user's decision, 3 November 2026; not built yet):** from the Studies page, a study can be opened and moved through on a board, with arrows for the move options, the comments and so on, to review it before (or instead of) practicing. On **its own page** (the user's choice), showing **a study at a chapter** (the user's choice: a study's chapters are usually one repertoire, so moving between them without going back helps).
+- **To do (the user's decision, 3 November 2026; not built yet):** from the Studies page, a study can be opened and moved through on a board, with arrows for the move options, the comments and so on, to review it before (or instead of) practicing. An advantage over reviewing it on Lichess (the user's point): it works offline, where Lichess needs a connection. On **its own page** (the user's choice), showing **a study at a chapter** (the user's choice: a study's chapters are usually one repertoire, so moving between them without going back helps).
 - *Claude's details, for the user to accept or reject:*
   - **Buttons on both rows** of the Studies page: a chapter's row opens its study at that chapter; a study's row opens it at its first chapter.
   - **The page:** the board on the left; on the right a drop-down of the study's chapters (the current one shown, with the side you play beside each name; chapters that can't be shown, such as empty ones or a variant, greyed out), the chapter's move tree as on the Studies page with the current move highlighted, and the current move's comment and glyphs under it. A ✕ (or "Back to Studies") returns to the Studies page as it was left.
