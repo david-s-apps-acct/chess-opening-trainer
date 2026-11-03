@@ -270,7 +270,7 @@
   /* Reviewing a study: tiles beside the board (the study with its chapters; the moves, the current one
      highlighted; its move statistics; your accuracy), and the review button on the
      Practice page. On a narrow screen the tiles go under the board. */
-  /* Three columns where there's room (the study's chapters, the board, the tiles), with the page wider than
+  /* Three columns where there's room (the study's chapters, 260 pixels; the board; the tiles), with the page wider than
      usual; two (the board; the tiles with the chapters under them); one on a phone. */
   body[data-page=review] main { max-width: 1440px; }
   .review-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; align-items: start; }
@@ -279,14 +279,14 @@
     .review-layout > .board-col { grid-row: 1 / span 2; }
   }
   @media (min-width: 1200px) {
-    .review-layout { grid-template-columns: 220px auto minmax(260px, 1fr); }
+    .review-layout { grid-template-columns: 260px auto minmax(240px, 1fr); }
     .review-chapters-tile { grid-column: 1; grid-row: 1 / span 2; }
     .review-layout > .board-col { grid-column: 2; }
     .review-tiles { grid-column: 3; grid-row: 1 / span 2; }
     .review-chapters-tile .review-chapters { max-height: 520px; } /* the board's height, more or less */
   }
   .review-tiles { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-  .review-layout .review-chapters-tile { min-width: 0; } /* within its column (not the tiles' usual 260 pixels): long names end in "…" */
+  .review-layout .review-chapters-tile { min-width: 0; } /* within its column: long names end in "…" */
   .review-tiles .panel { flex: none; min-width: 0; }
   .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   #review-study { flex: 1; min-width: 0; font-weight: 600; text-overflow: ellipsis; }
@@ -309,7 +309,7 @@
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
-  .review-comment { margin-top: 10px; font-size: 14px; }
+  .review-comment { margin-top: 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
   .review-comment:empty { display: none; }
   .review-comment .glyph { margin: 0 6px 0 0; }
   .review-comment p { margin: 0 0 4px; }
