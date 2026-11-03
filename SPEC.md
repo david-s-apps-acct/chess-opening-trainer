@@ -103,6 +103,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board
 
+- **To do (the user's decisions, 3 November 2026; not built yet): a simpler accuracy display.** The chapters list shows no accuracy figures; the "Your tries" tile is renamed **Your accuracy**; at a chapter's starting position it shows the chapter's accuracy, and at the last move of a line, that line's line accuracy (agreed with Claude: a chapter has several lines, so line accuracy belongs at a line's end). *Claude's details, for the user to accept or reject:* at the start, "85% average move accuracy (12 of 15 moves tried)", or "Untried" when none has been tried; at a line's last move, "92% line accuracy" (untried moves in it count as 0%, as for spaced repetition) and "Last played through today" (or "… 3 days ago", or "Not played through yet"), after the move's own lines when it's one of yours; nothing else changes in the tile.
+
 - **Built 3 November 2026 (the user's decision): hover boards in the Review page's move tree.** Hovering over a move shows it on the small hover board (as in Practice's move list), and clicking it shows it on the big board. *Claude's detail:* no hover board for the move already on the big board (after a click it would only repeat it).
 
 - **Built 3 November 2026 (the user's decision): the same text size in Move statistics and Your tries as the rest of the page.** They're smaller now (13 pixels). *Claude's details, accepted by the user:* 14 pixels, the size of the chapter names, the move tree and (per the to-do above) the comment under the board; their small headings too, so each tile is one size throughout (the headings stay bold and grey).
