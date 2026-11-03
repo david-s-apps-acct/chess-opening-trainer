@@ -367,7 +367,7 @@
   }
   @media (max-width: 640px) {
     header nav { width: 100%; gap: 4px; flex-wrap: nowrap; }
-    header nav button { flex: 1; padding: 7px 4px; font-size: 14px; }
+    header nav button { flex: 1 1 auto; padding: 7px 4px; font-size: 13px; white-space: nowrap; } /* six buttons, each on one line */
     .row { flex-wrap: wrap; }
     .row .name { flex-basis: calc(100% - 80px); white-space: normal; }
     .rate { min-width: 0; text-align: left; }
@@ -380,6 +380,7 @@
   <nav>
     <button id="nav-practice">Practice</button>
     <button id="nav-studies">Studies</button>
+    <button id="nav-review">Review</button>
     <button id="nav-options">Options</button>
     <button id="nav-lichess">Lichess</button>
     <button id="nav-help">Help</button>
@@ -725,7 +726,7 @@
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name to look through it on the Review page. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first ticked chapter); <b>Close</b> returns to the page you came from. On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -1045,13 +1046,11 @@ function showScreen(name) {
   currentScreen = name;
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
-  // Each page, and its header button (always shown; the current page's is highlighted; reviewing a
-  // study belongs to Studies).
-  const navName = name === 'review' ? (review?.back === 'practice' ? 'practice' : 'studies') : name;
-  for (const s of ['practice', 'studies', 'options', 'lichess', 'help', 'review']) $(s + '-screen').classList.toggle('hidden', s !== name);
-  for (const s of ['practice', 'studies', 'options', 'lichess', 'help']) {
-    $('nav-' + s).classList.toggle('current', s === navName);
-    if (s === navName) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
+  // Each page, and its header button (always shown; the current page's is highlighted).
+  for (const s of ['practice', 'studies', 'review', 'options', 'lichess', 'help']) {
+    $(s + '-screen').classList.toggle('hidden', s !== name);
+    $('nav-' + s).classList.toggle('current', s === name);
+    if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
   }
   updateLichessStatus();
 }
@@ -1790,7 +1789,7 @@ function chapterRow(ch, studyHidden) {
     element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
       onchange: e => setTicked([ch.key], e.target.checked) }),
     // The side you play: a small white or black circle right after the chapter name.
-    element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch)), openingName(parsed), 700),
+    element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch, { back: 'studies' })), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
@@ -2068,11 +2067,12 @@ function reviewButton(ch, title, open) {
 }
 
 // Opens a chapter, at its start or at a position (at: the moves to it, as SANs). back: the page Close
-// returns to, 'studies' or 'practice' (kept when changing chapter).
-function openReview(ch, { at = [], back = review?.back ?? 'studies' } = {}) {
+// returns to (kept when changing chapter).
+function openReview(ch, { at = [], back } = {}) {
   const parsed = parseChapter(ch);
   if (parsed.error) return;
-  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY: review?.scrollY ?? window.scrollY, back };
+  const scrollY = back ? window.scrollY : review?.scrollY ?? 0; // the page Close returns to: where it was scrolled
+  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY, back: back ?? review?.back ?? 'studies' };
   showScreen('review');
   if (!reviewBoard) {
     reviewBoard = Chessground($('review-board'), {
@@ -2108,15 +2108,25 @@ function stepChapter(d) {
   if (next) openReview(next);
 }
 
-// Close (or Esc): back to the Studies page as it was, or to the Practice page's chooser when the study
-// was opened from practice.
+// Close (or Esc): back to the page the Review page was opened from (Studies as it was, scrolled where
+// it was). The chapter and position stay for the header's Review button.
 function closeReview() {
-  const { scrollY = 0, back = 'studies' } = review ?? {};
-  review = null;
-  if (back === 'practice') return showChooser();
-  showStudies(); // open and closed studies as they were
-  window.scrollTo(0, scrollY);
+  const { scrollY, back } = review;
+  $('nav-' + back).click();
+  if (back === 'studies') window.scrollTo(0, scrollY);
 }
+
+// The header's Review button: the chapter and position last looked at (the studies may have been
+// updated since), or else the first ticked chapter (or the first chapter) that can be shown. Before
+// there are studies, as the Studies button.
+$('nav-review').addEventListener('click', () => {
+  if (!library) return $('nav-studies').click();
+  if (currentScreen === 'review') return;
+  const last = review && chapterByKey(review.ch.key);
+  if (last) return openReview(last, { at: pathTo(review.node).map(m => m.san), back: currentScreen });
+  const first = [...tickedChapters(), ...visibleChapters()].find(c => !parseChapter(c).error);
+  if (first) openReview(first, { back: currentScreen });
+});
 
 // From the Practice page, while a line or position is tested (or after it, while Next waits): practice
 // ends as with End practice, and the line's study opens on the review page at the position on the board

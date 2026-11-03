@@ -446,7 +446,7 @@ async function runLichessPage(app) {
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   const chapterShown = () => $('review-chapters').querySelector('.current')?.textContent;
-  check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-studies').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
+  check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-review').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
     [true, true, '1. Italian', 'Starting position', null]);
   key('ArrowRight'); key('ArrowRight');
   const afterTwo = current();
@@ -473,10 +473,16 @@ async function runLichessPage(app) {
   app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC'))[0]); // the Sicilian: you're Black, so 1. e4 is played first
   await until(() => app.practice?.movesPlayed === 1, 'the opponent\'s first move');
   $('practice-title').querySelector('.review-btn').click();
-  check('practice → review: practice ended, the study at the position, Practice highlighted', [app.practice, !$('review-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-practice').classList.contains('current')],
+  check('practice → review: practice ended, the study at the position, Review highlighted', [app.practice, !$('review-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-review').classList.contains('current')],
     [null, true, '2. Sicilian', 'e4', true]);
   $('review-close').click();
   check('practice → review: Close goes back to the Practice page\'s chooser', [!$('practice-screen').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden')], [true, true]);
+  // The header's Review button: back where you left it; Close then returns to the page you came from.
+  $('nav-options').click();
+  $('nav-review').click();
+  check('Review button: the chapter and position last looked at', [!$('review-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
+  $('review-close').click();
+  check('Review button: Close goes back to the page it was opened from', !$('options-screen').classList.contains('hidden'), true);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
