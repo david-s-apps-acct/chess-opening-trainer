@@ -103,6 +103,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board
 
+- **To do (the user's decision, 3 November 2026; not built yet): long chapter names on one line.** In the Review page's chapters list, a long chapter name isn't wrapped: it ends in "…", and the full name shows on hover. *Claude's details, for the user to accept or reject:* the number ("4.") stays, and the side dot and move accuracy stay at the right, so only the name is shortened; the hover is the browser's own (as for long study names in the studies list); the same for the study names in the drop-down above, which the browser already cuts short.
 - **Built 3 November 2026 (the user's decision): separate tiles for the move statistics and your tries.** Under the moves: the move (with its glyphs) and its comment; then a **Move statistics** tile (the move's Lichess and masters ranks, "Position reached …"); then, for your moves, a **Your tries** tile (move accuracy, last tested, errors). *Claude's details:* the two tile names, small grey headings; each tile is hidden when it has nothing to show (e.g. Your tries for the opponent's moves, Move statistics before they've downloaded); "Alternative move, not tested" stays with the move and its comment.
 
 - **Built 3 November 2026 (the user's decisions): three changes to the Review page.**
