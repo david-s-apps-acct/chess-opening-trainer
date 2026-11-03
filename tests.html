@@ -57,7 +57,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
-  restoreQuestion, chooseDefaultGames, gamesText, ratingText,
+  restoreQuestion, chooseDefaultGames, ratingText,
   get token() { return token; },
   loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
@@ -399,8 +399,7 @@ async function runLichessPage(app) {
   app.library.ratings = { blitz: { rating: 1720, games: 300, prov: false } };
   app.chooseDefaultGames();
   check('games: set once, not changed by a new rating', app.settings.games.ratings, [1200, 1400, 1600, 1800]);
-  check('games: their names, and the rating line', [app.gamesText(app.settings.games), app.gamesText({ ratings: [0, 1000, 2200, 2500], speeds: ['blitz'] }), app.ratingText()],
-    ['1200–2000, blitz, rapid', 'under 1200, 2200+, blitz', 'Lichess rating: blitz 1720']);
+  check('games: the rating line', app.ratingText(), 'Lichess rating: blitz 1720');
 
   // The download asks for those games, records them, and downloads statistics from other games again.
   app.setMoveStats(Object.fromEntries(epds.map(epd => [epd, { lichess: explorer([['e4', 1]]) }]))); // all rated games

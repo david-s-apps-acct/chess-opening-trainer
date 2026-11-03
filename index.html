@@ -119,7 +119,7 @@
   /* The Move statistics card: the padlock after the heading, then two columns of tick boxes (ratings, lowest
      first; time controls, fastest first) */
   .lock-heading { display: flex; align-items: center; gap: 6px; }
-  .tick-columns { display: flex; gap: 48px; font-size: 14px; }
+  .tick-columns { display: flex; gap: 48px; margin-top: 10px; font-size: 14px; }
   .tick-title { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .tick-column { display: flex; flex-direction: column; gap: 4px; }
   .tick-column label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -381,8 +381,6 @@
           <p id="lichess-rating" class="muted"></p>
           <p id="lichess-connected" class="muted"></p>
           <p id="lichess-fetched" class="muted"></p>
-          <p id="lichess-moves" class="muted"></p>
-          <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
           <p id="lichess-masters" class="muted"></p>
           <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
           <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
@@ -407,6 +405,8 @@
       <div id="games-card" class="card hidden">
         <h2 class="lock-heading"><span data-tip="Which Lichess games the move statistics come from, combined. A game's band is its players' average Lichess rating (higher than Chess.com's).">Move statistics</span>
           <button id="games-lock" class="icon-btn"></button></h2>
+        <p id="lichess-moves" class="muted"></p>
+        <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <div class="tick-columns">
           <div><div class="tick-title">Rating</div><div id="games-ratings" class="tick-column"></div></div>
           <div><div class="tick-title">Time control</div><div id="games-speeds" class="tick-column"></div></div>
@@ -718,7 +718,7 @@
         <h2>Lichess</h2>
         <ul>
           <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
-          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
+          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their masters statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
           <li><b>Move statistics</b>: the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
@@ -3025,22 +3025,9 @@ const chosenGames = () => settings.games || ALL_GAMES;
 const gamesKey = g => g.ratings.length === RATING_BANDS.length && g.speeds.length === SPEEDS.length ? 'all' : `${g.ratings.join(',')}|${g.speeds.join(',')}`;
 const isCurrentStats = stats => (stats.games ?? 'all') === gamesKey(chosenGames());
 
-// A rating band's name: "under 1000", "1600–1800", "2500+"; runs of bands joined ("1600–2000").
-const bandsText = (from, to) => from === 0 ? `under ${RATING_BANDS[to + 1] ?? 1000}` : to === RATING_BANDS.length - 1 ? `${RATING_BANDS[from]}+` : `${RATING_BANDS[from]}–${RATING_BANDS[to + 1]}`;
-const bandName = b => bandsText(RATING_BANDS.indexOf(b), RATING_BANDS.indexOf(b));
+// A rating band's name: "under 1000", "1600–1800", "2500+".
+const bandName = b => b === 0 ? 'under 1000' : b === 2500 ? '2500+' : `${b}–${RATING_BANDS[RATING_BANDS.indexOf(b) + 1]}`;
 const SPEED_NAMES = { ultraBullet: 'UltraBullet', bullet: 'Bullet', blitz: 'Blitz', rapid: 'Rapid', classical: 'Classical', correspondence: 'Correspondence' };
-
-// The games, for the Status card: "1600–2000, blitz, rapid"; null for all rated games.
-function gamesText(g) {
-  if (gamesKey(g) === 'all') return null;
-  const runs = [];
-  for (const k of g.ratings.map(b => RATING_BANDS.indexOf(b))) {
-    if (runs.length && runs.at(-1)[1] === k - 1) runs.at(-1)[1] = k; else runs.push([k, k]);
-  }
-  const ratings = g.ratings.length === RATING_BANDS.length ? ['all ratings'] : runs.map(([from, to]) => bandsText(from, to));
-  const speeds = g.speeds.length === SPEEDS.length ? ['all time controls'] : g.speeds.map(x => SPEED_NAMES[x].toLowerCase());
-  return [...ratings, ...speeds].join(', ');
-}
 
 // Every position reached in the studies: every move and variation, alternative moves' variations
 // and each line's final position included. For each: its FEN, depth (in plies), the positions and
@@ -3156,8 +3143,9 @@ async function downloadExplorerPositions(kind, run) {
   const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   if (!todo.length) return; // nothing missing: nothing to say
-  // The progress shows in the Lichess page's "Move statistics: 3 of 10 positions (downloading…)"; the
-  // status line under it is only for problems.
+  // The progress shows in the Lichess page's "3 of 10 positions (downloading…)" (the Move statistics
+  // card) or "Masters statistics: 3 of 10 positions (downloading…)" (the Status card); the status line
+  // under it is only for problems.
   status('');
   showProgress();
   let fetched = 0;
@@ -3187,7 +3175,7 @@ async function downloadExplorerPositions(kind, run) {
       continue;
     }
     if (res.status === 401) {
-      status(canLogIn ? 'Lichess connection expired. Connect again below to continue.' : 'Lichess rejected the token. Replace it below to continue.');
+      status(canLogIn ? 'Lichess connection expired. Connect again to continue.' : 'Lichess rejected the token. Replace it to continue.');
       return;
     }
     if (explorerDownloads[kind] !== run) return; // the games were changed meanwhile
@@ -3204,16 +3192,16 @@ async function downloadExplorerPositions(kind, run) {
   if (fetched && todo.every(([epd]) => saved(epd))) suggestBackup(explorer.Label);
 }
 
-// The Lichess page's "Move statistics: 3 of 10 positions (downloading…)" and "Masters statistics: …"
-// lines, and the status on the header's Lichess button.
+// The Lichess page's download progress: "3 of 10 positions (downloading…)" in the Move statistics card
+// (shown once there are studies), "Masters statistics: …" in the Status card; and the status on the
+// header's Lichess button.
 function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
-    const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
-    const games = kind === 'lichess' && gamesText(chosenGames()), label = explorer.Label + (games ? ` (${games})` : '');
-    if (!library) { el.textContent = `${label}: no positions downloaded`; continue; }
+    const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info), label = kind === 'masters' ? `${explorer.Label}: ` : '';
+    if (!library) { el.textContent = `${label}no positions downloaded`; continue; }
     const done = studied.filter(epd => moveStats[epd]?.[kind] && explorer.isCurrent(moveStats[epd][kind])).length;
-    el.textContent = `${label}: ${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
+    el.textContent = `${label}${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
   }
   updateLichessStatus();
 }
