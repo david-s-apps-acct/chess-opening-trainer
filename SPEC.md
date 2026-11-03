@@ -539,9 +539,9 @@ The last selection is remembered between visits (stored in the browser, like the
 
 - **To do (the user's decision, 3 November 2026; not built yet; the scheme still to confirm): one arrow-colour scheme across the whole app.** The colours had grown piece by piece (blue meant "another move in your study" on the Review page but "an error that cost less" on the hover boards; one amber for ?!, ? and ??; faint white arrows for the opponent; no key). The user decided the same scheme must hold on every board and in the matching text (the Practice page's error messages, the hover boards' "Errors: …"). *Claude's proposed scheme, for the user to accept or change:* a colour says what the move **is**, wherever it's shown:
   - **green**: your study's main move (the correct move; also the Hint circle and Show correct move);
-  - **blue**: another move your study gives at your turn (an unmarked alternative);
+  - **pale green**: another move your study gives at your turn (an unmarked alternative; the user's choice, 3 November 2026: shades of green are moves in your study; chessground's pale green arrow, and a lighter green in text);
   - **amber**: a move the study marks ?!, ? or ?? (yours or the opponent's; the mark itself shows in the text and the move list);
-  - **purple**: a masters move that isn't in your study;
+  - **blue**: a masters move that isn't in your study (the user's choice, 3 November 2026: different and specific);
   - **red**: anything else you tried;
   - **grey** (darker than today's white, to show on light squares): the opponent's moves;
   - errors' arrows the same strength as the others (the slight lightening goes);
