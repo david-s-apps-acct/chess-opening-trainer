@@ -164,18 +164,13 @@
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* On the Practice page, under the chooser: the Studies to test tile (the preset, its edit panel, how many
-     chapters are ticked, Choose chapters), then the chapters, when opened. */
+  /* On the Practice page, under the chooser: the Studies to test tile (the preset, how many chapters it has,
+     Select chapters and, while selecting, the buttons to save them), then the chapters to tick. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .practice-studies .rate { min-width: 0; } /* a narrower column: the accuracy column narrows, long names end in "…" */
   .studies-to-test h2 { margin: 0 0 10px; }
-  .studies-to-test.locked { opacity: .55; } /* during practice: shown, but greyed out */
-  .preset-row { display: flex; align-items: center; gap: 8px; }
-  #preset-select { min-width: 0; text-overflow: ellipsis; }
-  #preset-select.changed { color: var(--faint); } /* the ticks differ from the chosen preset, or "None chosen" */
-  #preset-select option { color: var(--text); }
-  #preset-edit-btn[aria-expanded=true] { color: var(--text-strong); }
+  #preset-select { width: 100%; text-overflow: ellipsis; }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
   .sel-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
   .all-row #show-hidden-btn { margin-left: auto; }
@@ -281,6 +276,7 @@
   .review-chapters::-webkit-scrollbar { width: 8px; }
   .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
   .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
+  #review-practice { margin-top: 12px; }
   .review-chapter .rate, .review-head .rate { min-width: 0; margin-left: auto; padding-left: 10px; } /* move accuracy, at the right */
   .review-chapter.current .rate, .review-chapter.current .rate .needs-work { color: var(--accent-text); } /* readable on the blue */
   .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
@@ -520,25 +516,22 @@
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
-      <!-- Studies to test: the preset, how many chapters are ticked, and the chapters (opened on request).
-           Shown always; greyed out during practice. -->
+      <!-- Studies to test: the chosen preset (All, or one of yours) and how many chapters it has; Select
+           chapters opens its chapters to tick, with the buttons to save them. Hidden during practice. -->
       <div id="studies-to-test" class="panel studies-to-test hidden">
         <h2>Studies to test</h2>
-        <div class="preset-row">
-          <select id="preset-select" aria-label="Preset" title="Tick exactly the chapters of a preset"></select>
-          <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
-          </button>
+        <select id="preset-select" aria-label="Preset"></select>
+        <div class="sel-row">
+          <span id="sel-summary" class="muted"></span>
+          <button id="preset-edit-btn" aria-controls="practice-studies" title="Tick the chapters of this preset">Select chapters</button>
         </div>
-        <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
-          <div class="preset-edit-row">
-            <div class="preset-buttons">
-              <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
-              <button id="preset-update-btn" class="small" title="Save the ticked chapters in this preset">Update</button>
-              <button id="preset-rename-btn" class="small">Rename</button>
-              <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
-            </div>
-            <button id="preset-edit-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
+        <div id="preset-edit" class="preset-edit hidden">
+          <div class="preset-buttons">
+            <button id="preset-save-btn" class="small primary" title="Save the ticked chapters in this preset">Save</button>
+            <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
+            <button id="preset-rename-btn" class="small">Rename</button>
+            <button id="preset-delete-btn" class="small">Delete</button>
+            <button id="preset-cancel-btn" class="small" title="Close without saving (Esc)">Cancel</button>
           </div>
           <form id="preset-name-form" class="preset-name-form hidden">
             <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
@@ -546,12 +539,8 @@
             <div id="preset-name-error" class="form-error"></div>
           </form>
         </div>
-        <div class="sel-row">
-          <span id="sel-summary" class="muted"></span>
-          <button id="chapters-toggle" aria-expanded="false" aria-controls="practice-studies">Choose chapters ▾</button>
-        </div>
       </div>
-      <!-- The chapters: opened with Choose chapters, while nothing is practised -->
+      <!-- The chapters, to tick: only while selecting a preset's chapters -->
       <div id="practice-studies" class="practice-studies hidden">
         <div class="studies">
           <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes; the eye shows hidden studies. -->
@@ -577,6 +566,7 @@
         <div class="panel">
           <div class="review-head"><select id="review-study" aria-label="Study"></select><span id="review-study-score"></span></div>
           <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
+          <div class="actions"><button id="review-practice" class="primary">Practice this chapter</button></div>
         </div>
         <div class="panel">
           <div id="review-position" class="muted"></div>
@@ -628,7 +618,7 @@
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
-          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some in the list of studies on the same page.</li>
+          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the preset <b>All</b>); to practise fewer, make a preset with <b>Select chapters</b> under <b>Studies to test</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
@@ -655,7 +645,7 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters ticked in the list of studies. <b>Main lines only</b> leaves out the opponent's side variations.</li>
+          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen preset (Studies to test). <b>Main lines only</b> leaves out the opponent's side variations.</li>
           <li>Spaced repetition chooses what comes next; the sliders on the Options page (<b>Spaced repetition focus</b>) change the balance, and <b>Show lines</b> there lists what's most likely to be tested next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
@@ -740,22 +730,14 @@
       <div class="card" id="help-studies">
         <h2>Studies to test</h2>
         <ul>
-          <li>On the Practice page, <b>Studies to test</b> shows the chosen preset and how many chapters are ticked; <b>Choose chapters</b> opens your studies and chapters. During practice it's greyed out: end practice to change it.</li>
-          <li>Tick studies or chapters, or <b>All</b>, to choose what you practice.</li>
-          <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name to look through it on the Review page. Clicking a name doesn't tick it.</li>
-          <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first ticked chapter). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Choose another study from the drop-down, and another chapter in the numbered list (or use ↑ ↓). Beside the board: the study and its chapters (with their move accuracy), the moves, and the move's comment and statistics.</li>
+          <li>On the Practice page, <b>Studies to test</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
+          <li><b>Select chapters</b> opens the preset's chapters to tick, with <b>Save</b>, <b>Save as new</b> (a new preset from the ticks), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Save as new and Cancel.</li>
+          <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name to look through it on the Review page (clicking a name doesn't tick it). Hover over a chapter's name to see its opening; the dot after it shows the side you play.</li>
+          <li>To practise one chapter without a preset, use <b>Practice this chapter</b> on the Review page.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
+          <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
         </ul>
-        <details>
-          <summary>Presets</summary>
-          <ul>
-            <li>A preset is a saved set of ticked chapters. Choose one from the drop-down under <b>Studies to test</b> to tick exactly its chapters.</li>
-            <li>The pencil (✎) opens the buttons: <b>Save as new</b> saves the ticked chapters under a new name; <b>Update</b> saves them in the chosen preset; <b>Rename</b> and <b>Delete</b> (the ticks stay).</li>
-            <li>When the ticks differ from the chosen preset, its name is greyed out; choose it again to go back to its chapters.</li>
-            <li>Chapters no longer on Lichess, or in hidden studies, are skipped. Presets are included in backups.</li>
-          </ul>
-        </details>
         <details>
           <summary>Hiding studies</summary>
           <p>The eye beside <b>All</b> shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the eye beside All again to put them out of sight. Hidden studies aren't practiced.</p>
@@ -844,7 +826,7 @@ const MAX_LINES_PER_CHAPTER = 5000;
 
 // ---------- Storage ----------
 
-// localStorage (names start "cot."): the Lichess token, settings, selection, presets, the chosen
+// localStorage (names start "cot."): the Lichess token, settings, presets, the chosen
 // preset, hidden studies and your history. IndexedDB (database "chess-opening-trainer"): the studies
 // fetched from Lichess (store "library") and the move statistics for each board position (store
 // "moveStats", keyed by EPD). Both can be large.
@@ -925,19 +907,22 @@ async function saveMoveStats(epds = Object.keys(moveStats)) {
 
 let token = store.get('token', null);
 let library = null; // the studies fetched from Lichess: { fetchedAt, username, ratings, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
-let selection = new Set(store.get('selection', [])); // the ticked chapters' keys, "studyId/chapterId"
-// Presets: saved chapter selections, [{ name, chapters: [chapter keys] }], and the name of the one
-// chosen in the drop-down.
+// Presets: named sets of chapters, [{ name, chapters: [chapter keys] }], and the name of the one chosen
+// (null for the built-in All: every chapter outside hidden studies, worked out each time, not stored).
+// What's practised is always the chosen preset's chapters (selection, worked out from it: see
+// useChosenPreset). A preset of your own can't be called "All": one that is (e.g. from a backup) becomes
+// "All 2".
+const ALL_PRESET = 'All';
 const checkedPresets = v => {
-  const names = new Set();
-  return (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.name.trim() && Array.isArray(p.chapters)
-    && !names.has(p.name.toLowerCase()) && names.add(p.name.toLowerCase()))
-    .map(p => ({ name: p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string') }));
+  const names = new Set([ALL_PRESET.toLowerCase()]);
+  return (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.name.trim() && Array.isArray(p.chapters))
+    .map(p => ({ name: p.name.trim().toLowerCase() === ALL_PRESET.toLowerCase() ? `${ALL_PRESET} 2` : p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string') }))
+    .filter(p => !names.has(p.name.toLowerCase()) && names.add(p.name.toLowerCase()));
 };
+let selection = new Set(); // the chosen preset's chapters (keys such as "studyId/chapterId")
 let presets = checkedPresets(store.get('presets', []));
 let chosenPresetName = store.get('chosenPreset', null);
 let hiddenStudies = new Set(store.get('hiddenStudies', [])); // studies hidden from the list and from practice
-const saveSelection = () => store.set('selection', [...selection]);
 const saveHidden = () => store.set('hiddenStudies', [...hiddenStudies]);
 const isHiddenChapter = key => hiddenStudies.has(key.slice(0, key.indexOf('/')));
 const visibleChapters = () => allChapters().filter(c => !isHiddenChapter(c.key));
@@ -1288,8 +1273,9 @@ async function useStudies(fetched) {
 }
 
 // Fetching your studies when there are none yet (connecting), with "Fetching…"
-// and any error shown. With welcome (the first connection), every chapter is ticked and the
-// statistics don't download yet: Getting started waits for Start or Restore backup (see
+// and any error shown. With welcome (the first connection), the statistics don't download yet
+// (the preset All, every chapter, is chosen unless one of yours is): Getting started waits for
+// Download statistics or Restore backup (see
 // showWelcomeReady). (Once you have your own studies, syncStudies keeps them up to date.)
 async function fetchStudies({ welcome = false } = {}) {
   if (!token) return askForToken();
@@ -1297,8 +1283,7 @@ async function fetchStudies({ welcome = false } = {}) {
   try {
     const fetched = await downloadStudies();
     await useStudies(fetched);
-    if (welcome) { selection = new Set(allChapters().map(c => c.key)); saveSelection(); } // first import: everything ticked, ready to practice
-    else startDownloads(); // missing Lichess data, quietly in the background
+    if (!welcome) startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Status card says what was fetched, and when
     if (welcome) showWelcomeReady();
     else if (currentScreen === 'lichess') renderLichessPage(); else showChooser();
@@ -1348,13 +1333,13 @@ function pruneAfterRefresh() {
   const chapters = allChapters();
   const chapterKeys = new Set(chapters.map(c => c.key));
   const moveKeys = new Set(chapters.flatMap(ch => yourMoves(ch).map(m => m.key)));
-  selection = new Set([...selection].filter(k => chapterKeys.has(k)));
   hiddenStudies = new Set([...hiddenStudies].filter(id => library.studies.some(s => s.id === id)));
   saveHidden();
   const lineKeys = new Set(chapters.flatMap(ch => chapterLines(ch).map(l => l.key)));
   history.moves = Object.fromEntries(Object.entries(history.moves).filter(([k]) => moveKeys.has(k)));
   history.lines = Object.fromEntries(Object.entries(history.lines).filter(([k]) => lineKeys.has(k)));
-  saveSelection(); saveHistory();
+  saveHistory();
+  useChosenPreset(); // its chapters still on Lichess
 }
 
 // The token (from logging in, or pasted) saved, with when (shown on the Lichess page); null forgets it.
@@ -1735,32 +1720,21 @@ function averageScore(chapters) {
 }
 
 // ---------- Studies list (on the Practice page) ----------
-// Under the chooser, the Studies to test tile: the preset (a named set of ticked chapters, with ✎ for
-// its buttons), how many chapters are ticked, and Choose chapters, which opens the chapters (your
-// studies and chapters to tick, hidden studies, move accuracy; a chapter's name opens it on the Review
-// page). The chapters start closed each time the app opens and stay as you leave them. During practice
-// the tile is greyed out ("End practice to change") and the chapters close, since a session's lines are
-// chosen when it starts.
-let chaptersShown = false;
+// Under the chooser, the Studies to test tile: the chosen preset (All, built in, or one of yours) and how
+// many chapters it has; what's practised is always the chosen preset. Select chapters opens its chapters
+// to tick (your studies and chapters, the eye for hidden studies, move accuracy; a chapter's name opens it
+// on the Review page) with Save, Save as new, Rename, Delete and Cancel (for All, only Save as new and
+// Cancel). The tile is hidden during practice, since a session's lines are chosen when it starts.
+let editing = null; // while selecting chapters: { preset, ticks (a Set of chapter keys) }
 
-function showChapters(open) {
-  chaptersShown = open;
-  const shown = open && !practice; // never during practice
-  $('practice-studies').classList.toggle('hidden', !shown);
-  $('chapters-toggle').textContent = shown ? 'Hide chapters ▴' : 'Choose chapters ▾';
-  $('chapters-toggle').setAttribute('aria-expanded', String(shown));
-}
-$('chapters-toggle').addEventListener('click', () => showChapters(!chaptersShown));
+// The chapters being ticked (while selecting) or practised.
+const ticked = () => editing ? editing.ticks : selection;
 
 function lockStudiesToTest(locked) {
-  const tile = $('studies-to-test');
-  tile.classList.toggle('hidden', !library); // once there are studies
-  tile.classList.toggle('locked', locked);
-  tile.title = locked ? 'End practice to change' : '';
-  if (locked) showPresetEdit(false);
-  $('chapters-toggle').disabled = $('preset-edit-btn').disabled = locked;
-  $('preset-select').disabled = locked || !presets.length;
-  showChapters(chaptersShown); // the chapters only while nothing is practised
+  if (locked) editing = null;
+  hideNameForm();
+  $('studies-to-test').classList.toggle('hidden', !library || locked); // once there are studies; not during practice
+  if (library) $('practice-studies').classList.toggle('hidden', !editing);
 }
 
 function scoreElement({ lines, tried, score }) {
@@ -1772,8 +1746,9 @@ function scoreElement({ lines, tried, score }) {
 
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
-  $('studies-to-test').classList.toggle('hidden', !library); // once there are studies
+  $('studies-to-test').classList.toggle('hidden', !library || !!practice); // once there are studies; not during practice
   if (!library) return; // the list keeps any message about fetching your studies
+  $('practice-studies').classList.toggle('hidden', !editing);
   const container = $('studies');
   container.replaceChildren();
   if (!library.studies.length) {
@@ -1811,15 +1786,15 @@ function opener(name, onOpen) {
 // (while the top eye is open), chapter count and score.
 function studyRow(study, isHidden) {
   const keys = study.chapters.map(c => c.key);
-  const ticked = keys.filter(k => selection.has(k)).length;
+  const nTicked = keys.filter(k => ticked().has(k)).length;
   const open = openStudies.has(study.id);
   const toggleStudy = () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); };
   return element('div', { class: 'row study-row' },
     triangle(open, ['Show chapters', 'Hide chapters'], toggleStudy),
     element('input', {
       type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
-      checked: ticked === keys.length && keys.length > 0,
-      indeterminate: ticked > 0 && ticked < keys.length,
+      checked: nTicked === keys.length && keys.length > 0,
+      indeterminate: nTicked > 0 && nTicked < keys.length,
       onchange: e => setTicked(keys, e.target.checked),
     }),
     element('span', { class: 'name', title: study.name }, opener(study.name, toggleStudy),
@@ -1836,7 +1811,7 @@ function chapterRow(ch, studyHidden) {
   const lines = chapterLines(ch);
   return element('div', { class: 'row chapter-row' },
     element('span', { class: 'toggle-space' }), // indented under its study
-    element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
+    element('input', { type: 'checkbox', id, checked: ticked().has(ch.key), disabled: studyHidden,
       onchange: e => setTicked([ch.key], e.target.checked) }),
     // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch)), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
@@ -1927,23 +1902,23 @@ function hideStudyButton(study, isHidden) {
   return btn;
 }
 
-// Ticks or unticks chapters (by key), saves the selection and redraws the list.
-function setTicked(keys, ticked) {
-  for (const k of keys) ticked ? selection.add(k) : selection.delete(k);
-  saveSelection();
+// Ticks or unticks chapters (by key) while selecting, and redraws the list.
+function setTicked(keys, on) {
+  if (!editing) return;
+  for (const k of keys) on ? editing.ticks.add(k) : editing.ticks.delete(k);
   renderStudies();
 }
 
-// Hiding a study unticks its chapters; they can't be ticked (or practiced) while it's hidden.
+// Hiding a study unticks its chapters; they can't be ticked (or practiced) while it's hidden, and All
+// leaves them out.
 function toggleHideStudy(study) {
-  if (hiddenStudies.has(study.id)) {
-    hiddenStudies.delete(study.id);
-  } else {
+  if (hiddenStudies.has(study.id)) hiddenStudies.delete(study.id);
+  else {
     hiddenStudies.add(study.id);
-    for (const c of study.chapters) selection.delete(c.key);
-    saveSelection();
+    if (editing) for (const c of study.chapters) editing.ticks.delete(c.key);
   }
   saveHidden();
+  useChosenPreset();
   renderStudies();
 }
 
@@ -1951,56 +1926,41 @@ $('show-hidden-btn').addEventListener('click', () => { showHiddenStudies = !show
 
 function updateSelectionPanel() {
   const all = visibleChapters();
-  const selected = all.filter(c => selection.has(c.key));
+  const selected = all.filter(c => ticked().has(c.key));
   const all_ = $('all-box');
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
-  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} ticked`;
+  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected`;
   renderPresets();
-  // The top eye: a line through it while hidden studies are out of sight.
+  // The eye by All: a line through it while hidden studies are out of sight.
   setToggle('show-hidden-btn', showHiddenStudies, showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies');
 }
 
 $('all-box').addEventListener('change', e => setTicked(visibleChapters().map(c => c.key), e.target.checked));
 
-// Presets: named sets of chapters, chosen from the drop-down to tick exactly those chapters.
-// The chosen one is edited by changing the ticks and pressing Update (its name is greyed out until then).
-
-// The chapters a preset ticks now: those still on Lichess and not in hidden studies.
+// The chapters a preset has now: those still on Lichess and not in hidden studies.
 function chaptersOf(preset) {
   const existing = new Set(allChapters().map(c => c.key));
   return preset.chapters.filter(k => existing.has(k) && !isHiddenChapter(k));
 }
 
-const chosenPreset = () => presets.find(p => p.name === chosenPresetName) || null;
+// The chosen preset: one of yours, or All (every chapter, worked out each time).
+const chosenPreset = () => presets.find(p => p.name === chosenPresetName)
+  || { name: ALL_PRESET, builtIn: true, chapters: allChapters().map(c => c.key) };
 
-// Whether the ticks differ from the chosen preset's chapters.
-function chosenChanged() {
-  const preset = chosenPreset();
-  if (!preset) return false;
-  const keys = chaptersOf(preset);
-  return keys.length !== selection.size || keys.some(k => !selection.has(k));
-}
+// What's practised: the chosen preset's chapters (after a change of preset, hidden studies or studies).
+function useChosenPreset() { selection = new Set(chaptersOf(chosenPreset())); }
 
 function renderPresets() {
   const preset = chosenPreset();
-  const changed = chosenChanged();
-  // The open list shows only the presets. The closed drop-down shows the chosen preset, or, with none
-  // chosen, a hint that isn't in the list. While the ticks differ from the chosen preset, its name is
-  // greyed out and shown by a hidden stand-in, so choosing the preset again in the list is a change
-  // (a drop-down ignores choosing what's already chosen) and ticks its chapters again.
-  const shown = !preset ? (presets.length ? 'None chosen' : 'No presets yet') : changed ? preset.name : null;
-  $('preset-select').replaceChildren(
-    ...shown ? [element('option', { value: '', hidden: true, disabled: true }, shown)] : [],
-    ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p =>
-      element('option', { value: p.name }, p.name)));
-  $('preset-select').classList.toggle('changed', !!shown); // greyed out while the ticks differ, and "None chosen"
-  $('preset-select').value = shown ? '' : preset.name;
-  $('preset-select').disabled = !presets.length || !!practice;
-  $('preset-new-btn').disabled = selection.size === 0;
-  $('preset-update-btn').disabled = !preset || !changed || selection.size === 0;
-  $('preset-rename-btn').disabled = !preset;
-  $('preset-delete-btn').disabled = !preset;
+  $('preset-select').replaceChildren(element('option', { value: '' }, ALL_PRESET),
+    ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p => element('option', { value: p.name }, p.name)));
+  $('preset-select').value = preset.builtIn ? '' : preset.name;
+  $('preset-select').disabled = !!editing;
+  $('preset-edit-btn').classList.toggle('hidden', !!editing);
+  $('preset-edit').classList.toggle('hidden', !editing);
+  for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Save as new
+  $('preset-save-btn').disabled = $('preset-new-btn').disabled = !editing?.ticks.size;
 }
 
 function savePresets() {
@@ -2009,33 +1969,43 @@ function savePresets() {
 }
 
 $('preset-select').addEventListener('change', e => {
-  const preset = presets.find(p => p.name === e.target.value);
-  chosenPresetName = preset ? preset.name : null;
+  chosenPresetName = e.target.value || null;
   savePresets();
-  hideNameForm(); // the edit panel stays open
-  if (!preset) { renderPresets(); return; }
-  selection = new Set(chaptersOf(preset)); // no message: the ticks and the count show it
-  saveSelection();
-  renderStudies(); // open and closed studies stay as they were
+  useChosenPreset();
+  renderStudies(); // and the chooser
 });
 
-$('preset-update-btn').addEventListener('click', () => {
-  const preset = chosenPreset();
+// Select chapters: the chosen preset's chapters, ticked, to change; Cancel (or Esc) leaves them as they were.
+function startEditing() {
+  editing = { preset: chosenPreset(), ticks: new Set(selection) };
+  renderStudies();
+}
+function stopEditing() {
+  editing = null;
+  hideNameForm();
+  if (library) renderStudies();
+}
+$('preset-edit-btn').addEventListener('click', startEditing);
+$('preset-cancel-btn').addEventListener('click', stopEditing);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && editing && currentScreen === 'practice' && !typingInTextBox()) stopEditing(); });
+
+$('preset-save-btn').addEventListener('click', () => {
+  const preset = presets.find(p => p === editing?.preset);
   if (!preset) return;
-  preset.chapters = [...preset.chapters.filter(isHiddenChapter), ...selection]; // chapters in hidden studies can't be ticked: they're kept
+  preset.chapters = [...preset.chapters.filter(isHiddenChapter), ...editing.ticks]; // chapters in hidden studies can't be ticked: they're kept
   savePresets();
-  showPresetEdit(false); // done: the edit buttons go away again
-  renderPresets();
+  useChosenPreset();
+  stopEditing();
 });
 
 $('preset-delete-btn').addEventListener('click', () => {
   const preset = chosenPreset();
-  if (!preset || !confirm(`Delete the preset "${preset.name}"? The chapters ticked now stay ticked.`)) return;
+  if (preset.builtIn || !confirm(`Delete the preset "${preset.name}"? All will be chosen.`)) return;
   presets = presets.filter(p => p !== preset);
   chosenPresetName = null;
   savePresets();
-  showPresetEdit(false);
-  renderPresets();
+  useChosenPreset();
+  stopEditing();
 });
 
 // The name box, for Save as new and Rename.
@@ -2057,38 +2027,26 @@ function hideNameForm() {
   $('preset-name-error').textContent = '';
 }
 
-// The ✎ button opens the edit panel under the bar; × (or ✎ again) closes it.
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('preset-edit').classList.contains('hidden')) showPresetEdit(false); });
-
-function showPresetEdit(open) {
-  $('preset-edit').classList.toggle('hidden', !open);
-  $('preset-edit-btn').setAttribute('aria-expanded', String(open));
-  if (!open) hideNameForm();
-}
-
-$('preset-edit-btn').addEventListener('click', () => showPresetEdit($('preset-edit').classList.contains('hidden')));
-$('preset-edit-close').addEventListener('click', () => showPresetEdit(false));
-
 $('preset-new-btn').addEventListener('click', () => showNameForm('new'));
-$('preset-rename-btn').addEventListener('click', () => { if (chosenPreset()) showNameForm('rename'); });
+$('preset-rename-btn').addEventListener('click', () => { if (!chosenPreset().builtIn) showNameForm('rename'); });
 $('preset-name-cancel').addEventListener('click', hideNameForm);
-$('preset-name').addEventListener('keydown', e => { if (e.key === 'Escape') hideNameForm(); });
+$('preset-name').addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); hideNameForm(); } });
 
 $('preset-name-form').addEventListener('submit', e => {
   e.preventDefault();
   const name = $('preset-name').value.trim().replace(/\s+/g, ' ');
   const renaming = namingMode === 'rename' ? chosenPreset() : null;
   if (!name) { $('preset-name-error').textContent = 'Type a name.'; return; }
-  if (presets.some(p => p !== renaming && p.name.toLowerCase() === name.toLowerCase())) {
+  if (name.toLowerCase() === ALL_PRESET.toLowerCase() || presets.some(p => p !== renaming && p.name.toLowerCase() === name.toLowerCase())) {
     $('preset-name-error').textContent = `There's already a preset called ${name}.`;
     return;
   }
-  if (renaming) renaming.name = name;
-  else presets.push({ name, chapters: [...selection] });
+  if (renaming) { renaming.name = name; chosenPresetName = name; savePresets(); hideNameForm(); renderPresets(); return; } // still selecting
+  presets.push({ name, chapters: [...editing.ticks] });
   chosenPresetName = name;
   savePresets();
-  showPresetEdit(false);
-  renderPresets();
+  useChosenPreset();
+  stopEditing();
 });
 
 // ---------- Review page: reviewing a study ----------
@@ -2150,7 +2108,17 @@ function openReview(ch, { at = [] } = {}) {
   for (const x of at) node = node.children.find(c => c.san === x) || node;
   showReviewNode(node);
   reviewBoard.redrawAll();
+  const kind = settings.practice.kind;
+  $('review-practice').disabled = !practicable(kind, reversedSides(), [ch]).items.length;
+  $('review-practice').title = `${KINDS[kind].label}, as chosen on the Practice page; your preset stays as it is`;
 }
+
+// Practice this chapter: a one-off session of just this chapter (lines or positions, as chosen on the
+// Practice page), without changing the chosen preset.
+$('review-practice').addEventListener('click', () => {
+  const kind = settings.practice.kind, reversed = reversedSides();
+  startSession(kind, practicable(kind, reversed, [review.ch]).items, reversed);
+});
 
 // Another study from the drop-down: the chapter last looked at in it during this visit, or its first
 // chapter that can be shown.
@@ -2264,7 +2232,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- Spaced repetition ----------
-// What's practised: all the lines (or positions) of the chapters ticked on the Practice page, from
+// What's practised: all the lines (or positions) of the chosen preset's chapters (Studies to test), from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of four parts, one per slider:
 //   frequency: 0.2 to 1, by the rated Lichess games reaching the position (a line's final position),
@@ -2316,8 +2284,8 @@ const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours &&
 // chapters (i is null: played from move 1); for 'positions', every move of yours in them from move 3
 // (FIRST_POSITION_MOVE), once each (i: the move tested as a single position).
 const FIRST_POSITION_MOVE = 3;
-function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind]) {
-  const lines = tickedChapters().flatMap(chapterLines);
+function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind], chapters = tickedChapters()) {
+  const lines = chapters.flatMap(chapterLines);
   if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
   const items = new Map(); // move key -> item
   for (const line of lines) for (const i of yourMoveIndexes(line)) {
@@ -2531,12 +2499,12 @@ const reversedSides = () => settings.practice.kind === 'lines' && settings.pract
 
 // The items a kind of practice would use now (those with any chance of coming up; reversed, the lines
 // with a move of the opponent's), and a note when there are none.
-function practicable(kind, reversed = reversedSides()) {
-  const all = practiceItems(kind).filter(({ line }) => !reversed || line.moves.some(m => !m.isYours));
+function practicable(kind, reversed = reversedSides(), chapters = tickedChapters()) {
+  const all = practiceItems(kind, undefined, chapters).filter(({ line }) => !reversed || line.moves.some(m => !m.isYours));
   const chances = chancesOf(all, reversed);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
-  return { items, note: !all.length ? `No ${noun}s to practice: tick some chapters.`
+  return { items, note: !all.length ? `No ${noun}s to practice: select some chapters.`
     : !items.length ? `Every ${noun} is untried, and Untried is at 0%.` : '' };
 }
 
@@ -3749,7 +3717,7 @@ $('backup-btn').addEventListener('click', async () => {
   const backup = {
     app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
     account: ownAccount(),
-    settings, selection: [...selection], presets, hiddenStudies: [...hiddenStudies],
+    settings, presets, chosenPreset: chosenPresetName, hiddenStudies: [...hiddenStudies],
     history: storedHistory(),
     moveStats, // they take a long time to download, so they're included
   };
@@ -3818,10 +3786,10 @@ $('restore-file').addEventListener('change', async e => {
   settings = checkedSettings(b.settings);
   rescoreHistory(); // points worked out with the current rules and data
   const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
-  selection = new Set(strings(b.selection));
   presets = checkedPresets(b.presets);
-  chosenPresetName = null;
+  chosenPresetName = presets.some(p => p.name === b.chosenPreset) ? b.chosenPreset : null; // else All
   hiddenStudies = new Set(strings(b.hiddenStudies));
+  useChosenPreset();
   // The move statistics are merged, not replaced: each part keeps whichever copy is newer, so
   // downloads made since the backup aren't lost.
   for (const [epd, saved] of Object.entries(b.moveStats && typeof b.moveStats === 'object' ? b.moveStats : {})) {
@@ -3832,7 +3800,7 @@ $('restore-file').addEventListener('change', async e => {
     }
   }
   await saveMoveStats();
-  saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
+  saveHistory(); saveSettings(); saveHidden(); savePresets();
   updateSoundButton();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
   refreshPage();
@@ -3876,6 +3844,8 @@ async function init() {
     library = await loadLibrary();
     if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
     moveStats = await loadMoveStats();
+    useChosenPreset();
+    store.remove('selection'); // no longer stored: the chosen preset says what's practised
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting

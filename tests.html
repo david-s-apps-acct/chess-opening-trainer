@@ -443,10 +443,12 @@ async function runLichessPage(app) {
   $('nav-practice').click(); // nothing practised: the board, the chooser, and the studies list under it
   check('Studies to test: under the chooser, the chapters closed, the board shown; no Studies button', [!$('studies-to-test').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
     !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!$('nav-studies'), $('sel-summary').textContent],
-    [true, true, true, true, false, `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} ticked`]);
-  $('chapters-toggle').click();
-  check('Studies to test: Choose chapters opens them', [!$('practice-studies').classList.contains('hidden'), $('chapters-toggle').textContent], [true, 'Hide chapters ▴']);
-  document.querySelector('#studies .study-row .opener').click(); // the study's chapters
+    [true, true, true, true, false, `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} selected`]);
+  $('preset-edit-btn').click();
+  check('Studies to test: Select chapters opens them, with Save as new and Cancel for All', [!$('practice-studies').classList.contains('hidden'),
+    ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden'))], [true, ['preset-new-btn', 'preset-cancel-btn']]);
+  $('preset-cancel-btn').click();
+  if (!document.querySelector('#studies .chapter-row')) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
   document.querySelector('#studies .chapter-row .opener').click(); // its first chapter's name: the Review page
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
@@ -490,7 +492,7 @@ async function runLichessPage(app) {
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('review-screen').classList.contains('hidden'), true);
   $('nav-practice').click();
-  check('review: the header\'s Practice button goes back to the studies list', [!$('practice-screen').classList.contains('hidden'), !$('practice-studies').classList.contains('hidden')], [true, true]);
+  check('review: the header\'s Practice button goes back to the Practice page, with Studies to test', [!$('practice-screen').classList.contains('hidden'), !$('studies-to-test').classList.contains('hidden')], [true, true]);
   // From Practice: the icon by the study's name ends practice and opens the study at the position on the
   // board.
   app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC'))[0]); // the Sicilian: you're Black, so 1. e4 is played first
@@ -502,6 +504,10 @@ async function runLichessPage(app) {
   $('nav-options').click();
   $('nav-review').click();
   check('Review button: the chapter and position last looked at', [!$('review-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
+  const presetBefore = $('preset-select').value;
+  $('review-practice').click();
+  check('Practice this chapter: just this chapter, the preset unchanged', [app.practice?.line.chapterKey, !$('practice-screen').classList.contains('hidden'), $('preset-select').value], ['AAAAAAAA/CCCCCCCC', true, presetBefore]);
+  $('end-practice-btn').click();
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
@@ -746,14 +752,13 @@ function runPositions(app) {
   check('chooser: the switch and the main-lines checkbox', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, app.settings.practice.kind],
     ['true', 'false', 'Positions from main lines only', 'positions']);
   $('chooser-start').click();
-  check('chooser: practising, Studies to test greyed out (End practice to change)', [$('studies-to-test').classList.contains('locked'), $('studies-to-test').title, $('chapters-toggle').disabled,
-    !$('studies-to-test').classList.contains('hidden')], [true, 'End practice to change', true, true]);
+  check('chooser: practising, Studies to test hidden', $('studies-to-test').classList.contains('hidden'), true);
   check('chooser: practising positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
     $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
     document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [true, true, true, true, true, false]);
   $('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
-  check('chooser: Studies to test usable again, the board still shown', [$('studies-to-test').classList.contains('locked'), $('chapters-toggle').disabled, document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, false, false]);
+  check('chooser: Studies to test back, the board still shown', [$('studies-to-test').classList.contains('hidden'), document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, false]);
   $('chooser-kind-lines').click();
   $('chooser-start').click();
   check('chooser: practising lines, from move 1', app.practice.singleAt, null);
@@ -767,7 +772,7 @@ function runPositions(app) {
   app.setSettings({});
   app.renderChooser();
   $('chooser-kind-positions').click();
-  check('chooser: only ticked chapters', [$('chooser-start').disabled, $('chooser-note').textContent], [true, 'No positions to practice: tick some chapters.']);
+  check('chooser: only ticked chapters', [$('chooser-start').disabled, $('chooser-note').textContent], [true, 'No positions to practice: select some chapters.']);
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
 }
 
@@ -775,69 +780,78 @@ function runPositions(app) {
 
 function runPresets(app) {
   app.setLibrary(structuredClone(LIBRARY));
-  check('presets: invalid and duplicate names dropped', app.checkedPresets([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null]),
-    [{ name: 'A', chapters: ['x'] }]);
+  check('presets: invalid and duplicate names dropped; "All" is taken', app.checkedPresets([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null, { name: 'all', chapters: [] }]),
+    [{ name: 'A', chapters: ['x'] }, { name: 'All 2', chapters: [] }]);
   const $ = id => document.getElementById(id);
   const realConfirm = window.confirm;
   window.confirm = () => true;
+  const B = 'AAAAAAAA/BBBBBBBB', C = 'AAAAAAAA/CCCCCCCC', F = 'EEEEEEEE/FFFFFFFF';
   const nameIt = name => { $('preset-name').value = name; $('preset-name-form').requestSubmit(); };
-  const options = () => [...$('preset-select').options].filter(o => !o.hidden).map(o => o.textContent);
+  const options = () => [...$('preset-select').options].map(o => o.textContent);
+  const choose = name => { $('preset-select').value = name; $('preset-select').dispatchEvent(new Event('change')); };
+  const tick = (key, on) => {
+    if (!$('ch-' + key.replace(/[^A-Za-z0-9]/g, '_'))) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
+    const box = $('ch-' + key.replace(/[^A-Za-z0-9]/g, '_'));
+    box.checked = on;
+    box.dispatchEvent(new Event('change'));
+  };
   app.setPresets([]);
-  app.setSelection(['AAAAAAAA/BBBBBBBB']);
-  app.renderPresets();
+  choose('');
+  check('presets: All, first and chosen by default, is every chapter', [options(), $('preset-select').value, app.selection.sort(), $('sel-summary').textContent], [['All'], '', [B, C], '2 chapters selected']);
+  // From All: Save as new, with the Sicilian unticked.
   $('preset-edit-btn').click();
-  check('presets: ✎ opens the edit panel', [$('preset-edit').classList.contains('hidden'), $('preset-edit-btn').getAttribute('aria-expanded')], [false, 'true']);
+  tick(C, false);
+  check('presets: while selecting, the count follows the ticks; what\'s practised doesn\'t change yet', [$('sel-summary').textContent, app.selection.length], ['1 chapter selected', 2]);
   $('preset-new-btn').click();
   nameIt('Italian');
-  check('presets: Save as new', [app.presets, $('preset-select').value], [[{ name: 'Italian', chapters: ['AAAAAAAA/BBBBBBBB'] }], 'Italian']);
+  check('presets: Save as new: chosen, practised, the chapters closed', [app.presets, $('preset-select').value, app.selection, $('practice-studies').classList.contains('hidden')],
+    [[{ name: 'Italian', chapters: [B] }], 'Italian', [B], true]);
+  $('preset-edit-btn').click();
+  check('presets: your own preset: Save, Save as new, Rename, Delete, Cancel', ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')).length, 5);
   $('preset-new-btn').click();
+  nameIt('all');
+  const allTaken = $('preset-name-error').textContent;
   nameIt('italian');
-  check('presets: names must differ', [$('preset-name-error').textContent, app.presets.length], ["There's already a preset called italian.", 1]);
+  check('presets: names must differ, and All is taken', [allTaken, $('preset-name-error').textContent, app.presets.length], ["There's already a preset called all.", "There's already a preset called italian.", 1]);
   $('preset-name-cancel').click();
-  app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
-  app.renderPresets();
-  check('presets: changed ticks grey the name out', [options(), $('preset-select').classList.contains('changed'), $('preset-select').selectedOptions[0].textContent, $('preset-update-btn').disabled], [['Italian'], true, 'Italian', false]);
-  $('preset-select').value = 'Italian';
-  $('preset-select').dispatchEvent(new Event('change'));
-  check('presets: choosing the same preset again ticks its chapters again', [app.selection, $('preset-select').classList.contains('changed')], [['AAAAAAAA/BBBBBBBB'], false]);
-  app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
-  app.renderPresets();
-  $('preset-update-btn').click();
-  check('presets: Update, then the edit buttons close', [app.presets[0].chapters.length, $('preset-select').classList.contains('changed'), $('preset-update-btn').disabled, $('preset-edit').classList.contains('hidden')], [2, false, true, true]);
+  // Save, Cancel.
+  tick(C, true);
+  $('preset-save-btn').click();
+  check('presets: Save', [app.presets[0].chapters.sort(), app.selection.sort(), $('practice-studies').classList.contains('hidden')], [[B, C], [B, C], true]);
+  $('preset-edit-btn').click();
+  tick(C, false);
+  $('preset-cancel-btn').click();
+  check('presets: Cancel leaves it as it was', [app.presets[0].chapters.length, app.selection.length], [2, 2]);
+  // Rename, Delete.
   $('preset-edit-btn').click();
   $('preset-rename-btn').click();
   nameIt('Both and a much longer name than sixty characters, which is now allowed without any limit');
   check('presets: long names', app.presets[0].name.length > 60, true);
   $('preset-rename-btn').click();
   nameIt('Both');
-  check('presets: Rename', [app.presets[0].name, $('preset-select').value], ['Both', 'Both']);
-  app.setSelection([]);
-  $('preset-select').value = 'Both';
-  $('preset-select').dispatchEvent(new Event('change'));
-  check('presets: choosing one ticks its chapters', app.selection.sort(), ['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
+  check('presets: Rename (still selecting)', [app.presets[0].name, $('preset-select').value, $('practice-studies').classList.contains('hidden')], ['Both', 'Both', false]);
   $('preset-delete-btn').click();
-  check('presets: Delete keeps the ticks; "No presets yet" in grey', [app.presets.length, app.selection.length, options(), $('preset-select').classList.contains('changed'), $('preset-edit').classList.contains('hidden')], [0, 2, [], true, true]);
-  $('preset-edit-btn').click();
-  // A preset's chapters in a hidden study are kept by Update (they can't be ticked).
+  check('presets: Delete: All chosen', [app.presets.length, $('preset-select').value, app.selection.length, options()], [0, '', 2, ['All']]);
+  // A preset's chapters in a hidden study are kept by Save (they can't be ticked); All leaves them out.
   const library = structuredClone(LIBRARY);
-  library.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: 'EEEEEEEE/FFFFFFFF', id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
+  library.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: F, id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
   app.setLibrary(library);
-  app.setPresets([{ name: 'Mixed', chapters: ['AAAAAAAA/BBBBBBBB', 'EEEEEEEE/FFFFFFFF'] }]);
-  app.setSelection([]);
-  app.renderPresets();
-  $('preset-select').value = 'Mixed';
-  $('preset-select').dispatchEvent(new Event('change'));
   app.setHidden(['EEEEEEEE']);
-  app.setSelection(['AAAAAAAA/CCCCCCCC']);
-  app.renderPresets();
-  $('preset-update-btn').click();
-  check('presets: Update keeps chapters in hidden studies', [...app.presets[0].chapters].sort(), ['AAAAAAAA/CCCCCCCC', 'EEEEEEEE/FFFFFFFF']);
+  choose('');
+  check('presets: All leaves out hidden studies', app.selection.sort(), [B, C]);
+  app.setPresets([{ name: 'Mixed', chapters: [B, F] }]);
+  app.renderPresets(); // into the drop-down
+  choose('Mixed');
+  $('preset-edit-btn').click();
+  tick(C, true);
+  $('preset-save-btn').click();
+  check('presets: Save keeps chapters in hidden studies', [...app.presets[0].chapters].sort(), [B, C, F]);
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  $('preset-edit-close').click();
-  check('presets: × closes the edit panel', $('preset-edit').classList.contains('hidden'), true);
+  app.setPresets([]);
+  choose('');
   window.confirm = realConfirm;
-  app.setSelection(['AAAAAAAA/BBBBBBBB']);
+  app.setSelection([B]);
 }
 
 // ---------- Report ----------
