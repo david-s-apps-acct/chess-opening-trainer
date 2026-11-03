@@ -270,9 +270,9 @@
   .review-tiles .panel { flex: none; min-width: 0; }
   .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   #review-study { flex: 1; min-width: 0; font-weight: 600; text-overflow: ellipsis; }
-  /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 5 (the 6th cut in half,
+  /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 4 (the 5th cut in half,
      so it's clear the list goes on), with a scroll bar always shown when it scrolls (Safari and Chrome) */
-  .review-chapters { margin-top: 10px; max-height: 160px; overflow-y: auto; overflow-x: hidden; font-size: 14px; }
+  .review-chapters { margin-top: 10px; max-height: 130px; overflow-y: auto; overflow-x: hidden; font-size: 14px; }
   .review-chapters::-webkit-scrollbar { width: 8px; }
   .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
   .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
@@ -286,11 +286,17 @@
   .review-chapter .side-dot { flex: none; }
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
-  .review-info { font-size: 14px; }
-  .review-info:empty { display: none; }
-  .review-info div + div { margin-top: 3px; }
-  .review-stats { font-size: 13px; }
-  .review-stats h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
+  .review-comment { margin-top: 10px; font-size: 14px; }
+  .review-comment:empty { display: none; }
+  .review-comment .glyph { margin: 0 6px 0 0; }
+  .review-comment p { margin: 0 0 4px; }
+  /* The move statistics and your tries: the page's text size and colour; small grey headings */
+  .review-stats { font-size: 14px; }
+  .review-stats:empty { display: none; }
+  .review-stats div + div { margin-top: 3px; }
+  .review-stats .muted { color: var(--text); }
+  .review-stats h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
   #practice-title .review-btn { margin-left: 6px; vertical-align: -1px; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
@@ -565,11 +571,12 @@
     <div class="quiz">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
+        <div id="review-comment" class="review-comment"></div>
       </div>
-      <!-- Tiles: the study and its chapters; the moves; the move and its comment; its move statistics; your tries -->
+      <!-- Tiles: the study and its chapters; the moves; the move's statistics; your tries -->
       <div class="review-tiles">
         <div class="panel">
-          <div class="review-head"><select id="review-study" aria-label="Study"></select><span id="review-study-score"></span></div>
+          <div class="review-head"><select id="review-study" aria-label="Study"></select></div>
           <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
         </div>
         <div class="panel">
@@ -582,9 +589,8 @@
             <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
           </div>
         </div>
-        <div id="review-info" class="panel review-info"></div>
-        <div id="review-lichess" class="panel review-info review-stats"></div>
-        <div id="review-yours" class="panel review-info review-stats"></div>
+        <div id="review-lichess" class="panel review-stats"></div>
+        <div id="review-yours" class="panel review-stats"></div>
       </div>
     </div>
   </section>
@@ -739,7 +745,7 @@
           <li>On the Practice page, <b>Studies to practice</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
           <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
           <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name (or its tick box) to tick it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. To look through a chapter, use the header's <b>Review</b> button.</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Beside the board: the study and its chapters (with their move accuracy), the moves, the move and its comment, its <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Under the board: the move's annotation (e.g. !) and its comment. Beside it: the study and its chapters (with their move accuracy), the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
           <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
           <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
         </ul>
@@ -2063,8 +2069,8 @@ $('preset-name-form').addEventListener('submit', e => {
 // position, with arrows for the study's moves there (see reviewArrows). Beside it, tiles: the study (a
 // drop-down of your studies with the study's move accuracy, its chapters as a numbered list, as on
 // Lichess, each with its move accuracy); the moves (the position's name, the
-// tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move with its glyphs and comment; its move
-// statistics; and your tries (as on the hover boards). ← → Home End step through the moves, ↑ ↓ the
+// tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's statistics; and your tries (as on the
+// hover boards). Under the board, the move's annotation and comment. ← → Home End step through the moves, ↑ ↓ the
 // chapters; playing one of the study's moves on the board follows it. (The header's buttons leave it.)
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches) }
@@ -2098,7 +2104,6 @@ function openReview(ch, { at = [] } = {}) {
   $('review-study').replaceChildren(...library.studies.filter(st => st === study || !hiddenStudies.has(st.id)).map(st =>
     element('option', { value: st.id, disabled: st.chapters.every(c => parseChapter(c).error) }, st.name)));
   $('review-study').value = study.id;
-  $('review-study-score').replaceChildren(scoreElement(averageScore(study.chapters)));
   // The chapters, numbered as on Lichess, each with the dot for the side you play; one that can't be
   // shown is greyed out, with the reason on hover.
   $('review-chapters').replaceChildren(...study.chapters.map((c, k) => {
@@ -2184,19 +2189,17 @@ function showReviewNode(node) {
   reviewBoard.setAutoShapes(reviewArrows(node, parsed.yourColor));
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   renderReviewTree();
-  // Under the moves, three tiles, each hidden when empty: the move with its glyphs and its comment (at the
-  // start, the chapter's introduction); its Lichess and masters statistics (ranks, "Position reached …");
-  // and, for your moves, your tries (move accuracy, last tested, errors), as on the hover boards.
-  const text = node.uci ? node.notes?.text ?? [] : parsed.intro;
+  // Under the board, the move's annotation (its glyphs, in their Lichess colours, named on hover) and its
+  // comment; at the start, the chapter's introduction; nothing when there's neither.
+  const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
+  $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
+  // Under the moves, two tiles, each hidden when empty: the move's Lichess and masters statistics (ranks,
+  // "Position reached …"); and, for your moves, your tries (move accuracy, last tested, errors), as on the
+  // hover boards.
   const heading = node.uci ? hoverBoardHeading(node) : [];
   const lichessRows = node.uci ? heading.slice(1) : [positionCountText(lichessGamesAt(node.epd)) && element('div', { class: 'muted' }, positionCountText(lichessGamesAt(node.epd)))];
   const yourRows = node.uci && node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null).rows.slice(heading.length) : [];
   const tile = (id, title, rows) => { rows = rows.filter(Boolean); $(id).replaceChildren(...rows.length ? [element('h3', {}, title), ...rows] : []); };
-  $('review-info').replaceChildren(...[
-    node.uci ? element('div', {}, element('b', {}, moveLabel(node)), (node.notes?.nags ?? []).map(n => [' ', glyphSpan(n), element('span', { class: 'muted' }, ' ' + GLYPHS[n][1])])) : null,
-    node.uci && node.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null,
-    ...text.map(t => element('div', {}, t)),
-  ].filter(Boolean));
   tile('review-lichess', 'Move statistics', lichessRows);
   tile('review-yours', 'Your tries', yourRows);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;

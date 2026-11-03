@@ -471,7 +471,7 @@ async function runLichessPage(app) {
   key('ArrowRight');
   const yoursAtE5 = $('review-yours').childElementCount;
   key('ArrowLeft');
-  check('review: Your tries for your moves only, in its own tile', [yoursAtE4, yoursAtE5, $('review-info').firstChild?.textContent], ['Your tries', 0, '1. e4']);
+  check('review: Your tries for your moves only, in its own tile; the comment under the board', [yoursAtE4, yoursAtE5, $('review-comment').textContent], ['Your tries', 0, 'Best by test.']);
   check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.firstChild.textContent), ['1. Italian', '2. Sicilian']);
   $('review-chapters').children[1].click();
   const atStart = current();
@@ -500,8 +500,8 @@ async function runLichessPage(app) {
   chooseStudy('AAAAAAAA');
   check('review: another study, then back to the chapter you were on', [other, chapterShown()], ['1. Side line', '2. Sicilian']);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: no Close button; the study\'s and chapters\' move accuracy shown', [!!$('review-close'), !!$('review-study-score').querySelector('.rate'),
-    [...$('review-chapters').children].every(row => row.querySelector('.rate'))], [false, true, true]);
+  check('review: no Close button; the chapters\' move accuracy shown, not the study\'s', [!!$('review-close'), !!document.querySelector('.review-head .rate'),
+    [...$('review-chapters').children].every(row => row.querySelector('.rate'))], [false, false, true]);
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('review-screen').classList.contains('hidden'), true);
   $('nav-practice').click();
