@@ -243,8 +243,8 @@ async function runLichessPage(app) {
   // A new user: Getting started, with no sample studies (removed), and the red dot (not connected).
   app.setLibrary(null);
   $('nav-lichess').click();
-  check('new user: Getting started (no sample studies), no Move statistics card, the red dot', [$('getting-started').classList.contains('hidden'), !!$('trial-btn'),
-    $('games-card').classList.contains('hidden'), !!$('nav-lichess').querySelector('.problem-dot')], [false, false, true, true]);
+  check('new user: only Status and Connection (no Move statistics, Backup or Getting started), the red dot', [...['games-card', 'backup-card', 'getting-started'].map(id => $(id).classList.contains('hidden')),
+    !!$('trial-btn'), !!$('nav-lichess').querySelector('.problem-dot')], [true, true, true, false, true]);
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-lichess').click();
   check('own studies, not connected: Status, Connect to Lichess and no Disconnect', [$('lichess-heading').textContent,
@@ -294,16 +294,17 @@ async function runLichessPage(app) {
   check('studies fetched after a restore: the tries get their points', app.history.moves['AAAAAAAA/BBBBBBBB|e4']?.[0]?.points, 8);
 
   // The first connection, from the welcome screen: the studies are fetched, nothing downloads, and the
-  // screen offers Restore backup or Start; Start opens the Studies page and starts the downloads.
+  // page offers Restore backup or Download statistics, which opens the Practice page and starts the downloads.
   app.setLibrary(null);
   app.setToken('lip_test');
   window.fetch = async url => String(url).includes('/api/account') ? new Response(JSON.stringify({ username: 'tester' }))
     : String(url).includes('export.pgn') ? new Response(ITALIAN + '\n\n' + SICILIAN) : new Response('', { status: 404 });
   await app.fetchStudies({ welcome: true });
-  check('welcome: studies fetched, then Getting started with Start enabled, nothing downloading', [!$('lichess-screen').classList.contains('hidden'), $('getting-started').classList.contains('hidden'),
-    $('getting-started-ready').textContent, $('welcome-start-btn').disabled, app.downloading], [true, false, 'Your study is ready.', false, false]);
+  check('welcome: studies fetched, then Getting started with Download statistics, Backup (Save greyed out), nothing downloading', [!$('lichess-screen').classList.contains('hidden'), $('getting-started').classList.contains('hidden'),
+    $('getting-started-ready').textContent, $('welcome-start-btn').textContent, $('backup-card').classList.contains('hidden'), $('backup-btn').disabled, app.downloading],
+    [true, false, 'Your study is ready.', 'Download statistics', false, true, false]);
   $('welcome-start-btn').click();
-  check('welcome: every chapter ticked; Start opens the Practice page and downloads', [app.selection.length, !$('practice-screen').classList.contains('hidden'), app.downloading], [2, true, true]);
+  check('welcome: every chapter ticked; Download statistics opens the Practice page and downloads', [app.selection.length, !$('practice-screen').classList.contains('hidden'), app.downloading], [2, true, true]);
   await until(() => !app.downloading, 'the downloads to finish');
   window.fetch = isolated;
   app.setToken(null);

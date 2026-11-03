@@ -418,7 +418,7 @@
         <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
-      <div id="backup-card" class="card">
+      <div id="backup-card" class="card hidden">
         <h2><span data-tip="Your stats, settings and Lichess data are kept only in this browser. Backups never include your token.">Backup</span></h2>
         <div class="actions stacked">
           <button id="backup-btn" class="primary">Save backup</button>
@@ -429,12 +429,12 @@
         <div id="backup-suggestion" class="update-status"></div>
       </div>
 
-      <div id="getting-started" class="card">
+      <div id="getting-started" class="card hidden">
         <h2>Getting started</h2>
         <p id="getting-started-ready"></p>
         <p>Used the app before? Restore a backup.</p>
         <div class="actions">
-          <button id="welcome-start-btn" class="primary" title="Your studies first need fetching: Connect to Lichess">Start</button>
+          <button id="welcome-start-btn" class="primary" title="Downloads the move and masters statistics; you can practice meanwhile">Download statistics</button>
         </div>
       </div>
     </div>
@@ -563,7 +563,7 @@
         <h2>Getting started</h2>
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
-          <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Start</b>.</li>
+          <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
           <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some on the <b>Studies</b> page.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
@@ -718,7 +718,7 @@
         <h2>Lichess</h2>
         <ul>
           <li>The header's <b>Lichess</b> button shows a red dot when you're not connected (including when Lichess has ended the connection). Other messages, such as Lichess asking to slow down, show only on the Lichess page.</li>
-          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, and any message about fetching your studies), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
+          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, and any message about fetching your studies), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> and, after your first connection, <b>Getting started</b> (Download statistics). Before you connect, only Status and Connection show.</li>
           <li><b>Move statistics</b>: how many positions have their move statistics and masters statistics so far, and the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
@@ -3279,13 +3279,15 @@ function renderOptions() {
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
 //   about a year), Disconnect when connected (the same for everyone);
 // - Move statistics: the rating bands and time controls they come from (see renderGamesCard);
-// - Backup: Save backup (greyed out until you've started) and Restore backup;
-// - Getting started (new users only, until they start): Start once the studies have been fetched
-//   (nothing downloads until Start or Restore backup is pressed).
+// - Backup: Save backup (greyed out while Getting started shows) and Restore backup;
+// - Getting started (after the first connection, once the studies have been fetched, until you go on):
+//   Restore backup (on the Backup card) or Download statistics (nothing downloads until one is pressed).
+// A new user sees only Status and Connection: Move statistics, Backup and Getting started appear once
+// there are studies.
 // Connecting logs in with Lichess online; opened from disk it's Add token (with a box to paste it into)
 // and Clear token. A new user gets the welcome splash over the page. The header's Lichess button
 // always reads "Lichess", with a red dot when not connected.
-let welcomeReady = false; // the first connection is done: waiting for Restore backup or Start
+let welcomeReady = false; // the first connection is done: waiting for Restore backup or Download statistics
 
 function showLichess() {
   showScreen('lichess');
@@ -3303,16 +3305,14 @@ function renderLichessPage() {
   // connected.
   $('connect-btn').classList.toggle('hidden', !!token && !connectionExpired());
   $('disconnect-btn').classList.toggle('hidden', !token);
-  // Getting started: until you've started; Start once your studies are here.
-  $('getting-started').classList.toggle('hidden', !!library && !welcomeReady);
+  // Getting started: after the first connection, once your studies are here.
+  $('getting-started').classList.toggle('hidden', !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
-  $('welcome-start-btn').disabled = !welcomeReady;
-  $('welcome-start-btn').title = welcomeReady ? 'On to practice; the statistics download meanwhile' : 'Your studies first need fetching: Connect to Lichess';
   renderGamesCard();
-  // Backup: nothing to save until you've started.
-  const notStarted = !$('getting-started').classList.contains('hidden');
-  $('backup-btn').disabled = notStarted;
-  $('backup-btn').title = notStarted ? 'Nothing to save yet' : '';
+  // Backup: once there are studies; nothing to save while Getting started shows.
+  $('backup-card').classList.toggle('hidden', !library);
+  $('backup-btn').disabled = welcomeReady;
+  $('backup-btn').title = welcomeReady ? 'Nothing to save yet' : '';
   const lastBackup = store.get('lastBackup', null);
   $('backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
   updateStatisticsInfo(); // the statistics lines, and the header button
@@ -3474,7 +3474,7 @@ $('lichess-heading').dataset.tip = canLogIn
   : 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). The token needs the Read private studies (study:read) scope; a new one replaces the stored one.';
 
 // After the first connection (every chapter ticked): restore a backup (stats, move statistics and your
-// ticks, so they needn't be downloaded), or start. Either way the Practice page opens and the missing
+// ticks, so they needn't be downloaded), or Download statistics. Either way the Practice page opens and the missing
 // statistics download. (Closing the page instead is fine: the app opens normally.)
 function showWelcomeReady() {
   welcomeReady = true;
@@ -3588,7 +3588,7 @@ $('restore-file').addEventListener('change', async e => {
   await saveMoveStats();
   saveHistory(); saveSettings(); saveSelection(); saveHidden(); savePresets();
   updateSoundButton();
-  if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Start does
+  if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
   refreshPage();
   startDownloads(); // statistics for the backup's games, if they're other games
   showBanner(`Backup restored: history for ${plural(Object.keys(history.moves).length, 'move')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
