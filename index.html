@@ -165,14 +165,15 @@
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
   /* On the Practice page, under the chooser: the Studies to test tile (the preset, how many chapters it has,
-     Select chapters and, while selecting, the buttons to save them), then the chapters to tick. */
+     ✎ and, while editing, the buttons to save them), then the chapters to tick. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .practice-studies .rate { min-width: 0; } /* a narrower column: the accuracy column narrows, long names end in "…" */
   .studies-to-test h2 { margin: 0 0 10px; }
-  #preset-select { width: 100%; text-overflow: ellipsis; }
+  .preset-row { display: flex; align-items: center; gap: 8px; }
+  #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
+  #sel-summary { margin-top: 8px; }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
-  .sel-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
   .all-row #show-hidden-btn { margin-left: auto; }
   .preset-edit-row { display: flex; align-items: center; gap: 6px; }
   .preset-edit-row .panel-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; align-self: flex-start; }
@@ -272,7 +273,7 @@
   #review-study { flex: 1; min-width: 0; font-weight: 600; text-overflow: ellipsis; }
   /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 5 (the 6th cut in half,
      so it's clear the list goes on), with a scroll bar always shown when it scrolls (Safari and Chrome) */
-  .review-chapters { margin-top: 10px; max-height: 160px; overflow-y: auto; font-size: 14px; }
+  .review-chapters { margin-top: 10px; max-height: 160px; overflow-y: auto; overflow-x: hidden; font-size: 14px; }
   .review-chapters::-webkit-scrollbar { width: 8px; }
   .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
   .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
@@ -283,6 +284,8 @@
   .review-chapter:hover { background: var(--surface-3); }
   .review-chapter.current, .review-chapter.current:hover { background: var(--accent); color: var(--accent-text); }
   .review-chapter.unavailable { color: var(--faint); cursor: default; background: none; }
+  .review-chapter-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } /* a long name ends in "…" (the full name on hover) */
+  .review-chapter .side-dot { flex: none; }
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   .review-info { font-size: 14px; }
@@ -517,19 +520,21 @@
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
-      <!-- Studies to test: the chosen preset (All, or one of yours) and how many chapters it has; Select
-           chapters opens its chapters to tick, with the buttons to save them. Hidden during practice. -->
+      <!-- Studies to test: the chosen preset (All, or one of yours) and how many chapters it has; ✎ opens
+           its chapters to tick, with the buttons to save them. Hidden during practice. -->
       <div id="studies-to-test" class="panel studies-to-test hidden">
         <h2>Studies to test</h2>
-        <select id="preset-select" aria-label="Preset"></select>
-        <div class="sel-row">
-          <span id="sel-summary" class="muted"></span>
-          <button id="preset-edit-btn" aria-controls="practice-studies" title="Tick the chapters of this preset">Select chapters</button>
+        <div class="preset-row">
+          <select id="preset-select" aria-label="Preset"></select>
+          <button id="preset-edit-btn" class="icon-btn" aria-controls="practice-studies" aria-label="Edit this preset, or make a new one" title="Edit this preset, or make a new one">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
+          </button>
         </div>
+        <div id="sel-summary" class="muted"></div>
         <div id="preset-edit" class="preset-edit hidden">
           <div class="preset-buttons">
             <button id="preset-save-btn" class="small primary" title="Save the ticked chapters in this preset">Save</button>
-            <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
+            <button id="preset-new-btn" class="small" title="A new preset with the ticked chapters (untick All first to start empty)">Create new</button>
             <button id="preset-rename-btn" class="small">Rename</button>
             <button id="preset-delete-btn" class="small">Delete</button>
             <button id="preset-cancel-btn" class="small" title="Close without saving (Esc)">Cancel</button>
@@ -621,7 +626,7 @@
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
-          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the preset <b>All</b>); to practise fewer, make a preset with <b>Select chapters</b> under <b>Studies to test</b>.</li>
+          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the preset <b>All</b>); to practise fewer, make a preset with ✎ under <b>Studies to test</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
@@ -734,7 +739,7 @@
         <h2>Studies to test</h2>
         <ul>
           <li>On the Practice page, <b>Studies to test</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
-          <li><b>Select chapters</b> opens the preset's chapters to tick, with <b>Save</b>, <b>Save as new</b> (a new preset from the ticks), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Save as new and Cancel.</li>
+          <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
           <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name to look through it on the Review page (clicking a name doesn't tick it). Hover over a chapter's name to see its opening; the dot after it shows the side you play.</li>
           <li>To practise one chapter without a preset, use <b>Practice this chapter</b> on the Review page.</li>
           <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Beside the board: the study and its chapters (with their move accuracy), the moves, the move and its comment, its <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
@@ -1724,9 +1729,9 @@ function averageScore(chapters) {
 
 // ---------- Studies list (on the Practice page) ----------
 // Under the chooser, the Studies to test tile: the chosen preset (All, built in, or one of yours) and how
-// many chapters it has; what's practised is always the chosen preset. Select chapters opens its chapters
+// many chapters it has; what's practised is always the chosen preset. ✎ beside it opens its chapters
 // to tick (your studies and chapters, the eye for hidden studies, move accuracy; a chapter's name opens it
-// on the Review page) with Save, Save as new, Rename, Delete and Cancel (for All, only Save as new and
+// on the Review page) with Save, Create new, Rename, Delete and Cancel (for All, only Create new and
 // Cancel). The tile is hidden during practice, since a session's lines are chosen when it starts.
 let editing = null; // while selecting chapters: { preset, ticks (a Set of chapter keys) }
 
@@ -1962,7 +1967,7 @@ function renderPresets() {
   $('preset-select').disabled = !!editing;
   $('preset-edit-btn').classList.toggle('hidden', !!editing);
   $('preset-edit').classList.toggle('hidden', !editing);
-  for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Save as new
+  for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Create new
   $('preset-save-btn').disabled = $('preset-new-btn').disabled = !editing?.ticks.size;
 }
 
@@ -1978,7 +1983,7 @@ $('preset-select').addEventListener('change', e => {
   renderStudies(); // and the chooser
 });
 
-// Select chapters: the chosen preset's chapters, ticked, to change; Cancel (or Esc) leaves them as they were.
+// ✎: the chosen preset's chapters, ticked, to change; Cancel (or Esc) leaves them as they were.
 function startEditing() {
   editing = { preset: chosenPreset(), ticks: new Set(selection) };
   renderStudies();
@@ -2011,7 +2016,7 @@ $('preset-delete-btn').addEventListener('click', () => {
   stopEditing();
 });
 
-// The name box, for Save as new and Rename.
+// The name box, for Create new and Rename.
 let namingMode = null; // 'new' or 'rename'
 
 function showNameForm(mode) {
@@ -2101,7 +2106,7 @@ function openReview(ch, { at = [] } = {}) {
     const p = parseChapter(c);
     return element('div', { class: 'review-chapter' + (c === ch ? ' current' : '') + (p.error ? ' unavailable' : ''), role: 'option', 'aria-selected': String(c === ch),
       'aria-disabled': p.error ? 'true' : null, title: p.error || null, onclick: p.error ? null : () => openReview(c) },
-      `${k + 1}. ${c.name}`, p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }),
+      element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, `${k + 1}. ${c.name}`), p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }),
       p.error ? null : scoreElement(averageScore([c])));
   }));
   const list = $('review-chapters'), row = list.querySelector('.current');
