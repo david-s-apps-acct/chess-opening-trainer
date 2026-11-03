@@ -438,23 +438,24 @@ async function runLichessPage(app) {
   app.setSettings({});
 
   // Reviewing a study: on its own page at its first chapter; → plays the main move, ← goes back; the
-  // list changes chapter; Esc goes back to the Practice page's studies list.
+  // list changes chapter; the header's buttons leave it (no Close).
   app.setLibrary(structuredClone(LIBRARY));
-  $('nav-practice').click(); // nothing practised: the studies list, in the board's place
-  check('studies list: on the Practice page in the board\'s place, with the chooser; no Studies button', [!$('practice-studies').classList.contains('hidden'),
-    document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!$('nav-studies')], [true, true, true, false]);
+  $('nav-practice').click(); // nothing practised: the board, the chooser, and the studies list under it
+  check('studies list: on the Practice page under the chooser, the board shown; no Studies button', [!$('practice-studies').classList.contains('hidden'),
+    !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!$('nav-studies'),
+    $('practice-studies').parentElement === $('practice-chooser').closest('.panel').parentElement], [true, true, true, false, true]);
   document.querySelector('#studies .study-row .opener').click(); // the study's chapters
   document.querySelector('#studies .chapter-row .opener').click(); // its first chapter's name: the Review page
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
-  const chapterShown = () => $('review-chapters').querySelector('.current')?.textContent;
+  const chapterShown = () => $('review-chapters').querySelector('.current')?.firstChild.textContent; // the name, without the accuracy
   check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-review').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
     [true, true, '1. Italian', 'Starting position', null]);
   key('ArrowRight'); key('ArrowRight');
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
-  check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.textContent), ['1. Italian', '2. Sicilian']);
+  check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.firstChild.textContent), ['1. Italian', '2. Sicilian']);
   $('review-chapters').children[1].click();
   const atStart = current();
   key('ArrowRight');
@@ -482,23 +483,23 @@ async function runLichessPage(app) {
   chooseStudy('AAAAAAAA');
   check('review: another study, then back to the chapter you were on', [other, chapterShown()], ['1. Side line', '2. Sicilian']);
   app.setLibrary(structuredClone(LIBRARY));
+  check('review: no Close button; the study\'s and chapters\' move accuracy shown', [!!$('review-close'), !!$('review-study-score').querySelector('.rate'),
+    [...$('review-chapters').children].every(row => row.querySelector('.rate'))], [false, true, true]);
   key('Escape');
-  check('review: Esc goes back to the studies list', [!$('practice-screen').classList.contains('hidden'), !$('practice-studies').classList.contains('hidden')], [true, true]);
+  check('review: Esc doesn\'t leave the page', !$('review-screen').classList.contains('hidden'), true);
+  $('nav-practice').click();
+  check('review: the header\'s Practice button goes back to the studies list', [!$('practice-screen').classList.contains('hidden'), !$('practice-studies').classList.contains('hidden')], [true, true]);
   // From Practice: the icon by the study's name ends practice and opens the study at the position on the
-  // board; Close goes back to the Practice page's chooser.
+  // board.
   app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC'))[0]); // the Sicilian: you're Black, so 1. e4 is played first
   await until(() => app.practice?.movesPlayed === 1, 'the opponent\'s first move');
   $('practice-title').querySelector('.review-btn').click();
   check('practice → review: practice ended, the study at the position, Review highlighted', [app.practice, !$('review-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-review').classList.contains('current')],
     [null, true, '2. Sicilian', 'e4', true]);
-  $('review-close').click();
-  check('practice → review: Close goes back to the Practice page\'s chooser', [!$('practice-screen').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden')], [true, true]);
-  // The header's Review button: back where you left it; Close then returns to the page you came from.
+  // The header's Review button: back where you left it.
   $('nav-options').click();
   $('nav-review').click();
   check('Review button: the chapter and position last looked at', [!$('review-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
-  $('review-close').click();
-  check('Review button: Close goes back to the page it was opened from', !$('options-screen').classList.contains('hidden'), true);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
@@ -743,12 +744,12 @@ function runPositions(app) {
   check('chooser: the switch and the main-lines checkbox', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, app.settings.practice.kind],
     ['true', 'false', 'Positions from main lines only', 'positions']);
   $('chooser-start').click();
-  check('chooser: practising positions, the board in the studies list\'s place', [app.practice.singleAt != null, $('practice-position').textContent !== '',
+  check('chooser: practising positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
     $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
     document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [true, true, true, true, true, false]);
   $('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
-  check('chooser: the studies list back in the board\'s place', [$('practice-studies').classList.contains('hidden'), document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, true]);
+  check('chooser: the studies list back, the board still shown', [$('practice-studies').classList.contains('hidden'), document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, false]);
   $('chooser-kind-lines').click();
   $('chooser-start').click();
   check('chooser: practising lines, from move 1', app.practice.singleAt, null);
