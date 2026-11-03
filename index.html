@@ -103,7 +103,7 @@
   .banner.error { border-color: var(--bad); color: var(--bad); }
   .bg-status { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
 
-  /* Cards (Lichess, Options and Help pages, and the overlays) */
+  /* Cards (Lichess and Help pages, and the overlays) */
   .card { background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); padding: 20px; }
   .card h2 { margin-top: 0; font-size: 18px; }
   .token-row { display: flex; gap: 8px; margin-top: 12px; }
@@ -145,7 +145,7 @@
   .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
   .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
 
-  /* Options and Help pages: a column of cards */
+  /* Lichess and Help pages: a column of cards */
   .cards { display: flex; flex-direction: column; gap: 16px; }
   .cards .card { max-width: 640px; }
   .cards p { margin: 4px 0; }
@@ -167,7 +167,7 @@
      ✎ and, while editing, the buttons to save them), then the chapters to tick. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
-  .studies-to-test h2 { margin: 0 0 10px; }
+  .studies-to-practice h2 { margin: 0 0 10px; }
   /* The Spaced repetition tile: a heading that opens and closes it */
   .tile-toggle { display: flex; align-items: center; gap: 6px; width: 100%; padding: 0; background: none; box-shadow: none; font-size: 18px; font-weight: 600; color: var(--text-strong); text-align: left; }
   .tile-toggle:hover:not(:disabled) { background: none; color: var(--text-strong); }
@@ -178,8 +178,6 @@
   #sel-summary { margin-top: 8px; }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
   .all-row #show-hidden-btn { margin-left: auto; }
-  .preset-edit-row { display: flex; align-items: center; gap: 6px; }
-  .preset-edit-row .panel-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; align-self: flex-start; }
   /* The Lichess page's lines: account, connected, fetched, statistics */
   .lichess-lines p { margin: 2px 0; }
   #lichess-account:empty, #lichess-rating:empty, #lichess-connected:empty, #lichess-fetched:empty, #lichess-moves:empty, #lichess-masters:empty { display: none; }
@@ -213,7 +211,6 @@
   .side-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--muted); margin-left: 6px; vertical-align: 0; }
   .side-dot.white { background: #fff; }
   .side-dot.black { background: #222; }
-  .rate { font-size: 13px; color: var(--muted); white-space: nowrap; min-width: 150px; text-align: right; font-variant-numeric: tabular-nums; }
   /* Move scores: only moves that need work are highlighted, with a violet background (a color
      chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
      the tint, the weaker the move. 100% and never tried: plain. */
@@ -296,7 +293,6 @@
   .review-chapters::-webkit-scrollbar { width: 8px; }
   .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
   .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
-  .review-chapter .rate, .review-head .rate { min-width: 0; margin-left: auto; padding-left: 10px; } /* move accuracy, at the right */
   /* As on Lichess: the numbers in blue; the chosen chapter in bold blue on a lighter background */
   .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
   .review-chapter:hover { background: var(--surface-2); }
@@ -407,7 +403,6 @@
     header nav button { flex: 1 1 auto; padding: 7px 4px; font-size: 13px; white-space: nowrap; } /* six buttons, each on one line */
     .row { flex-wrap: wrap; }
     .row .name { flex-basis: calc(100% - 80px); white-space: normal; }
-    .rate { min-width: 0; text-align: left; }
   }
 </style>
 </head>
@@ -548,7 +543,7 @@
       </div>
       <!-- Studies to practice: the chosen preset (All, or one of yours) and how many chapters it has; ✎ opens
            its chapters to tick, with the buttons to save them. Hidden during practice. -->
-      <div id="studies-to-test" class="panel studies-to-test hidden">
+      <div id="studies-to-practice" class="panel studies-to-practice hidden">
         <h2>Studies to practice</h2>
         <div class="preset-row">
           <select id="preset-select" aria-label="Preset"></select>
@@ -585,7 +580,7 @@
       </div>
       <!-- Spaced repetition: collapsed; ▾ opens the sliders, Show lines, Show positions and Reset. Hidden during practice. -->
       <div id="srs-tile" class="panel srs-tile hidden">
-        <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
+        <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
         <div id="srs-body" class="hidden">
           <div id="weight-rows" class="weight-rows"></div>
           <div class="actions">
@@ -1743,27 +1738,18 @@ let editing = null; // while selecting chapters: { preset, ticks (a Set of chapt
 // The chapters being ticked (while selecting) or practised.
 const ticked = () => editing ? editing.ticks : selection;
 
-function lockStudiesToTest(locked) {
-  if (locked) editing = null;
-  hideNameForm();
-  $('studies-to-test').classList.toggle('hidden', !library || locked); // once there are studies; not during practice
-  $('srs-tile').classList.toggle('hidden', !library || locked);
+// The Studies to practice and Spaced repetition tiles: once there are studies, and not during practice;
+// the chapters only while editing a preset. (Start practice is greyed out while editing, so practice never
+// starts mid-edit.)
+function showPracticeTiles() {
+  for (const id of ['studies-to-practice', 'srs-tile']) $(id).classList.toggle('hidden', !library || !!practice);
   if (library) $('practice-studies').classList.toggle('hidden', !editing);
-}
-
-function scoreElement({ lines, tried, score }) {
-  if (!lines) return element('span', { class: 'rate' }, 'no lines to practice');
-  if (!tried) return element('span', { class: 'rate' });
-  return quickTip(element('span', { class: 'rate' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)), // highlight just the text
-    'Average move accuracy over the last 10 tries');
 }
 
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
-  $('studies-to-test').classList.toggle('hidden', !library || !!practice); // once there are studies; not during practice
-  $('srs-tile').classList.toggle('hidden', !library || !!practice);
+  showPracticeTiles();
   if (!library) return; // the list keeps any message about fetching your studies
-  $('practice-studies').classList.toggle('hidden', !editing);
   const container = $('studies');
   container.replaceChildren();
   if (!library.studies.length) {
@@ -2081,8 +2067,7 @@ let review = null; // { ch, parsed, node (the move shown, or the root), openSet 
 
 // The small board icon after the study's name on the Practice page: it ends practice and opens the line's
 // study on the Review page (see reviewFromPractice).
-function reviewButton(ch, title, open) {
-  if (!ch) return null;
+function reviewButton(title, open) {
   const btn = element('button', { class: 'icon-btn review-btn', title, 'aria-label': title, onclick: e => { e.stopPropagation(); open(); } });
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 3h6v6H3zM9 9h6v6H9zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" fill="currentColor"/></svg>';
   return btn;
@@ -2547,7 +2532,7 @@ function renderChooser() {
 }
 
 // The Practice page's Spaced repetition tile: the sliders' values. It starts closed each time the app opens,
-// stays as you leave it during the visit, and is hidden during practice (see lockStudiesToTest).
+// stays as you leave it during the visit, and is hidden during practice (see showPracticeTiles).
 const renderWeights = () => showSliders('weight', WEIGHTS, settings.practice.weights);
 function openSpacedRepetition(open) {
   $('srs-body').classList.toggle('hidden', !open);
@@ -2660,7 +2645,7 @@ function startLine(line, singleAt = null) {
   };
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
-  lockStudiesToTest(true);
+  showPracticeTiles(); // hidden during practice
   $('practice-line').classList.remove('hidden');
   $('next-btn').classList.add('hidden');
   for (const id of ['hint-btn', 'skip-btn', 'end-practice-btn']) $(id).classList.remove('hidden');
@@ -2865,7 +2850,7 @@ $('end-practice-btn').addEventListener('click', () => {
 function endPractice() {
   practice = null;
   session = null;
-  lockStudiesToTest(false);
+  showPracticeTiles();
   if (waitingStudies) { // updated studies that arrived during practice (see syncStudies)
     const fetched = waitingStudies;
     waitingStudies = null;
@@ -3052,7 +3037,7 @@ function updateNames() {
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
   $('practice-title').replaceChildren(chapterTitle(ch) + (session.reversed ? ' (reversed)' : ''), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
-    reviewButton(ch, 'End practice and review this study', reviewFromPractice));
+    reviewButton('End practice and review this study', reviewFromPractice));
   updatePositionName();
 }
 
