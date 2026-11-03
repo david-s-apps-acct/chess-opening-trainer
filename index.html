@@ -168,7 +168,6 @@
      ✎ and, while editing, the buttons to save them), then the chapters to tick. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
-  .practice-studies .rate { min-width: 0; } /* a narrower column: the accuracy column narrows, long names end in "…" */
   .studies-to-test h2 { margin: 0 0 10px; }
   .preset-row { display: flex; align-items: center; gap: 8px; }
   #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
@@ -743,7 +742,7 @@
           <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name to look through it on the Review page (clicking a name doesn't tick it). Hover over a chapter's name to see its opening; the dot after it shows the side you play.</li>
           <li>To practise one chapter without a preset, use <b>Practice this chapter</b> on the Review page.</li>
           <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Beside the board: the study and its chapters (with their move accuracy), the moves, the move and its comment, its <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
-          <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
+          <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
           <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
         </ul>
         <details>
@@ -1791,7 +1790,7 @@ function opener(name, onOpen) {
 }
 
 // A study's row: its triangle (show or hide its chapters), checkbox (all its chapters), name, eye
-// (while the top eye is open), chapter count and score.
+// (while the top eye is open) and chapter count. (Move accuracy is shown on the Review page.)
 function studyRow(study, isHidden) {
   const keys = study.chapters.map(c => c.key);
   const nTicked = keys.filter(k => ticked().has(k)).length;
@@ -1807,12 +1806,11 @@ function studyRow(study, isHidden) {
     }),
     element('span', { class: 'name', title: study.name }, opener(study.name, toggleStudy),
       showHiddenStudies ? hideStudyButton(study, isHidden) : null,
-      element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))),
-    scoreElement(averageScore(study.chapters)));
+      element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))));
 }
 
 // A chapter's row: its checkbox, its name (the opening on hover; clicking it opens the chapter on the
-// Review page), the side you play, "· 5 lines" and its score.
+// Review page), the side you play and "· 5 lines" (or why it has none to test).
 function chapterRow(ch, studyHidden) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
@@ -1825,8 +1823,7 @@ function chapterRow(ch, studyHidden) {
     element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch)), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
-    parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
-    scoreElement(averageScore([ch])));
+    parsed.error ? element('span', { class: 'side' }, parsed.error) : !lines.length ? element('span', { class: 'side' }, 'no lines to test') : null);
 }
 
 // The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
