@@ -537,15 +537,14 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Colored moves and the hover board
 
-- **To do (the user's decision, 3 November 2026; not built yet; the scheme still to confirm): one arrow-colour scheme across the whole app.** The colours had grown piece by piece (blue meant "another move in your study" on the Review page but "an error that cost less" on the hover boards; one amber for ?!, ? and ??; faint white arrows for the opponent; no key). The user decided the same scheme must hold on every board and in the matching text (the Practice page's error messages, the hover boards' "Errors: …"). *Claude's proposed scheme, for the user to accept or change:* a colour says what the move **is**, wherever it's shown:
+- **To do (the user's decision, 3 November 2026; not built yet; the scheme still to confirm): one arrow-colour scheme across the whole app.** The colours had grown piece by piece (blue meant "another move in your study" on the Review page but "an error that cost less" on the hover boards; one amber for ?!, ? and ??; faint white arrows for the opponent; no key). The user decided the same scheme must hold on every board and in the matching text (the Practice page's error messages, the hover boards' "Errors: …"). *The scheme (the user's decisions, 3 November 2026; matching Lichess where possible, since that's what users already expect):* a colour says what the move **is**, wherever it's shown:
   - **green**: your study's main move (the correct move; also the Hint circle and Show correct move);
-  - **pale green**: another move your study gives at your turn (an unmarked alternative; the user's choice, 3 November 2026: shades of green are moves in your study; chessground's pale green arrow, and a lighter green in text);
-  - **amber**: a move the study marks ?!, ? or ?? (yours or the opponent's; the mark itself shows in the text and the move list);
-  - **blue**: a masters move that isn't in your study (the user's choice, 3 November 2026: different and specific);
-  - **red**: anything else you tried;
-  - **grey** (darker than today's white, to show on light squares): the opponent's moves;
-  - errors' arrows the same strength as the others (the slight lightening goes);
-  - Help gets a short "Arrow colours" table; no key on the boards (fewest words on screen).
+  - **pale green**: another move your study gives at your turn (an unmarked alternative; shades of green are moves in your study; chessground's pale green arrow, and a lighter green in text);
+  - **marked moves, in Lichess's glyph colours**, whoever plays them: **light blue** for ?! (dubious), **amber** for ? (mistake), **red** for ?? (blunder);
+  - **dark blue**: a masters move that isn't in your study (different and specific; told apart from ?!'s light blue by its shade, option 1, chosen by the user);
+  - **violet**: any other move you tried (not in your study, not a masters move; it fits the app's violet for moves that need work);
+  - **grey** (darker than today's white, to show on light squares): the opponent's unmarked moves;
+  - *Claude's details, for the user to accept or reject:* errors' arrows the same strength as the others (the slight lightening goes); Help gets a short "Arrow colours" table, and there's no key on the boards (fewest words on screen); the matching text (the Practice page's error messages and the hover boards' "Errors: …") uses the same colours, lightened where needed to read on the dark background.
 
 Lines are shown with the user's moves highlighted by score (see Progress tracking) in a chapter's move tree on the Studies page. The moves are in Lichess style, e.g. "1. e4 e5 2. Nf3 Nc6 3. Bc4" ("1… e5" when a line starts with Black); all moves are in the standard text color (glyph-marked moves in the glyph's color) and move numbers are muted grey.
 
