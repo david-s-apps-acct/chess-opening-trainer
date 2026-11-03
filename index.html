@@ -164,7 +164,7 @@
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* On the Practice page, under the chooser: the Studies to test tile (the preset, how many chapters it has,
+  /* On the Practice page, under the chooser: the Studies to practice tile (the preset, how many chapters it has,
      ✎ and, while editing, the buttons to save them), then the chapters to tick. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
@@ -276,7 +276,6 @@
   .review-chapters::-webkit-scrollbar { width: 8px; }
   .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
   .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
-  #review-practice { margin-top: 12px; }
   .review-chapter .rate, .review-head .rate { min-width: 0; margin-left: auto; padding-left: 10px; } /* move accuracy, at the right */
   .review-chapter.current .rate, .review-chapter.current .rate .needs-work { color: var(--accent-text); } /* readable on the blue */
   .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
@@ -520,10 +519,10 @@
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
-      <!-- Studies to test: the chosen preset (All, or one of yours) and how many chapters it has; ✎ opens
+      <!-- Studies to practice: the chosen preset (All, or one of yours) and how many chapters it has; ✎ opens
            its chapters to tick, with the buttons to save them. Hidden during practice. -->
       <div id="studies-to-test" class="panel studies-to-test hidden">
-        <h2>Studies to test</h2>
+        <h2>Studies to practice</h2>
         <div class="preset-row">
           <select id="preset-select" aria-label="Preset"></select>
           <button id="preset-edit-btn" class="icon-btn" aria-controls="practice-studies" aria-label="Edit this preset, or make a new one" title="Edit this preset, or make a new one">
@@ -572,7 +571,6 @@
         <div class="panel">
           <div class="review-head"><select id="review-study" aria-label="Study"></select><span id="review-study-score"></span></div>
           <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
-          <div class="actions"><button id="review-practice" class="primary">Practice this chapter</button></div>
         </div>
         <div class="panel">
           <div id="review-position" class="muted"></div>
@@ -619,14 +617,14 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies to test</a> · <a href="#help-options">Options</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies to practice</a> · <a href="#help-options">Options</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
-          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the preset <b>All</b>); to practise fewer, make a preset with ✎ under <b>Studies to test</b>.</li>
+          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the preset <b>All</b>); to practise fewer, make a preset with ✎ under <b>Studies to practice</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
@@ -653,7 +651,7 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen preset (Studies to test). <b>Main lines only</b> leaves out the opponent's side variations.</li>
+          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen preset (Studies to practice). <b>Main lines only</b> leaves out the opponent's side variations.</li>
           <li>Spaced repetition chooses what comes next; the sliders on the Options page (<b>Spaced repetition focus</b>) change the balance, and <b>Show lines</b> there lists what's most likely to be tested next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
@@ -736,12 +734,11 @@
       </div>
 
       <div class="card" id="help-studies">
-        <h2>Studies to test</h2>
+        <h2>Studies to practice</h2>
         <ul>
-          <li>On the Practice page, <b>Studies to test</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
+          <li>On the Practice page, <b>Studies to practice</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
           <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
           <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name (or its tick box) to tick it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. To look through a chapter, use the header's <b>Review</b> button.</li>
-          <li>To practise one chapter without a preset, use <b>Practice this chapter</b> on the Review page.</li>
           <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Beside the board: the study and its chapters (with their move accuracy), the moves, the move and its comment, its <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
           <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
           <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
@@ -1728,7 +1725,7 @@ function averageScore(chapters) {
 }
 
 // ---------- Studies list (on the Practice page) ----------
-// Under the chooser, the Studies to test tile: the chosen preset (All, built in, or one of yours) and how
+// Under the chooser, the Studies to practice tile: the chosen preset (All, built in, or one of yours) and how
 // many chapters it has; what's practised is always the chosen preset. ✎ beside it opens its chapters
 // to tick (your studies and chapters, the eye for hidden studies, move accuracy; a chapter's name opens it
 // on the Review page) with Save, Create new, Rename, Delete and Cancel (for All, only Create new and
@@ -1746,7 +1743,7 @@ function lockStudiesToTest(locked) {
 }
 
 function scoreElement({ lines, tried, score }) {
-  if (!lines) return element('span', { class: 'rate' }, 'no lines to test');
+  if (!lines) return element('span', { class: 'rate' }, 'no lines to practice');
   if (!tried) return element('span', { class: 'rate' });
   return quickTip(element('span', { class: 'rate' }, element('span', { class: scoreClass(score) }, `${percent(score)}%`)), // highlight just the text
     'Average move accuracy over the last 10 tries');
@@ -1811,7 +1808,7 @@ function studyRow(study, isHidden) {
 }
 
 // A chapter's row (indented under its study's name): its checkbox, its name (a label: clicking it ticks
-// the chapter; the opening on hover), the side you play and "· 5 lines" (or why it has none to test).
+// the chapter; the opening on hover), the side you play and "· 5 lines" (or why it has none to practice).
 function chapterRow(ch, studyHidden) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
@@ -1824,7 +1821,7 @@ function chapterRow(ch, studyHidden) {
     element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
-    parsed.error ? element('span', { class: 'side' }, parsed.error) : !lines.length ? element('span', { class: 'side' }, 'no lines to test') : null);
+    parsed.error ? element('span', { class: 'side' }, parsed.error) : !lines.length ? element('span', { class: 'side' }, 'no lines to practice') : null);
 }
 
 // The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
@@ -2061,7 +2058,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // the Practice page's studies list, or the icon by the study's name during practice. The board shows the
 // position, with arrows for the study's moves there (see reviewArrows). Beside it, tiles: the study (a
 // drop-down of your studies with the study's move accuracy, its chapters as a numbered list, as on
-// Lichess, each with its move accuracy, and Practice this chapter); the moves (the position's name, the
+// Lichess, each with its move accuracy); the moves (the position's name, the
 // tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move with its glyphs and comment; its move
 // statistics; and your tries (as on the hover boards). ← → Home End step through the moves, ↑ ↓ the
 // chapters; playing one of the study's moves on the board follows it. (The header's buttons leave it.)
@@ -2114,17 +2111,7 @@ function openReview(ch, { at = [] } = {}) {
   for (const x of at) node = node.children.find(c => c.san === x) || node;
   showReviewNode(node);
   reviewBoard.redrawAll();
-  const kind = settings.practice.kind;
-  $('review-practice').disabled = !practicable(kind, reversedSides(), [ch]).items.length;
-  $('review-practice').title = `${KINDS[kind].label}, as chosen on the Practice page; your preset stays as it is`;
 }
-
-// Practice this chapter: a one-off session of just this chapter (lines or positions, as chosen on the
-// Practice page), without changing the chosen preset.
-$('review-practice').addEventListener('click', () => {
-  const kind = settings.practice.kind, reversed = reversedSides();
-  startSession(kind, practicable(kind, reversed, [review.ch]).items, reversed);
-});
 
 // Another study from the drop-down: the chapter last looked at in it during this visit, or its first
 // chapter that can be shown.
@@ -2242,7 +2229,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- Spaced repetition ----------
-// What's practised: all the lines (or positions) of the chosen preset's chapters (Studies to test), from
+// What's practised: all the lines (or positions) of the chosen preset's chapters (Studies to practice), from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of four parts, one per slider:
 //   frequency: 0.2 to 1, by the rated Lichess games reaching the position (a line's final position),
@@ -2294,8 +2281,8 @@ const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours &&
 // chapters (i is null: played from move 1); for 'positions', every move of yours in them from move 3
 // (FIRST_POSITION_MOVE), once each (i: the move tested as a single position).
 const FIRST_POSITION_MOVE = 3;
-function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind], chapters = tickedChapters()) {
-  const lines = chapters.flatMap(chapterLines);
+function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind]) {
+  const lines = tickedChapters().flatMap(chapterLines);
   if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
   const items = new Map(); // move key -> item
   for (const line of lines) for (const i of yourMoveIndexes(line)) {
@@ -2509,8 +2496,8 @@ const reversedSides = () => settings.practice.kind === 'lines' && settings.pract
 
 // The items a kind of practice would use now (those with any chance of coming up; reversed, the lines
 // with a move of the opponent's), and a note when there are none.
-function practicable(kind, reversed = reversedSides(), chapters = tickedChapters()) {
-  const all = practiceItems(kind, undefined, chapters).filter(({ line }) => !reversed || line.moves.some(m => !m.isYours));
+function practicable(kind, reversed = reversedSides()) {
+  const all = practiceItems(kind).filter(({ line }) => !reversed || line.moves.some(m => !m.isYours));
   const chances = chancesOf(all, reversed);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
