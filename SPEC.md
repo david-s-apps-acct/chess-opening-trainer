@@ -537,6 +537,16 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Colored moves and the hover board
 
+- **To do (the user's decision, 3 November 2026; not built yet; the scheme still to confirm): one arrow-colour scheme across the whole app.** The colours had grown piece by piece (blue meant "another move in your study" on the Review page but "an error that cost less" on the hover boards; one amber for ?!, ? and ??; faint white arrows for the opponent; no key). The user decided the same scheme must hold on every board and in the matching text (the Practice page's error messages, the hover boards' "Errors: …"). *Claude's proposed scheme, for the user to accept or change:* a colour says what the move **is**, wherever it's shown:
+  - **green**: your study's main move (the correct move; also the Hint circle and Show correct move);
+  - **blue**: another move your study gives at your turn (an unmarked alternative);
+  - **amber**: a move the study marks ?!, ? or ?? (yours or the opponent's; the mark itself shows in the text and the move list);
+  - **purple**: a masters move that isn't in your study;
+  - **red**: anything else you tried;
+  - **grey** (darker than today's white, to show on light squares): the opponent's moves;
+  - errors' arrows the same strength as the others (the slight lightening goes);
+  - Help gets a short "Arrow colours" table; no key on the boards (fewest words on screen).
+
 Lines are shown with the user's moves highlighted by score (see Progress tracking) in a chapter's move tree on the Studies page. The moves are in Lichess style, e.g. "1. e4 e5 2. Nf3 Nc6 3. Bc4" ("1… e5" when a line starts with Black); all moves are in the standard text color (glyph-marked moves in the glyph's color) and move numbers are muted grey.
 
 - **Hover board:** hovering over any move in a chapter's move tree or in the practice page's move list, for any move already played, during the line as well as after it (the list only ever holds moves already played, so it can't show a move still to come; at first this was only once the line was over, until the user asked for it during the line too; while viewing an earlier position too; clicking a move there still steps back to that position; hovering over a comment bubble in the list closes the move's board and shows the comment, so only one pop-up is open at a time) (or tapping it on a touch screen, or focusing it with the keyboard) pops up a small read-only board, about 200 pixels square, in the same brown board and pieces, oriented the way the user plays the chapter. It sits below the move, or above it when there's no room, and disappears when the pointer leaves or the page scrolls.
