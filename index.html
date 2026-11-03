@@ -164,7 +164,10 @@
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* Studies page: the presets bar above the list, and its edit panel. */
+  /* The studies list (on the Practice page while nothing is practised, in the board's place; under the
+     chooser on a narrow screen): the presets bar above the list, and its edit panel. */
+  .practice-studies { width: min(600px, calc(100vw - 32px)); flex: none; }
+  @media (max-width: 700px) { .practice-studies { order: 2; } }
   .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
   .selection-bar label { font-weight: 600; }
   .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
@@ -265,7 +268,7 @@
   #board, #review-board { width: 100%; height: 100%; }
   /* Reviewing a study: three tiles beside the board (the study with its chapter drop-down and Close; the
      moves, the current one highlighted; the move's comment and statistics), and the review buttons on
-     the Studies page. On a narrow screen the tiles go under the board. */
+     the Practice page. On a narrow screen the tiles go under the board. */
   .review-tiles { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .review-tiles .panel { flex: none; min-width: 0; }
   .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -379,7 +382,6 @@
   <h1>Chess Opening Trainer</h1>
   <nav>
     <button id="nav-practice">Practice</button>
-    <button id="nav-studies">Studies</button>
     <button id="nav-review">Review</button>
     <button id="nav-options">Options</button>
     <button id="nav-lichess">Lichess</button>
@@ -460,46 +462,45 @@
     </div>
   </section>
 
-  <!-- Choose chapters -->
-  <section id="studies-screen" class="hidden">
-    <div class="selection-bar">
-      <label for="preset-select">Presets</label>
-      <select id="preset-select" title="Tick exactly the chapters of a preset"></select>
-      <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
-      </button>
-      <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
-      <span id="sel-summary" class="muted"></span>
-    </div>
-    <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
-      <div class="preset-edit-row">
-        <div class="preset-buttons">
-          <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
-          <button id="preset-update-btn" class="small" title="Save the ticked chapters in this preset">Update</button>
-          <button id="preset-rename-btn" class="small">Rename</button>
-          <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
-        </div>
-        <button id="preset-edit-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
-      </div>
-      <form id="preset-name-form" class="preset-name-form hidden">
-        <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
-        <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
-        <div id="preset-name-error" class="form-error"></div>
-      </form>
-    </div>
-    <div class="studies">
-      <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
-      <div class="row study-row all-row"><span class="toggle-space"></span>
-        <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
-      </div>
-      <div id="studies"></div>
-    </div>
-  </section>
-
   <!-- Practice -->
   <section id="practice-screen" class="hidden">
     <div class="quiz">
-      <div class="board-col">
+      <!-- While nothing is practised: the studies and chapters to tick, in the board's place -->
+      <div id="practice-studies" class="practice-studies">
+        <div class="selection-bar">
+          <label for="preset-select">Presets</label>
+          <select id="preset-select" title="Tick exactly the chapters of a preset"></select>
+          <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
+          </button>
+          <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
+          <span id="sel-summary" class="muted"></span>
+        </div>
+        <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
+          <div class="preset-edit-row">
+            <div class="preset-buttons">
+              <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
+              <button id="preset-update-btn" class="small" title="Save the ticked chapters in this preset">Update</button>
+              <button id="preset-rename-btn" class="small">Rename</button>
+              <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
+            </div>
+            <button id="preset-edit-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
+          </div>
+          <form id="preset-name-form" class="preset-name-form hidden">
+            <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
+            <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
+            <div id="preset-name-error" class="form-error"></div>
+          </form>
+        </div>
+        <div class="studies">
+          <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
+          <div class="row study-row all-row"><span class="toggle-space"></span>
+            <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
+          </div>
+          <div id="studies"></div>
+        </div>
+      </div>
+      <div class="board-col hidden">
         <div class="board-wrap">
           <div id="board"></div>
           <div id="promo" class="promo hidden"><div class="cg-wrap"></div></div>
@@ -549,7 +550,7 @@
     </div>
   </section>
 
-  <!-- Review: a study on a board, opened from the Studies page (see Studies page: reviewing a study) -->
+  <!-- Review: a study on a board (see Review page: reviewing a study) -->
   <section id="review-screen" class="hidden">
     <div class="quiz">
       <div class="board-col">
@@ -558,7 +559,7 @@
       <!-- Three tiles: the study and its chapters; the moves; the move's comment and statistics -->
       <div class="review-tiles">
         <div class="panel">
-          <div class="review-head"><h2 id="review-study"></h2><button id="review-close" title="Back to Studies (Esc)">Close</button></div>
+          <div class="review-head"><h2 id="review-study"></h2><button id="review-close" title="Back (Esc)">Close</button></div>
           <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
         </div>
         <div class="panel">
@@ -611,7 +612,7 @@
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
-          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some on the <b>Studies</b> page.</li>
+          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some in the list of studies on the same page.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
@@ -638,7 +639,7 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters ticked on the Studies page. <b>Main lines only</b> leaves out the opponent's side variations.</li>
+          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters ticked in the list of studies. <b>Main lines only</b> leaves out the opponent's side variations.</li>
           <li>Spaced repetition chooses what comes next; the sliders on the Options page (<b>Spaced repetition focus</b>) change the balance, and <b>Show lines</b> there lists what's most likely to be tested next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
@@ -723,6 +724,7 @@
       <div class="card" id="help-studies">
         <h2>Studies</h2>
         <ul>
+          <li>While nothing is being practised, the Practice page lists your studies in the board's place (under the buttons on a phone).</li>
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name to look through it on the Review page. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
@@ -998,7 +1000,7 @@ function checkedGames(g) {
 let settings = checkedSettings(store.get('settings'));
 const saveSettings = () => store.set('settings', settings);
 
-// The Studies page's open/closed state (not remembered).
+// The studies list's open/closed state (not remembered).
 const openStudies = new Set();       // studies whose chapters are listed
 let showHiddenStudies = false;       // the top eye: hidden studies are listed (in grey)
 
@@ -1047,7 +1049,7 @@ function showScreen(name) {
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
   // Each page, and its header button (always shown; the current page's is highlighted).
-  for (const s of ['practice', 'studies', 'review', 'options', 'lichess', 'help']) {
+  for (const s of ['practice', 'review', 'options', 'lichess', 'help']) {
     $(s + '-screen').classList.toggle('hidden', s !== name);
     $('nav-' + s).classList.toggle('current', s === name);
     if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
@@ -1222,7 +1224,7 @@ function askForToken() {
 }
 
 // Messages about fetching from Lichess appear on the Lichess page (before any studies have been
-// fetched, also in the Studies page's empty list).
+// fetched, also in the Practice page's empty studies list).
 function setUpdateStatus(message, isError = false) {
   const parts = [].concat(message).filter(part => part !== ''); // '' clears it
   const box = $('update-status');
@@ -1280,7 +1282,7 @@ async function fetchStudies({ welcome = false } = {}) {
     else startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Status card says what was fetched, and when
     if (welcome) showWelcomeReady();
-    else if (currentScreen === 'lichess') renderLichessPage(); else showStudies();
+    else if (currentScreen === 'lichess') renderLichessPage(); else showChooser();
   } catch (e) {
     setUpdateStatus(errorText(e), true);
   }
@@ -1312,10 +1314,9 @@ async function syncStudies() {
 
 // After the studies or settings change under the page you're on: it's drawn again.
 function refreshPage() {
-  if (currentScreen === 'studies') renderStudies();
-  else if (currentScreen === 'lichess') renderLichessPage();
+  if (currentScreen === 'lichess') renderLichessPage();
   else if (currentScreen === 'options') renderOptions();
-  else if (currentScreen === 'practice' && !practice) renderChooser();
+  else if (currentScreen === 'practice' && !practice) renderStudies(); // and the chooser
 }
 
 // Drop selection entries and history that no longer match anything.
@@ -1709,12 +1710,10 @@ function averageScore(chapters) {
     score: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null };
 }
 
-// ---------- Studies page ----------
-
-function showStudies() {
-  showScreen('studies');
-  renderStudies();
-}
+// ---------- Studies list (on the Practice page) ----------
+// While nothing is practised, the Practice page shows your studies and chapters in the board's place:
+// tick them to choose what to practice (with presets and hidden studies); a chapter's name opens it on
+// the Review page.
 
 function scoreElement({ lines, tried, score }) {
   if (!lines) return element('span', { class: 'rate' }, 'no lines to test');
@@ -1725,6 +1724,7 @@ function scoreElement({ lines, tried, score }) {
 
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
+  if (!library) return; // the list keeps any message about fetching your studies
   const container = $('studies');
   container.replaceChildren();
   if (!library.studies.length) {
@@ -1744,6 +1744,7 @@ function renderStudies() {
     container.append(element('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
   }
   updateSelectionPanel();
+  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practised follows the ticks
 }
 
 // A ▸ / ▾ triangle that shows or hides something (titles: [when closed, when open]).
@@ -1789,7 +1790,7 @@ function chapterRow(ch, studyHidden) {
     element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
       onchange: e => setTicked([ch.key], e.target.checked) }),
     // The side you play: a small white or black circle right after the chapter name.
-    element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch, { back: 'studies' })), openingName(parsed), 700),
+    element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch, { back: 'practice' })), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
@@ -2043,19 +2044,17 @@ $('preset-name-form').addEventListener('submit', e => {
   renderPresets();
 });
 
-// ---------- Studies page: reviewing a study ----------
+// ---------- Review page: reviewing a study ----------
 // A study opened on a board, on its own page, at one of its chapters, to look through before (or
-// instead of) practicing; it works offline. The board shows the position, with arrows for the study's
-// moves there (see reviewArrows); beside it, the chapter drop-down, the chapter's move tree (the
-// current move highlighted; click a move to go to it), and the move's comment and glyphs; under the
-// board, the position's name and, as on the hover boards, the move's ranks among Lichess and master
-// games, how often the position is reached, and for your moves, your move accuracy. ← → Home End step
-// through it; playing one of the study's moves on the board follows it; Close or Esc goes back to the
-// Studies page as it was. Beside the board, three tiles: the study (its name, the chapter drop-down and
-// Close); the moves (the position's name, the tree, ⏮ ◀ ▶ ⏭); and the move's glyphs, comment and
-// statistics. The study's chapters are a numbered list, as on Lichess (↑ ↓ for the previous and next).
+// instead of) practicing; it works offline. Opened from the header's Review button, a chapter's name in
+// the Practice page's studies list, or the icon by the study's name during practice. The board shows the
+// position, with arrows for the study's moves there (see reviewArrows). Beside it, three tiles: the study
+// (its name, its chapters as a numbered list, as on Lichess, and Close); the moves (the position's name,
+// the tree with the current move highlighted, ⏮ ◀ ▶ ⏭); and the move's glyphs, comment and statistics
+// (as on the hover boards). ← → Home End step through the moves, ↑ ↓ the chapters; playing one of the
+// study's moves on the board follows it; Close or Esc goes back to the page it was opened from.
 let reviewBoard = null;
-let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the Studies page's) }
+let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the page it was opened from) }
 
 // The small board icon after the study's name on the Practice page: it ends practice and opens the line's
 // study on the Review page (see reviewFromPractice).
@@ -2072,7 +2071,7 @@ function openReview(ch, { at = [], back } = {}) {
   const parsed = parseChapter(ch);
   if (parsed.error) return;
   const scrollY = back ? window.scrollY : review?.scrollY ?? 0; // the page Close returns to: where it was scrolled
-  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY, back: back ?? review?.back ?? 'studies' };
+  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY, back: back ?? review?.back ?? 'practice' };
   showScreen('review');
   if (!reviewBoard) {
     reviewBoard = Chessground($('review-board'), {
@@ -2108,19 +2107,19 @@ function stepChapter(d) {
   if (next) openReview(next);
 }
 
-// Close (or Esc): back to the page the Review page was opened from (Studies as it was, scrolled where
-// it was). The chapter and position stay for the header's Review button.
+// Close (or Esc): back to the page the Review page was opened from (the Practice page's studies list as
+// it was scrolled). The chapter and position stay for the header's Review button.
 function closeReview() {
   const { scrollY, back } = review;
   $('nav-' + back).click();
-  if (back === 'studies') window.scrollTo(0, scrollY);
+  if (back === 'practice') window.scrollTo(0, scrollY); // the studies list as it was scrolled
 }
 
 // The header's Review button: the chapter and position last looked at (the studies may have been
 // updated since), or else the first ticked chapter (or the first chapter) that can be shown. Before
-// there are studies, as the Studies button.
+// there are studies, as the Practice button.
 $('nav-review').addEventListener('click', () => {
-  if (!library) return $('nav-studies').click();
+  if (!library) return $('nav-practice').click();
   if (currentScreen === 'review') return;
   const last = review && chapterByKey(review.ch.key);
   if (last) return openReview(last, { at: pathTo(review.node).map(m => m.san), back: currentScreen });
@@ -2213,7 +2212,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- Spaced repetition ----------
-// What's practised: all the lines (or positions) of the chapters ticked on the Studies page, from
+// What's practised: all the lines (or positions) of the chapters ticked on the Practice page, from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of four parts, one per slider:
 //   frequency: 0.2 to 1, by the rated Lichess games reaching the position (a line's final position),
@@ -2470,8 +2469,11 @@ function showChooser() {
   setStatus('');
   $('practice-status').classList.add('hidden'); // setStatus shows it again when a line starts
   hideCommentPopup();
-  renderChooser();
+  $('practice-studies').classList.remove('hidden'); // the studies list in the board's place
+  document.querySelector('#practice-screen .board-col').classList.add('hidden');
   $('practice-chooser').classList.remove('hidden');
+  renderStudies(); // and the chooser
+  renderChooser();
 }
 
 // Playing the reversed sides, as chosen: { mainLinesOnly }, or null (always null for positions).
@@ -2484,7 +2486,7 @@ function practicable(kind, reversed = reversedSides()) {
   const chances = chancesOf(all, reversed);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
-  return { items, note: !all.length ? `No ${noun}s to practice: tick chapters on the Studies page.`
+  return { items, note: !all.length ? `No ${noun}s to practice: tick some chapters.`
     : !items.length ? `Every ${noun} is untried, and Untried is at 0%.` : '' };
 }
 
@@ -2607,6 +2609,8 @@ function startLine(line, singleAt = null) {
   };
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
+  $('practice-studies').classList.add('hidden'); // the board in the studies list's place
+  document.querySelector('#practice-screen .board-col').classList.remove('hidden');
   $('practice-line').classList.remove('hidden');
   $('next-btn').classList.add('hidden');
   for (const id of ['hint-btn', 'skip-btn', 'end-practice-btn']) $(id).classList.remove('hidden');
@@ -3086,7 +3090,7 @@ function showHoverBoard(el, m, orientation, thisTime = null) {
   hoverBoard.redrawAll();
 }
 
-// The rows shared by every hover board (the practice move list, the Studies page's move tree and the
+// The rows shared by every hover board (the practice move list, the Review page and the
 // Test probabilities table alike): the move, then its rank and share among all Lichess games and
 // among master games (each left out until downloaded), e.g. "#2 Lichess move (27%)", then "Position
 // reached 23k times": the Lichess games reaching the position after the move.
@@ -3791,21 +3795,17 @@ $('restore-file').addEventListener('change', async e => {
 // Practice: back to what's being practised, or the idle page saying where practice starts.
 $('nav-practice').addEventListener('click', () => {
   if (currentScreen === 'practice') return; // already on the practice page
-  if (!library) { $('nav-studies').click(); return; }
+  if (!library) { // before your studies are here: the Lichess page, or (fetching) the Practice page with its message
+    if (!token) return showLichess();
+    showScreen('practice');
+    return;
+  }
   if (practice) { // back to the line in progress (or its summary), exactly as it was
     showScreen('practice');
     board.redrawAll();
     return;
   }
   showChooser();
-});
-
-// Studies: the selection page (or the Lichess page before any studies are fetched).
-// A line in progress is kept; Practice returns to it.
-$('nav-studies').addEventListener('click', () => {
-  if (library) showStudies();
-  else if (token) { showScreen('studies'); $('studies').replaceChildren(); }
-  else showLichess();
 });
 
 $('nav-options').addEventListener('click', showOptions);
@@ -3836,7 +3836,7 @@ async function init() {
   if (loggedIn === false && library) return showLichess();
   // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
   if (library) { showChooser(); keepData(); syncStudies().then(startDownloads); } // the Practice page
-  else if (token) { showScreen('studies'); $('studies').replaceChildren(); fetchStudies(); }
+  else if (token) { showScreen('practice'); $('studies').replaceChildren(); fetchStudies(); } // the message shows in the studies list
   else { showLichess(); showSplash(true); } // not started yet: the welcome
 }
 
