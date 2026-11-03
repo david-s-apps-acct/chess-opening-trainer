@@ -3305,9 +3305,9 @@ async function downloadExplorerPositions(kind, run) {
   const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   if (!todo.length) return; // nothing missing: nothing to say
-  // The progress shows in the Lichess page's Move statistics card, under the tick boxes: "3 of 10
-  // positions (downloading…)" ("10 of 10 positions downloaded" when done), then "Masters statistics: 3
-  // of 10 positions (downloading…)"; the status line under each is only for problems.
+  // The progress shows in the Lichess page's Move statistics card, under the tick boxes: "Move
+  // statistics: 3 of 10 positions (downloading…)" ("… 10 of 10 positions downloaded" when done), then
+  // the same for Masters statistics; the status line under each is only for problems.
   status('');
   showProgress();
   let fetched = 0;
@@ -3355,15 +3355,16 @@ async function downloadExplorerPositions(kind, run) {
 }
 
 // The Lichess page's download progress, in the Move statistics card (shown once there are studies),
-// under the tick boxes: "3 of 10 positions (downloading…)" ("10 of 10 positions downloaded" when done),
-// then "Masters statistics: …"; and the status on the header's Lichess button.
+// under the tick boxes: "Move statistics: 3 of 10 positions (downloading…)" ("… 10 of 10 positions
+// downloaded" when done), then the same for Masters statistics; and the status on the header's Lichess
+// button.
 function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
-    const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info), label = kind === 'masters' ? `${explorer.Label}: ` : '';
-    if (!library) { el.textContent = `${label}no positions downloaded`; continue; }
+    const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
+    if (!library) { el.textContent = `${explorer.Label}: no positions downloaded`; continue; }
     const done = studied.filter(epd => moveStats[epd]?.[kind] && explorer.isCurrent(moveStats[epd][kind])).length;
-    el.textContent = `${label}${done} of ${plural(studied.length, 'position')}` + (done === studied.length && !label ? ' downloaded' : explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
+    el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')}` + (done === studied.length ? ' downloaded' : explorerDownloads[kind] ? ' (downloading…)' : '');
   }
   updateLichessStatus();
 }
