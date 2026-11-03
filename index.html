@@ -114,7 +114,7 @@
   .update-status:empty { display: none; }
   #token-error:empty, #getting-started-ready:empty, #backup-info:empty { display: none; }
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
-  #options-screen button.primary, #lichess-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options and Lichess page button the same width, wide enough for the longest */
+  #lichess-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Lichess page button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
   /* The Move statistics card: the padlock after the heading, then two columns of tick boxes (ratings, lowest
      first; time controls, fastest first) */
@@ -150,10 +150,9 @@
   .cards .card { max-width: 640px; }
   .cards p { margin: 4px 0; }
 
-  /* Options page: error penalties */
   .card h3 { font-size: 14px; margin: 16px 0 0; }
 
-  /* The Test probabilities table, shown by "Show lines" / "Show positions" on the Options page */
+  /* The Test probabilities table, shown by "Show lines" / "Show positions" (the Spaced repetition tile) */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   .report-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
   .report-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -169,6 +168,11 @@
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .studies-to-test h2 { margin: 0 0 10px; }
+  /* The Spaced repetition tile: a heading that opens and closes it */
+  .tile-toggle { display: flex; align-items: center; gap: 6px; width: 100%; padding: 0; background: none; box-shadow: none; font-size: 18px; font-weight: 600; color: var(--text-strong); text-align: left; }
+  .tile-toggle:hover:not(:disabled) { background: none; color: var(--text-strong); }
+  .tile-toggle .tile-arrow { color: var(--muted); font-size: 14px; }
+  .srs-tile .actions { margin-top: 10px; }
   .preset-row { display: flex; align-items: center; gap: 8px; }
   #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
   #sel-summary { margin-top: 8px; }
@@ -266,7 +270,23 @@
   /* Reviewing a study: tiles beside the board (the study with its chapters; the moves, the current one
      highlighted; its move statistics; your accuracy), and the review button on the
      Practice page. On a narrow screen the tiles go under the board. */
-  .review-tiles { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
+  /* Three columns where there's room (the study's chapters, the board, the tiles), with the page wider than
+     usual; two (the board; the tiles with the chapters under them); one on a phone. */
+  body[data-page=review] main { max-width: 1440px; }
+  .review-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; align-items: start; }
+  @media (min-width: 701px) {
+    .review-layout { grid-template-columns: auto minmax(260px, 1fr); grid-template-rows: auto 1fr; } /* the chapters straight under the tiles */
+    .review-layout > .board-col { grid-row: 1 / span 2; }
+  }
+  @media (min-width: 1200px) {
+    .review-layout { grid-template-columns: 220px auto minmax(260px, 1fr); }
+    .review-chapters-tile { grid-column: 1; grid-row: 1 / span 2; }
+    .review-layout > .board-col { grid-column: 2; }
+    .review-tiles { grid-column: 3; grid-row: 1 / span 2; }
+    .review-chapters-tile .review-chapters { max-height: 520px; } /* the board's height, more or less */
+  }
+  .review-tiles { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .review-layout .review-chapters-tile { min-width: 0; } /* within its column (not the tiles' usual 260 pixels): long names end in "…" */
   .review-tiles .panel { flex: none; min-width: 0; }
   .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   #review-study { flex: 1; min-width: 0; font-weight: 600; text-overflow: ellipsis; }
@@ -277,11 +297,13 @@
   .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
   .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
   .review-chapter .rate, .review-head .rate { min-width: 0; margin-left: auto; padding-left: 10px; } /* move accuracy, at the right */
-  .review-chapter.current .rate, .review-chapter.current .rate .needs-work { color: var(--accent-text); } /* readable on the blue */
+  /* As on Lichess: the numbers in blue; the chosen chapter in bold blue on a lighter background */
   .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
-  .review-chapter:hover { background: var(--surface-3); }
-  .review-chapter.current, .review-chapter.current:hover { background: var(--accent); color: var(--accent-text); }
+  .review-chapter:hover { background: var(--surface-2); }
+  .review-chapter-num { flex: none; color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .review-chapter.current, .review-chapter.current:hover { background: var(--surface-3); color: var(--accent); font-weight: 600; }
   .review-chapter.unavailable { color: var(--faint); cursor: default; background: none; }
+  .review-chapter.unavailable .review-chapter-num { color: var(--faint); }
   .review-chapter-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } /* a long name ends in "…" (the full name on hover) */
   .review-chapter .side-dot { flex: none; }
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
@@ -395,7 +417,6 @@
   <nav>
     <button id="nav-practice">Practice</button>
     <button id="nav-review">Review</button>
-    <button id="nav-options">Options</button>
     <button id="nav-lichess">Lichess</button>
     <button id="nav-help">Help</button>
   </nav>
@@ -562,23 +583,32 @@
           <div id="studies"></div>
         </div>
       </div>
+      <!-- Spaced repetition: collapsed; ▾ opens the sliders, Show lines, Show positions and Reset. Hidden during practice. -->
+      <div id="srs-tile" class="panel srs-tile hidden">
+        <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
+        <div id="srs-body" class="hidden">
+          <div id="weight-rows" class="weight-rows"></div>
+          <div class="actions">
+            <button id="show-lines-btn" class="small" title="The lines most likely to be tested next">Show lines</button>
+            <button id="show-positions-btn" class="small" title="The positions most likely to be tested next">Show positions</button>
+            <button id="weights-reset" class="small" title="All sliders to 50%">Reset</button>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   </section>
 
   <!-- Review: a study on a board (see Review page: reviewing a study) -->
   <section id="review-screen" class="hidden">
-    <div class="quiz">
+    <!-- The board; beside it the moves, the move's statistics and your accuracy; the study and its chapters
+         to the left of the board where there's room, else under your accuracy (see .review-layout) -->
+    <div class="review-layout">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
         <div id="review-comment" class="review-comment"></div>
       </div>
-      <!-- Tiles: the study and its chapters; the moves; the move's statistics; your accuracy -->
       <div class="review-tiles">
-        <div class="panel">
-          <div class="review-head"><select id="review-study" aria-label="Study"></select></div>
-          <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
-        </div>
         <div class="panel">
           <div id="review-position" class="muted"></div>
           <div id="review-tree" class="tree review-tree"></div>
@@ -591,6 +621,10 @@
         </div>
         <div id="review-lichess" class="panel review-stats"></div>
         <div id="review-yours" class="panel review-stats"></div>
+      </div>
+      <div class="panel review-chapters-tile">
+        <div class="review-head"><select id="review-study" aria-label="Study"></select></div>
+        <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
       </div>
     </div>
   </section>
@@ -609,7 +643,7 @@
     </div>
   </div>
 
-  <!-- Test probabilities: a table shown over the Options page -->
+  <!-- Test probabilities: a table shown over the Practice page -->
   <div id="probabilities" class="table-overlay hidden">
     <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="probabilities-title">
       <div class="overlay-head"><h2 id="probabilities-title">Test probabilities</h2><button id="probabilities-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
@@ -623,7 +657,7 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies to practice</a> · <a href="#help-options">Options</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies to practice</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
@@ -658,7 +692,7 @@
         <h2>Practice</h2>
         <ul>
           <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen preset (Studies to practice). <b>Main lines only</b> leaves out the opponent's side variations.</li>
-          <li>Spaced repetition chooses what comes next; the sliders on the Options page (<b>Spaced repetition focus</b>) change the balance, and <b>Show lines</b> there lists what's most likely to be tested next.</li>
+          <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next. Not used with Reverse sides.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
           <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
@@ -688,7 +722,7 @@
         </details>
         <details>
           <summary>Move accuracy</summary>
-          <p>Each try at one of your moves starts at 100%. Each error before the right move costs a penalty, every time you make it (set on the Options page; never below 0%):</p>
+          <p>Each try at one of your moves starts at 100%. Each error before the right move costs a penalty, every time you make it (never below 0%):</p>
           <table class="help-table">
             <tr><th>Error</th><th>Default</th></tr>
             <tr><td>Alternative move (unmarked)</td><td>−20%</td></tr>
@@ -711,7 +745,7 @@
           <summary>Spaced repetition</summary>
           <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
-            <li>The four sliders, on the Options page, set how much each counts (not with Reverse sides): <b>Frequency</b> (how often the position is reached on Lichess), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones) and <b>Untried</b>. 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
+            <li>The four sliders, in the Spaced repetition tile on the Practice page, set how much each counts (not with Reverse sides): <b>Frequency</b> (how often the position is reached on Lichess), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones) and <b>Untried</b>. 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
             <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely to be tested next, with their position reached, accuracy, when last tested and chance of coming up next.</li>
           </ul>
           <details>
@@ -764,15 +798,6 @@
         </details>
       </div>
 
-      <div class="card" id="help-options">
-        <h2>Options</h2>
-        <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
-        <ul>
-          <li><b>Spaced repetition focus</b>: the four sliders that decide what comes up next (see Practice, Spaced repetition), with <b>Show lines</b> and <b>Show positions</b> to see what's most likely, and <b>Reset</b>. Not used with Reverse sides.</li>
-          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy). Changes apply to your past tries straight away; <b>Reset</b> puts them back to their defaults.</li>
-        </ul>
-      </div>
-
       <div class="card" id="help-lichess">
         <h2>Lichess</h2>
         <ul>
@@ -805,27 +830,6 @@
     </div>
   </section>
 
-  <!-- Options: as few words as possible; each heading (and each penalty) explains itself on hover
-       (data-tip), with more on the Help page. -->
-  <section id="options-screen" class="hidden">
-    <div class="cards">
-      <div class="card">
-        <h2><span id="weights-heading" data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition focus</span></h2>
-        <div id="weight-rows" class="weight-rows"></div>
-        <div class="actions">
-          <button id="show-lines-btn" class="primary" title="The lines most likely to be tested next">Show lines</button>
-          <button id="show-positions-btn" class="primary" title="The positions most likely to be tested next">Show positions</button>
-          <button id="weights-reset" class="primary" title="All sliders to 50%">Reset</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2><span data-tip="Move accuracy lost for each error before the right move (never below 0%). Changes apply to past tries too.">Error penalties</span></h2>
-        <div id="penalty-rows" class="weight-rows"></div>
-        <div class="actions"><button id="penalties-reset" class="primary" title="Penalties back to 20%, 20%, 50% and 100%">Reset</button></div>
-      </div>
-    </div>
-  </section>
 </main>
 
 <script type="module">
@@ -964,12 +968,10 @@ let moveStats = {};
 const RATING_BANDS = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
 const SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
 
-// Settings (chosen on the Practice, Options and Lichess pages).
-// Error penalties are percentages of an attempt's move accuracy, in steps of 5. (They were points,
-// 0–10, called "penalties", until 2 November 2026; those are ignored, and the defaults used once.)
+// Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
+// November 2026; they're fixed now, see ERROR_PENALTIES, and a saved setting is ignored.)
 const DEFAULT_SETTINGS = {
   sounds: false,
-  errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 },
   games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
   // The Practice page: lines or positions; main lines only, for each; reverse sides (lines only: you
   // play the opponent's moves, not scored); and the four spaced-repetition sliders (0–100, shared; see
@@ -991,7 +993,6 @@ function checkedSettings(saved) {
   const isBetween = (lo, hi) => x => Number.isInteger(x) && x >= lo && x <= hi;
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
-    errorPenalties: valuesOf(d.errorPenalties, v.errorPenalties, x => isBetween(0, 100)(x) && x % 5 === 0),
     games: checkedGames(v.games),
     practice: {
       kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
@@ -1060,8 +1061,9 @@ function showScreen(name) {
   currentScreen = name;
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
+  document.body.dataset.page = name; // e.g. the Review page is wider
   // Each page, and its header button (always shown; the current page's is highlighted).
-  for (const s of ['practice', 'review', 'options', 'lichess', 'help']) {
+  for (const s of ['practice', 'review', 'lichess', 'help']) {
     $(s + '-screen').classList.toggle('hidden', s !== name);
     $('nav-' + s).classList.toggle('current', s === name);
     if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
@@ -1126,7 +1128,7 @@ function setToggle(id, on, title) {
 // zone: "on 10/26/26 at 12:01 PM".
 const onDateAtTime = ts => `on ${new Date(ts).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })} at ${new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
-// The Options page's sliders, 0%–100% in steps of 5, in a grid: for each row ({ key, name, definition }),
+// The Spaced repetition tile's sliders, 0%–100% in steps of 5, in a grid: for each row ({ key, name, definition }),
 // its name (with its definition on hover), the slider (id prefix-key) and its value. onChange(key, value)
 // when one is let go.
 function addSliders(grid, prefix, rows, onChange) {
@@ -1330,7 +1332,6 @@ async function syncStudies() {
 // After the studies or settings change under the page you're on: it's drawn again.
 function refreshPage() {
   if (currentScreen === 'lichess') renderLichessPage();
-  else if (currentScreen === 'options') renderOptions();
   else if (currentScreen === 'practice' && !practice) renderStudies(); // and the chooser
   else if (currentScreen === 'review') { // the same chapter and position in the new studies, if they're still there
     const ch = chapterByKey(review.ch.key);
@@ -1661,12 +1662,13 @@ function isMasterMove(epd, s) {
 }
 
 // Each attempt at one of your moves starts at 10 points (100%), and each thing tried before the
-// correct move costs its penalty (set on the Options page as a percentage; 10% = 1 point): an
+// correct move costs its penalty (a fixed percentage, ERROR_PENALTIES; 10% = 1 point): an
 // unmarked alternative from the study, or a masters move (once, even if it's both: the alternative's
 // penalty); an error (an alternative marked ?, ?? or ?!, or any other move); the hint and Show
 // correct move (each the hint's penalty). Never below 0. Repeats cost each time.
+const ERROR_PENALTIES = { alternative: 20, masters: 20, error: 50, hint: 100 }; // percentages (fixed)
 function pointsFor(tried, yourMove) {
-  const penalty = kind => settings.errorPenalties[kind] / 10; // a percentage, in points
+  const penalty = kind => ERROR_PENALTIES[kind] / 10; // a percentage, in points
   let points = 10;
   for (const step of tried) {
     if (step === 'hint' || step === 'show') { points -= penalty('hint'); continue; }
@@ -1745,6 +1747,7 @@ function lockStudiesToTest(locked) {
   if (locked) editing = null;
   hideNameForm();
   $('studies-to-test').classList.toggle('hidden', !library || locked); // once there are studies; not during practice
+  $('srs-tile').classList.toggle('hidden', !library || locked);
   if (library) $('practice-studies').classList.toggle('hidden', !editing);
 }
 
@@ -1758,6 +1761,7 @@ function scoreElement({ lines, tried, score }) {
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
   $('studies-to-test').classList.toggle('hidden', !library || !!practice); // once there are studies; not during practice
+  $('srs-tile').classList.toggle('hidden', !library || !!practice);
   if (!library) return; // the list keeps any message about fetching your studies
   $('practice-studies').classList.toggle('hidden', !editing);
   const container = $('studies');
@@ -2110,7 +2114,7 @@ function openReview(ch, { at = [] } = {}) {
     const p = parseChapter(c);
     return element('div', { class: 'review-chapter' + (c === ch ? ' current' : '') + (p.error ? ' unavailable' : ''), role: 'option', 'aria-selected': String(c === ch),
       'aria-disabled': p.error ? 'true' : null, title: p.error || null, onclick: p.error ? null : () => openReview(c) },
-      element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, `${k + 1}. ${c.name}`), p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }));
+      element('span', { class: 'review-chapter-num' }, `${k + 1}.`), element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, c.name), p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }));
   }));
   const list = $('review-chapters'), row = list.querySelector('.current');
   list.scrollTop = Math.max(0, Math.min(list.scrollTop, row.offsetTop - list.offsetTop), row.offsetTop - list.offsetTop + row.offsetHeight - list.clientHeight); // in view
@@ -2474,9 +2478,9 @@ function choosePromotion(color) {
 
 // ---------- Practice: choosing what to practise ----------
 // The Practice page when nothing is in progress: the Lines | Positions switch with its main-lines
-// checkbox (and, for lines, Reverse sides), and Start practice. (The "Spaced repetition focus" sliders,
-// with Show lines, Show positions and Reset, are on the Options page.) Everything here is kept in
-// settings.practice.
+// checkbox (and, for lines, Reverse sides), and Start practice; under it the Studies to practice and
+// Spaced repetition tiles (the sliders, with Show lines, Show positions and Reset). Everything here is
+// kept in settings.practice.
 //
 // Reverse sides (lines only, not scored): you play the opponent's moves from your studies and the app
 // plays yours. Any reply the study gives counts as correct and the line follows it; with main lines
@@ -2542,8 +2546,16 @@ function renderChooser() {
   $('chooser-note').textContent = note;
 }
 
-// The Options page's Spaced repetition focus card: the sliders' values.
+// The Practice page's Spaced repetition tile: the sliders' values. It starts closed each time the app opens,
+// stays as you leave it during the visit, and is hidden during practice (see lockStudiesToTest).
 const renderWeights = () => showSliders('weight', WEIGHTS, settings.practice.weights);
+function openSpacedRepetition(open) {
+  $('srs-body').classList.toggle('hidden', !open);
+  $('srs-toggle').setAttribute('aria-expanded', String(open));
+  $('srs-toggle').querySelector('.tile-arrow').textContent = open ? '▴' : '▾';
+  if (open) renderWeights();
+}
+$('srs-toggle').addEventListener('click', () => openSpacedRepetition($('srs-body').classList.contains('hidden')));
 
 // A change to the practice settings: saved, and the chooser and sliders shown again.
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); renderWeights(); };
@@ -2555,12 +2567,12 @@ $('weights-reset').addEventListener('click', () => changePractice(p => { p.weigh
 $('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items, reversedSides()));
 for (const kind of Object.keys(KINDS)) {
   $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
-  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // on the Options page
+  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // in the Spaced repetition tile
 }
 
 // "Show lines" / "Show positions": the Test probabilities table, the 25 most likely to come up next
 // with the current settings, the most likely first, and the rest together in a last row ("Other lines
-// to be tested (12)"), so the chances add up to 100%; over the Options page, closed with ×, Esc or a
+// to be tested (12)"), so the chances add up to 100%; over the Practice page, closed with ×, Esc or a
 // click outside it.
 // Each row: the study and chapter, the position's name (a line's final position), how often it's
 // reached, its accuracy, when it was last tested, and its chance of coming up next. Hovering shows
@@ -3475,37 +3487,6 @@ function rankAndShareText(stats, moveSan, who, none) {
   return r ? `#${r} ${who} move (${s})` : none;
 }
 
-// ---------- Options page ----------
-
-function showOptions() {
-  // A line in progress is kept; the Practice button returns to it.
-  showScreen('options');
-  renderOptions();
-}
-
-// The Error penalties card: a slider for each penalty, 0%–100% in steps of 5, like the Spaced
-// repetition focus sliders (each name explains itself on hover).
-const PENALTIES = [
-  { key: 'alternative', name: 'Alternative move', definition: 'An unmarked alternative in your study.' },
-  { key: 'masters', name: 'Masters move', definition: 'A top-3 master move, played 10% of the time or more, not in your study.' },
-  { key: 'error', name: 'Error', definition: 'Any other move, or an alternative marked ?, ?? or ?!.' },
-  { key: 'hint', name: 'Hint', definition: 'Hint, and Show correct move.' },
-];
-// A change to the scoring settings: saved, and past attempts scored again with them.
-const changeScoring = change => { change(); saveSettings(); rescoreHistory(); };
-addSliders($('penalty-rows'), 'pen', PENALTIES, (key, value) => changeScoring(() => { settings.errorPenalties = { ...settings.errorPenalties, [key]: value }; }));
-// Reset: the four penalties back to their defaults.
-$('penalties-reset').addEventListener('click', () => {
-  changeScoring(() => { settings.errorPenalties = { ...DEFAULT_SETTINGS.errorPenalties }; });
-  renderPenalties();
-});
-const renderPenalties = () => showSliders('pen', PENALTIES, settings.errorPenalties);
-
-function renderOptions() {
-  renderPenalties();
-  renderWeights();
-}
-
 // ---------- Lichess page ----------
 // Everything to do with Lichess, and backups, in one place:
 // - Status: your account and Lichess rating, when you connected (or "Not connected."), when your
@@ -3847,7 +3828,6 @@ $('nav-practice').addEventListener('click', () => {
   showChooser();
 });
 
-$('nav-options').addEventListener('click', showOptions);
 
 $('nav-lichess').addEventListener('click', showLichess); // a line in progress is kept
 

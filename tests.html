@@ -55,7 +55,7 @@ export const app = {
   startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
-  onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
+  onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
   restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, parseChapter, refreshPage,
   get token() { return token; },
@@ -160,11 +160,11 @@ function run(app) {
   app.setSettings({});
 
   // Settings
-  check('settings: defaults', app.checkedSettings({}), { sounds: false, errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 }, games: null,
+  check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
     practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
-  check('settings: invalid values fall back', [app.checkedSettings({ errorPenalties: { alternative: 110, masters: 7, hint: 40 } }).errorPenalties,
+  check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [{ alternative: 20, masters: 20, error: 50, hint: 40 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
+    [undefined, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
 
   // Masters moves: the top 3, played 10% of the time or more
   check('masters move: top 3, 10% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3']);
@@ -185,9 +185,6 @@ function run(app) {
   check('points: alternative', app.pointsFor(['Nc3', 'Nf3'], nf3), 8);
   check('points: marked alternative', app.pointsFor(['Bb5', 'Bc4'], bc4), 5);
   check('points: + and # ignored', app.pointsFor(['e4'], { ...e4, san: 'e4+' }), 10);
-  app.setSettings({ errorPenalties: { alternative: 0, masters: 15, error: 35, hint: 40 } });
-  check('points: custom penalties, in 5% steps', [app.pointsFor(['Nc3', 'Nf3'], nf3), app.pointsFor(['d4', 'e4'], e4), app.pointsFor(['g3', 'e4'], e4), app.pointsFor(['hint', 'e4'], e4)], [10, 8.5, 6.5, 6]);
-  app.setSettings({});
   check('error kinds', [app.errorKind(nf3, 'Nc3'), app.errorKind(bc4, 'Bb5'), app.errorKind(e4, 'd4'), app.errorKind(e4, 'g3')], ['alternative', 'marked', 'masters', 'wrong']);
 
   // Scores: weighted average, newest counts most
@@ -372,11 +369,8 @@ async function runLichessPage(app) {
   window.confirm = before.confirm;
   app.setHistory(before.history); app.setSelection(before.selection); app.setPresets(before.presets); app.setSettings({});
 
-  // Options: Reset puts the penalties back to their defaults.
-  app.setSettings({ errorPenalties: { error: 85 } });
-  $('penalties-reset').click();
-  check('options: Reset, the penalties', [app.settings.errorPenalties, $('pen-error-value').textContent], [{ alternative: 20, masters: 20, error: 50, hint: 100 }, '50%']);
-  app.setSettings({});
+  // No Options page (its last card, Spaced repetition, is on the Practice page).
+  check('no Options page or button', [!!$('options-screen'), !!$('nav-options')], [false, false]);
 
   // A download skips positions whose statistics arrive meanwhile (e.g. from a restored backup).
   app.setMoveStats({});
@@ -455,7 +449,8 @@ async function runLichessPage(app) {
   $('nav-review').click(); // the first selected chapter, on the Review page
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
-  const chapterShown = () => $('review-chapters').querySelector('.current')?.firstChild.textContent; // the name, without the accuracy
+  const rowText = row => [...row.querySelectorAll('.review-chapter-num, .review-chapter-name')].map(e => e.textContent).join(' ');
+  const chapterShown = () => { const row = $('review-chapters').querySelector('.current'); return row && rowText(row); };
   check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-review').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
     [true, true, '1. Italian', 'Starting position', null]);
   key('ArrowRight'); key('ArrowRight');
@@ -478,7 +473,7 @@ async function runLichessPage(app) {
   const yoursAtE5 = $('review-yours').childElementCount;
   key('ArrowLeft');
   check('review: Your accuracy for your moves only (e5 isn\'t a line\'s end), in its own tile; the comment under the board', [yoursAtE4, yoursAtE5, $('review-comment').textContent], ['Your accuracy', 0, 'Best by test.']);
-  check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.firstChild.textContent), ['1. Italian', '2. Sicilian']);
+  check('review: the chapters, numbered', [...$('review-chapters').children].map(rowText), ['1. Italian', '2. Sicilian']);
   $('review-chapters').children[1].click();
   const atStart = current();
   key('ArrowRight');
@@ -520,7 +515,7 @@ async function runLichessPage(app) {
   check('practice → review: practice ended, the study at the position, Review highlighted', [app.practice, !$('review-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-review').classList.contains('current')],
     [null, true, '2. Sicilian', 'e4', true]);
   // The header's Review button: back where you left it.
-  $('nav-options').click();
+  $('nav-lichess').click();
   $('nav-review').click();
   check('Review button: the chapter and position last looked at', [!$('review-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
@@ -756,8 +751,8 @@ function runPositions(app) {
     [false, 'Test probabilities', 'Positions · Frequency 50% · Accuracy 50% · Last played 50% · Untried 50%']);
   $('probabilities-close').click();
   check('test probabilities: × closes it', $('probabilities').classList.contains('hidden'), true);
-  // The sliders, on the Options page.
-  check('options: the sliders are on the Options page', $('weight-rows').closest('section').id, 'options-screen');
+  // The sliders, in the Spaced repetition tile on the Practice page (closed until ▾).
+  check('spaced repetition: a tile on the Practice page', [$('weight-rows').closest('section').id, !!$('weight-rows').closest('#srs-tile')], ['practice-screen', true]);
   $('weight-accuracy').value = '80';
   $('weight-accuracy').dispatchEvent(new Event('change'));
   check('options: a slider changes its setting', [app.settings.practice.weights.accuracy, $('weight-accuracy-value').textContent], [80, '80%']);
