@@ -89,10 +89,10 @@ The user chooses the practice set at any of these levels:
 
 The last selection is remembered between visits (stored in the browser, like the token) and restored when the app opens.
 
-### Reviewing a study on a board (to do)
+### Reviewing a study on a board
 
-- **To do (the user's decision, 3 November 2026; not built yet):** from the Studies page, a study can be opened and moved through on a board, with arrows for the move options, the comments and so on, to review it before (or instead of) practicing. An advantage over reviewing it on Lichess (the user's point): it works offline, where Lichess needs a connection. On **its own page** (the user's choice), showing **a study at a chapter** (the user's choice: a study's chapters are usually one repertoire, so moving between them without going back helps).
-- *Claude's details, for the user to accept or reject:*
+- **Built 3 November 2026 (the user's decision):** from the Studies page, a study can be opened and moved through on a board, with arrows for the move options, the comments and so on, to review it before (or instead of) practicing. An advantage over reviewing it on Lichess (the user's point): it works offline, where Lichess needs a connection. On **its own page** (the user's choice), showing **a study at a chapter** (the user's choice: a study's chapters are usually one repertoire, so moving between them without going back helps).
+- *Claude's details, accepted by the user:*
   - **Buttons on both rows** of the Studies page: a chapter's row opens its study at that chapter; a study's row opens it at its first chapter.
   - **The page:** the board on the left; on the right a drop-down of the study's chapters (the current one shown, with the side you play beside each name; chapters that can't be shown, such as empty ones or a variant, greyed out), the chapter's move tree as on the Studies page with the current move highlighted, and the current move's comment and glyphs under it. A ✕ (or "Back to Studies") returns to the Studies page as it was left.
   - **Arrows for the choices** in the position shown, in the hover boards' colours: green for the study's main move, blue for its alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??.
@@ -100,6 +100,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Under the board:** the position's name, "Position reached 23k times", the Lichess and masters ranks of the moves, and for your moves, your move accuracy and when last tested. It works offline, like the rest of the app.
   - Most of it reuses what exists (each chapter's parsed move tree, the board, the tree drawing, the comment pop-ups and the arrow colours).
   - A possible later step: "Practice this line" from the position shown.
+  - *As built (Claude's details):* the button is a small board icon after the name ("Review on a board"); the position's name sits under the chapter drop-down, beside the tree, and under the board are the hover board's lines for the move just played (its Lichess and masters ranks, "Position reached …", and for your moves your move accuracy, when last tested and errors); the comment and glyphs are under the tree (at the start, the chapter's introduction); only the study's moves can be played on the board; a move inside a variation opens its variations in the tree; the header's Studies button stays highlighted. Code: the Studies page: reviewing a study section (`openReview`, `showReviewNode`, `reviewArrows`); `renderChapterTree` takes options so the same tree serves both pages.
 
 ### The Lichess page (2 November 2026)
 

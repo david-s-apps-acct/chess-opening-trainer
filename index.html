@@ -263,7 +263,16 @@
   .note-move { font-weight: 600; }
   #practice-title .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
-  #board { width: 100%; height: 100%; }
+  #board, #review-board { width: 100%; height: 100%; }
+  /* Reviewing a study: the chapter drop-down, the tree beside the board (the current move highlighted),
+     the facts under the board, and the review buttons on the Studies page. */
+  #review-chapter { width: 100%; margin: 8px 0 4px; flex: none; }
+  .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
+  .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
+  .review-facts { margin-top: 8px; font-size: 13px; }
+  .review-facts div + div { margin-top: 2px; }
+  #review-notes:empty { display: none; }
+  .row .review-btn { margin-left: 4px; vertical-align: -2px; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
   .moves .mv { padding: 3px 10px; cursor: pointer; color: var(--text); }
@@ -529,6 +538,29 @@
     </div>
   </section>
 
+  <!-- Review: a study on a board, opened from the Studies page (see Studies page: reviewing a study) -->
+  <section id="review-screen" class="hidden">
+    <div class="quiz">
+      <div class="board-col">
+        <div class="board-wrap"><div id="review-board"></div></div>
+        <div id="review-facts" class="review-facts"></div>
+      </div>
+      <div class="panel">
+        <div class="overlay-head"><h2 id="review-study"></h2><button id="review-close" class="icon-btn overlay-close" aria-label="Back to Studies" title="Back to Studies (Esc)">×</button></div>
+        <select id="review-chapter" aria-label="Chapter"></select>
+        <div id="review-position" class="muted"></div>
+        <div id="review-tree" class="tree review-tree"></div>
+        <div class="move-nav">
+          <button id="review-first" title="Start (Home)" aria-label="Start">⏮</button>
+          <button id="review-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
+          <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
+          <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
+        </div>
+        <div id="review-notes" class="status"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- The welcome, over the Lichess page, until a new user has started -->
   <div id="welcome-splash" class="table-overlay hidden">
     <div class="card welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcome-splash-title">
@@ -679,6 +711,7 @@
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
+          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the board: the position's name, how often it's reached, the move's Lichess and masters ranks, and your move accuracy. Choose another chapter from the drop-down; × or Esc goes back.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -1001,11 +1034,13 @@ function showScreen(name) {
   currentScreen = name;
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
-  // Each page, and its header button (always shown; the current page's is highlighted).
+  // Each page, and its header button (always shown; the current page's is highlighted; reviewing a
+  // study belongs to Studies).
+  const navName = name === 'review' ? 'studies' : name;
+  for (const s of ['practice', 'studies', 'options', 'lichess', 'help', 'review']) $(s + '-screen').classList.toggle('hidden', s !== name);
   for (const s of ['practice', 'studies', 'options', 'lichess', 'help']) {
-    $(s + '-screen').classList.toggle('hidden', s !== name);
-    $('nav-' + s).classList.toggle('current', s === name);
-    if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
+    $('nav-' + s).classList.toggle('current', s === navName);
+    if (s === navName) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
   }
   updateLichessStatus();
 }
@@ -1733,6 +1768,7 @@ function studyRow(study, isHidden) {
       onchange: e => setTicked(keys, e.target.checked),
     }),
     element('span', { class: 'name' }, opener(study.name, toggleStudy),
+      reviewButton(study.chapters.find(ch => !parseChapter(ch).error)),
       showHiddenStudies ? hideStudyButton(study, isHidden) : null,
       element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))),
     scoreElement(averageScore(study.chapters)));
@@ -1764,6 +1800,7 @@ function chapterRow(ch, studyHidden) {
     // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
+      parsed.error ? null : reviewButton(ch),
       lines.length ? chapterCounts(lines.length, branches.length ? toggleVariations : null, allOpen) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
     scoreElement(averageScore([ch])));
@@ -1782,8 +1819,9 @@ function openingName(parsed) {
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
 // Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
 // are italics; moves with a move-quality glyph take its color; each practiced line's last move is
-// underlined. Every move has the small hover board.
-function renderChapterTree(ch) {
+// underlined. Every move has the small hover board; or, when reviewing a study (pick), clicking a move
+// shows it (current, highlighted). Branches open and close in openSet, and the tree is drawn again by redraw.
+function renderChapterTree(ch, { openSet = openBranches, redraw = renderStudies, pick = null, current = null } = {}) {
   const parsed = parseChapter(ch);
   const box = element('div', { class: 'tree' });
   // One move: its number (when needed), SAN, glyphs, bubble. Returns the elements and the moves
@@ -1794,8 +1832,8 @@ function renderChapterTree(ch) {
     // The last move of a line you practice is underlined.
     const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
     const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
-    const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + lineEnd, tabindex: '0' }, withFigurines(node.san));
-    addHoverBoard(el, node, parsed.yourColor);
+    const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + lineEnd + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
+    if (pick) el.addEventListener('click', () => pick(node)); else addHoverBoard(el, node, parsed.yourColor);
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       highlight ? element('span', { class: 'needs-work' }, el, glyphMarks(node)) : [el, glyphMarks(node)],
@@ -1814,10 +1852,10 @@ function renderChapterTree(ch) {
       showNo = false;
       if (alts.length) {
         const key = node.key; // the branch point (in a variation, a stand-in starts the walk: never a branch)
-        const open = openBranches.has(key);
+        const open = openSet.has(key);
         flow.append(element('button', { class: 'tree-toggle', 'aria-expanded': String(open),
           title: open ? 'Hide variations' : `Show ${plural(alts.length, 'variation')}`,
-          onclick: () => { open ? openBranches.delete(key) : openBranches.add(key); renderStudies(); } }, open ? '−' : '+'), ' ');
+          onclick: () => { open ? openSet.delete(key) : openSet.add(key); redraw(); } }, open ? '−' : '+'), ' ');
         if (open) {
           const vars = element('div', { class: 'tree-vars' });
           container.append(vars);
@@ -2020,6 +2058,131 @@ $('preset-name-form').addEventListener('submit', e => {
   savePresets();
   showPresetEdit(false);
   renderPresets();
+});
+
+// ---------- Studies page: reviewing a study ----------
+// A study opened on a board, on its own page, at one of its chapters, to look through before (or
+// instead of) practicing; it works offline. The board shows the position, with arrows for the study's
+// moves there (see reviewArrows); beside it, the chapter drop-down, the chapter's move tree (the
+// current move highlighted; click a move to go to it), and the move's comment and glyphs; under the
+// board, the position's name and, as on the hover boards, the move's ranks among Lichess and master
+// games, how often the position is reached, and for your moves, your move accuracy. ← → Home End step
+// through it; playing one of the study's moves on the board follows it; × or Esc goes back to the
+// Studies page as it was.
+let reviewBoard = null;
+let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the Studies page's) }
+
+// The small board icon on a study's or chapter's row (for a study, its first chapter that can be shown).
+function reviewButton(ch) {
+  if (!ch) return null;
+  const btn = element('button', { class: 'icon-btn review-btn', title: 'Review on a board', 'aria-label': 'Review on a board', onclick: e => { e.stopPropagation(); openReview(ch); } });
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 3h6v6H3zM9 9h6v6H9zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" fill="currentColor"/></svg>';
+  return btn;
+}
+
+function openReview(ch) {
+  const parsed = parseChapter(ch);
+  if (parsed.error) return;
+  review = { ch, parsed, node: parsed.root, openSet: new Set(), scrollY: review?.scrollY ?? window.scrollY };
+  showScreen('review');
+  if (!reviewBoard) {
+    reviewBoard = Chessground($('review-board'), {
+      coordinates: true, animation: { enabled: true, duration: 150 }, highlight: { lastMove: true, check: true },
+      premovable: { enabled: false }, drawable: { enabled: false, visible: true, brushes: ERROR_ARROWS },
+      movable: { free: false, showDests: true, events: { after: onReviewMove } },
+    });
+    window.addEventListener('resize', () => reviewBoard.redrawAll());
+  }
+  const study = studyOfChapter(ch);
+  $('review-study').textContent = study.name;
+  $('review-chapter').replaceChildren(...study.chapters.map(c => {
+    const p = parseChapter(c);
+    return element('option', { value: c.key, disabled: !!p.error }, c.name + (p.error ? ` (${p.error})` : ` · ${p.yourColor === 'white' ? 'White' : 'Black'}`));
+  }));
+  $('review-chapter').value = ch.key;
+  reviewBoard.set({ orientation: parsed.yourColor });
+  showReviewNode(parsed.root);
+  reviewBoard.redrawAll();
+}
+
+$('review-chapter').addEventListener('change', e => openReview(chapterByKey(e.target.value)));
+
+function closeReview() {
+  const y = review?.scrollY ?? 0;
+  review = null;
+  showStudies(); // open and closed studies as they were
+  window.scrollTo(0, y);
+}
+$('review-close').addEventListener('click', closeReview);
+
+// The moves from the root to a node, in order.
+const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
+
+// The study's moves in a position, as arrows in the hover boards' colours: at your turn green for the
+// main move and blue for the alternatives, at the opponent's white; amber for a move marked ?, ?? or ?!.
+function reviewArrows(node, yourColor) {
+  const yourTurn = node.position.turn === yourColor;
+  return node.children.map(c => {
+    const [orig, dest] = arrowSquares(node.position, parseUci(c.uci));
+    return { orig, dest, brush: isMistake(c) ? 'yellow' : !yourTurn ? 'white' : c.variationIndex === 0 ? 'green' : 'blue' };
+  });
+}
+
+function showReviewNode(node) {
+  review.node = node;
+  const { parsed } = review, moves = pathTo(node);
+  // A move inside a variation opens the variations it's in, so it shows in the tree.
+  for (const m of moves) if (m.variationIndex > 0) review.openSet.add(m.parent.key);
+  const dests = new Map();
+  for (const [from, tos] of compat.chessgroundDests(node.position)) {
+    const ok = tos.filter(to => node.children.some(c => { const a = parseUci(c.uci), b = variant.normalizeMove(node.position, parseUci(from + to)); return a.from === b.from && a.to === b.to; }));
+    if (ok.length) dests.set(from, ok);
+  }
+  reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
+  reviewBoard.setAutoShapes(reviewArrows(node, parsed.yourColor));
+  $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
+  renderReviewTree();
+  // The move's comment and glyphs (at the start, the chapter's introduction).
+  const notes = node.uci ? node.notes : parsed.intro.length ? { text: parsed.intro, nags: [] } : null;
+  $('review-notes').replaceChildren(...!notes ? [] : [
+    node.uci ? element('div', {}, element('span', { class: 'note-move' }, moveLabel(node)), ' ', notes.nags.map(n => [glyphSpan(n), element('span', { class: 'muted' }, ' ' + GLYPHS[n][1] + ' ')])) : null,
+    ...notes.text.map(t => element('div', { class: 'hint-note' }, t)),
+  ].filter(Boolean));
+  // Under the board: as on the hover boards (your move, or the opponent's).
+  const facts = !node.uci ? [positionCountText(lichessGamesAt(node.epd)) && element('div', { class: 'muted' }, positionCountText(lichessGamesAt(node.epd)))]
+    : (node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null) : opponentMoveBoard(node)).rows;
+  $('review-facts').replaceChildren(...facts.filter(Boolean));
+  $('review-first').disabled = $('review-prev').disabled = !node.uci;
+  $('review-next').disabled = $('review-last').disabled = !node.children.length;
+}
+
+function renderReviewTree() {
+  const box = renderChapterTree(review.ch, { openSet: review.openSet, redraw: renderReviewTree, pick: showReviewNode, current: review.node });
+  $('review-tree').replaceChildren(...box.childNodes);
+  $('review-tree').querySelector('.current')?.scrollIntoView({ block: 'nearest' });
+}
+
+// One of the study's moves played on the board: on along it.
+function onReviewMove(orig, dest) {
+  const node = review?.node;
+  if (!node) return;
+  const played = variant.normalizeMove(node.position, parseUci(orig + dest));
+  showReviewNode(node.children.find(c => { const m = parseUci(c.uci); return m.from === played.from && m.to === played.to; }) || node);
+}
+
+// Stepping through: back, on along the main move, the start, the end of the main line from here.
+const reviewStep = {
+  first: () => review.parsed.root,
+  prev: () => review.node.parent || review.node,
+  next: () => review.node.children[0] || review.node,
+  last: () => { let n = review.node; while (n.children.length) n = n.children[0]; return n; },
+};
+for (const k of Object.keys(reviewStep)) $(`review-${k}`).addEventListener('click', () => review && showReviewNode(reviewStep[k]()));
+document.addEventListener('keydown', e => {
+  if (currentScreen !== 'review' || !review || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  const step = { ArrowLeft: 'prev', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key];
+  if (step) { e.preventDefault(); showReviewNode(reviewStep[step]()); }
+  else if (e.key === 'Escape') closeReview();
 });
 
 // ---------- Spaced repetition ----------

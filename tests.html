@@ -57,7 +57,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
-  restoreQuestion, chooseDefaultGames, ratingText,
+  restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, parseChapter,
   get token() { return token; },
   loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
@@ -437,6 +437,30 @@ async function runLichessPage(app) {
   window.fetch = isolated;
   app.setToken(null);
   app.setSettings({});
+
+  // Reviewing a study: on its own page at its first chapter; → plays the main move, ← goes back; the
+  // drop-down changes chapter; Esc goes back to the Studies page.
+  app.setLibrary(structuredClone(LIBRARY));
+  $('nav-studies').click();
+  document.querySelector('#studies .study-row .review-btn').click();
+  const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
+  const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
+  check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-studies').classList.contains('current'), $('review-chapter').value, $('review-position').textContent, current()],
+    [true, true, 'AAAAAAAA/BBBBBBBB', 'Starting position', null]);
+  key('ArrowRight'); key('ArrowRight');
+  const afterTwo = current();
+  key('ArrowLeft');
+  check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
+  $('review-chapter').value = 'AAAAAAAA/CCCCCCCC';
+  $('review-chapter').dispatchEvent(new Event('change'));
+  check('review: another chapter from the drop-down, from its start', [$('review-chapter').value, current()], ['AAAAAAAA/CCCCCCCC', null]);
+  // The arrows: your main move green, your alternatives blue, the opponent's replies white, marked moves amber.
+  const italianRoot = app.parseChapter(app.chapterByKey('AAAAAAAA/BBBBBBBB')).root;
+  const arrowsAt = sans => { let n = italianRoot; for (const x of sans) n = n.children.find(c => c.san === x); return app.reviewArrows(n, 'white').map(a => `${a.orig}${a.dest} ${a.brush}`); };
+  check('review: arrows for the study\'s moves', [arrowsAt([]), arrowsAt(['e4']), arrowsAt(['e4', 'e5']), arrowsAt(['e4', 'e5', 'Nf3', 'Nc6'])],
+    [['e2e4 green'], ['e7e5 white'], ['g1f3 green', 'b1c3 blue'], ['f1c4 green', 'f1b5 yellow']]);
+  key('Escape');
+  check('review: Esc goes back to the Studies page', !$('studies-screen').classList.contains('hidden'), true);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
