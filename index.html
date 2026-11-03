@@ -198,13 +198,12 @@
   .toggle { border: none; background: none; padding: 0 4px; width: 24px; color: var(--muted); }
   .toggle:hover:not(:disabled) { background: none; color: var(--text); }
   .chapters { background: #2a2825; }
-  .chapter-row { padding-left: 12px; border-top: 1px solid var(--border); font-size: 14px; } /* two ▸ (moves, all variations) under the study's ▸ and checkbox, so the checkbox is one tab in */
-  .tree { background: #242220; border-top: 1px solid var(--border); padding: 6px 12px 8px 108px; font-size: 14px; } /* one more tab in */
+  .chapter-row { padding-left: 12px; border-top: 1px solid var(--border); font-size: 14px; } /* under the study's ▸, so the checkbox is a little in */
+  .tree { background: #242220; font-size: 14px; } /* a chapter's move tree, on the Review page */
   .tree-line { line-height: 1.9; }
   .tree-vars { margin: 0 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--border); }
   .tree-toggle { padding: 0 5px; font-size: 12px; line-height: 1.3; margin-left: 2px; box-shadow: none; }
   .untested-move { font-style: italic; }
-  @media (max-width: 640px) { .tree { padding-left: 44px; } }
   .side { font-size: 12px; color: var(--muted); white-space: nowrap; } /* e.g. "variant not supported" */
   .side-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--muted); margin-left: 6px; vertical-align: 0; }
   .side-dot.white { background: #fff; }
@@ -283,7 +282,6 @@
   .review-info:empty { display: none; }
   .review-info div + div { margin-top: 3px; }
   .review-info .review-stats { margin-top: 10px; font-size: 13px; }
-  .row .review-btn { margin-left: 4px; vertical-align: -2px; }
   #practice-title .review-btn { margin-left: 6px; vertical-align: -1px; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
@@ -725,9 +723,9 @@
         <h2>Studies</h2>
         <ul>
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
-          <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
+          <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name to look through it on the Review page. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). On the Practice page, the same icon after the study's name ends practice and opens the line's study at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -1001,9 +999,6 @@ const saveSettings = () => store.set('settings', settings);
 
 // The Studies page's open/closed state (not remembered).
 const openStudies = new Set();       // studies whose chapters are listed
-const openChapters = new Set();      // chapters whose move tree is shown
-const openBranches = new Set();      // tree branch points whose variations are open ("chapter key|moves before")
-const allVariationsOpen = new Set(); // chapters with all their variations shown (by clicking "3 lines")
 let showHiddenStudies = false;       // the top eye: hidden studies are listed (in grey)
 
 // ---------- Page helpers ----------
@@ -1729,14 +1724,6 @@ function scoreElement({ lines, tried, score }) {
     'Average move accuracy over the last 10 tries');
 }
 
-// "· 5 lines" after a chapter's name.
-// Clicking the number of lines (when the chapter has variations) shows or hides all of them.
-function chapterCounts(nLines, toggleVariations, variationsOpen) {
-  const lines = toggleVariations ? opener(plural(nLines, 'line'), toggleVariations) : plural(nLines, 'line');
-  if (toggleVariations) lines.title = variationsOpen ? 'Hide all variations' : 'Show all variations';
-  return element('span', { class: 'muted' }, ' · ', lines);
-}
-
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
   const container = $('studies');
@@ -1750,8 +1737,7 @@ function renderStudies() {
     if (isHidden && !showHiddenStudies) continue;
     const studyEl = element('div', { class: 'study' + (isHidden ? ' hidden-study' : '') }, studyRow(study, isHidden));
     if (openStudies.has(study.id)) {
-      studyEl.append(element('div', { class: 'chapters' }, study.chapters.map(ch =>
-        [chapterRow(ch, isHidden), openChapters.has(ch.key) && chapterLines(ch).length ? renderChapterTree(ch) : null])));
+      studyEl.append(element('div', { class: 'chapters' }, study.chapters.map(ch => chapterRow(ch, isHidden))));
     }
     container.append(studyEl);
   }
@@ -1765,8 +1751,8 @@ function renderStudies() {
 const triangle = (open, [showTitle, hideTitle], onClick) =>
   element('button', { class: 'toggle', title: open ? hideTitle : showTitle, 'aria-expanded': String(open), onclick: onClick }, open ? '▾' : '▸');
 
-// A study's or chapter's name: clicking it (or Enter / Space on it) does the same as its first
-// triangle: a study shows or hides its chapters, a chapter its moves. Its checkbox ticks it.
+// A study's or chapter's name: clicking it (or Enter / Space on it) shows or hides a study's chapters
+// (as its triangle does), or opens a chapter on the Review page. Its checkbox ticks it.
 function opener(name, onOpen) {
   return element('span', { class: 'opener', role: 'button', tabindex: '0', onclick: onOpen,
     onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } }, name);
@@ -1788,40 +1774,25 @@ function studyRow(study, isHidden) {
       onchange: e => setTicked(keys, e.target.checked),
     }),
     element('span', { class: 'name' }, opener(study.name, toggleStudy),
-      reviewButton(study.chapters.find(ch => !parseChapter(ch).error)),
       showHiddenStudies ? hideStudyButton(study, isHidden) : null,
       element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))),
     scoreElement(averageScore(study.chapters)));
 }
 
-// A chapter's row: a triangle (its moves as a tree), its checkbox, its name (the opening on hover),
-// the side you play, its counts (the number of lines shows or hides all its variations) and score.
+// A chapter's row: its checkbox, its name (the opening on hover; clicking it opens the chapter on the
+// Review page), the side you play, "· 5 lines" and its score.
 function chapterRow(ch, studyHidden) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
   const lines = chapterLines(ch);
-  const movesOpen = openChapters.has(ch.key) && lines.length > 0;
-  const branches = lines.length ? branchKeys(ch) : [];
-  const allOpen = allVariationsOpen.has(ch.key);
-  const toggleMoves = () => { movesOpen ? openChapters.delete(ch.key) : openChapters.add(ch.key); renderStudies(); };
-  const toggleVariations = () => {
-    for (const k of branches) allOpen ? openBranches.delete(k) : openBranches.add(k);
-    if (allOpen) allVariationsOpen.delete(ch.key);
-    else { allVariationsOpen.add(ch.key); openChapters.add(ch.key); } // showing the variations shows the moves too
-    renderStudies();
-  };
   return element('div', { class: 'row chapter-row' },
     element('span', { class: 'toggle-space' }), // indented under its study
-    lines.length
-      ? triangle(movesOpen, ['Show moves', 'Hide moves'], toggleMoves)
-      : element('span', { class: 'toggle-space' }),
     element('input', { type: 'checkbox', id, checked: selection.has(ch.key), disabled: studyHidden,
       onchange: e => setTicked([ch.key], e.target.checked) }),
     // The side you play: a small white or black circle right after the chapter name.
-    element('span', { class: 'name' }, quickTip(lines.length ? opener(ch.name, toggleMoves) : element('span', {}, ch.name), openingName(parsed), 700),
+    element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch)), openingName(parsed), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
-      parsed.error ? null : reviewButton(ch),
-      lines.length ? chapterCounts(lines.length, branches.length ? toggleVariations : null, allOpen) : null),
+      lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null,
     scoreElement(averageScore([ch])));
 }
@@ -1839,9 +1810,9 @@ function openingName(parsed) {
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
 // Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
 // are italics; moves with a move-quality glyph take its color; each practiced line's last move is
-// underlined. Every move has the small hover board; or, when reviewing a study (pick), clicking a move
-// shows it (current, highlighted). Branches open and close in openSet, and the tree is drawn again by redraw.
-function renderChapterTree(ch, { openSet = openBranches, redraw = renderStudies, pick = null, current = null } = {}) {
+// underlined. On the Review page, clicking a move shows it (pick; current, highlighted). Branches open
+// and close in openSet, and the tree is drawn again by redraw.
+function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
   const parsed = parseChapter(ch);
   const box = element('div', { class: 'tree' });
   // One move: its number (when needed), SAN, glyphs, bubble. Returns the elements and the moves
@@ -1853,7 +1824,7 @@ function renderChapterTree(ch, { openSet = openBranches, redraw = renderStudies,
     const lineEnd = !node.children.length && !node.untested ? ' line-end' : '';
     const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
     const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + lineEnd + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
-    if (pick) el.addEventListener('click', () => pick(node)); else addHoverBoard(el, node, parsed.yourColor);
+    if (pick) el.addEventListener('click', () => pick(node));
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       highlight ? element('span', { class: 'needs-work' }, el, glyphMarks(node)) : [el, glyphMarks(node)],
@@ -1891,13 +1862,6 @@ function renderChapterTree(ch, { openSet = openBranches, redraw = renderStudies,
   };
   if (!parsed.error) walk(parsed.root, [], box);
   return box;
-}
-
-// The keys of every branch point in a chapter's tree (every position with several moves), as used
-// for openBranches: "chapter key|moves before the branch".
-function branchKeys(ch) {
-  const root = parseChapter(ch).root;
-  return root ? [root, ...allMoveNodes(ch)].filter(n => n.children.length > 1).map(n => n.key) : [];
 }
 
 // The eye icon (the top eye, and each study's): a line through it when its button is "off".
@@ -2094,9 +2058,9 @@ $('preset-name-form').addEventListener('submit', e => {
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the Studies page's) }
 
-// The small board icon on a study's or chapter's row (for a study, its first chapter that can be shown).
-// (On the Practice page, the same icon ends practice and reviews the line's study: see reviewFromPractice.)
-function reviewButton(ch, title = 'Review on a board', open = () => openReview(ch)) {
+// The small board icon after the study's name on the Practice page: it ends practice and opens the line's
+// study on the Review page (see reviewFromPractice).
+function reviewButton(ch, title, open) {
   if (!ch) return null;
   const btn = element('button', { class: 'icon-btn review-btn', title, 'aria-label': title, onclick: e => { e.stopPropagation(); open(); } });
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 3h6v6H3zM9 9h6v6H9zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" fill="currentColor"/></svg>';
