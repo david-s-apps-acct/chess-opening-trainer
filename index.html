@@ -133,8 +133,6 @@
   .cards p { margin: 4px 0; }
 
   /* Options page: error penalties */
-  .penalties { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; margin-top: 4px; font-size: 14px; }
-  .penalties select { flex: none; width: auto; padding: 3px 6px; }
   .card h3 { font-size: 14px; margin: 16px 0 0; }
 
   /* The Test probabilities table, shown by "Show lines" / "Show positions" on the Options page */
@@ -550,7 +548,7 @@
             <li><b>Line accuracy</b>: the average move accuracy of your moves in a completed line.</li>
             <li><b>Error</b>: any move you play that isn't your study's move, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Masters move</b>: one of the top 5 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more. "Top 5" can be changed on the Options page.</li>
+            <li><b>Masters move</b>: one of the top 3 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, e.g. "Position reached 23k times".</li>
           </ul>
         </details>
@@ -682,7 +680,7 @@
         <p>Hover over a heading or a penalty on the Options page to see what it's for.</p>
         <ul>
           <li><b>Spaced repetition focus</b>: the four sliders that decide what comes up next (see Practice, Spaced repetition), with <b>Show lines</b> and <b>Show positions</b> to see what's most likely, and <b>Reset</b>. Not used with Reverse sides.</li>
-          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy), and how many top master moves count as masters moves. Changes apply to your past tries straight away; <b>Reset</b> puts the penalties and Masters moves back to their defaults.</li>
+          <li><b>Error penalties</b>: the move accuracy each kind of error costs (see Practice, Move accuracy). Changes apply to your past tries straight away; <b>Reset</b> puts them back to their defaults.</li>
         </ul>
       </div>
 
@@ -734,11 +732,7 @@
       <div class="card">
         <h2><span data-tip="Move accuracy lost for each error before the right move (never below 0%). Changes apply to past tries too.">Error penalties</span></h2>
         <div id="penalty-rows" class="weight-rows"></div>
-        <div class="penalties">
-          <label for="masters-top" data-tip="A masters move is among this many most-played master moves, and played 10% of the time or more.">Masters moves</label>
-          <select id="masters-top"></select>
-        </div>
-        <div class="actions"><button id="penalties-reset" class="primary" title="Penalties back to 20%, 20%, 50% and 100%, and Masters moves to Top 5">Reset</button></div>
+        <div class="actions"><button id="penalties-reset" class="primary" title="Penalties back to 20%, 20%, 50% and 100%">Reset</button></div>
       </div>
     </div>
   </section>
@@ -875,11 +869,9 @@ let moveStats = {};
 // Settings (chosen on the Practice and Options pages).
 // Error penalties are percentages of an attempt's move accuracy, in steps of 5. (They were points,
 // 0–10, called "penalties", until 2 November 2026; those are ignored, and the defaults used once.)
-const MASTERS_TOPS = [1, 2, 3, 4, 5];
 const DEFAULT_SETTINGS = {
   sounds: false,
   errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 },
-  mastersTop: 5, // a masters move is within this many top master moves
   // The Practice page: lines or positions; main lines only, for each; reverse sides (lines only: you
   // play the opponent's moves, not scored); and the four spaced-repetition sliders (0–100, shared; see
   // Spaced repetition).
@@ -901,7 +893,6 @@ function checkedSettings(saved) {
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     errorPenalties: valuesOf(d.errorPenalties, v.errorPenalties, x => isBetween(0, 100)(x) && x % 5 === 0),
-    mastersTop: MASTERS_TOPS.includes(v.mastersTop) ? v.mastersTop : d.mastersTop,
     practice: {
       kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
       mainLinesOnly: valuesOf(dp.mainLinesOnly, p.mainLinesOnly, x => typeof x === 'boolean'),
@@ -1558,14 +1549,14 @@ function scoreOf(attempts) {
   return sum / weights / 10;
 }
 
-const MASTERS_SHARE = 0.1;
+const MASTERS_TOP = 3, MASTERS_SHARE = 0.1;
 
-// A masters move: within the top N master moves in the position (N set on the Options page; moves
-// played equally often share a rank) and played in 10% or more of master games there.
+// A masters move: within the top 3 master moves in the position (moves played equally often share a
+// rank) and played in 10% or more of master games there.
 function isMasterMove(epd, s) {
   const st = masterGamesAt(epd), n = st && totalGames(st);
   if (!n || gamesWith(st, s) / n < MASTERS_SHARE) return false;
-  return moveRank(st, s) <= settings.mastersTop;
+  return moveRank(st, s) <= MASTERS_TOP;
 }
 
 // Each attempt at one of your moves starts at 10 points (100%), and each thing tried before the
@@ -3201,27 +3192,22 @@ function showOptions() {
 }
 
 // The Error penalties card: a slider for each penalty, 0%–100% in steps of 5, like the Spaced
-// repetition focus sliders (each name explains itself on hover), then the Masters moves drop-down.
+// repetition focus sliders (each name explains itself on hover).
 const PENALTIES = [
   { key: 'alternative', name: 'Alternative move', definition: 'An unmarked alternative in your study.' },
-  { key: 'masters', name: 'Masters move', definition: 'A masters move not in your study.' },
+  { key: 'masters', name: 'Masters move', definition: 'A top-3 master move, played 10% of the time or more, not in your study.' },
   { key: 'error', name: 'Error', definition: 'Any other move, or an alternative marked ?, ?? or ?!.' },
   { key: 'hint', name: 'Hint', definition: 'Hint, and Show correct move.' },
 ];
 // A change to the scoring settings: saved, and past attempts scored again with them.
 const changeScoring = change => { change(); saveSettings(); rescoreHistory(); };
 addSliders($('penalty-rows'), 'pen', PENALTIES, (key, value) => changeScoring(() => { settings.errorPenalties = { ...settings.errorPenalties, [key]: value }; }));
-for (const n of MASTERS_TOPS) $('masters-top').append(element('option', { value: String(n) }, `Top ${n}`));
-$('masters-top').addEventListener('change', e => changeScoring(() => { settings.mastersTop = +e.target.value; }));
-// Reset: the four penalties and Masters moves back to their defaults.
+// Reset: the four penalties back to their defaults.
 $('penalties-reset').addEventListener('click', () => {
-  changeScoring(() => { settings.errorPenalties = { ...DEFAULT_SETTINGS.errorPenalties }; settings.mastersTop = DEFAULT_SETTINGS.mastersTop; });
+  changeScoring(() => { settings.errorPenalties = { ...DEFAULT_SETTINGS.errorPenalties }; });
   renderPenalties();
 });
-function renderPenalties() {
-  showSliders('pen', PENALTIES, settings.errorPenalties);
-  $('masters-top').value = String(settings.mastersTop);
-}
+const renderPenalties = () => showSliders('pen', PENALTIES, settings.errorPenalties);
 
 function renderOptions() {
   renderPenalties();

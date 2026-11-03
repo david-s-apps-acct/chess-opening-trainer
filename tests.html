@@ -161,17 +161,14 @@ function run(app) {
   app.setSettings({});
 
   // Settings
-  check('settings: defaults', app.checkedSettings({}), { sounds: false, errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 }, mastersTop: 5,
+  check('settings: defaults', app.checkedSettings({}), { sounds: false, errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 },
     practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
-  check('settings: invalid values fall back', [app.checkedSettings({ mastersTop: 9 }).mastersTop, app.checkedSettings({ errorPenalties: { alternative: 110, masters: 7, hint: 40 } }).errorPenalties,
+  check('settings: invalid values fall back', [app.checkedSettings({ errorPenalties: { alternative: 110, masters: 7, hint: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [5, { alternative: 20, masters: 20, error: 50, hint: 40 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
+    [{ alternative: 20, masters: 20, error: 50, hint: 40 }, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
 
-  // Masters moves: top N and 10% or more
-  const top = n => { app.setSettings({ mastersTop: n }); return ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)); };
-  check('masters move: top 5, 10% or more', top(5), ['e4', 'd4', 'Nf3', 'c4']);
-  check('masters move: top 3', top(3), ['e4', 'd4', 'Nf3']);
-  check('masters move: top 1', top(1), ['e4']);
+  // Masters moves: the top 3, played 10% of the time or more
+  check('masters move: top 3, 10% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3']);
   check('masters move: no data', app.isMasterMove(AFTER_E4, 'c5'), false);
   app.setSettings({});
 
@@ -376,10 +373,10 @@ async function runTrial(app) {
   window.confirm = before.confirm;
   app.setHistory(before.history); app.setSelection(before.selection); app.setPresets(before.presets); app.setSettings({});
 
-  // Options: Reset puts the penalties and Masters moves back to their defaults.
-  app.setSettings({ errorPenalties: { error: 85 }, mastersTop: 2 });
+  // Options: Reset puts the penalties back to their defaults.
+  app.setSettings({ errorPenalties: { error: 85 } });
   $('penalties-reset').click();
-  check('options: Reset, penalties and Masters moves', [app.settings.errorPenalties, app.settings.mastersTop, $('pen-error-value').textContent], [{ alternative: 20, masters: 20, error: 50, hint: 100 }, 5, '50%']);
+  check('options: Reset, the penalties', [app.settings.errorPenalties, $('pen-error-value').textContent], [{ alternative: 20, masters: 20, error: 50, hint: 100 }, '50%']);
   app.setSettings({});
 
   // A download skips positions whose statistics arrive meanwhile (e.g. from a restored backup).
