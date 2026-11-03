@@ -451,9 +451,16 @@ async function runLichessPage(app) {
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
+  $('review-chapter').focus();
   $('review-chapter').value = 'AAAAAAAA/CCCCCCCC';
   $('review-chapter').dispatchEvent(new Event('change'));
-  check('review: another chapter from the drop-down, from its start', [$('review-chapter').value, current()], ['AAAAAAAA/CCCCCCCC', null]);
+  const atStart = current();
+  key('ArrowRight');
+  check('review: another chapter from the drop-down, from its start; then → still steps', [$('review-chapter').value, atStart, current(), document.activeElement === $('review-chapter')],
+    ['AAAAAAAA/CCCCCCCC', null, 'e4', false]);
+  $('review-chapter').focus(); // a drop-down with the focus doesn't stop the keys either
+  key('ArrowRight');
+  check('review: → with the drop-down focused', current(), 'c5');
   // The arrows: your main move green, your alternatives blue, the opponent's replies white, marked moves amber.
   const italianRoot = app.parseChapter(app.chapterByKey('AAAAAAAA/BBBBBBBB')).root;
   const arrowsAt = sans => { let n = italianRoot; for (const x of sans) n = n.children.find(c => c.san === x); return app.reviewArrows(n, 'white').map(a => `${a.orig}${a.dest} ${a.brush}`); };

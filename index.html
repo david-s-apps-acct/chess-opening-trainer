@@ -264,14 +264,20 @@
   #practice-title .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   #board, #review-board { width: 100%; height: 100%; }
-  /* Reviewing a study: the chapter drop-down, the tree beside the board (the current move highlighted),
-     the facts under the board, and the review buttons on the Studies page. */
-  #review-chapter { width: 100%; margin: 8px 0 4px; flex: none; }
+  /* Reviewing a study: three tiles beside the board (the study with its chapter drop-down and Close; the
+     moves, the current one highlighted; the move's comment and statistics), and the review buttons on
+     the Studies page. On a narrow screen the tiles go under the board. */
+  .review-tiles { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
+  .review-tiles .panel { flex: none; min-width: 0; }
+  .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .review-head h2 { margin: 0; }
+  #review-chapter { width: 100%; margin-top: 10px; flex: none; }
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
-  .review-facts { margin-top: 8px; font-size: 13px; }
-  .review-facts div + div { margin-top: 2px; }
-  #review-notes:empty { display: none; }
+  .review-info { font-size: 14px; }
+  .review-info:empty { display: none; }
+  .review-info div + div { margin-top: 3px; }
+  .review-info .review-stats { margin-top: 10px; font-size: 13px; }
   .row .review-btn { margin-left: 4px; vertical-align: -2px; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
@@ -543,20 +549,24 @@
     <div class="quiz">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
-        <div id="review-facts" class="review-facts"></div>
       </div>
-      <div class="panel">
-        <div class="overlay-head"><h2 id="review-study"></h2><button id="review-close" class="icon-btn overlay-close" aria-label="Back to Studies" title="Back to Studies (Esc)">×</button></div>
-        <select id="review-chapter" aria-label="Chapter"></select>
-        <div id="review-position" class="muted"></div>
-        <div id="review-tree" class="tree review-tree"></div>
-        <div class="move-nav">
-          <button id="review-first" title="Start (Home)" aria-label="Start">⏮</button>
-          <button id="review-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
-          <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
-          <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
+      <!-- Three tiles: the study and its chapters; the moves; the move's comment and statistics -->
+      <div class="review-tiles">
+        <div class="panel">
+          <div class="review-head"><h2 id="review-study"></h2><button id="review-close" title="Back to Studies (Esc)">Close</button></div>
+          <select id="review-chapter" aria-label="Chapter"></select>
         </div>
-        <div id="review-notes" class="status"></div>
+        <div class="panel">
+          <div id="review-position" class="muted"></div>
+          <div id="review-tree" class="tree review-tree"></div>
+          <div class="move-nav">
+            <button id="review-first" title="Start (Home)" aria-label="Start">⏮</button>
+            <button id="review-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
+            <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
+            <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
+          </div>
+        </div>
+        <div id="review-info" class="panel review-info"></div>
       </div>
     </div>
   </section>
@@ -711,7 +721,7 @@
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the board: the position's name, how often it's reached, the move's Lichess and masters ranks, and your move accuracy. Choose another chapter from the drop-down; × or Esc goes back.</li>
+          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Choose another chapter from the drop-down; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -1085,6 +1095,10 @@ function hideQuickTip() { clearTimeout(quickTipTimer); $('quick-tip')?.classList
 // The page's own explanations: any element with data-tip shows it on hover.
 for (const el of document.querySelectorAll('[data-tip]')) quickTip(el, () => el.dataset.tip); // read when shown, so it can change
 window.addEventListener('scroll', hideQuickTip, { passive: true });
+
+// Whether you're typing in a text box (the preset name, the token), where the arrow keys move the
+// cursor; otherwise they step through the moves (a tick box or drop-down with the focus doesn't stop them).
+const typingInTextBox = () => { const el = document.activeElement; return el?.tagName === 'TEXTAREA' || (el?.tagName === 'INPUT' && ['text', 'password', 'search'].includes(el.type)); };
 
 // An icon button: a line through it when off; title is its hover text.
 function setToggle(id, on, title) {
@@ -2067,8 +2081,10 @@ $('preset-name-form').addEventListener('submit', e => {
 // current move highlighted; click a move to go to it), and the move's comment and glyphs; under the
 // board, the position's name and, as on the hover boards, the move's ranks among Lichess and master
 // games, how often the position is reached, and for your moves, your move accuracy. ← → Home End step
-// through it; playing one of the study's moves on the board follows it; × or Esc goes back to the
-// Studies page as it was.
+// through it; playing one of the study's moves on the board follows it; Close or Esc goes back to the
+// Studies page as it was. Beside the board, three tiles: the study (its name, the chapter drop-down and
+// Close); the moves (the position's name, the tree, ⏮ ◀ ▶ ⏭); and the move's glyphs, comment and
+// statistics.
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the Studies page's) }
 
@@ -2105,7 +2121,10 @@ function openReview(ch) {
   reviewBoard.redrawAll();
 }
 
-$('review-chapter').addEventListener('change', e => openReview(chapterByKey(e.target.value)));
+$('review-chapter').addEventListener('change', e => {
+  e.target.blur(); // so ← and → step through the moves again
+  openReview(chapterByKey(e.target.value));
+});
 
 function closeReview() {
   const y = review?.scrollY ?? 0;
@@ -2142,16 +2161,17 @@ function showReviewNode(node) {
   reviewBoard.setAutoShapes(reviewArrows(node, parsed.yourColor));
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   renderReviewTree();
-  // The move's comment and glyphs (at the start, the chapter's introduction).
-  const notes = node.uci ? node.notes : parsed.intro.length ? { text: parsed.intro, nags: [] } : null;
-  $('review-notes').replaceChildren(...!notes ? [] : [
-    node.uci ? element('div', {}, element('span', { class: 'note-move' }, moveLabel(node)), ' ', notes.nags.map(n => [glyphSpan(n), element('span', { class: 'muted' }, ' ' + GLYPHS[n][1] + ' ')])) : null,
-    ...notes.text.map(t => element('div', { class: 'hint-note' }, t)),
+  // The third tile: the move with its glyphs, its comment (at the start, the chapter's introduction),
+  // then its statistics as on the hover boards (without the move, named once above); hidden when empty.
+  const text = node.uci ? node.notes?.text ?? [] : parsed.intro;
+  const stats = !node.uci ? [positionCountText(lichessGamesAt(node.epd)) && element('div', { class: 'muted' }, positionCountText(lichessGamesAt(node.epd)))]
+    : (node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null) : opponentMoveBoard(node)).rows.slice(1);
+  const shown = stats.filter(Boolean);
+  $('review-info').replaceChildren(...[
+    node.uci ? element('div', {}, element('b', {}, moveLabel(node)), (node.notes?.nags ?? []).map(n => [' ', glyphSpan(n), element('span', { class: 'muted' }, ' ' + GLYPHS[n][1])])) : null,
+    ...text.map(t => element('div', {}, t)),
+    shown.length ? element('div', { class: 'review-stats' }, shown) : null,
   ].filter(Boolean));
-  // Under the board: as on the hover boards (your move, or the opponent's).
-  const facts = !node.uci ? [positionCountText(lichessGamesAt(node.epd)) && element('div', { class: 'muted' }, positionCountText(lichessGamesAt(node.epd)))]
-    : (node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null) : opponentMoveBoard(node)).rows;
-  $('review-facts').replaceChildren(...facts.filter(Boolean));
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
 }
@@ -2179,7 +2199,7 @@ const reviewStep = {
 };
 for (const k of Object.keys(reviewStep)) $(`review-${k}`).addEventListener('click', () => review && showReviewNode(reviewStep[k]()));
 document.addEventListener('keydown', e => {
-  if (currentScreen !== 'review' || !review || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  if (currentScreen !== 'review' || !review || typingInTextBox()) return;
   const step = { ArrowLeft: 'prev', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key];
   if (step) { e.preventDefault(); showReviewNode(reviewStep[step]()); }
   else if (e.key === 'Escape') closeReview();
@@ -2950,7 +2970,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   // Step through the moves played, as on Lichess.
-  if (!practice || currentScreen !== 'practice' || ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  if (!practice || currentScreen !== 'practice' || typingInTextBox()) return;
   const shown = practice.viewing ?? practice.movesPlayed;
   const target = { ArrowLeft: shown - 1, ArrowRight: shown + 1, Home: 0, End: practice.movesPlayed }[e.key];
   if (target === undefined) return;
