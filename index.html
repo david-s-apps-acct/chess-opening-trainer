@@ -199,7 +199,7 @@
   .toggle { border: none; background: none; padding: 0 4px; width: 24px; color: var(--muted); }
   .toggle:hover:not(:disabled) { background: none; color: var(--text); }
   .chapters { background: #2a2825; }
-  .chapter-row { padding-left: 12px; border-top: 1px solid var(--border); font-size: 14px; } /* under the study's ▸, so the checkbox is a little in */
+  .chapter-row { padding-left: 36px; border-top: 1px solid var(--border); font-size: 14px; } /* a chapter's tick box under its study's name */
   .tree { background: #242220; font-size: 14px; } /* a chapter's move tree, on the Review page */
   .tree-line { line-height: 1.9; }
   .tree-vars { margin: 0 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--border); }
@@ -375,6 +375,7 @@
   @media (max-width: 800px) {
   }
   @media (max-width: 640px) {
+    .chapter-row { padding-left: 28px; } /* a smaller step, so long names still fit */
     header nav { width: 100%; gap: 4px; flex-wrap: nowrap; }
     header nav button { flex: 1 1 auto; padding: 7px 4px; font-size: 13px; white-space: nowrap; } /* six buttons, each on one line */
     .row { flex-wrap: wrap; }
@@ -739,7 +740,7 @@
         <ul>
           <li>On the Practice page, <b>Studies to test</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
           <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
-          <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name to look through it on the Review page (clicking a name doesn't tick it). Hover over a chapter's name to see its opening; the dot after it shows the side you play.</li>
+          <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name (or its tick box) to tick it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. To look through a chapter, use the header's <b>Review</b> button.</li>
           <li>To practise one chapter without a preset, use <b>Practice this chapter</b> on the Review page.</li>
           <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Beside the board: the study and its chapters (with their move accuracy), the moves, the move and its comment, its <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
           <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
@@ -1782,8 +1783,8 @@ function renderStudies() {
 const triangle = (open, [showTitle, hideTitle], onClick) =>
   element('button', { class: 'toggle', title: open ? hideTitle : showTitle, 'aria-expanded': String(open), onclick: onClick }, open ? '▾' : '▸');
 
-// A study's or chapter's name: clicking it (or Enter / Space on it) shows or hides a study's chapters
-// (as its triangle does), or opens a chapter on the Review page. Its checkbox ticks it.
+// A study's name (or its chapter count): clicking it (or Enter / Space on it) shows or hides its
+// chapters, as its triangle does. Its checkbox ticks them.
 function opener(name, onOpen) {
   return element('span', { class: 'opener', role: 'button', tabindex: '0', onclick: onOpen,
     onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } }, name);
@@ -1809,8 +1810,8 @@ function studyRow(study, isHidden) {
       element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))));
 }
 
-// A chapter's row: its checkbox, its name (the opening on hover; clicking it opens the chapter on the
-// Review page), the side you play and "· 5 lines" (or why it has none to test).
+// A chapter's row (indented under its study's name): its checkbox, its name (a label: clicking it ticks
+// the chapter; the opening on hover), the side you play and "· 5 lines" (or why it has none to test).
 function chapterRow(ch, studyHidden) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
@@ -1820,7 +1821,7 @@ function chapterRow(ch, studyHidden) {
     element('input', { type: 'checkbox', id, checked: ticked().has(ch.key), disabled: studyHidden,
       onchange: e => setTicked([ch.key], e.target.checked) }),
     // The side you play: a small white or black circle right after the chapter name.
-    element('span', { class: 'name' }, quickTip(parsed.error ? element('span', {}, ch.name) : opener(ch.name, () => openReview(ch)), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
+    element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
       parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : !lines.length ? element('span', { class: 'side' }, 'no lines to test') : null);

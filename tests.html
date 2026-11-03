@@ -447,9 +447,12 @@ async function runLichessPage(app) {
   $('preset-edit-btn').click();
   check('Studies to test: Select chapters opens them, with Save as new and Cancel for All', [!$('practice-studies').classList.contains('hidden'),
     ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden'))], [true, ['preset-new-btn', 'preset-cancel-btn']]);
-  $('preset-cancel-btn').click();
   if (!document.querySelector('#studies .chapter-row')) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
-  document.querySelector('#studies .chapter-row .opener').click(); // its first chapter's name: the Review page
+  const firstBox = document.querySelector('#studies .chapter-row input'), wasTicked = firstBox.checked;
+  document.querySelector('#studies .chapter-row label').click(); // its name
+  check('chapter list: clicking a chapter\'s name ticks it (it doesn\'t leave the page)', [firstBox.checked !== wasTicked, !$('practice-screen').classList.contains('hidden')], [true, true]);
+  $('preset-cancel-btn').click();
+  $('nav-review').click(); // the first selected chapter, on the Review page
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   const chapterShown = () => $('review-chapters').querySelector('.current')?.firstChild.textContent; // the name, without the accuracy
