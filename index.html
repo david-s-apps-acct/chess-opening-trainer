@@ -107,6 +107,12 @@
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   #options-screen button.primary, #lichess-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options and Lichess page button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
+  /* The Move statistics card: the padlock after the heading, and the rows of tick boxes */
+  .lock-heading { display: flex; align-items: center; gap: 6px; }
+  .tick-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0; font-size: 14px; }
+  .tick-row label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .tick-row input:disabled + span { color: var(--muted); }
+  #games-warning:empty { display: none; }
   .update-status.error { color: var(--bad); }
   select { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
 
@@ -159,7 +165,7 @@
   .selection-bar #sel-summary { margin-left: auto; }
   /* The Lichess page's lines: account, connected, fetched, statistics */
   .lichess-lines p { margin: 2px 0; }
-  #lichess-account:empty, #lichess-connected:empty, #lichess-fetched:empty, #lichess-moves:empty, #lichess-masters:empty { display: none; }
+  #lichess-account:empty, #lichess-rating:empty, #lichess-connected:empty, #lichess-fetched:empty, #lichess-moves:empty, #lichess-masters:empty { display: none; }
   .preset-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
   .preset-name-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .preset-name-form input { flex: 1 1 240px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
@@ -360,6 +366,7 @@
         <h2><span id="lichess-heading">Status</span></h2>
         <div class="lichess-lines">
           <p id="lichess-account" class="muted"></p>
+          <p id="lichess-rating" class="muted"></p>
           <p id="lichess-connected" class="muted"></p>
           <p id="lichess-fetched" class="muted"></p>
           <p id="lichess-moves" class="muted"></p>
@@ -383,6 +390,18 @@
           </form>
         </div>
         <div id="token-error" class="form-error"></div>
+      </div>
+
+      <div id="games-card" class="card hidden">
+        <h2 class="lock-heading"><span data-tip="Which Lichess games the move statistics come from, combined. A game's band is its players' average Lichess rating (higher than Chess.com's).">Move statistics</span>
+          <button id="games-lock" class="icon-btn"></button></h2>
+        <div id="games-ratings" class="tick-row"></div>
+        <div id="games-speeds" class="tick-row"></div>
+        <p id="games-warning" class="muted after-actions"></p>
+        <div id="games-actions" class="actions hidden">
+          <button id="games-apply" class="primary">Apply</button>
+          <button id="games-cancel" class="primary">Cancel</button>
+        </div>
       </div>
 
       <div id="backup-card" class="card">
@@ -688,7 +707,8 @@
         <h2>Lichess</h2>
         <ul>
           <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
-          <li>The Lichess page's cards: <b>Status</b> (your account, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched, and Try sample studies).</li>
+          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched, and Try sample studies).</li>
+          <li><b>Move statistics</b>: the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them. The sample studies use all rated games.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
@@ -866,12 +886,19 @@ const saveHistory = () => store.set('history', storedHistory());
 // masters: its master games } (see the Lichess downloads).
 let moveStats = {};
 
-// Settings (chosen on the Practice and Options pages).
+// The Lichess Opening Explorer's rating bands (each from its value to the next one's) and time
+// controls: the move statistics come from the games of those chosen (settings.games; see the Lichess
+// downloads).
+const RATING_BANDS = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
+const SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
+
+// Settings (chosen on the Practice, Options and Lichess pages).
 // Error penalties are percentages of an attempt's move accuracy, in steps of 5. (They were points,
 // 0–10, called "penalties", until 2 November 2026; those are ignored, and the defaults used once.)
 const DEFAULT_SETTINGS = {
   sounds: false,
   errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 },
+  games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
   // The Practice page: lines or positions; main lines only, for each; reverse sides (lines only: you
   // play the opponent's moves, not scored); and the four spaced-repetition sliders (0–100, shared; see
   // Spaced repetition).
@@ -893,6 +920,7 @@ function checkedSettings(saved) {
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     errorPenalties: valuesOf(d.errorPenalties, v.errorPenalties, x => isBetween(0, 100)(x) && x % 5 === 0),
+    games: checkedGames(v.games),
     practice: {
       kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
       mainLinesOnly: valuesOf(dp.mainLinesOnly, p.mainLinesOnly, x => typeof x === 'boolean'),
@@ -900,6 +928,13 @@ function checkedSettings(saved) {
       weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
   };
+}
+
+// Rating bands and time controls, in their usual order; null unless there's at least one of each.
+function checkedGames(g) {
+  const ratings = RATING_BANDS.filter(b => Array.isArray(g?.ratings) && g.ratings.includes(b));
+  const speeds = SPEEDS.filter(x => Array.isArray(g?.speeds) && g.speeds.includes(x));
+  return ratings.length && speeds.length ? { ratings, speeds } : null;
 }
 
 let settings = checkedSettings(store.get('settings'));
@@ -1139,17 +1174,34 @@ function setUpdateStatus(message, isError = false) {
   updateLichessStatus();
 }
 
-// All your studies from Lichess (one export), parsed; a LichessError if that fails.
+// All your studies from Lichess (one export), parsed, with your Lichess ratings ({ blitz: { rating,
+// games, prov }, … }); a LichessError if that fails.
 async function downloadStudies() {
   const account = await lichessRequest('/api/account', token);
   const text = await lichessRequest(`/api/study/by/${encodeURIComponent(account.username)}/export.pgn?orientation=true&clocks=false&comments=true`, token, true);
-  return parseStudyExport(text, account.username);
+  const ratings = Object.fromEntries(SPEEDS.filter(x => account.perfs?.[x]).map(x => [x, (({ rating, games, prov }) => ({ rating, games, prov: !!prov }))(account.perfs[x])]));
+  return { ...parseStudyExport(text, account.username), ratings };
+}
+
+// The games the move statistics come from, chosen the first time your Lichess account is read (and
+// never changed by itself after that, since a change means downloading them all again): blitz and
+// rapid; your rating's band and the next one up, or 1200–2000 without a rating. The rating is the
+// one, of those time controls, with more games; a provisional one (too few games) doesn't count.
+function chooseDefaultGames() {
+  if (settings.games || !library?.ratings || isTrial()) return;
+  const speeds = ['blitz', 'rapid'];
+  const rated = speeds.map(x => library.ratings[x]).filter(x => x?.games && !x.prov).sort((a, b) => b.games - a.games)[0];
+  const band = rated && RATING_BANDS.findLastIndex(b => b <= rated.rating);
+  const ratings = !rated ? [1200, 1400, 1600, 1800] : band === RATING_BANDS.length - 1 ? RATING_BANDS.slice(-2) : RATING_BANDS.slice(band, band + 2);
+  settings.games = { ratings, speeds };
+  saveSettings();
 }
 
 // Puts studies just fetched in place of the stored ones: saved, and your stats for moves no longer
 // in them dropped; the tries' points worked out again (a backup restored before them has none yet).
 async function useStudies(fetched) {
   library = fetched;
+  chooseDefaultGames();
   await saveLibrary();
   forgetParsedChapters();
   pruneAfterRefresh();
@@ -1187,7 +1239,9 @@ async function syncStudies() {
   try {
     const fetched = await downloadStudies();
     if (fetched.username === library.username && JSON.stringify(fetched.studies) === JSON.stringify(library.studies)) {
-      library.fetchedAt = fetched.fetchedAt; // nothing changed: just when they were last fetched
+      library.fetchedAt = fetched.fetchedAt; // nothing changed: just when they were last fetched, and your ratings
+      library.ratings = fetched.ratings;
+      chooseDefaultGames();
       await saveLibrary();
     } else if (session) {
       waitingStudies = fetched;
@@ -2968,14 +3022,46 @@ window.addEventListener('scroll', hideHoverBoard, { passive: true });
 // interrupted download resumes) and after studies are fetched or replaced: missing move statistics,
 // then missing Masters statistics (both need the token). Each fetches only what's missing, and says
 // nothing if nothing is.
-let downloadsRunning = false;
+// Asked while they run (e.g. after the games were changed), they run again once they've stopped.
+let downloadsRunning = false, downloadsAgain = false;
 
 async function startDownloads() {
-  if (downloadsRunning || !library) return;
+  if (downloadsRunning) { downloadsAgain = true; return; }
   downloadsRunning = true;
   try {
-    if (token) { await downloadExplorer('lichess'); await downloadExplorer('masters'); }
+    do {
+      downloadsAgain = false;
+      // Your own studies' move statistics wait until the games are chosen (when your account is read).
+      if (settings.games || isTrial()) await downloadExplorer('lichess');
+      await downloadExplorer('masters');
+    } while (downloadsAgain);
   } finally { downloadsRunning = false; }
+}
+
+// The games the move statistics come from: as chosen (settings.games), or all rated games (the
+// sample studies, and until they're chosen). Each position's statistics record which games they
+// came from (gamesKey; 'all' when every band and time control is included, or when not recorded),
+// so a change downloads them again.
+const ALL_GAMES = { ratings: RATING_BANDS, speeds: SPEEDS };
+const chosenGames = () => !isTrial() && settings.games || ALL_GAMES;
+const gamesKey = g => g.ratings.length === RATING_BANDS.length && g.speeds.length === SPEEDS.length ? 'all' : `${g.ratings.join(',')}|${g.speeds.join(',')}`;
+const isCurrentStats = stats => (stats.games ?? 'all') === gamesKey(chosenGames());
+
+// A rating band's name: "under 1000", "1600–1800", "2500+"; runs of bands joined ("1600–2000").
+const bandsText = (from, to) => from === 0 ? `under ${RATING_BANDS[to + 1] ?? 1000}` : to === RATING_BANDS.length - 1 ? `${RATING_BANDS[from]}+` : `${RATING_BANDS[from]}–${RATING_BANDS[to + 1]}`;
+const bandName = b => bandsText(RATING_BANDS.indexOf(b), RATING_BANDS.indexOf(b));
+const SPEED_NAMES = { ultraBullet: 'UltraBullet', bullet: 'Bullet', blitz: 'Blitz', rapid: 'Rapid', classical: 'Classical', correspondence: 'Correspondence' };
+
+// The games, for the Status card: "1600–2000, blitz, rapid"; null for all rated games.
+function gamesText(g) {
+  if (gamesKey(g) === 'all') return null;
+  const runs = [];
+  for (const k of g.ratings.map(b => RATING_BANDS.indexOf(b))) {
+    if (runs.length && runs.at(-1)[1] === k - 1) runs.at(-1)[1] = k; else runs.push([k, k]);
+  }
+  const ratings = g.ratings.length === RATING_BANDS.length ? ['all ratings'] : runs.map(([from, to]) => bandsText(from, to));
+  const speeds = g.speeds.length === SPEEDS.length ? ['all time controls'] : g.speeds.map(x => SPEED_NAMES[x].toLowerCase());
+  return [...ratings, ...speeds].join(', ');
 }
 
 // Every position reached in the studies: every move and variation, alternative moves' variations
@@ -3031,15 +3117,18 @@ function gamesWith(stats, s) {
 const EXPLORER_DATABASES = {
   lichess: {
     Label: 'Move statistics',
-    url: fen => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`,
+    url: (fen, g) => `${EXPLORER}/lichess?variant=standard&fen=${encodeURIComponent(fen)}&moves=100&topGames=0&recentGames=0`
+      + (gamesKey(g) === 'all' ? '' : `&ratings=${g.ratings.join(',')}&speeds=${g.speeds.join(',')}`),
     status: 'lichess-status', info: 'lichess-moves',
-    keep: (answer, position) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(withoutCheckMarks(m.san))), at: Date.now() }),
-    empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, at: Date.now() }),
+    isCurrent: isCurrentStats,
+    keep: (answer, position, g) => ({ ...answer, moves: answer.moves.filter((m, k) => k < 10 || position.studyMoves.has(withoutCheckMarks(m.san))), games: gamesKey(g), at: Date.now() }),
+    empty: g => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [], opening: null, skipped: true, games: gamesKey(g), at: Date.now() }),
   },
   masters: {
     Label: 'Masters statistics',
     url: fen => `${EXPLORER}/masters?fen=${encodeURIComponent(fen)}&moves=100&topGames=0`,
     status: 'masters-status', info: 'lichess-masters',
+    isCurrent: () => true,
     keep: answer => ({ ...answer, at: Date.now() }),
     empty: () => ({ white: 0, draws: 0, black: 0, moves: [], topGames: [], opening: null, skipped: true, at: Date.now() }),
   },
@@ -3078,8 +3167,9 @@ async function downloadExplorer(kind) {
 }
 
 async function downloadExplorerPositions(kind, run) {
-  const explorer = EXPLORER_DATABASES[kind];
-  const saved = epd => moveStats[epd]?.[kind];
+  const explorer = EXPLORER_DATABASES[kind], games = chosenGames();
+  // A position's statistics, if they're from the games chosen.
+  const saved = epd => { const stats = moveStats[epd]?.[kind]; return stats && explorer.isCurrent(stats) ? stats : undefined; };
   const status = text => setExplorerStatus(kind, text);
   // The same order whatever is ticked: branch points (the opponent has several replies), then the
   // rest of the chapters' main lines, then everything else; by move number within each group, so a
@@ -3100,13 +3190,13 @@ async function downloadExplorerPositions(kind, run) {
     // Skip positions nobody reaches: every known way here is a move no game in this database played.
     // (A different move order could still reach it, so this is a close approximation.)
     if (position.parents.length && position.parents.every(parent => saved(parent.epd) && !(gamesWith(saved(parent.epd), parent.san) > 0))) {
-      setPositionData(epd, kind, explorer.empty());
+      setPositionData(epd, kind, explorer.empty(games));
       i++;
       continue;
     }
     let res;
     try {
-      res = await lichessFetch(explorer.url(position.fen), token);
+      res = await lichessFetch(explorer.url(position.fen, games), token);
     } catch {
       status("Couldn't reach Lichess. The rest downloads next time.");
       return;
@@ -3122,8 +3212,9 @@ async function downloadExplorerPositions(kind, run) {
       status(canLogIn ? 'Lichess connection expired. Connect again below to continue.' : 'Lichess rejected the token. Replace it below to continue.');
       return;
     }
+    if (explorerDownloads[kind] !== run) return; // the games were changed meanwhile
     if (res.ok) {
-      setPositionData(epd, kind, explorer.keep(await res.json(), position));
+      setPositionData(epd, kind, explorer.keep(await res.json(), position, games));
       fetched++;
     }
     i++;
@@ -3141,9 +3232,10 @@ function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
     const explorer = EXPLORER_DATABASES[kind], el = $(explorer.info);
-    if (!library) { el.textContent = `${explorer.Label}: no positions downloaded`; continue; }
-    const done = studied.filter(epd => moveStats[epd]?.[kind]).length;
-    el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
+    const games = kind === 'lichess' && gamesText(chosenGames()), label = explorer.Label + (games ? ` (${games})` : '');
+    if (!library) { el.textContent = `${label}: no positions downloaded`; continue; }
+    const done = studied.filter(epd => moveStats[epd]?.[kind] && explorer.isCurrent(moveStats[epd][kind])).length;
+    el.textContent = `${label}: ${done} of ${plural(studied.length, 'position')}` + (explorerDownloads[kind] && done < studied.length ? ' (downloading…)' : '');
   }
   updateLichessStatus();
 }
@@ -3221,6 +3313,7 @@ function renderOptions() {
 //   downloading;
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
 //   about a year), Disconnect when connected (the same for everyone);
+// - Move statistics: the rating bands and time controls they come from (see renderGamesCard);
 // - Backup: Save backup (greyed out until you've started) and Restore backup;
 // - Getting started (new users only, until they start): Start once the studies have been fetched
 //   (nothing downloads until Start or Restore backup is pressed); and, without studies of your own,
@@ -3238,6 +3331,7 @@ function showLichess() {
 function renderLichessPage() {
   // Status
   $('lichess-account').textContent = isTrial() ? 'Sample studies' : library ? `Lichess account: ${library.username}` : '';
+  $('lichess-rating').textContent = ratingText();
   const savedAt = store.get('tokenSavedAt', null), when = savedAt ? ' ' + onDateAtTime(savedAt) : '';
   $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Token stored${when}` : 'No token stored.');
   $('lichess-fetched').textContent = isTrial() ? '' : library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
@@ -3252,6 +3346,7 @@ function renderLichessPage() {
   $('welcome-start-btn').disabled = !welcomeReady;
   $('welcome-start-btn').title = welcomeReady ? 'On to practice; the statistics download meanwhile' : 'Your studies first need fetching: Connect to Lichess';
   $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
+  renderGamesCard();
   // Backup: nothing to save until you've started.
   const notStarted = !$('getting-started').classList.contains('hidden');
   $('backup-btn').disabled = notStarted;
@@ -3260,6 +3355,73 @@ function renderLichessPage() {
   $('backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
+
+// "Lichess rating: blitz 1720, rapid 1500?" (the time controls chosen for the move statistics; "?" for
+// a provisional rating, as on Lichess), or "… no rated games"; nothing for the sample studies (or
+// until your account has been read).
+function ratingText() {
+  if (isTrial() || !library?.ratings) return '';
+  const rated = chosenGames().speeds.filter(x => library.ratings[x]?.games)
+    .map(x => `${SPEED_NAMES[x].toLowerCase()} ${library.ratings[x].rating}${library.ratings[x].prov ? '?' : ''}`);
+  return `Lichess rating: ${rated.length ? rated.join(', ') : 'no rated games'}`;
+}
+
+// The Move statistics card: the rating bands and time controls the move statistics come from, locked
+// so a change is deliberate. The padlock unlocks it, with a warning that a change downloads them all
+// again; after a change, Apply (locks it and starts the download) or Cancel (or the padlock: the
+// ticks go back and it locks). At least one band and one time control stay ticked. Changing needs
+// the connection; for the sample studies it's all rated games. Shown once there are studies.
+let gamesDraft = null; // the ticks while unlocked; null when locked
+const PADLOCK = open => `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="${open ? 'M8 10V7a4 4 0 0 1 7.9-.9' : 'M8 10V7a4 4 0 0 1 8 0v3'}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"/></svg>`;
+
+for (const [row, values, name, key] of [['games-ratings', RATING_BANDS, bandName, 'ratings'], ['games-speeds', SPEEDS, x => SPEED_NAMES[x], 'speeds']]) {
+  $(row).replaceChildren(...values.map(v => element('label', {},
+    element('input', { type: 'checkbox', value: String(v), onchange: e => {
+      gamesDraft[key] = values.filter(x => x === v ? e.target.checked : gamesDraft[key].includes(x));
+      renderGamesCard();
+    } }), element('span', {}, name(v)))));
+}
+
+const sameGames = (a, b) => gamesKey(a) === gamesKey(b);
+
+function renderGamesCard() {
+  const canChange = !!token && !!library && !isTrial();
+  if (!canChange) gamesDraft = null;
+  const shown = gamesDraft ?? chosenGames();
+  $('games-card').classList.toggle('hidden', !library); // once there are studies
+  for (const [row, key] of [['games-ratings', 'ratings'], ['games-speeds', 'speeds']]) {
+    for (const box of $(row).querySelectorAll('input')) {
+      box.checked = shown[key].includes(key === 'ratings' ? +box.value : box.value);
+      box.disabled = !gamesDraft;
+    }
+  }
+  const lock = $('games-lock');
+  lock.innerHTML = PADLOCK(!!gamesDraft);
+  lock.disabled = !canChange;
+  lock.title = !canChange ? 'Connect to Lichess to change' : gamesDraft ? 'Lock' : 'Unlock to change';
+  lock.setAttribute('aria-label', gamesDraft ? 'Lock' : 'Unlock');
+  $('games-warning').textContent = gamesDraft ? `Changing these downloads the move statistics again for all ${plural(allStudyPositions().size, 'position')}.` : '';
+  const changed = !!gamesDraft && !sameGames(gamesDraft, chosenGames());
+  $('games-actions').classList.toggle('hidden', !changed);
+  $('games-apply').disabled = !gamesDraft?.ratings.length || !gamesDraft?.speeds.length;
+}
+
+function lockGames() { gamesDraft = null; renderGamesCard(); }
+$('games-lock').addEventListener('click', () => {
+  if (gamesDraft) return lockGames();
+  gamesDraft = structuredClone(chosenGames());
+  renderGamesCard();
+});
+$('games-cancel').addEventListener('click', lockGames);
+// Apply: the new games saved, and the downloads (any running) start again with them.
+$('games-apply').addEventListener('click', () => {
+  settings.games = checkedGames(gamesDraft);
+  saveSettings();
+  gamesDraft = null;
+  explorerDownloads.lichess = explorerDownloads.masters = null; // a running download stops
+  renderLichessPage();
+  startDownloads();
+});
 
 const lichessMessages = () => ['update-status', 'lichess-status', 'masters-status'].map(id => $(id).textContent).join(' ').trim();
 const connectionExpired = () => /expired|rejected/.test(lichessMessages());
@@ -3467,6 +3629,7 @@ $('restore-file').addEventListener('change', async e => {
   updateSoundButton();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Start does
   refreshPage();
+  startDownloads(); // statistics for the backup's games, if they're other games
   showBanner(`Backup restored: history for ${plural(Object.keys(history.moves).length, 'move')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
 });
 

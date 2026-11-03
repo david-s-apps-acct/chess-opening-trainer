@@ -57,7 +57,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
-  restoreQuestion,
+  restoreQuestion, chooseDefaultGames, gamesText, ratingText,
   get token() { return token; },
   loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
@@ -161,7 +161,7 @@ function run(app) {
   app.setSettings({});
 
   // Settings
-  check('settings: defaults', app.checkedSettings({}), { sounds: false, errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 },
+  check('settings: defaults', app.checkedSettings({}), { sounds: false, errorPenalties: { alternative: 20, masters: 20, error: 50, hint: 100 }, games: null,
     practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } } });
   check('settings: invalid values fall back', [app.checkedSettings({ errorPenalties: { alternative: 110, masters: 7, hint: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
@@ -393,6 +393,52 @@ async function runTrial(app) {
   window.fetch = isolated;
   app.setToken(null);
   check('download: positions restored meanwhile are skipped', [requests, epds.every(epd => app.moveStats[epd]?.lichess)], [1, true]);
+
+  // The games the move statistics come from: the default from your Lichess rating, set once.
+  const before2 = { library: app.library, moveStats: app.moveStats };
+  const defaultFor = ratings => { app.setSettings({}); app.setLibrary({ ...structuredClone(LIBRARY), ratings }); app.chooseDefaultGames(); return app.settings.games; };
+  check('games: the default from your rating (more games wins; provisional ignored; top band; none)', [
+    defaultFor({ blitz: { rating: 1720, games: 300, prov: false }, rapid: { rating: 2050, games: 20, prov: false } }),
+    defaultFor({ blitz: { rating: 1900, games: 5, prov: true }, rapid: { rating: 1450, games: 40, prov: false } }),
+    defaultFor({ rapid: { rating: 2600, games: 40, prov: false } }),
+    defaultFor({ blitz: { rating: 1500, games: 0, prov: true } }),
+  ], [{ ratings: [1600, 1800], speeds: ['blitz', 'rapid'] }, { ratings: [1400, 1600], speeds: ['blitz', 'rapid'] },
+      { ratings: [2200, 2500], speeds: ['blitz', 'rapid'] }, { ratings: [1200, 1400, 1600, 1800], speeds: ['blitz', 'rapid'] }]);
+  app.library.ratings = { blitz: { rating: 1720, games: 300, prov: false } };
+  app.chooseDefaultGames();
+  check('games: set once, not changed by a new rating', app.settings.games.ratings, [1200, 1400, 1600, 1800]);
+  check('games: their names, and the rating line', [app.gamesText(app.settings.games), app.gamesText({ ratings: [0, 1000, 2200, 2500], speeds: ['blitz'] }), app.ratingText()],
+    ['1200–2000, blitz, rapid', 'under 1200, 2200+, blitz', 'Lichess rating: blitz 1720']);
+
+  // The download asks for those games, records them, and downloads statistics from other games again.
+  app.setMoveStats(Object.fromEntries(epds.map(epd => [epd, { lichess: explorer([['e4', 1]]) }]))); // all rated games
+  app.setToken('lip_test');
+  const statsAsked = [];
+  window.fetch = async url => { statsAsked.push(String(url)); return new Response(JSON.stringify(explorer([['e4', 1]])), { status: 200 }); };
+  await app.downloadExplorer('lichess');
+  window.fetch = isolated;
+  check('games: other games\' statistics downloaded again, for the games chosen', [statsAsked.length > 0, statsAsked.every(u => u.includes('&ratings=1200,1400,1600,1800&speeds=blitz,rapid')),
+    epds.every(epd => app.moveStats[epd].lichess.games === '1200,1400,1600,1800|blitz,rapid')], [true, true, true]);
+
+  // The Move statistics card: locked; unlocked, a warning; a change, Apply, which saves it.
+  $('nav-lichess').click();
+  const boxes = () => [...document.querySelectorAll('#games-card input')];
+  check('games card: locked, the games ticked', [boxes().every(b => b.disabled), boxes().filter(b => b.checked).map(b => b.value), $('games-warning').textContent],
+    [true, ['1200', '1400', '1600', '1800', 'blitz', 'rapid'], '']);
+  $('games-lock').click();
+  const box2000 = boxes().find(b => b.value === '2000');
+  box2000.checked = true;
+  box2000.dispatchEvent(new Event('change'));
+  check('games card: unlocked, a warning; changed, Apply', [boxes().some(b => b.disabled), $('games-warning').textContent.startsWith('Changing these downloads the move statistics again for all'), $('games-actions').classList.contains('hidden')],
+    [false, true, false]);
+  window.fetch = async () => new Response(JSON.stringify(explorer([['e4', 1]])), { status: 200 });
+  $('games-apply').click();
+  check('games card: Apply saves the games and locks it', [app.settings.games.ratings, boxes().every(b => b.disabled)], [[1200, 1400, 1600, 1800, 2000], true]);
+  await until(() => !app.downloading, 'the downloads to finish');
+  window.fetch = isolated;
+  app.setToken(null);
+  app.setSettings({});
+  app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
 // ---------- Practice: whole lines played through the app ----------
