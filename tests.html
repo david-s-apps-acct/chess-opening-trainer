@@ -441,9 +441,11 @@ async function runLichessPage(app) {
   // list changes chapter; the header's buttons leave it (no Close).
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-practice').click(); // nothing practised: the board, the chooser, and the studies list under it
-  check('studies list: on the Practice page under the chooser, the board shown; no Studies button', [!$('practice-studies').classList.contains('hidden'),
-    !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!$('nav-studies'),
-    $('practice-studies').parentElement === $('practice-chooser').closest('.panel').parentElement], [true, true, true, false, true]);
+  check('Studies to test: under the chooser, the chapters closed, the board shown; no Studies button', [!$('studies-to-test').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
+    !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!$('nav-studies'), $('sel-summary').textContent],
+    [true, true, true, true, false, `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} ticked`]);
+  $('chapters-toggle').click();
+  check('Studies to test: Choose chapters opens them', [!$('practice-studies').classList.contains('hidden'), $('chapters-toggle').textContent], [true, 'Hide chapters ▴']);
   document.querySelector('#studies .study-row .opener').click(); // the study's chapters
   document.querySelector('#studies .chapter-row .opener').click(); // its first chapter's name: the Review page
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
@@ -744,12 +746,14 @@ function runPositions(app) {
   check('chooser: the switch and the main-lines checkbox', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, app.settings.practice.kind],
     ['true', 'false', 'Positions from main lines only', 'positions']);
   $('chooser-start').click();
+  check('chooser: practising, Studies to test greyed out (End practice to change)', [$('studies-to-test').classList.contains('locked'), $('studies-to-test').title, $('chapters-toggle').disabled,
+    !$('studies-to-test').classList.contains('hidden')], [true, 'End practice to change', true, true]);
   check('chooser: practising positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
     $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
     document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [true, true, true, true, true, false]);
   $('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
-  check('chooser: the studies list back, the board still shown', [$('practice-studies').classList.contains('hidden'), document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, false]);
+  check('chooser: Studies to test usable again, the board still shown', [$('studies-to-test').classList.contains('locked'), $('chapters-toggle').disabled, document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, false, false]);
   $('chooser-kind-lines').click();
   $('chooser-start').click();
   check('chooser: practising lines, from move 1', app.practice.singleAt, null);

@@ -164,21 +164,23 @@
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* The studies list (on the Practice page while nothing is practised, under the chooser): the presets
-     bar above the list, and its edit panel. */
+  /* On the Practice page, under the chooser: the Studies to test tile (the preset, its edit panel, how many
+     chapters are ticked, Choose chapters), then the chapters, when opened. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .practice-studies .rate { min-width: 0; } /* a narrower column: the accuracy column narrows, long names end in "…" */
-  .selection-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
-  .selection-bar label { font-weight: 600; }
-  .selection-bar select { flex: 0 1 320px; min-width: 0; text-overflow: ellipsis; }
-  .selection-bar select.changed { color: var(--faint); } /* the ticks differ from the chosen preset, or "None chosen" */
-  .selection-bar select option { color: var(--text); }
+  .studies-to-test h2 { margin: 0 0 10px; }
+  .studies-to-test.locked { opacity: .55; } /* during practice: shown, but greyed out */
+  .preset-row { display: flex; align-items: center; gap: 8px; }
+  #preset-select { min-width: 0; text-overflow: ellipsis; }
+  #preset-select.changed { color: var(--faint); } /* the ticks differ from the chosen preset, or "None chosen" */
+  #preset-select option { color: var(--text); }
   #preset-edit-btn[aria-expanded=true] { color: var(--text-strong); }
-  .preset-edit { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 8px; padding: 8px 12px; background: var(--surface); border-radius: 4px; box-shadow: var(--box-shadow); }
+  .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
+  .sel-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .all-row #show-hidden-btn { margin-left: auto; }
   .preset-edit-row { display: flex; align-items: center; gap: 6px; }
   .preset-edit-row .panel-close { margin-left: auto; font-size: 20px; line-height: 1; padding: 0 4px; align-self: flex-start; }
-  .selection-bar #sel-summary { margin-left: auto; }
   /* The Lichess page's lines: account, connected, fetched, statistics */
   .lichess-lines p { margin: 2px 0; }
   #lichess-account:empty, #lichess-rating:empty, #lichess-connected:empty, #lichess-fetched:empty, #lichess-moves:empty, #lichess-masters:empty { display: none; }
@@ -373,7 +375,6 @@
   .promo button { position: relative; width: 64px; height: 64px; padding: 0; }
 
   @media (max-width: 800px) {
-    .selection-bar #sel-summary { margin-left: 0; flex-basis: 100%; }
   }
   @media (max-width: 640px) {
     header nav { width: 100%; gap: 4px; flex-wrap: nowrap; }
@@ -520,41 +521,48 @@
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
-      <!-- While nothing is practised: the studies and chapters to tick, under the chooser -->
-        <div id="practice-studies" class="practice-studies">
-          <div class="selection-bar">
-            <label for="preset-select">Presets</label>
-            <select id="preset-select" title="Tick exactly the chapters of a preset"></select>
-            <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
-            </button>
-            <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
-            <span id="sel-summary" class="muted"></span>
-          </div>
-          <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
-            <div class="preset-edit-row">
-              <div class="preset-buttons">
-                <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
-                <button id="preset-update-btn" class="small" title="Save the ticked chapters in this preset">Update</button>
-                <button id="preset-rename-btn" class="small">Rename</button>
-                <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
-              </div>
-              <button id="preset-edit-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
-            </div>
-            <form id="preset-name-form" class="preset-name-form hidden">
-              <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
-              <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
-              <div id="preset-name-error" class="form-error"></div>
-            </form>
-          </div>
-          <div class="studies">
-            <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes. -->
-            <div class="row study-row all-row"><span class="toggle-space"></span>
-              <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
-            </div>
-            <div id="studies"></div>
-          </div>
+      <!-- Studies to test: the preset, how many chapters are ticked, and the chapters (opened on request).
+           Shown always; greyed out during practice. -->
+      <div id="studies-to-test" class="panel studies-to-test hidden">
+        <h2>Studies to test</h2>
+        <div class="preset-row">
+          <select id="preset-select" aria-label="Preset" title="Tick exactly the chapters of a preset"></select>
+          <button id="preset-edit-btn" class="icon-btn" aria-expanded="false" aria-controls="preset-edit" aria-label="Edit presets" title="Edit presets">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
+          </button>
         </div>
+        <div id="preset-edit" class="preset-edit hidden" aria-label="Edit presets">
+          <div class="preset-edit-row">
+            <div class="preset-buttons">
+              <button id="preset-new-btn" class="small" title="Save the ticked chapters as a new preset">Save as new</button>
+              <button id="preset-update-btn" class="small" title="Save the ticked chapters in this preset">Update</button>
+              <button id="preset-rename-btn" class="small">Rename</button>
+              <button id="preset-delete-btn" class="small" title="Delete this preset; the ticks stay">Delete</button>
+            </div>
+            <button id="preset-edit-close" class="icon-btn panel-close" aria-label="Close" title="Close (Esc)">×</button>
+          </div>
+          <form id="preset-name-form" class="preset-name-form hidden">
+            <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
+            <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
+            <div id="preset-name-error" class="form-error"></div>
+          </form>
+        </div>
+        <div class="sel-row">
+          <span id="sel-summary" class="muted"></span>
+          <button id="chapters-toggle" aria-expanded="false" aria-controls="practice-studies">Choose chapters ▾</button>
+        </div>
+      </div>
+      <!-- The chapters: opened with Choose chapters, while nothing is practised -->
+      <div id="practice-studies" class="practice-studies hidden">
+        <div class="studies">
+          <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes; the eye shows hidden studies. -->
+          <div class="row study-row all-row"><span class="toggle-space"></span>
+            <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
+            <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
+          </div>
+          <div id="studies"></div>
+        </div>
+      </div>
       </div>
     </div>
   </section>
@@ -614,7 +622,7 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies</a> · <a href="#help-options">Options</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies to test</a> · <a href="#help-options">Options</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
@@ -731,10 +739,10 @@
       </div>
 
       <div class="card" id="help-studies">
-        <h2>Studies</h2>
+        <h2>Studies to test</h2>
         <ul>
-          <li>While nothing is being practised, the Practice page lists your studies under Lines and Positions.</li>
-          <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
+          <li>On the Practice page, <b>Studies to test</b> shows the chosen preset and how many chapters are ticked; <b>Choose chapters</b> opens your studies and chapters. During practice it's greyed out: end practice to change it.</li>
+          <li>Tick studies or chapters, or <b>All</b>, to choose what you practice.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name to look through it on the Review page. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
           <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first ticked chapter). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Choose another study from the drop-down, and another chapter in the numbered list (or use ↑ ↓). Beside the board: the study and its chapters (with their move accuracy), the moves, and the move's comment and statistics.</li>
@@ -743,7 +751,7 @@
         <details>
           <summary>Presets</summary>
           <ul>
-            <li>A preset is a saved set of ticked chapters. Choose one from <b>Presets</b> to tick exactly its chapters.</li>
+            <li>A preset is a saved set of ticked chapters. Choose one from the drop-down under <b>Studies to test</b> to tick exactly its chapters.</li>
             <li>The pencil (✎) opens the buttons: <b>Save as new</b> saves the ticked chapters under a new name; <b>Update</b> saves them in the chosen preset; <b>Rename</b> and <b>Delete</b> (the ticks stay).</li>
             <li>When the ticks differ from the chosen preset, its name is greyed out; choose it again to go back to its chapters.</li>
             <li>Chapters no longer on Lichess, or in hidden studies, are skipped. Presets are included in backups.</li>
@@ -751,7 +759,7 @@
         </details>
         <details>
           <summary>Hiding studies</summary>
-          <p>The eye at the top shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the top eye again to put them out of sight. Hidden studies aren't practiced.</p>
+          <p>The eye beside <b>All</b> shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the eye beside All again to put them out of sight. Hidden studies aren't practiced.</p>
         </details>
         <details>
           <summary>The move tree</summary>
@@ -759,7 +767,7 @@
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
             <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>Hover over a move to see the small board (see Practice).</li>
+            <li>Click a move to show it on the board (on the Review page).</li>
           </ul>
         </details>
       </div>
@@ -1239,7 +1247,10 @@ function setUpdateStatus(message, isError = false) {
   const box = $('update-status');
   box.className = 'update-status' + (isError ? ' error' : '');
   box.replaceChildren(...parts);
-  if (!library && parts.length) $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
+  if (!library && parts.length) {
+    $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
+    $('practice-studies').classList.remove('hidden');
+  }
   updateLichessStatus();
 }
 
@@ -1725,9 +1736,33 @@ function averageScore(chapters) {
 }
 
 // ---------- Studies list (on the Practice page) ----------
-// While nothing is practised, the Practice page shows your studies and chapters under the chooser:
-// tick them to choose what to practice (with presets and hidden studies); a chapter's name opens it on
-// the Review page.
+// Under the chooser, the Studies to test tile: the preset (a named set of ticked chapters, with ✎ for
+// its buttons), how many chapters are ticked, and Choose chapters, which opens the chapters (your
+// studies and chapters to tick, hidden studies, move accuracy; a chapter's name opens it on the Review
+// page). The chapters start closed each time the app opens and stay as you leave them. During practice
+// the tile is greyed out ("End practice to change") and the chapters close, since a session's lines are
+// chosen when it starts.
+let chaptersShown = false;
+
+function showChapters(open) {
+  chaptersShown = open;
+  const shown = open && !practice; // never during practice
+  $('practice-studies').classList.toggle('hidden', !shown);
+  $('chapters-toggle').textContent = shown ? 'Hide chapters ▴' : 'Choose chapters ▾';
+  $('chapters-toggle').setAttribute('aria-expanded', String(shown));
+}
+$('chapters-toggle').addEventListener('click', () => showChapters(!chaptersShown));
+
+function lockStudiesToTest(locked) {
+  const tile = $('studies-to-test');
+  tile.classList.toggle('hidden', !library); // once there are studies
+  tile.classList.toggle('locked', locked);
+  tile.title = locked ? 'End practice to change' : '';
+  if (locked) showPresetEdit(false);
+  $('chapters-toggle').disabled = $('preset-edit-btn').disabled = locked;
+  $('preset-select').disabled = locked || !presets.length;
+  showChapters(chaptersShown); // the chapters only while nothing is practised
+}
 
 function scoreElement({ lines, tried, score }) {
   if (!lines) return element('span', { class: 'rate' }, 'no lines to test');
@@ -1738,6 +1773,7 @@ function scoreElement({ lines, tried, score }) {
 
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
+  $('studies-to-test').classList.toggle('hidden', !library); // once there are studies
   if (!library) return; // the list keeps any message about fetching your studies
   const container = $('studies');
   container.replaceChildren();
@@ -1922,7 +1958,7 @@ function updateSelectionPanel() {
   const all_ = $('all-box');
   all_.checked = all.length > 0 && selected.length === all.length;
   all_.indeterminate = selected.length > 0 && selected.length < all.length;
-  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected`;
+  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} ticked`;
   renderPresets();
   // The top eye: a line through it while hidden studies are out of sight.
   setToggle('show-hidden-btn', showHiddenStudies, showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies');
@@ -1963,7 +1999,7 @@ function renderPresets() {
       element('option', { value: p.name }, p.name)));
   $('preset-select').classList.toggle('changed', !!shown); // greyed out while the ticks differ, and "None chosen"
   $('preset-select').value = shown ? '' : preset.name;
-  $('preset-select').disabled = !presets.length;
+  $('preset-select').disabled = !presets.length || !!practice;
   $('preset-new-btn').disabled = selection.size === 0;
   $('preset-update-btn').disabled = !preset || !changed || selection.size === 0;
   $('preset-rename-btn').disabled = !preset;
@@ -2488,7 +2524,6 @@ function showChooser() {
   setStatus('');
   $('practice-status').classList.add('hidden'); // setStatus shows it again when a line starts
   hideCommentPopup();
-  $('practice-studies').classList.remove('hidden'); // the studies list, under the chooser
   $('practice-chooser').classList.remove('hidden');
   renderStudies(); // and the chooser
   renderChooser();
@@ -2627,7 +2662,7 @@ function startLine(line, singleAt = null) {
   };
   hideBoardNotice(true);
   $('practice-chooser').classList.add('hidden');
-  $('practice-studies').classList.add('hidden'); // no studies list during practice
+  lockStudiesToTest(true);
   $('practice-line').classList.remove('hidden');
   $('next-btn').classList.add('hidden');
   for (const id of ['hint-btn', 'skip-btn', 'end-practice-btn']) $(id).classList.remove('hidden');
@@ -2832,6 +2867,7 @@ $('end-practice-btn').addEventListener('click', () => {
 function endPractice() {
   practice = null;
   session = null;
+  lockStudiesToTest(false);
   if (waitingStudies) { // updated studies that arrived during practice (see syncStudies)
     const fetched = waitingStudies;
     waitingStudies = null;
