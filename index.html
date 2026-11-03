@@ -753,7 +753,7 @@
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
             <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>Click a move to show it on the board (on the Review page).</li>
+            <li>On the Review page, hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
         </details>
       </div>
@@ -1836,8 +1836,8 @@ function openingName(parsed) {
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
 // Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
-// are italics; moves with a move-quality glyph take its color. On the Review page, clicking a move
-// shows it (pick; current, highlighted). Branches open and close in openSet, and the tree is drawn
+// are italics; moves with a move-quality glyph take its color. On the Review page, hovering over a move
+// shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted). Branches open and close in openSet, and the tree is drawn
 // again by redraw.
 function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
   const parsed = parseChapter(ch);
@@ -1849,7 +1849,11 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
     const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(node))) : node.untested ? 'untested-move' : 'opp';
     const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
     const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
-    if (pick) el.addEventListener('click', () => pick(node));
+    if (pick) { // hovering shows the move on the small hover board; clicking shows it on the big one
+      el.addEventListener('click', () => pick(node));
+      if (node !== current) el.addEventListener('mouseenter', () => showHoverBoard(el, node, parsed.yourColor)); // not for the move on the big board
+      el.addEventListener('mouseleave', hideHoverBoard);
+    }
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       highlight ? element('span', { class: 'needs-work' }, el, glyphMarks(node)) : [el, glyphMarks(node)],
@@ -2200,6 +2204,7 @@ function showReviewNode(node) {
 }
 
 function renderReviewTree() {
+  hideHoverBoard(); // its move may be about to be redrawn
   const box = renderChapterTree(review.ch, { openSet: review.openSet, redraw: renderReviewTree, pick: showReviewNode, current: review.node });
   $('review-tree').replaceChildren(...box.childNodes);
   $('review-tree').querySelector('.current')?.scrollIntoView({ block: 'nearest' });

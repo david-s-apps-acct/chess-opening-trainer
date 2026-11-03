@@ -462,6 +462,11 @@ async function runLichessPage(app) {
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
+  const e5 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e5');
+  e5.dispatchEvent(new MouseEvent('mouseenter'));
+  const hoverShown = !$('move-preview').classList.contains('hidden') && $('move-preview').innerText.startsWith('1… e5'), stillAt = current();
+  e5.dispatchEvent(new MouseEvent('mouseleave'));
+  check('review: hovering over a move shows the hover board, not the big board', [hoverShown, stillAt, $('move-preview').classList.contains('hidden')], [true, 'e4', true]);
   const yoursAtE4 = $('review-yours').firstChild?.textContent ?? null;
   key('ArrowRight');
   const yoursAtE5 = $('review-yours').childElementCount;
