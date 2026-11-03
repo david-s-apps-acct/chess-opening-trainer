@@ -28,6 +28,8 @@ Loaded by the app from the jsDelivr CDN; each keeps its own licence:
 | "SFX" move sounds, from [lila](https://github.com/lichess-org/lila) | Enigmahack | AGPL-3.0-or-later |
 | [Noto Sans](https://fonts.google.com/noto/specimen/Noto+Sans) and Noto Sans Symbols 2 (via Fontsource) | Google | OFL-1.1 |
 
+The app's icon is the knight (♞) from Noto Sans Symbols 2, in white on the app's blue.
+
 Move statistics come from the [Lichess Opening Explorer](https://lichess.org/api#tag/Opening-Explorer).
 
 This app is not affiliated with or endorsed by Lichess.org.

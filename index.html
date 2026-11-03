@@ -10,6 +10,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chess Opening Trainer</title>
+<!-- Installable (Add to Home Screen): the manifest, icons and full-screen settings -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="theme-color" content="#161512">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Openings">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/600.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5.3.0/700.css">
@@ -553,6 +562,7 @@
           <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some on the <b>Studies</b> page.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
+        <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
         <p>The app practices the openings in your Lichess studies, so you need a Lichess account with studies (create them at lichess.org/study). New studies appear here the next time the app opens.</p>
         <details>
           <summary>Words used in the app</summary>
@@ -1290,7 +1300,9 @@ function connected() {
 // studies, then sends you back here with a code; the app exchanges it for a token (lasting about a
 // year) and fetches your studies. Lichess needs an address to send you back to, so it works only
 // online (GitHub Pages, or a local test server); a page opened from disk pastes a token instead.
-// The code verifier and state wait in sessionStorage while you're on Lichess.
+// The code verifier and state wait in localStorage ("cot.login") while you're on Lichess: in an
+// installed app, the way back may open in another view of it, which shares localStorage but not
+// sessionStorage.
 const OAUTH_CLIENT = 'chess-opening-trainer.david-s-apps-acct.github.io'; // any unique name will do
 const canLogIn = location.protocol !== 'file:';
 const returnAddress = () => location.origin + location.pathname;
@@ -1299,7 +1311,7 @@ const randomText = () => base64url(crypto.getRandomValues(new Uint8Array(32)));
 
 async function logInWithLichess() {
   const verifier = randomText(), state = randomText();
-  try { sessionStorage.setItem('cot.login', JSON.stringify({ verifier, state })); } catch {}
+  store.set('login', { verifier, state });
   location.href = await loginAddress(verifier, state);
 }
 
@@ -1317,8 +1329,8 @@ async function finishLogIn() {
   const params = new URLSearchParams(location.search);
   if (!params.has('code') && !params.has('error')) return null;
   window.history.replaceState(null, '', returnAddress()); // the code isn't left in the address bar (`history` is your practice history)
-  let saved = null;
-  try { saved = JSON.parse(sessionStorage.getItem('cot.login')); sessionStorage.removeItem('cot.login'); } catch {}
+  const saved = store.get('login', null);
+  store.remove('login');
   const fail = text => { setUpdateStatus(text, true); return false; };
   if (params.get('error') === 'access_denied') return fail('Connecting was cancelled on Lichess.');
   if (params.has('error')) return fail(`Lichess couldn't connect: ${params.get('error_description') || params.get('error')}.`);

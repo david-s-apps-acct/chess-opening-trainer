@@ -309,17 +309,18 @@ async function runLichessPage(app) {
     ['https://lichess.org/oauth', 'code', 'chess-opening-trainer.david-s-apps-acct.github.io', 'S256', 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM', 'study:read', 'st4te', true]);
   let sent = null;
   window.fetch = async (url, init) => { sent = [String(url), Object.fromEntries(init.body)]; return new Response(JSON.stringify({ token_type: 'Bearer', access_token: 'lio_new', expires_in: 31536000 })); };
-  sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
+  localStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' })); // as Connect leaves it (saving is off here)
   history.replaceState(null, '', location.pathname + '?code=liu_code&state=st4te');
   const loggedIn = await app.finishLogIn();
-  check('login: back from Lichess, the code exchanged for a token', [loggedIn, app.token, sent[0], sent[1].code, sent[1].code_verifier, location.search, sessionStorage.getItem('cot.login')],
-    [true, 'lio_new', 'https://lichess.org/api/token', 'liu_code', 'v3rifier', '', null]);
-  sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
+  check('login: back from Lichess, the code exchanged for a token', [loggedIn, app.token, sent[0], sent[1].code, sent[1].code_verifier, location.search],
+    [true, 'lio_new', 'https://lichess.org/api/token', 'liu_code', 'v3rifier', '']);
+  localStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' })); // as Connect leaves it (saving is off here)
   history.replaceState(null, '', location.pathname + '?error=access_denied&state=st4te');
   check('login: cancelled on Lichess', [await app.finishLogIn(), $('update-status').textContent], [false, 'Connecting was cancelled on Lichess.']);
-  sessionStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' }));
+  localStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' })); // as Connect leaves it (saving is off here)
   history.replaceState(null, '', location.pathname + '?code=liu_code&state=other');
   check('login: a state that doesn\'t match is refused', await app.finishLogIn(), false);
+  localStorage.removeItem('cot.login');
   window.fetch = isolated;
   app.setToken(null);
 
