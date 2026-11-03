@@ -264,7 +264,7 @@
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   #board, #review-board { width: 100%; height: 100%; }
   /* Reviewing a study: tiles beside the board (the study with its chapters; the moves, the current one
-     highlighted; the move and its comment; its move statistics; your tries), and the review button on the
+     highlighted; its move statistics; your accuracy), and the review button on the
      Practice page. On a narrow screen the tiles go under the board. */
   .review-tiles { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .review-tiles .panel { flex: none; min-width: 0; }
@@ -291,7 +291,7 @@
   .review-comment:empty { display: none; }
   .review-comment .glyph { margin: 0 6px 0 0; }
   .review-comment p { margin: 0 0 4px; }
-  /* The move statistics and your tries: the page's text size and colour; small grey headings */
+  /* The move statistics and your accuracy: the page's text size and colour; small grey headings */
   .review-stats { font-size: 14px; }
   .review-stats:empty { display: none; }
   .review-stats div + div { margin-top: 3px; }
@@ -573,7 +573,7 @@
         <div class="board-wrap"><div id="review-board"></div></div>
         <div id="review-comment" class="review-comment"></div>
       </div>
-      <!-- Tiles: the study and its chapters; the moves; the move's statistics; your tries -->
+      <!-- Tiles: the study and its chapters; the moves; the move's statistics; your accuracy -->
       <div class="review-tiles">
         <div class="panel">
           <div class="review-head"><select id="review-study" aria-label="Study"></select></div>
@@ -745,7 +745,7 @@
           <li>On the Practice page, <b>Studies to practice</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
           <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
           <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name (or its tick box) to tick it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. To look through a chapter, use the header's <b>Review</b> button.</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Under the board: the move's annotation (e.g. !) and its comment. Beside it: the study and its chapters (with their move accuracy), the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and, for your moves, <b>Your tries</b> (move accuracy, last tested, errors). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Under the board: the move's annotation (e.g. !) and its comment. Beside it: the study and its chapters, the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
           <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
           <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
         </ul>
@@ -2069,7 +2069,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // position, with arrows for the study's moves there (see reviewArrows). Beside it, tiles: the study (a
 // drop-down of your studies with the study's move accuracy, its chapters as a numbered list, as on
 // Lichess, each with its move accuracy); the moves (the position's name, the
-// tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's statistics; and your tries (as on the
+// tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's statistics; and your accuracy (as on the
 // hover boards). Under the board, the move's annotation and comment. ← → Home End step through the moves, ↑ ↓ the
 // chapters; playing one of the study's moves on the board follows it. (The header's buttons leave it.)
 let reviewBoard = null;
@@ -2110,8 +2110,7 @@ function openReview(ch, { at = [] } = {}) {
     const p = parseChapter(c);
     return element('div', { class: 'review-chapter' + (c === ch ? ' current' : '') + (p.error ? ' unavailable' : ''), role: 'option', 'aria-selected': String(c === ch),
       'aria-disabled': p.error ? 'true' : null, title: p.error || null, onclick: p.error ? null : () => openReview(c) },
-      element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, `${k + 1}. ${c.name}`), p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }),
-      p.error ? null : scoreElement(averageScore([c])));
+      element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, `${k + 1}. ${c.name}`), p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }));
   }));
   const list = $('review-chapters'), row = list.querySelector('.current');
   list.scrollTop = Math.max(0, Math.min(list.scrollTop, row.offsetTop - list.offsetTop), row.offsetTop - list.offsetTop + row.offsetHeight - list.clientHeight); // in view
@@ -2194,16 +2193,33 @@ function showReviewNode(node) {
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
   $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
   // Under the moves, two tiles, each hidden when empty: the move's Lichess and masters statistics (ranks,
-  // "Position reached …"); and, for your moves, your tries (move accuracy, last tested, errors), as on the
-  // hover boards.
+  // "Position reached …"); and Your accuracy: for your moves, as on the hover boards (move accuracy, last
+  // tested, errors); at the start, the chapter's average move accuracy; at a line's last move, its line
+  // accuracy and when it was last played through.
   const heading = node.uci ? hoverBoardHeading(node) : [];
   const lichessRows = node.uci ? heading.slice(1) : [positionCountText(lichessGamesAt(node.epd)) && element('div', { class: 'muted' }, positionCountText(lichessGamesAt(node.epd)))];
   const yourRows = node.uci && node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null).rows.slice(heading.length) : [];
   const tile = (id, title, rows) => { rows = rows.filter(Boolean); $(id).replaceChildren(...rows.length ? [element('h3', {}, title), ...rows] : []); };
   tile('review-lichess', 'Move statistics', lichessRows);
-  tile('review-yours', 'Your tries', yourRows);
+  tile('review-yours', 'Your accuracy', [...yourRows, ...!node.uci ? [chapterAccuracyText(review.ch)] : lineEndRows(node)]);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
+}
+
+// "85% average move accuracy (12 of 15 moves tried)", or "Untried".
+function chapterAccuracyText(ch) {
+  const { tried, score } = averageScore([ch]), total = yourMoves(ch).length;
+  return element('div', {}, tried ? `${percent(score)}% average move accuracy (${tried} of ${plural(total, 'move')} tried)` : 'Untried');
+}
+
+// At a line's last move: "92% line accuracy" (untried moves counting 0%) and when it was last played
+// through ("Last played through today", "… 3 days ago", "Not played through yet").
+function lineEndRows(node) {
+  const line = !node.children.length && !node.untested && chapterLines(review.ch).find(l => l.key === node.key);
+  if (!line) return [];
+  const accuracy = itemAccuracy({ line, i: null }), last = lastPlayedAt(line.key), days = last && daysAgo(last);
+  return [accuracy == null ? null : element('div', {}, `${percent(accuracy)}% line accuracy`),
+    element('div', {}, !last ? 'Not played through yet' : days === 'Today' ? 'Last played through today' : `Last played through ${days} ago`)];
 }
 
 function renderReviewTree() {

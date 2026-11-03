@@ -462,6 +462,12 @@ async function runLichessPage(app) {
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
+  key('Home');
+  const accuracyAtStart = [...$('review-yours').querySelectorAll('div')].map(d => d.textContent);
+  key('End');
+  const atEnd = [...$('review-yours').querySelectorAll('div')].map(d => d.textContent);
+  key('Home'); key('ArrowRight');
+  check('review: Your accuracy: the chapter\'s at the start, the line\'s at its end', [accuracyAtStart[0].endsWith('tried)') || accuracyAtStart[0] === 'Untried', atEnd.at(-1).startsWith('Last played through') || atEnd.at(-1) === 'Not played through yet'], [true, true]);
   const e5 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e5');
   e5.dispatchEvent(new MouseEvent('mouseenter'));
   const hoverShown = !$('move-preview').classList.contains('hidden') && $('move-preview').innerText.startsWith('1… e5'), stillAt = current();
@@ -471,7 +477,7 @@ async function runLichessPage(app) {
   key('ArrowRight');
   const yoursAtE5 = $('review-yours').childElementCount;
   key('ArrowLeft');
-  check('review: Your tries for your moves only, in its own tile; the comment under the board', [yoursAtE4, yoursAtE5, $('review-comment').textContent], ['Your tries', 0, 'Best by test.']);
+  check('review: Your accuracy for your moves only (e5 isn\'t a line\'s end), in its own tile; the comment under the board', [yoursAtE4, yoursAtE5, $('review-comment').textContent], ['Your accuracy', 0, 'Best by test.']);
   check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.firstChild.textContent), ['1. Italian', '2. Sicilian']);
   $('review-chapters').children[1].click();
   const atStart = current();
@@ -500,8 +506,8 @@ async function runLichessPage(app) {
   chooseStudy('AAAAAAAA');
   check('review: another study, then back to the chapter you were on', [other, chapterShown()], ['1. Side line', '2. Sicilian']);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: no Close button; the chapters\' move accuracy shown, not the study\'s', [!!$('review-close'), !!document.querySelector('.review-head .rate'),
-    [...$('review-chapters').children].every(row => row.querySelector('.rate'))], [false, false, true]);
+  check('review: no Close button; no accuracy in the study drop-down or the chapters list', [!!$('review-close'), !!document.querySelector('.review-head .rate'),
+    [...$('review-chapters').children].some(row => row.querySelector('.rate'))], [false, false, false]);
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('review-screen').classList.contains('hidden'), true);
   $('nav-practice').click();
