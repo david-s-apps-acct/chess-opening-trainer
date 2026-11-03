@@ -272,9 +272,9 @@
   .review-tiles { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .review-tiles .panel { flex: none; min-width: 0; }
   .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .review-head h2 { margin: 0; }
-  /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 8 */
-  .review-chapters { margin-top: 10px; max-height: 232px; overflow-y: auto; font-size: 14px; }
+  #review-study { flex: 1; min-width: 0; font-weight: 600; text-overflow: ellipsis; }
+  /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 5 */
+  .review-chapters { margin-top: 10px; max-height: 146px; overflow-y: auto; font-size: 14px; }
   .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
   .review-chapter:hover { background: var(--surface-3); }
   .review-chapter.current, .review-chapter.current:hover { background: var(--accent); color: var(--accent-text); }
@@ -559,7 +559,7 @@
       <!-- Three tiles: the study and its chapters; the moves; the move's comment and statistics -->
       <div class="review-tiles">
         <div class="panel">
-          <div class="review-head"><h2 id="review-study"></h2><button id="review-close" title="Back (Esc)">Close</button></div>
+          <div class="review-head"><select id="review-study" aria-label="Study"></select><button id="review-close" title="Back (Esc)">Close</button></div>
           <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
         </div>
         <div class="panel">
@@ -728,7 +728,7 @@
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name to look through it on the Review page. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first ticked chapter); <b>Close</b> returns to the page you came from. On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first ticked chapter); <b>Close</b> returns to the page you came from. On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board; Close then goes back to Practice. Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Choose another study from the drop-down, and another chapter in the numbered list (or use ↑ ↓); <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -1317,6 +1317,11 @@ function refreshPage() {
   if (currentScreen === 'lichess') renderLichessPage();
   else if (currentScreen === 'options') renderOptions();
   else if (currentScreen === 'practice' && !practice) renderStudies(); // and the chooser
+  else if (currentScreen === 'review') { // the same chapter and position in the new studies, if they're still there
+    const ch = chapterByKey(review.ch.key);
+    if (ch && !parseChapter(ch).error) openReview(ch, { at: pathTo(review.node).map(m => m.san) });
+    else $('nav-practice').click();
+  }
 }
 
 // Drop selection entries and history that no longer match anything.
@@ -2049,7 +2054,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // instead of) practicing; it works offline. Opened from the header's Review button, a chapter's name in
 // the Practice page's studies list, or the icon by the study's name during practice. The board shows the
 // position, with arrows for the study's moves there (see reviewArrows). Beside it, three tiles: the study
-// (its name, its chapters as a numbered list, as on Lichess, and Close); the moves (the position's name,
+// (a drop-down of your studies, its chapters as a numbered list, as on Lichess, and Close); the moves (the position's name,
 // the tree with the current move highlighted, ⏮ ◀ ▶ ⏭); and the move's glyphs, comment and statistics
 // (as on the hover boards). ← → Home End step through the moves, ↑ ↓ the chapters; playing one of the
 // study's moves on the board follows it; Close or Esc goes back to the page it was opened from.
@@ -2082,7 +2087,11 @@ function openReview(ch, { at = [], back } = {}) {
     window.addEventListener('resize', () => reviewBoard.redrawAll());
   }
   const study = studyOfChapter(ch);
-  $('review-study').textContent = study.name;
+  // The studies (hidden ones left out, except this one), a study with no chapter that can be shown greyed out.
+  reviewedChapters.set(study.id, ch.key);
+  $('review-study').replaceChildren(...library.studies.filter(st => st === study || !hiddenStudies.has(st.id)).map(st =>
+    element('option', { value: st.id, disabled: st.chapters.every(c => parseChapter(c).error) }, st.name)));
+  $('review-study').value = study.id;
   // The chapters, numbered as on Lichess, each with the dot for the side you play; one that can't be
   // shown is greyed out, with the reason on hover.
   $('review-chapters').replaceChildren(...study.chapters.map((c, k) => {
@@ -2099,6 +2108,16 @@ function openReview(ch, { at = [], back } = {}) {
   showReviewNode(node);
   reviewBoard.redrawAll();
 }
+
+// Another study from the drop-down: the chapter last looked at in it during this visit, or its first
+// chapter that can be shown.
+const reviewedChapters = new Map(); // study id -> chapter key
+$('review-study').addEventListener('change', e => {
+  e.target.blur(); // so the arrow keys step through the moves again
+  const study = library.studies.find(st => st.id === e.target.value);
+  const ch = chapterByKey(reviewedChapters.get(study.id)) || study.chapters.find(c => !parseChapter(c).error);
+  if (ch) openReview(ch);
+});
 
 // ↑ and ↓: the previous and next chapter that can be shown.
 function stepChapter(d) {

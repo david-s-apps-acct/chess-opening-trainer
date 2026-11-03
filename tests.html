@@ -57,7 +57,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, renderOptions, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
-  restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, parseChapter,
+  restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, parseChapter, refreshPage,
   get token() { return token; },
   loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
@@ -468,6 +468,20 @@ async function runLichessPage(app) {
   const arrowsAt = sans => { let n = italianRoot; for (const x of sans) n = n.children.find(c => c.san === x); return app.reviewArrows(n, 'white').map(a => `${a.orig}${a.dest} ${a.brush}`); };
   check('review: arrows for the study\'s moves', [arrowsAt([]), arrowsAt(['e4']), arrowsAt(['e4', 'e5']), arrowsAt(['e4', 'e5', 'Nf3', 'Nc6'])],
     [['e2e4 green'], ['e7e5 white'], ['g1f3 green', 'b1c3 blue'], ['f1c4 green', 'f1b5 yellow']]);
+  // Another study from the drop-down: its first chapter; back to the first study: the chapter you were on.
+  const twoStudies = structuredClone(LIBRARY);
+  twoStudies.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: 'EEEEEEEE/FFFFFFFF', id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
+  $('review-chapters').children[1].click(); // the Sicilian, in the first study
+  app.setLibrary(twoStudies);
+  app.refreshPage(); // as after your studies are updated from Lichess
+  check('review: after the studies are updated, the same chapter and position', [!$('review-screen').classList.contains('hidden'), chapterShown()], [true, '2. Sicilian']);
+  const chooseStudy = id => { $('review-study').value = id; $('review-study').dispatchEvent(new Event('change')); };
+  check('review: the studies in the drop-down', [...$('review-study').options].map(o => o.textContent), ['Test Study', 'Other Study']);
+  chooseStudy('EEEEEEEE');
+  const other = chapterShown();
+  chooseStudy('AAAAAAAA');
+  check('review: another study, then back to the chapter you were on', [other, chapterShown()], ['1. Side line', '2. Sicilian']);
+  app.setLibrary(structuredClone(LIBRARY));
   key('Escape');
   check('review: Esc goes back to the studies list', [!$('practice-screen').classList.contains('hidden'), !$('practice-studies').classList.contains('hidden')], [true, true]);
   // From Practice: the icon by the study's name ends practice and opens the study at the position on the
