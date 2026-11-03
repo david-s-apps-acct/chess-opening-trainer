@@ -381,8 +381,6 @@
           <p id="lichess-rating" class="muted"></p>
           <p id="lichess-connected" class="muted"></p>
           <p id="lichess-fetched" class="muted"></p>
-          <p id="lichess-masters" class="muted"></p>
-          <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
           <div id="update-status" class="update-status" role="status" aria-live="polite"></div>
         </div>
       </div>
@@ -416,6 +414,8 @@
           <button id="games-apply" class="primary">Apply</button>
           <button id="games-cancel" class="primary">Cancel</button>
         </div>
+        <p id="lichess-masters" class="muted after-actions"></p>
+        <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div id="backup-card" class="card">
@@ -718,8 +718,8 @@
         <h2>Lichess</h2>
         <ul>
           <li>The header's <b>Lichess</b> button shows a red dot when you're not connected (including when Lichess has ended the connection). Other messages, such as Lichess asking to slow down, show only on the Lichess page.</li>
-          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their masters statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
-          <li><b>Move statistics</b>: the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
+          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, and any message about fetching your studies), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
+          <li><b>Move statistics</b>: how many positions have their move statistics and masters statistics so far, and the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
@@ -3142,9 +3142,9 @@ async function downloadExplorerPositions(kind, run) {
   const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
     .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
   if (!todo.length) return; // nothing missing: nothing to say
-  // The progress shows in the Lichess page's "3 of 10 positions (downloading…)" (the Move statistics
-  // card) or "Masters statistics: 3 of 10 positions (downloading…)" (the Status card); the status line
-  // under it is only for problems.
+  // The progress shows in the Lichess page's Move statistics card: "3 of 10 positions (downloading…)"
+  // under its heading, "Masters statistics: 3 of 10 positions (downloading…)" at the bottom; the status
+  // line under each is only for problems.
   status('');
   showProgress();
   let fetched = 0;
@@ -3191,9 +3191,9 @@ async function downloadExplorerPositions(kind, run) {
   if (fetched && todo.every(([epd]) => saved(epd))) suggestBackup(explorer.Label);
 }
 
-// The Lichess page's download progress: "3 of 10 positions (downloading…)" in the Move statistics card
-// (shown once there are studies), "Masters statistics: …" in the Status card; and the status on the
-// header's Lichess button.
+// The Lichess page's download progress, in the Move statistics card (shown once there are studies):
+// "3 of 10 positions (downloading…)" under its heading, "Masters statistics: …" at the bottom; and the
+// status on the header's Lichess button.
 function updateStatisticsInfo() {
   const studied = library ? [...allStudyPositions().keys()] : [];
   for (const kind of ['lichess', 'masters']) {
