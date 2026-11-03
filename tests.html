@@ -445,22 +445,22 @@ async function runLichessPage(app) {
   document.querySelector('#studies .study-row .review-btn').click();
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
-  check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-studies').classList.contains('current'), $('review-chapter').value, $('review-position').textContent, current()],
-    [true, true, 'AAAAAAAA/BBBBBBBB', 'Starting position', null]);
+  const chapterShown = () => $('review-chapters').querySelector('.current')?.textContent;
+  check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-studies').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
+    [true, true, '1. Italian', 'Starting position', null]);
   key('ArrowRight'); key('ArrowRight');
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
-  $('review-chapter').focus();
-  $('review-chapter').value = 'AAAAAAAA/CCCCCCCC';
-  $('review-chapter').dispatchEvent(new Event('change'));
+  check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.textContent), ['1. Italian', '2. Sicilian']);
+  $('review-chapters').children[1].click();
   const atStart = current();
   key('ArrowRight');
-  check('review: another chapter from the drop-down, from its start; then → still steps', [$('review-chapter').value, atStart, current(), document.activeElement === $('review-chapter')],
-    ['AAAAAAAA/CCCCCCCC', null, 'e4', false]);
-  $('review-chapter').focus(); // a drop-down with the focus doesn't stop the keys either
-  key('ArrowRight');
-  check('review: → with the drop-down focused', current(), 'c5');
+  check('review: another chapter clicked, from its start; then → steps', [chapterShown(), atStart, current()], ['2. Sicilian', null, 'e4']);
+  key('ArrowUp');
+  const up = chapterShown();
+  key('ArrowDown');
+  check('review: ↑ and ↓, the previous and next chapter', [up, chapterShown()], ['1. Italian', '2. Sicilian']);
   // The arrows: your main move green, your alternatives blue, the opponent's replies white, marked moves amber.
   const italianRoot = app.parseChapter(app.chapterByKey('AAAAAAAA/BBBBBBBB')).root;
   const arrowsAt = sans => { let n = italianRoot; for (const x of sans) n = n.children.find(c => c.san === x); return app.reviewArrows(n, 'white').map(a => `${a.orig}${a.dest} ${a.brush}`); };

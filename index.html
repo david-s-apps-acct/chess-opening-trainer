@@ -271,7 +271,12 @@
   .review-tiles .panel { flex: none; min-width: 0; }
   .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .review-head h2 { margin: 0; }
-  #review-chapter { width: 100%; margin-top: 10px; flex: none; }
+  /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 8 */
+  .review-chapters { margin-top: 10px; max-height: 232px; overflow-y: auto; font-size: 14px; }
+  .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
+  .review-chapter:hover { background: var(--surface-3); }
+  .review-chapter.current, .review-chapter.current:hover { background: var(--accent); color: var(--accent-text); }
+  .review-chapter.unavailable { color: var(--faint); cursor: default; background: none; }
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   .review-info { font-size: 14px; }
@@ -554,7 +559,7 @@
       <div class="review-tiles">
         <div class="panel">
           <div class="review-head"><h2 id="review-study"></h2><button id="review-close" title="Back to Studies (Esc)">Close</button></div>
-          <select id="review-chapter" aria-label="Chapter"></select>
+          <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
         </div>
         <div class="panel">
           <div id="review-position" class="muted"></div>
@@ -721,7 +726,7 @@
           <li>Tick studies or chapters, or <b>All</b>, to choose what you practice. The count at the top right shows how many chapters are ticked.</li>
           <li>Click a study's name, ▸ or "7 chapters" to show its chapters. Click a chapter's name or ▸ to show its moves; click "3 lines" to show all its variations too. Clicking a name doesn't tick it.</li>
           <li>Hover over a chapter's name to see its opening. The dot after it shows the side you play (the orientation set on Lichess).</li>
-          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Choose another chapter from the drop-down; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
+          <li>The small board after a study's or chapter's name opens it on a board to review, on its own page (offline too). Arrows show the study's moves in the position: green for your main move, blue for your alternatives, white for the opponent's replies, amber for moves marked ?, ?! or ??. Click a move in the tree, use ← → (Home, End), or play one of the study's moves on the board. Under the moves: the move's comment, how often the position is reached, the move's Lichess and masters ranks, and your move accuracy. Click another chapter in the numbered list, or use ↑ ↓; <b>Close</b> or Esc goes back. Beside the board: the study and its chapters, the moves, and the move's comment and statistics.</li>
           <li>Each study and chapter shows your average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
         </ul>
         <details>
@@ -2084,7 +2089,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // through it; playing one of the study's moves on the board follows it; Close or Esc goes back to the
 // Studies page as it was. Beside the board, three tiles: the study (its name, the chapter drop-down and
 // Close); the moves (the position's name, the tree, ⏮ ◀ ▶ ⏭); and the move's glyphs, comment and
-// statistics.
+// statistics. The study's chapters are a numbered list, as on Lichess (↑ ↓ for the previous and next).
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), scrollY (the Studies page's) }
 
@@ -2111,20 +2116,27 @@ function openReview(ch) {
   }
   const study = studyOfChapter(ch);
   $('review-study').textContent = study.name;
-  $('review-chapter').replaceChildren(...study.chapters.map(c => {
+  // The chapters, numbered as on Lichess, each with the dot for the side you play; one that can't be
+  // shown is greyed out, with the reason on hover.
+  $('review-chapters').replaceChildren(...study.chapters.map((c, k) => {
     const p = parseChapter(c);
-    return element('option', { value: c.key, disabled: !!p.error }, c.name + (p.error ? ` (${p.error})` : ` · ${p.yourColor === 'white' ? 'White' : 'Black'}`));
+    return element('div', { class: 'review-chapter' + (c === ch ? ' current' : '') + (p.error ? ' unavailable' : ''), role: 'option', 'aria-selected': String(c === ch),
+      'aria-disabled': p.error ? 'true' : null, title: p.error || null, onclick: p.error ? null : () => openReview(c) },
+      `${k + 1}. ${c.name}`, p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }));
   }));
-  $('review-chapter').value = ch.key;
+  const list = $('review-chapters'), row = list.querySelector('.current');
+  list.scrollTop = Math.max(0, Math.min(list.scrollTop, row.offsetTop - list.offsetTop), row.offsetTop - list.offsetTop + row.offsetHeight - list.clientHeight); // in view
   reviewBoard.set({ orientation: parsed.yourColor });
   showReviewNode(parsed.root);
   reviewBoard.redrawAll();
 }
 
-$('review-chapter').addEventListener('change', e => {
-  e.target.blur(); // so ← and → step through the moves again
-  openReview(chapterByKey(e.target.value));
-});
+// ↑ and ↓: the previous and next chapter that can be shown.
+function stepChapter(d) {
+  const shown = studyOfChapter(review.ch).chapters.filter(c => !parseChapter(c).error);
+  const next = shown[shown.indexOf(review.ch) + d];
+  if (next) openReview(next);
+}
 
 function closeReview() {
   const y = review?.scrollY ?? 0;
@@ -2202,6 +2214,7 @@ document.addEventListener('keydown', e => {
   if (currentScreen !== 'review' || !review || typingInTextBox()) return;
   const step = { ArrowLeft: 'prev', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key];
   if (step) { e.preventDefault(); showReviewNode(reviewStep[step]()); }
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); stepChapter(e.key === 'ArrowUp' ? -1 : 1); }
   else if (e.key === 'Escape') closeReview();
 });
 
