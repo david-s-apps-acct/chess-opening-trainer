@@ -204,12 +204,13 @@
   /* Moves are in the standard text color, like Lichess, except moves with a move-quality glyph,
      which take the glyph's color. */
   .tree-move, .untested-move { color: var(--text); }
-  .quality-good { color: #629924 !important; }
-  .quality-brilliant { color: #21c43a !important; }
-  .quality-interesting { color: #f075e1 !important; }
-  .quality-dubious { color: #53b2ea !important; }
-  .quality-mistake { color: #e69d00 !important; }
-  .quality-blunder { color: #df5353 !important; }
+  /* Lichess's glyph colors (default dark theme, from lila's _theme.default.scss), for the glyphs and the moves they mark. */
+  .glyph.good, .quality-good { color: #629924 !important; }
+  .glyph.brilliant, .quality-brilliant { color: #21c43a !important; }
+  .glyph.interesting, .quality-interesting { color: #f075e1 !important; }
+  .glyph.dubious, .quality-dubious { color: #53b2ea !important; }
+  .glyph.mistake, .quality-mistake { color: #e69d00 !important; }
+  .glyph.blunder, .quality-blunder { color: #df5353 !important; }
   .tree-move { cursor: pointer; border-radius: 2px; }
   .tree-move.line-end { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .tree-move:hover, .tree-move:focus { background: var(--surface-3); outline: none; }
@@ -246,13 +247,6 @@
   .note-move { font-weight: 600; }
   #practice-title .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
-  /* Lichess's glyph colors (default dark theme, from lila's _theme.default.scss). */
-  .glyph.good { color: #629924; }
-  .glyph.brilliant { color: #21c43a; }
-  .glyph.interesting { color: #f075e1; }
-  .glyph.dubious { color: #53b2ea; }
-  .glyph.mistake { color: #e69d00; }
-  .glyph.blunder { color: #df5353; }
   #board { width: 100%; height: 100%; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
@@ -971,11 +965,11 @@ function showScreen(name) {
   currentScreen = name;
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
-  for (const s of ['lichess', 'studies', 'practice', 'options', 'help']) $(s + '-screen').classList.toggle('hidden', s !== name);
-  // The header buttons are always shown; the current page's button is highlighted.
-  for (const b of ['studies', 'practice', 'options', 'lichess', 'help']) {
-    $('nav-' + b).classList.toggle('current', b === name);
-    if (b === name) $('nav-' + b).setAttribute('aria-current', 'page'); else $('nav-' + b).removeAttribute('aria-current');
+  // Each page, and its header button (always shown; the current page's is highlighted).
+  for (const s of ['practice', 'studies', 'options', 'lichess', 'help']) {
+    $(s + '-screen').classList.toggle('hidden', s !== name);
+    $('nav-' + s).classList.toggle('current', s === name);
+    if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
   }
   updateLichessStatus();
 }
@@ -1447,10 +1441,6 @@ function allMoveNodes(ch) {
 // Your practiced moves in a chapter, each once (however many lines pass through it).
 const yourMoves = ch => allMoveNodes(ch).filter(m => m.isYours);
 
-
-// A move of yours is recorded under its node's key (see parseChapter), so every line through that
-// point shares its history.
-
 const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.isYours ? [i] : []);
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
@@ -1568,12 +1558,6 @@ function scoreOf(attempts) {
   return sum / weights / 10;
 }
 
-// Each attempt at one of the user's moves starts at 10 points, and each thing tried before the
-// correct move costs its penalty (set on the Options page, in points: 1 point = 10%): an unmarked
-// alternative move from the study, or a masters move (once, even if it's both: the alternative's
-// penalty); an error (an alternative marked ?, ?? or ?!, or any other wrong move); the hint and Show
-// correct move (each the hint's penalty). Never below 0. Repeats cost each time. entry is the move
-// in the line (its SAN, the study's alternatives there, and the position before it).
 const MASTERS_SHARE = 0.1;
 
 // A masters move: within the top N master moves in the position (N set on the Options page; moves
@@ -1584,6 +1568,11 @@ function isMasterMove(epd, s) {
   return moveRank(st, s) <= settings.mastersTop;
 }
 
+// Each attempt at one of your moves starts at 10 points (100%), and each thing tried before the
+// correct move costs its penalty (set on the Options page as a percentage; 10% = 1 point): an
+// unmarked alternative from the study, or a masters move (once, even if it's both: the alternative's
+// penalty); an error (an alternative marked ?, ?? or ?!, or any other move); the hint and Show
+// correct move (each the hint's penalty). Never below 0. Repeats cost each time.
 function pointsFor(tried, yourMove) {
   const penalty = kind => settings.errorPenalties[kind] / 10; // a percentage, in points
   let points = 10;
@@ -1635,7 +1624,7 @@ function errorCounts(attempts, correct) {
 // unscored (points null).
 const newAttempt = (expected, index) => ({ index, tried: practice.tried, points: session.reversed ? null : pointsFor(practice.tried, expected), at: Date.now() });
 
-const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 89.5% shows 89% and stays amber
+const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 99.5% shows 99%, not 100%
 
 // The highlight for an accuracy: 'needs-work' (violet) below 100%, 'score-100' (plain) at 100%,
 // 'untried' (plain) when there's none.
@@ -2062,8 +2051,7 @@ const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours &&
 
 // What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked
 // chapters (i is null: played from move 1); for 'positions', every move of yours in them from move 3
-// (FIRST_POSITION_MOVE), once each
-// (i: the move tested as a single position).
+// (FIRST_POSITION_MOVE), once each (i: the move tested as a single position).
 const FIRST_POSITION_MOVE = 3;
 function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind]) {
   const lines = tickedChapters().flatMap(chapterLines);
@@ -2257,7 +2245,6 @@ const KINDS = {
   },
 };
 
-
 // The Practice page with nothing in progress: the chooser.
 function showChooser() {
   endPractice();
@@ -2308,14 +2295,15 @@ const renderWeights = () => showSliders('weight', WEIGHTS, settings.practice.wei
 // A change to the practice settings: saved, and the chooser and sliders shown again.
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); renderWeights(); };
 
-for (const kind of Object.keys(KINDS)) $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
 $('chooser-main').addEventListener('change', e => changePractice(p => { p.mainLinesOnly[p.kind] = e.target.checked; }));
 $('chooser-reversed').addEventListener('change', e => changePractice(p => { p.reversed = e.target.checked; }));
 addSliders($('weight-rows'), 'weight', WEIGHTS, (key, value) => changePractice(p => { p.weights[key] = value; }));
 $('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
 $('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items, reversedSides()));
-for (const kind of Object.keys(KINDS)) $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind));
-
+for (const kind of Object.keys(KINDS)) {
+  $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
+  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // on the Options page
+}
 
 // "Show lines" / "Show positions": the Test probabilities table, the 25 most likely to come up next
 // with the current settings, the most likely first, and the rest together in a last row ("Other lines
@@ -2552,7 +2540,6 @@ function errorStatus(expected, played) {
     lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', stat(lichessRank && lichessRank <= 3, null)),
   ].filter(Boolean);
 }
-
 
 $('hint-btn').addEventListener('click', () => {
   if (!practice || practice.busy) return;
@@ -2791,8 +2778,8 @@ document.addEventListener('keydown', e => {
 // The practice panel's heading, as in the positions table: the study and chapter ("(reversed)" after
 // it with Reverse sides; the chapter's introductory comment as a bubble), then the position reached,
 // named by its opening and the moves since (see positionName), e.g. "Italian Game: Giuoco Piano,
-// 4. c3 ♘f6". The position line
-// follows the board: the line as it's played, or an earlier position being looked at.
+// 4. c3 ♘f6". The position line follows the board: the line as it's played, or an earlier position
+// being looked at.
 function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
@@ -2938,10 +2925,10 @@ function opponentMoveBoard(m) {
 }
 
 // One thing tried before the correct move m, for the hover board's "Errors: …" row, labelled by
-// how it was scored: "a3 (alternative)" and "b3 (masters)" (the alternative and masters penalties); an alternative the study
-// marks ?, ?? or ?! shows the mark, "a3 (alternative ?!)"; anything else is unlabelled, and "hint"
-// or "show correct move". A move that is both an unmarked alternative and a masters move is
-// labelled "(alternative)".
+// how it was scored: "a3 (alternative)" and "b3 (masters)" (the alternative and masters penalties);
+// an alternative the study marks ?, ?? or ?! shows the mark, "a3 (alternative ?!)"; anything else is
+// unlabelled, and "hint" or "show correct move". A move that is both an unmarked alternative and a
+// masters move is labelled "(alternative)".
 function errorLabel(m, x) {
   if (x === 'hint') return 'hint';
   if (x === 'show') return 'show correct move';
@@ -2986,9 +2973,10 @@ window.addEventListener('scroll', hideHoverBoard, { passive: true });
 // ---------- Lichess downloads (move statistics and masters statistics) ----------
 // For every position in the studies, how often each move is played in all rated Lichess games and in
 // master games, from the Lichess Opening Explorer: downloaded in the background, new positions only,
-// and saved. The downloads run by themselves, in the background, when the app opens (after your
-// studies are updated; an interrupted download resumes) and after studies are fetched or replaced: missing move statistics (they need the token),
-// then missing Masters statistics. Each fetches only what's missing, and says nothing if nothing is.
+// and saved. They run by themselves when the app opens (after your studies are updated; an
+// interrupted download resumes) and after studies are fetched or replaced: missing move statistics,
+// then missing Masters statistics (both need the token). Each fetches only what's missing, and says
+// nothing if nothing is.
 let downloadsRunning = false;
 
 async function startDownloads() {
@@ -3078,6 +3066,9 @@ function setPositionData(epd, part, value) {
 
 const explorerDownloads = { lichess: null, masters: null };
 
+// The progress, on the Lichess page when it's open.
+const showProgress = () => { if (currentScreen === 'lichess') updateStatisticsInfo(); };
+
 function setExplorerStatus(kind, text) {
   const el = $(EXPLORER_DATABASES[kind].status);
   el.textContent = text;
@@ -3091,7 +3082,7 @@ async function downloadExplorer(kind) {
   try { await downloadExplorerPositions(kind, run); }
   finally {
     if (explorerDownloads[kind] === run) explorerDownloads[kind] = null; // finished or stopped
-    if (currentScreen === 'lichess') updateStatisticsInfo();
+    showProgress();
   }
 }
 
@@ -3109,7 +3100,7 @@ async function downloadExplorerPositions(kind, run) {
   // The progress shows in the Lichess page's "Move statistics: 3 of 10 positions (downloading…)"; the
   // status line under it is only for problems.
   status('');
-  if (currentScreen === 'lichess') updateStatisticsInfo();
+  showProgress();
   let fetched = 0;
   for (let i = 0; i < todo.length; ) {
     if (explorerDownloads[kind] !== run) return; // a newer download took over
@@ -3145,7 +3136,7 @@ async function downloadExplorerPositions(kind, run) {
       fetched++;
     }
     i++;
-    if (currentScreen === 'lichess') updateStatisticsInfo();
+    showProgress();
   }
   if (explorerDownloads[kind] !== run) return;
   // Only once every position has these statistics (a request Lichess refused leaves a gap), and only
@@ -3174,7 +3165,6 @@ function positionCountText(stats) {
   if (!n) return 'Position never reached';
   return `Position reached ${shortCount(n)} times`;
 }
-
 
 // A move's share of a position's games as a percentage ("45%", "<1%", "0%"); null when the
 // statistics haven't been downloaded yet, '' when no game reaches the position.
@@ -3351,13 +3341,15 @@ $('disconnect-btn').addEventListener('click', () => {
 });
 
 // The welcome splash: over the Lichess page each time the app opens until you've started (connected or
-// tried the sample studies). Get started, × or Esc closes it.
+// tried the sample studies). Get started (or Enter: it has the focus), × or Esc closes it.
 // Its board: the Ruy Lopez after 1. e4 e5 2. Nf3 Nc6 3. Bb5, with the app's own arrows: green for the
 // study's move (3… a6), blue for an alternative (3… Nf6, the Berlin). Not playable.
 let splashBoard = null;
 function showSplash(open) {
   $('welcome-splash').classList.toggle('hidden', !open);
-  if (!open || splashBoard) return;
+  if (!open) return;
+  $('welcome-splash-start').focus(); // Enter closes it
+  if (splashBoard) return;
   splashBoard = Chessground(document.querySelector('.splash-board .cg-wrap'), {
     fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', lastMove: ['f1', 'b5'],
     viewOnly: true, coordinates: false, animation: { enabled: false },
