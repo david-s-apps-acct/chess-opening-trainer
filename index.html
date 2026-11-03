@@ -95,7 +95,7 @@
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  /* The Lichess button's red dot (not connected, or a problem): small, centred on the lowercase letters */
+  /* The Lichess button's red dot (not connected): small, centred on the lowercase letters */
   header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: middle; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
@@ -717,7 +717,7 @@
       <div class="card" id="help-lichess">
         <h2>Lichess</h2>
         <ul>
-          <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
+          <li>The header's <b>Lichess</b> button shows a red dot when you're not connected (including when Lichess has ended the connection). Other messages, such as Lichess asking to slow down, show only on the Lichess page.</li>
           <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their masters statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
           <li><b>Move statistics</b>: the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
@@ -1172,9 +1172,8 @@ function askForToken() {
   setUpdateStatus(canLogIn ? 'Connect to Lichess first.' : 'Add a Lichess token first.', true);
 }
 
-// Messages about fetching from Lichess appear on the Lichess page, with a red dot on its header button
-// for a problem (while connecting, in the welcome; before any studies have been fetched, also in the
-// Studies page's empty list).
+// Messages about fetching from Lichess appear on the Lichess page (before any studies have been
+// fetched, also in the Studies page's empty list).
 function setUpdateStatus(message, isError = false) {
   const parts = [].concat(message).filter(part => part !== ''); // '' clears it
   const box = $('update-status');
@@ -3285,7 +3284,7 @@ function renderOptions() {
 //   (nothing downloads until Start or Restore backup is pressed).
 // Connecting logs in with Lichess online; opened from disk it's Add token (with a box to paste it into)
 // and Clear token. A new user gets the welcome splash over the page. The header's Lichess button
-// always reads "Lichess", with a red dot for a problem.
+// always reads "Lichess", with a red dot when not connected.
 let welcomeReady = false; // the first connection is done: waiting for Restore backup or Start
 
 function showLichess() {
@@ -3389,14 +3388,13 @@ $('games-apply').addEventListener('click', () => {
 const lichessMessages = () => ['update-status', 'lichess-status', 'masters-status'].map(id => $(id).textContent).join(' ').trim();
 const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 
-// The header's Lichess button: always "Lichess", with a red dot when you're not connected (for
-// whatever reason) or there's a problem (an expired connection, Lichess unreachable or asking to slow
-// down, any other error).
+// The header's Lichess button: always "Lichess", with a red dot only when you're not connected: no
+// connection, or Lichess has ended it (other problems, such as Lichess asking to slow down, show only
+// on the Lichess page).
 function updateLichessStatus() {
-  const messages = lichessMessages();
-  const problem = connectionExpired() || /slow down|Couldn't reach/.test(messages) || ($('update-status').classList.contains('error') && !!messages);
-  $('nav-lichess').replaceChildren('Lichess', ...!token || problem ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'needs attention' })] : []);
-  $('nav-lichess').title = !token ? 'Not connected to Lichess' : problem ? 'A problem with Lichess: see the Lichess page' : 'Your Lichess account, studies and statistics';
+  const expired = !!token && connectionExpired();
+  $('nav-lichess').replaceChildren('Lichess', ...!token || expired ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'not connected' })] : []);
+  $('nav-lichess').title = !token ? 'Not connected to Lichess' : expired ? 'Lichess has ended the connection: connect again' : 'Your Lichess account, studies and statistics';
 }
 
 // Adding a token (opened from disk): Add token opens Lichess's page for creating one, with the scope

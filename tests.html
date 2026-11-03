@@ -254,6 +254,13 @@ async function runLichessPage(app) {
   app.setToken('lio_login');
   $('nav-lichess').click();
   check('connected: Disconnect, not Connect; no red dot', [$('connect-btn').classList.contains('hidden'), $('disconnect-btn').classList.contains('hidden'), $('disconnect-btn').textContent, !!$('nav-lichess').querySelector('.problem-dot')], [true, false, 'Disconnect', false]);
+  $('lichess-status').textContent = 'Lichess asked to slow down: waiting a minute…';
+  $('nav-lichess').click();
+  const dotWhenSlow = !!$('nav-lichess').querySelector('.problem-dot');
+  $('lichess-status').textContent = 'Lichess connection expired. Connect again to continue.';
+  $('nav-lichess').click();
+  check('red dot: not for Lichess asking to slow down; for an expired connection', [dotWhenSlow, !!$('nav-lichess').querySelector('.problem-dot')], [false, true]);
+  $('lichess-status').textContent = '';
   let revoked = null, asked = null;
   const realConfirm = window.confirm;
   window.confirm = question => { asked = question; return false; };
