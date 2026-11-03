@@ -105,6 +105,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board
 
+- **To do (the user's decision, 3 November 2026; not built yet): the comment under the board stands out.** The annotation and comment under the board get a slightly lighter background than the page's tiles, so they stand out when shown, and larger text than now (14 pixels). *Claude's details, for the user to accept or reject:* a box the width of the board, with the tiles' rounded corners and padding, in the slightly lighter grey the app uses inside tiles (as for the move list); 16 pixels; still only shown when the move has an annotation or comment (or at a chapter's start, its introduction).
+
 - **Built 3 November 2026 (the user's decision): the chapters to the left of the board, looking more like Lichess.** On a wide enough screen, the tile with the study drop-down and its chapters goes to the left of the board (as on Lichess); where there isn't room, it goes below the Your accuracy tile. The chapters list looks more like Lichess's: the chapter numbers in blue, and the chosen chapter's name in blue on a slightly different (lighter) background, rather than white on a solid blue bar. *Claude's details, accepted by the user:*
   - **Room:** the Review page uses more width than the other pages when the window allows (the board stays its usual size, between a chapters column of about 220 pixels and the right-hand tiles); below about 1,150 pixels wide the chapters tile moves under Your accuracy, and on a phone everything stacks (board, then the tiles).
   - **Height:** on the left, the chapters list can run the board's full height before it scrolls (so most studies need no scrolling); below, it keeps the 4-chapter box.
