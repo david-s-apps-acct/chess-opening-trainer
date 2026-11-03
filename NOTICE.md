@@ -17,11 +17,6 @@ over a network, must keep the author attribution **"Chess Opening Trainer by Dav
 visible to users in the program's Help page (or, if the program has no Help page, in an equally
 prominent place). Modified versions must also say that they have been changed.
 
-## Sample studies
-
-`trial.json` contains two studies by David Sharman (Ruy Lopez and Queen's Gambit Declined), covered
-by the same licence and attribution term, and move statistics from the Lichess Opening Explorer.
-
 ## Third-party parts
 
 Loaded by the app from the jsDelivr CDN; each keeps its own licence:

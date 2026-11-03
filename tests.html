@@ -233,27 +233,18 @@ function run(app) {
   }
 }
 
-// ---------- Sample studies ("Try sample studies") ----------
+// ---------- The Lichess page ----------
 
-async function runTrial(app) {
+async function runLichessPage(app) {
   const $ = id => document.getElementById(id);
-  app.setLibrary(null);
-  app.setSelection([]);
-  app.setMoveStats({});
-  // trial.json, as the published file would answer (the test library and one position's statistics).
   const isolated = window.fetch;
-  window.fetch = async url => String(url).endsWith('trial.json')
-    ? new Response(JSON.stringify({ app: 'chess-opening-trainer', kind: 'trial', library: structuredClone(LIBRARY), moveStats: structuredClone(POSITIONS) }))
-    : isolated(url);
-  $('trial-btn').click();
-  await until(() => app.library, 'the sample studies');
-  window.fetch = isolated;
-  await wait(50);
-  check('sample studies: loaded, marked, every chapter ticked', [app.library.trial, app.selection.length], [true, 2]);
-  check('sample studies: the header\'s Lichess button, with the red dot (not connected)', [$('nav-lichess').textContent, !!$('nav-lichess').querySelector('.problem-dot')], ['Lichess', true]);
+  app.setMoveStats(structuredClone(POSITIONS));
+  app.setSelection(LIBRARY.studies.flatMap(st => st.chapters.map(c => c.key)));
+  // A new user: Getting started, with no sample studies (removed), and the red dot (not connected).
+  app.setLibrary(null);
   $('nav-lichess').click();
-  check('sample studies: the Lichess page says so, with Connect and no Try sample studies or Getting started', [$('lichess-account').textContent, $('connect-btn').classList.contains('hidden'),
-    $('trial-offer').classList.contains('hidden'), $('getting-started').classList.contains('hidden')], ['Sample studies', false, true, true]);
+  check('new user: Getting started (no sample studies), no Move statistics card, the red dot', [$('getting-started').classList.contains('hidden'), !!$('trial-btn'),
+    $('games-card').classList.contains('hidden'), !!$('nav-lichess').querySelector('.problem-dot')], [false, false, true, true]);
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-lichess').click();
   check('own studies, not connected: Status, Connect to Lichess and no Disconnect', [$('lichess-heading').textContent,
@@ -780,7 +771,7 @@ try {
   runPositions(app);
   await runPractice(app);
   runPresets(app);
-  await runTrial(app);
+  await runLichessPage(app);
 } catch (e) {
   results.push({ name: 'loading or running the tests', ok: false, detail: e.stack || String(e) });
 }

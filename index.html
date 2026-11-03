@@ -422,10 +422,6 @@
         <div class="actions">
           <button id="welcome-start-btn" class="primary" title="Your studies first need fetching: Connect to Lichess">Start</button>
         </div>
-        <div id="trial-offer">
-          <p class="after-actions">No Lichess account? Try the sample studies.</p>
-          <div class="actions"><button id="trial-btn" class="primary" title="A Ruy Lopez and a Queen's Gambit Declined study, no account needed">Try sample studies</button></div>
-        </div>
       </div>
     </div>
   </section>
@@ -557,7 +553,7 @@
           <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. All your chapters start ticked; to practice fewer, untick some on the <b>Studies</b> page.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
-        <p>No Lichess account? <b>Try sample studies</b> (online only) loads a Ruy Lopez and a Queen's Gambit Declined study with their statistics. Press <b>Connect to Lichess</b> on the Lichess page later, and your own studies replace them.</p>
+        <p>The app practices the openings in your Lichess studies, so you need a Lichess account with studies (create them at lichess.org/study). New studies appear here the next time the app opens.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -707,8 +703,8 @@
         <h2>Lichess</h2>
         <ul>
           <li>The header's <b>Lichess</b> button shows a red dot when you're not connected, or when there's a problem (e.g. Lichess has ended the connection).</li>
-          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched, and Try sample studies).</li>
-          <li><b>Move statistics</b>: the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them. The sample studies use all rated games.</li>
+          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, how many positions have their statistics so far, and any message about fetching or downloading), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> (Save backup is greyed out until you've started) and, until you've started, <b>Getting started</b> (Start once your studies have been fetched).</li>
+          <li><b>Move statistics</b>: the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser. Backups never include your token.</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept, except for moves no longer in your studies.</li>
@@ -847,8 +843,7 @@ async function saveMoveStats(epds = Object.keys(moveStats)) {
 // ---------- State ----------
 
 let token = store.get('token', null);
-let library = null; // the studies fetched from Lichess: { fetchedAt, username, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] },
-                    // or the sample studies, marked trial: true (see Sample studies)
+let library = null; // the studies fetched from Lichess: { fetchedAt, username, ratings, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
 let selection = new Set(store.get('selection', [])); // the ticked chapters' keys, "studyId/chapterId"
 // Presets: saved chapter selections, [{ name, chapters: [chapter keys] }], and the name of the one
 // chosen in the drop-down.
@@ -1188,7 +1183,7 @@ async function downloadStudies() {
 // rapid; your rating's band and the next one up, or 1200–2000 without a rating. The rating is the
 // one, of those time controls, with more games; a provisional one (too few games) doesn't count.
 function chooseDefaultGames() {
-  if (settings.games || !library?.ratings || isTrial()) return;
+  if (settings.games || !library?.ratings) return;
   const speeds = ['blitz', 'rapid'];
   const rated = speeds.map(x => library.ratings[x]).filter(x => x?.games && !x.prov).sort((a, b) => b.games - a.games)[0];
   const band = rated && RATING_BANDS.findLastIndex(b => b <= rated.rating);
@@ -1208,7 +1203,7 @@ async function useStudies(fetched) {
   rescoreHistory();
 }
 
-// Fetching your studies when there are none yet, or the sample ones (connecting), with "Fetching…"
+// Fetching your studies when there are none yet (connecting), with "Fetching…"
 // and any error shown. With welcome (the first connection), every chapter is ticked and the
 // statistics don't download yet: Getting started waits for Start or Restore backup (see
 // showWelcomeReady). (Once you have your own studies, syncStudies keeps them up to date.)
@@ -1217,7 +1212,6 @@ async function fetchStudies({ welcome = false } = {}) {
   setUpdateStatus('Fetching your studies from Lichess…');
   try {
     const fetched = await downloadStudies();
-    if (session) endPractice(); // the sample studies' practice, say: it starts afresh
     await useStudies(fetched);
     if (welcome) { selection = new Set(allChapters().map(c => c.key)); saveSelection(); } // first import: everything ticked, ready to practice
     else startDownloads(); // missing Lichess data, quietly in the background
@@ -1235,7 +1229,7 @@ async function fetchStudies({ welcome = false } = {}) {
 // expired connection, which the Lichess page reports. Resolves when done (then the downloads start).
 let waitingStudies = null;
 async function syncStudies() {
-  if (!token || !library || isTrial() || !navigator.onLine) return;
+  if (!token || !library || !navigator.onLine) return;
   try {
     const fetched = await downloadStudies();
     if (fetched.username === library.username && JSON.stringify(fetched.studies) === JSON.stringify(library.studies)) {
@@ -1282,12 +1276,11 @@ function saveToken(tok) {
   else { store.remove('token'); store.remove('tokenSavedAt'); }
 }
 
-// Once connected (logged in, or a token pasted): the first connection (or replacing the sample
-// studies) fetches your studies; otherwise they just update, and a download stopped by an expired
+// Once connected (logged in, or a token pasted): the first connection fetches your studies; otherwise they just update, and a download stopped by an expired
 // connection continues. The Status card shows the connection (no banner).
 function connected() {
   showLichess();
-  if (!library || isTrial()) return fetchStudies({ welcome: true });
+  if (!library) return fetchStudies({ welcome: true });
   syncStudies().then(startDownloads);
 }
 
@@ -1338,38 +1331,6 @@ async function finishLogIn() {
   } catch (e) { return fail(errorText(e)); }
   return true;
 }
-
-// ---------- Sample studies ----------
-// "Try sample studies" on the Getting started card loads trial.json, published with the app: two
-// studies and their move statistics ({ library, moveStats }, as stored by the app), so the app can be
-// tried without a Lichess account. Its library is marked trial: true, which the Status card shows.
-// Connecting then fetches the user's own studies, which replace it (and the clean-up after
-// fetching drops the sample's stats). A page opened from disk can't read trial.json, so the offer is
-// hidden there.
-const isTrial = () => !!library?.trial;
-
-$('trial-btn').addEventListener('click', async () => {
-  $('trial-btn').disabled = true;
-  $('token-error').textContent = '';
-  try {
-    const res = await fetch('trial.json');
-    if (!res.ok) throw new Error(`the sample studies couldn't be loaded (${res.status})`);
-    const trial = await res.json();
-    library = { ...trial.library, trial: true };
-    await saveLibrary();
-    for (const [epd, stats] of Object.entries(trial.moveStats)) moveStats[epd] ||= stats;
-    await saveMoveStats(Object.keys(trial.moveStats));
-    forgetParsedChapters();
-    selection = new Set(allChapters().map(c => c.key)); // every chapter ticked, ready to practice
-    saveSelection();
-    rescoreHistory();
-    showChooser(); // the Practice page, ready to start
-  } catch (e) {
-    $('token-error').textContent = errorText(e);
-  } finally {
-    $('trial-btn').disabled = false;
-  }
-});
 
 // ---------- Chapters and lines ----------
 
@@ -1710,7 +1671,7 @@ function renderStudies() {
   const container = $('studies');
   container.replaceChildren();
   if (!library.studies.length) {
-    container.append(element('div', { class: 'row muted' }, `No studies found for ${library.username}.`));
+    container.append(element('div', { class: 'row muted' }, `No studies found for ${library.username}. Create them at lichess.org/study.`));
   }
   for (const study of library.studies) {
     // Hidden studies are left out, or shown dimmed (and can't be ticked) with the top eye open.
@@ -3032,18 +2993,18 @@ async function startDownloads() {
     do {
       downloadsAgain = false;
       // Your own studies' move statistics wait until the games are chosen (when your account is read).
-      if (settings.games || isTrial()) await downloadExplorer('lichess');
+      if (settings.games) await downloadExplorer('lichess');
       await downloadExplorer('masters');
     } while (downloadsAgain);
   } finally { downloadsRunning = false; }
 }
 
-// The games the move statistics come from: as chosen (settings.games), or all rated games (the
-// sample studies, and until they're chosen). Each position's statistics record which games they
+// The games the move statistics come from: as chosen (settings.games), or all rated games until
+// they're chosen. Each position's statistics record which games they
 // came from (gamesKey; 'all' when every band and time control is included, or when not recorded),
 // so a change downloads them again.
 const ALL_GAMES = { ratings: RATING_BANDS, speeds: SPEEDS };
-const chosenGames = () => !isTrial() && settings.games || ALL_GAMES;
+const chosenGames = () => settings.games || ALL_GAMES;
 const gamesKey = g => g.ratings.length === RATING_BANDS.length && g.speeds.length === SPEEDS.length ? 'all' : `${g.ratings.join(',')}|${g.speeds.join(',')}`;
 const isCurrentStats = stats => (stats.games ?? 'all') === gamesKey(chosenGames());
 
@@ -3308,7 +3269,7 @@ function renderOptions() {
 
 // ---------- Lichess page ----------
 // Everything to do with Lichess, and backups, in one place:
-// - Status: your account (or "Sample studies"), when you connected (or "Not connected."), when your
+// - Status: your account and Lichess rating, when you connected (or "Not connected."), when your
 //   studies were last fetched, the statistics downloaded so far, and any message about fetching or
 //   downloading;
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
@@ -3316,8 +3277,7 @@ function renderOptions() {
 // - Move statistics: the rating bands and time controls they come from (see renderGamesCard);
 // - Backup: Save backup (greyed out until you've started) and Restore backup;
 // - Getting started (new users only, until they start): Start once the studies have been fetched
-//   (nothing downloads until Start or Restore backup is pressed); and, without studies of your own,
-//   Try sample studies.
+//   (nothing downloads until Start or Restore backup is pressed).
 // Connecting logs in with Lichess online; opened from disk it's Add token (with a box to paste it into)
 // and Clear token. A new user gets the welcome splash over the page. The header's Lichess button
 // always reads "Lichess", with a red dot for a problem.
@@ -3330,22 +3290,20 @@ function showLichess() {
 
 function renderLichessPage() {
   // Status
-  $('lichess-account').textContent = isTrial() ? 'Sample studies' : library ? `Lichess account: ${library.username}` : '';
+  $('lichess-account').textContent = library ? `Lichess account: ${library.username}` : '';
   $('lichess-rating').textContent = ratingText();
   const savedAt = store.get('tokenSavedAt', null), when = savedAt ? ' ' + onDateAtTime(savedAt) : '';
   $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Token stored${when}` : 'No token stored.');
-  $('lichess-fetched').textContent = isTrial() ? '' : library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
+  $('lichess-fetched').textContent = library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
   // Connection: Connect when not connected, or when Lichess has ended the connection; Disconnect when
   // connected.
   $('connect-btn').classList.toggle('hidden', !!token && !connectionExpired());
   $('disconnect-btn').classList.toggle('hidden', !token);
-  // Getting started: until you've started; Start once your studies are here; the sample only without
-  // studies of your own (it would replace them; a page opened from disk can't read trial.json).
+  // Getting started: until you've started; Start once your studies are here.
   $('getting-started').classList.toggle('hidden', !!library && !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
   $('welcome-start-btn').disabled = !welcomeReady;
   $('welcome-start-btn').title = welcomeReady ? 'On to practice; the statistics download meanwhile' : 'Your studies first need fetching: Connect to Lichess';
-  $('trial-offer').classList.toggle('hidden', !!library || !canLogIn);
   renderGamesCard();
   // Backup: nothing to save until you've started.
   const notStarted = !$('getting-started').classList.contains('hidden');
@@ -3357,10 +3315,9 @@ function renderLichessPage() {
 }
 
 // "Lichess rating: blitz 1720, rapid 1500?" (the time controls chosen for the move statistics; "?" for
-// a provisional rating, as on Lichess), or "… no rated games"; nothing for the sample studies (or
-// until your account has been read).
+// a provisional rating, as on Lichess), or "… no rated games"; nothing until your account has been read.
 function ratingText() {
-  if (isTrial() || !library?.ratings) return '';
+  if (!library?.ratings) return '';
   const rated = chosenGames().speeds.filter(x => library.ratings[x]?.games)
     .map(x => `${SPEED_NAMES[x].toLowerCase()} ${library.ratings[x].rating}${library.ratings[x].prov ? '?' : ''}`);
   return `Lichess rating: ${rated.length ? rated.join(', ') : 'no rated games'}`;
@@ -3370,7 +3327,7 @@ function ratingText() {
 // so a change is deliberate. The padlock unlocks it, with a warning that a change downloads them all
 // again; after a change, Apply (locks it and starts the download) or Cancel (or the padlock: the
 // ticks go back and it locks). At least one band and one time control stay ticked. Changing needs
-// the connection; for the sample studies it's all rated games. Shown once there are studies.
+// the connection. Shown once there are studies.
 let gamesDraft = null; // the ticks while unlocked; null when locked
 const PADLOCK = open => `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="${open ? 'M8 10V7a4 4 0 0 1 7.9-.9' : 'M8 10V7a4 4 0 0 1 8 0v3'}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"/></svg>`;
 
@@ -3385,7 +3342,7 @@ for (const [row, values, name, key] of [['games-ratings', RATING_BANDS, bandName
 const sameGames = (a, b) => gamesKey(a) === gamesKey(b);
 
 function renderGamesCard() {
-  const canChange = !!token && !!library && !isTrial();
+  const canChange = !!token && !!library;
   if (!canChange) gamesDraft = null;
   const shown = gamesDraft ?? chosenGames();
   $('games-card').classList.toggle('hidden', !library); // once there are studies
@@ -3488,8 +3445,8 @@ $('disconnect-btn').addEventListener('click', () => {
   renderLichessPage(); // the Status card shows it (no banner)
 });
 
-// The welcome splash: over the Lichess page each time the app opens until you've started (connected or
-// tried the sample studies). Get started (or Enter: it has the focus), × or Esc closes it.
+// The welcome splash: over the Lichess page each time the app opens until you've started (connected).
+// Get started (or Enter: it has the focus), × or Esc closes it.
 // Its board: the Ruy Lopez after 1. e4 e5 2. Nf3 Nc6 3. Bb5, with the app's own arrows: green for the
 // study's move (3… a6), blue for an alternative (3… Nf6, the Berlin). Not playable.
 let splashBoard = null;
@@ -3533,9 +3490,9 @@ $('welcome-start-btn').addEventListener('click', leaveWelcome);
 const BACKUP_APP = 'chess-opening-trainer';
 const BACKUP_VERSION = 5; // backups from earlier versions can't be restored
 
-// The Lichess account whose studies these are (none for the sample studies): recorded in backups, to
-// warn when one is restored under another.
-const ownAccount = () => library && !isTrial() ? library.username : null;
+// The Lichess account whose studies these are: recorded in backups, to warn when one is restored
+// under another.
+const ownAccount = () => library?.username ?? null;
 
 $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
@@ -3671,6 +3628,7 @@ async function init() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered', e));
   try {
     library = await loadLibrary();
+    if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
     moveStats = await loadMoveStats();
   }
   catch (e) { console.warn('IndexedDB read failed', e); }

@@ -2,7 +2,7 @@
 // attribution term (see LICENSE and NOTICE.md).
 //
 // The service worker: keeps the app working offline (everything except Lichess) on the online version.
-// - The app's own files (index.html, trial.json): from the network when online, so a new version
+// - The app's own files (index.html): from the network when online, so a new version
 //   arrives straight away; the saved copy when offline.
 // - The libraries, fonts and sounds from jsDelivr: the saved copy first. Their addresses name a fixed
 //   version and never change, so a saved copy never goes out of date.
@@ -10,11 +10,11 @@
 // Saved on the first visit; anything else from jsDelivr is saved the first time it's used.
 // Change VERSION when the list below changes (e.g. a library's version), so old copies are dropped.
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const APP = `cot-app-${VERSION}`, LIBRARIES = `cot-libraries-${VERSION}`;
 const CDN = 'https://cdn.jsdelivr.net';
 
-const APP_FILES = ['./', './index.html', './trial.json'];
+const APP_FILES = ['./', './index.html'];
 const LIBRARY_FILES = [
   '/npm/chessground@9.2.1/+esm',
   '/npm/chessops@0.15.1/+esm',
