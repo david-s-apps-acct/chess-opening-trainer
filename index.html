@@ -116,11 +116,14 @@
   .after-actions { margin: 10px 0 0; } /* a line under a card's buttons */
   #options-screen button.primary, #lichess-screen button.primary { flex: none; width: 11em; white-space: nowrap; } /* every Options and Lichess page button the same width, wide enough for the longest */
   .actions.stacked { flex-direction: column; align-items: flex-start; } /* buttons one under another */
-  /* The Move statistics card: the padlock after the heading, and the rows of tick boxes */
+  /* The Move statistics card: the padlock after the heading, then two columns of tick boxes (ratings, lowest
+     first; time controls, fastest first) */
   .lock-heading { display: flex; align-items: center; gap: 6px; }
-  .tick-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0; font-size: 14px; }
-  .tick-row label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-  .tick-row input:disabled + span { color: var(--muted); }
+  .tick-columns { display: flex; gap: 48px; font-size: 14px; }
+  .tick-title { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+  .tick-column { display: flex; flex-direction: column; gap: 4px; }
+  .tick-column label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .tick-column input:disabled + span { color: var(--muted); }
   #games-warning:empty { display: none; }
   .update-status.error { color: var(--bad); }
   select { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
@@ -404,8 +407,10 @@
       <div id="games-card" class="card hidden">
         <h2 class="lock-heading"><span data-tip="Which Lichess games the move statistics come from, combined. A game's band is its players' average Lichess rating (higher than Chess.com's).">Move statistics</span>
           <button id="games-lock" class="icon-btn"></button></h2>
-        <div id="games-ratings" class="tick-row"></div>
-        <div id="games-speeds" class="tick-row"></div>
+        <div class="tick-columns">
+          <div><div class="tick-title">Rating</div><div id="games-ratings" class="tick-column"></div></div>
+          <div><div class="tick-title">Time control</div><div id="games-speeds" class="tick-column"></div></div>
+        </div>
         <p id="games-warning" class="muted after-actions"></p>
         <div id="games-actions" class="actions hidden">
           <button id="games-apply" class="primary">Apply</button>
@@ -3335,7 +3340,8 @@ function ratingText() {
   return `Lichess rating: ${rated.length ? rated.join(', ') : 'no rated games'}`;
 }
 
-// The Move statistics card: the rating bands and time controls the move statistics come from, locked
+// The Move statistics card: the rating bands and time controls the move statistics come from (two
+// columns: ratings, lowest first; time controls, fastest first), locked
 // so a change is deliberate. The padlock unlocks it, with a warning that a change downloads them all
 // again; after a change, Apply (locks it and starts the download) or Cancel (or the padlock: the
 // ticks go back and it locks). At least one band and one time control stay ticked. Changing needs
