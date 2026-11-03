@@ -459,6 +459,11 @@ async function runLichessPage(app) {
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
+  const yoursAtE4 = $('review-yours').firstChild?.textContent ?? null;
+  key('ArrowRight');
+  const yoursAtE5 = $('review-yours').childElementCount;
+  key('ArrowLeft');
+  check('review: Your tries for your moves only, in its own tile', [yoursAtE4, yoursAtE5, $('review-info').firstChild?.textContent], ['Your tries', 0, '1. e4']);
   check('review: the chapters, numbered', [...$('review-chapters').children].map(row => row.firstChild.textContent), ['1. Italian', '2. Sicilian']);
   $('review-chapters').children[1].click();
   const atStart = current();

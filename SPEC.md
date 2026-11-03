@@ -103,6 +103,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board
 
+- **Built 3 November 2026 (the user's decision): separate tiles for the move statistics and your tries.** Under the moves: the move (with its glyphs) and its comment; then a **Move statistics** tile (the move's Lichess and masters ranks, "Position reached …"); then, for your moves, a **Your tries** tile (move accuracy, last tested, errors). *Claude's details:* the two tile names, small grey headings; each tile is hidden when it has nothing to show (e.g. Your tries for the opponent's moves, Move statistics before they've downloaded); "Alternative move, not tested" stays with the move and its comment.
+
 - **Built 3 November 2026 (the user's decisions): three changes to the Review page.**
   - **No Close button** (the header's buttons do that now). *Claude's detail, accepted by the user:* Esc no longer leaves the page either, and the page no longer remembers where it was opened from.
   - **The chapters' scroll bar always shows** when there are more chapters than fit (none when they all fit). *Claude's details, accepted by the user:* in Safari and Chrome on a Mac the box draws its own slim scroll bar in the page's dark colours, so it shows even with the Mac's "Show scroll bars: Automatically"; on an iPad or iPhone (whose scroll bars a page can't change) the box's height cuts the last visible chapter in half, so it's clear the list goes on; Firefox follows the Mac's setting.
