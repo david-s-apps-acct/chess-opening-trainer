@@ -646,6 +646,15 @@ A page, **Positions**, listing the user's most common weak positions (built at t
 
 A Help page, opened from the "Help" button in the header. It opens only when clicked, never automatically. Opening it during a line keeps the line; Practice returns to it.
 
+- **To do (the user's decision, 4 November 2026; not built yet): step-by-step quickstart.** The steps in Help's **Getting started** card are replaced by this numbered list (the user's outline, with Claude's additions, accepted; the wording below is the agreed draft):
+  1. **Make your repertoire on Lichess.** One study per opening, one chapter per line. Set each chapter's **Orientation** to the side you play: that decides which moves you're tested on. Mark moves with ?, ?! and so on as you like.
+  2. **Connect to Lichess.** Your studies are fetched.
+  3. **Restore a backup, or download the statistics.** Used the app before? **Restore backup**. Otherwise check the **rating bands and time controls** (suggested from your Lichess rating) and press **Download statistics**.
+  4. **Choose what to practise.** Start with **All**, or make a group on the Studies page (**Groups**, ✎).
+  5. **Practise.** On the Practice page, choose **Lines** (whole lines) or **Positions** (single moves) and press **Start practice**. **Hint** helps when you're stuck.
+  - Then, one line each: look through a chapter first on the Studies page (offline too); save a backup now and then (Lichess page), since your stats live only in this browser; install it as an app (Add to Home Screen on an iPad; the installed app keeps its own data).
+  - The longer details stay in the other Help cards. *Still to decide:* whether the welcome screen (the splash or the Getting started tile) links to it.
+
 - **Reworked on 26 October 2026 (the user's request):** four sections named after the pages, **Getting started**, **Studies**, **Practice** and **Options**, with a contents line at the top. Each section has a few short bullets, in the order things appear or are used on its page; the detail is in the blue drop-downs, some with a second level inside (shown on a slightly lighter background). About 580 words show before any drop-down is opened (the whole page was about 4,400 words; now about 1,900).
   - **Getting started:** Connect to Lichess, then Restore backup or Start, tick chapters on Studies, Start practice; Try sample studies; move statistics download in the background. Drop-downs: **Words used in the app** (line, alternative move, move accuracy, line accuracy, error, mistake, masters move, position reached) and **Where your data is kept**.
   - **Studies:** ticking, opening studies and chapters ("7 chapters", "3 lines"), the opening on hover and the side dot, the average move accuracy. Drop-downs: **Presets**, **Hiding studies**, **The move tree**.
