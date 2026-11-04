@@ -382,6 +382,18 @@ The last selection is remembered between visits (stored in the browser, like the
 
 - There used to be a Lichess cloud evaluation of each line's final position (e.g. "Line complete. Evaluation +0.4" after a line, "+0.1" at the end of each line in a chapter's move tree, and a Position evaluation card on the Options page), downloaded automatically in the background from Lichess's cloud-eval API. The user removed it, since it wasn't used for anything important and the evaluations are available in the original Lichess studies; this also simplified the code and reduced the Lichess downloads. Saved evaluations are dropped (they aren't loaded or included in backups any more), and the future idea of a Stockfish fallback for missing evaluations went with it.
 
+### Opponent's mistakes from the engine (4 November 2026; not built, its use still to decide)
+
+- **The user's definition:** an opponent's mistake is a move (1) from any position in a study where it's the opponent's move, (2) that drops the opponent's winning chances by **10 points or more** (Lichess's own "mistake" threshold, so blunders count too). The move needn't be in the study.
+- **The evaluations come from Lichess's cloud-eval API** (the user's choice). A move with no cloud evaluation is treated as fine (the user's reasoning: a position nobody has analysed is very unlikely to occur).
+- *Claude's details, for the user to accept or reject:*
+  - The candidate moves are the moves in the position's Lichess move statistics (up to 10 most played, at the chosen ratings and time controls).
+  - Winning chances are Lichess's formula, on a 0–100 scale: from 0.00, 10 points is about −1.1.
+  - The evaluations download in the background after the masters statistics, throttled like them, and are kept in IndexedDB and in backups.
+- **Separate from the study's own glyphs** (the user's decision): a study's ?, ?? and ?! keep their meaning and behaviour (`isMistake`), and the engine's verdict is a separate thing.
+- **Still to decide:** what uses it (nothing does yet: "Prefer opponent's mistakes" was removed), and what it's called on screen, since "mistake" is reserved for the study's marking.
+- Note: the cloud evaluations of line ends were downloaded once before and removed (see Position evaluation).
+
 ### Hint
 
 - One button in the practice panel, available on the user's move, does both jobs (the user combined the separate Hint and Show correct move buttons):
