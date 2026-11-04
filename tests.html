@@ -37,7 +37,7 @@ export const app = {
   get presets() { return presets; },
   setPresets(v) { presets = v; chosenPresetName = null; },
   get selection() { return [...selection]; },
-  setHidden(ids) { hiddenStudies = new Set(ids); },
+  setHidden(ids) { hidden = new Set(ids); },
   checkedSettings, chapterByKey, chapterLines, allStudyPositions,
   renderChapterTree,
   positionName, pointsFor, isMasterMove, scoreOf, moveRank, errorCounts,
@@ -437,12 +437,15 @@ async function runLichessPage(app) {
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-practice').click(); // nothing practised: the board, the chooser, and Studies to practice under it
-  check('Studies to practice: under the chooser, the board shown; the group and Edit groups, no chapters here', [!$('studies-to-practice').classList.contains('hidden'),
+  check('Studies to practice: under the chooser, the board shown; the group (its hint: edited on the Studies page), no chapters here', [!$('studies-to-practice').classList.contains('hidden'),
     !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!document.querySelector('#practice-screen #studies, #practice-screen #preset-edit-btn'),
-    !!$('edit-groups-link'), $('sel-summary').textContent],
-    [true, true, true, false, true, `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} selected`]);
-  $('edit-groups-link').click();
-  check('Edit groups: the Studies page, editing the group; Create new and Cancel for All', [!$('studies-screen').classList.contains('hidden'), !$('preset-edit').classList.contains('hidden'), !$('all-row').classList.contains('hidden'),
+    $('preset-select').title, $('sel-summary').textContent],
+    [true, true, true, false, 'Edit study groups on the Studies page', `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} selected`]);
+  $('nav-studies').click();
+  check('Studies page: the Groups tile above the list, only its heading and ✎ when not editing; no chapter count by a study', [$('preset-edit-btn').closest('.panel').querySelector('h2').textContent,
+    $('preset-edit').classList.contains('hidden'), !!$('studies').closest('.groups-tile'), /chapter/.test(document.querySelector('#studies .study-row').textContent)], ['Groups', true, false, false]);
+  $('preset-edit-btn').click();
+  check('Groups ✎: editing the group; Create new and Cancel for All', [!$('studies-screen').classList.contains('hidden'), !$('preset-edit').classList.contains('hidden'), !$('all-row').classList.contains('hidden'),
     ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden'))], [true, true, true, ['preset-new-btn', 'preset-cancel-btn']]);
   if (!document.querySelector('#studies .chapter-row')) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
   const firstBox = document.querySelector('#studies .chapter-row input'), wasTicked = firstBox.checked;
@@ -528,12 +531,22 @@ async function runLichessPage(app) {
   check('review: after the studies are updated, the same chapter and position', [!$('studies-screen').classList.contains('hidden'), chapterShown()], [true, '2. Sicilian']);
   const studyNames = () => [...document.querySelectorAll('#studies .study-row .name > .opener')].map(e => e.textContent);
   check('Studies page: your studies, in the list', studyNames(), ['Test Study', 'Other Study']);
-  document.querySelectorAll('#studies .study-row .name > .opener')[1].click(); // its chapters
+  const otherRow = document.querySelectorAll('#studies .study-row')[1];
+  if (otherRow.querySelector('.toggle').getAttribute('aria-expanded') === 'false') otherRow.querySelector('.name > .opener').click(); // its chapters
   chapterRows().find(row => rowText(row) === '1. Side line').click();
   check('Studies page: another study\'s chapter', chapterShown(), '1. Side line');
   app.setHidden(['EEEEEEEE']);
   chapterRows()[1].click(); // the Sicilian
   check('Studies page: a hidden study left out', studyNames(), ['Test Study']);
+  $('show-hidden-btn').click();
+  const withEye = [studyNames(), $('show-hidden-btn').getAttribute('aria-pressed'), !!document.querySelector('#studies .hidden-study')];
+  chapterRows()[0].querySelector('.hide-btn').click(); // hides the Italian
+  $('show-hidden-btn').click();
+  check('Studies page: the eye shows hidden studies (dimmed); a chapter hidden with its own eye', [...withEye, chapterRows().map(rowText)], [['Test Study', 'Other Study'], 'true', true, ['2. Sicilian']]);
+  $('preset-edit-btn').click();
+  check('Studies page: editing lists every study and chapter, with no eyes', [studyNames(), document.querySelectorAll('#studies .chapter-row').length, !!document.querySelector('#studies .hide-btn'), $('show-hidden-btn').classList.contains('hidden')],
+    [['Test Study', 'Other Study'], 3, false, true]); // both studies open: the hidden Italian too
+  $('preset-cancel-btn').click();
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
   check('review: the Masters and Lichess toggles, and the Move statistics tile, each its own', [$('arrows-masters').textContent, $('arrows-lichess').textContent, $('review-lichess').classList.contains('review-stats'),
@@ -888,20 +901,22 @@ function runPresets(app) {
   check('presets: Rename (still editing)', [app.presets[0].name, $('preset-select').value, $('preset-edit').classList.contains('hidden')], ['Both', 'Both', false]);
   $('preset-delete-btn').click();
   check('presets: Delete: All chosen', [app.presets.length, $('preset-select').value, app.selection.length, options()], [0, '', 2, ['All']]);
-  // A preset's chapters in a hidden study are kept by Save (they can't be ticked); All leaves them out.
+  // Hiding doesn't change what's practised: All has hidden studies' chapters, and they can be ticked.
   const library = structuredClone(LIBRARY);
   library.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: F, id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
   app.setLibrary(library);
   app.setHidden(['EEEEEEEE']);
   choose('');
-  check('presets: All leaves out hidden studies', app.selection.sort(), [B, C]);
+  check('presets: All includes hidden studies', app.selection.sort(), [B, C, F]);
   app.setPresets([{ name: 'Mixed', chapters: [B, F] }]);
   app.renderPresets(); // into the drop-down
   choose('Mixed');
   $('preset-edit-btn').click();
   tick(C, true);
+  if (!$('ch-' + F.replace(/[^A-Za-z0-9]/g, '_'))) document.querySelectorAll('#studies .study-row .opener')[1].click(); // the hidden study's chapters
+  tick(F, false);
   $('preset-save-btn').click();
-  check('presets: Save keeps chapters in hidden studies', [...app.presets[0].chapters].sort(), [B, C, F]);
+  check('presets: a hidden study\'s chapter listed while editing, and unticked', [...app.presets[0].chapters].sort(), [B, C]);
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
   app.setPresets([]);
