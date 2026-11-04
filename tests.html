@@ -482,13 +482,20 @@ async function runLichessPage(app) {
   const up = chapterShown();
   key('ArrowDown');
   check('review: ↑ and ↓, the previous and next chapter', [up, chapterShown()], ['1. Italian', '2. Sicilian']);
-  // The arrows: the study's moves white, the main one outlined (+), a marked one with its glyph; with the
-  // toggles, the top 3 masters (teal) and Lichess (grey) moves not in the study.
+  // The arrows: the study's moves white, the main one outlined (+); the glyph of the move just played in
+  // its square's corner (2. Nf3!); with the toggles, the top 3 masters (teal) and Lichess (grey) moves
+  // not in the study.
   const italianRoot = app.parseChapter(app.chapterByKey('AAAAAAAA/BBBBBBBB')).root;
-  const arrowText = a => `${a.orig}${a.dest ?? ''} ${a.brush}${a.modifiers?.hilite ? '+' : ''}${a.label ? ' ' + a.label.text : ''}`;
+  const arrowText = a => `${a.orig}${a.dest ?? ''} ${a.brush ?? ''}${a.modifiers?.hilite ? '+' : ''}${a.label ? ' ' + a.label.text : ''}`;
   const arrowsAt = sans => { let n = italianRoot; for (const x of sans) n = n.children.find(c => c.san === x); return app.reviewArrows(n).map(arrowText); };
-  check('review: arrows for the study\'s moves', [arrowsAt([]), arrowsAt(['e4']), arrowsAt(['e4', 'e5']), arrowsAt(['e4', 'e5', 'Nf3', 'Nc6'])],
-    [['e2e4 white+'], ['e7e5 white+'], ['g1f3 white+', 'b1c3 white'], ['f1c4 white+', 'f1b5 white ?']]);
+  check('review: arrows for the study\'s moves', [arrowsAt([]), arrowsAt(['e4']), arrowsAt(['e4', 'e5']), arrowsAt(['e4', 'e5', 'Nf3']), arrowsAt(['e4', 'e5', 'Nf3', 'Nc6'])],
+    [['e2e4 white+'], ['e7e5 white+'], ['g1f3 white+', 'b1c3 white'], ['b8c6 white+', 'd7d6 white', 'f3  !'], ['f1c4 white+', 'f1b5 white']]);
+  // Each board's arrowheads have their own names, so a hidden board's can't take an arrow's head.
+  await new Promise(r => setTimeout(r, 0));
+  const reviewSvg = $('review-board');
+  check('review: the board\'s arrowheads named for it', [reviewSvg.querySelectorAll('marker').length > 0,
+    [...reviewSvg.querySelectorAll('marker')].every(m => m.id.endsWith('-review')),
+    [...reviewSvg.querySelectorAll('[marker-end]')].every(l => l.getAttribute('marker-end').endsWith('-review)'))], [true, true, true]);
   // At the start: masters moves d4 and Nf3; top-3 Lichess moves d4, c4 and Nf3 (sharing #3); e4 is in the study.
   const statsBefore = app.moveStats;
   app.setMoveStats(structuredClone(POSITIONS));

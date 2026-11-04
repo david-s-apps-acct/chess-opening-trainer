@@ -730,7 +730,7 @@
           <table class="help-table">
             <tr><td>White, blue outline</td><td>Your study's main move (also Hint and Show correct move)</td></tr>
             <tr><td>White</td><td>Another move in your study</td></tr>
-            <tr><td><span class="glyph dubious">?!</span> <span class="glyph mistake">?</span> <span class="glyph blunder">??</span> on an arrow</td><td>A move your study marks</td></tr>
+            <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Review page, small board)</td></tr>
             <tr><td class="error-teal">Teal</td><td>A masters move not in your study</td></tr>
             <tr><td class="error-grey">Grey</td><td>A top-3 Lichess move not in your study (Review page)</td></tr>
             <tr><td class="error-violet">Violet</td><td>Any other move you tried</td></tr>
@@ -2110,6 +2110,7 @@ function openReview(ch, { at = [] } = {}) {
   review = { ch, parsed, node: parsed.root, openSet: new Set() };
   showScreen('review');
   if (!reviewBoard) {
+    ownShapeNames($('review-board'), 'review');
     reviewBoard = Chessground($('review-board'), {
       coordinates: true, animation: { enabled: true, duration: 150 }, highlight: { lastMove: true, check: true },
       premovable: { enabled: false }, drawable: { enabled: false, visible: true, brushes: BRUSHES },
@@ -2183,8 +2184,8 @@ function reviewFromPractice() {
 // The moves from the root to a node, in order.
 const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
 
-// The arrows in a position (see BRUSHES): the study's moves (white, the main one outlined in blue, a
-// marked one with its glyph); with the toggles on, the top 3 masters moves (teal; masters moves, see
+// The arrows in a position (see BRUSHES): the study's moves (white, the main one outlined in blue);
+// the glyph of the move just played (see glyphBadge); with the toggles on, the top 3 masters moves (teal; masters moves, see
 // isMasterMove) and the top 3 Lichess moves (grey) that aren't in the study (teal for a move in both);
 // then the study's own arrows and circles, as drawn.
 function reviewArrows(node) {
@@ -2196,7 +2197,7 @@ function reviewArrows(node) {
   if (settings.review.masters) top(masterGamesAt(node.epd), 'teal', x => isMasterMove(node.epd, x));
   const extra = [...outside].map(([x, brush]) => [san.parseSan(pos, x), brush]).filter(([mv]) => mv)
     .map(([mv, brush]) => { const [orig, dest] = arrowSquares(pos, mv); return { orig, dest, brush }; });
-  return [...extra, ...node.children.map(c => studyMoveArrow(pos, c)), ...node.drawn];
+  return [...extra, ...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
 }
 
 for (const [id, which] of [['review-masters', 'masters'], ['review-lichess', 'lichess']]) $(id).addEventListener('click', () => {
@@ -2396,6 +2397,23 @@ const priorities = items => priorityOf(itemFacts(items));
 
 // ---------- Practice: the board ----------
 
+// Chessground names each arrowhead (and the blur behind the main move's outline) the same on every
+// board, and an arrow takes the first of that name on the page: one on a hidden board draws nothing,
+// so arrows lost their heads. Each board's are renamed (e.g. "arrowhead-white-review") as soon as
+// they're drawn, before the screen updates.
+function ownShapeNames(el, name) {
+  const suffix = '-' + name;
+  const rename = () => {
+    for (const d of el.querySelectorAll('[id^="arrowhead-"], [id="cg-filter-blur"]')) if (!d.id.endsWith(suffix)) d.id += suffix;
+    for (const attr of ['marker-end', 'filter']) for (const x of el.querySelectorAll(`[${attr}]`)) {
+      const v = x.getAttribute(attr);
+      if (!v.endsWith(suffix + ')')) x.setAttribute(attr, v.replace(/\)$/, suffix + ')'));
+    }
+  };
+  new MutationObserver(rename).observe(el, { childList: true, subtree: true });
+  rename();
+}
+
 let board = null;
 // The line in progress (null when none; see startLine):
 //   line, singleAt (for a single position, the index of the move tested; null for a whole line),
@@ -2436,6 +2454,7 @@ const alternativesAt = m => session?.reversed && !m.isYours
 
 function ensureBoard() {
   if (board) return;
+  ownShapeNames($('board'), 'practice');
   board = Chessground($('board'), {
     coordinates: true,
     animation: { enabled: true, duration: 200 },
@@ -3164,7 +3183,7 @@ function showHoverBoard(el, m, orientation, thisTime = null) {
     viewOnly: true, coordinates: false, animation: { enabled: false },
     drawable: { enabled: false, visible: true, brushes: BRUSHES },
   };
-  if (!hoverBoard) hoverBoard = Chessground(box.querySelector('.cg-wrap'), config);
+  if (!hoverBoard) { ownShapeNames(box.querySelector('.cg-wrap'), 'hover'); hoverBoard = Chessground(box.querySelector('.cg-wrap'), config); }
   else hoverBoard.set(config); // lastMove: undefined clears the previous highlight
   hoverBoard.setAutoShapes(shapes);
   placePopup(box, el);
@@ -3214,7 +3233,7 @@ function lastTestedText(time) {
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
 // on Lichess, with the move's arrow (see studyMoveArrow).
 function opponentMoveBoard(m) {
-  return { position: m.position, lastMove: squaresOf(m), shapes: [studyMoveArrow(m.parent.position, m)], rows: [
+  return { position: m.position, lastMove: squaresOf(m), shapes: [studyMoveArrow(m.parent.position, m), ...glyphBadge(m)], rows: [
     ...hoverBoardHeading(m),
     m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
 }
@@ -3242,7 +3261,8 @@ function errorKind(m, x) {
 // The arrow colours, the same on every board (as on Lichess, which keeps green, red, blue and amber
 // for the arrows and circles drawn in a study, and white for the study's moves): white for a move in
 // your study, outlined in blue for the main move (chessground's hilite; also Hint's circle is white,
-// and Show correct move's arrow the main move's), with the glyph of a move marked ?!, ? or ?? on it;
+// and Show correct move's arrow the main move's); once a move with a glyph is played, the glyph in a
+// corner of its square (see glyphBadge);
 // teal for a masters move outside your study; grey for a top-3 Lichess move outside it (the Review
 // page's toggles); violet for any other move you tried; the study's own arrows and circles in their
 // Lichess colours (Review page only). Text about a move (the Practice page's error messages, the
@@ -3253,15 +3273,21 @@ const BRUSHES = {
   violet: { key: 'violet', color: '#8a5cf6', opacity: 1, lineWidth: 10 },
 };
 const mainArrow = (orig, dest) => ({ orig, dest, brush: 'white', modifiers: { hilite: true } });
-// The glyphs' Lichess colours, for the label on a marked move's arrow (as .glyph.mistake and so on).
-const MISTAKE_FILLS = { 2: '#e69d00', 4: '#df5353', 6: '#53b2ea' };
-// A move in the study (a move node), from position pos: white, outlined for the main move, with the
-// glyph of a move marked ?!, ? or ??.
+// A move in the study (a move node), from position pos: white, outlined for the main move. (Unlike
+// Lichess, which leaves out the arrow where the study gives only one move.)
 function studyMoveArrow(pos, node) {
   const [orig, dest] = arrowSquares(pos, parseUci(node.uci));
-  const arrow = node.variationIndex === 0 ? mainArrow(orig, dest) : { orig, dest, brush: 'white' };
-  const mark = node.nags.find(n => MISTAKE_NAGS.includes(n));
-  return mark ? { ...arrow, label: { text: GLYPHS[mark][0], fill: MISTAKE_FILLS[mark] } } : arrow;
+  return node.variationIndex === 0 ? mainArrow(orig, dest) : { orig, dest, brush: 'white' };
+}
+// The move-quality glyphs' Lichess colours (as .glyph.good and so on).
+const QUALITY_FILLS = { 1: '#629924', 2: '#e69d00', 3: '#21c43a', 4: '#df5353', 5: '#f075e1', 6: '#53b2ea' };
+// Once a move with a move-quality glyph (!!, !, !?, ?!, ?, ??) has been played, as on Lichess: the
+// glyph in its colour at the top-right corner of the square it went to (none otherwise). On the
+// Review page and the hover boards showing the position after a move, not on the Practice board.
+function glyphBadge(node) {
+  const n = node.uci && node.nags.find(x => QUALITY_FILLS[x]);
+  if (!n) return [];
+  return [{ orig: arrowSquares(node.parent.position, parseUci(node.uci))[1], label: { text: GLYPHS[n][0], fill: QUALITY_FILLS[n] } }];
 }
 // An error's colour (as text and arrow): white for one of your alternatives (marked or not), teal for
 // a masters move, violet for anything else (the hint and Show correct move included).
@@ -3725,6 +3751,7 @@ function showSplash(open) {
   if (!open) return;
   $('welcome-splash-start').focus(); // Enter closes it
   if (splashBoard) return;
+  ownShapeNames(document.querySelector('.splash-board .cg-wrap'), 'splash');
   splashBoard = Chessground(document.querySelector('.splash-board .cg-wrap'), {
     fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', lastMove: ['f1', 'b5'],
     viewOnly: true, coordinates: false, animation: { enabled: false },
