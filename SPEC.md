@@ -382,7 +382,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 - There used to be a Lichess cloud evaluation of each line's final position (e.g. "Line complete. Evaluation +0.4" after a line, "+0.1" at the end of each line in a chapter's move tree, and a Position evaluation card on the Options page), downloaded automatically in the background from Lichess's cloud-eval API. The user removed it, since it wasn't used for anything important and the evaluations are available in the original Lichess studies; this also simplified the code and reduced the Lichess downloads. Saved evaluations are dropped (they aren't loaded or included in backups any more), and the future idea of a Stockfish fallback for missing evaluations went with it.
 
-### Opponent's mistakes from the engine (4 November 2026; not built, its use still to decide)
+### Punish moves (4 November 2026; not built, its use still to decide)
 
 - **The user's definition, in two steps** (to save downloads):
   1. **Suspect moves:** opponent moves, from any position in a study where it's the opponent's move, that are among the position's top 10 Lichess moves, played in at least 50 games, and whose result for the side playing them is 10 points or more below the position's (e.g. Black scores 50% from the position but 38% after the move). These come from the move statistics already downloaded. The move needn't be in the study.
@@ -392,7 +392,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - Winning chances are Lichess's formula, on a 0–100 scale: from 0.00, 10 points is about −1.1.
   - The cloud evaluations download in the background after the masters statistics, throttled like them, and are kept in IndexedDB and in backups.
 - **Separate from the study's own glyphs** (the user's decision): a study's ?, ?? and ?! keep their meaning and behaviour (`isMistake`), and the engine's verdict is a separate thing.
-- **Names (the user's decision):** the first group are **suspect moves**, the sub-group **mistakes**. *To settle with the user:* "mistake" is today reserved for the study's ?, ?? and ?! (CLAUDE.md terminology, `isMistake`), so the two meanings need reconciling.
+- **Names (the user's decision, provisional: "we can refine the name later"):** the first group are **suspect moves**, the sub-group **punish moves** (the opponent's moves worth learning to punish). "Mistake" stays reserved for the study's ?, ?? and ?! (`isMistake`).
 - **Still to decide:** what uses it (nothing does yet: "Prefer opponent's mistakes" was removed).
 - Note: the cloud evaluations of line ends were downloaded once before and removed (see Position evaluation).
 
