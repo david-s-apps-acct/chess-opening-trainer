@@ -201,7 +201,7 @@ function run(app) {
   const statsBeforeCounts = app.moveStats;
   app.setMoveStats({ a: { lichess: explorer([]) }, b: { lichess: explorer([['e4', 950]]), masters: explorer([]) }, c: { lichess: explorer([['e4', 1846500000]]), masters: explorer([['e4', 1200]]) }, d: { masters: explorer([['e4', 5]]) } });
   check('position counts use the same short counts, with the masters count', ['none', 'a', 'b', 'c', 'd'].map(app.positionCountText),
-    [null, 'Position never reached', 'Position reached 950 times · masters 0', 'Position reached 1.8bn times · masters 1k', null]);
+    [null, 'Never reached (Lichess)', 'Reached 950 times (Lichess) 0 times (Masters)', 'Reached 1.8bn times (Lichess) 1k times (Masters)', null]);
   app.setMoveStats(statsBeforeCounts);
 
   // Wrong moves counted over attempts
@@ -472,22 +472,13 @@ async function runLichessPage(app) {
   const afterTwo = current();
   key('ArrowLeft');
   check('review: → and ← step through the main line', [afterTwo, current()], ['e5', 'e4']);
-  key('Home');
-  const accuracyAtStart = [...$('review-yours').querySelectorAll('div')].map(d => d.textContent);
-  key('End');
-  const atEnd = [...$('review-yours').querySelectorAll('div')].map(d => d.textContent);
   key('Home'); key('ArrowRight');
-  check('review: Your accuracy: the chapter\'s at the start, the line\'s at its end', [accuracyAtStart[0].endsWith('tried)') || accuracyAtStart[0] === 'Untried', atEnd.at(-1).startsWith('Last played through') || atEnd.at(-1) === 'Not played through yet'], [true, true]);
   const e5 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e5');
   e5.dispatchEvent(new MouseEvent('mouseenter'));
   const hoverShown = !$('move-preview').classList.contains('hidden') && $('move-preview').innerText.startsWith('1… e5'), stillAt = current();
   e5.dispatchEvent(new MouseEvent('mouseleave'));
   check('review: hovering over a move shows the hover board, not the big board', [hoverShown, stillAt, $('move-preview').classList.contains('hidden')], [true, 'e4', true]);
-  const yoursAtE4 = $('review-yours').firstChild?.textContent ?? null;
-  key('ArrowRight');
-  const yoursAtE5 = $('review-yours').childElementCount;
-  key('ArrowLeft');
-  check('review: Your accuracy for your moves only (e5 isn\'t a line\'s end), in its own tile; the comment under the board', [yoursAtE4, yoursAtE5, $('review-comment').textContent], ['Your accuracy', 0, 'Best by test.']);
+  check('review: no Your accuracy tile (a trial); the comment in its tile', [!!$('review-yours'), $('review-comment').textContent], [false, 'Best by test.']);
   check('review: the chapters, numbered', chapterRows().map(rowText), ['1. Italian', '2. Sicilian']);
   chapterRows()[1].click();
   const atStart = current();
@@ -523,11 +514,11 @@ async function runLichessPage(app) {
   const lichess = [arrowsAt([]), arrowsAt(['e4'])];
   const lichessTip = app.squareTipLines(italianRoot, 'd4');
   // Errors: your errors at e4 in the last 10 tries (d4 twice, a masters move; g3; all violet; the hint, no
-  // arrow), counted, with the correct move; none at the opponent's turn; hovering over d4's square.
+  // arrow), counted, with the correct move, right first time in 1 of 4 tries; none at the opponent's turn; hovering over squares.
   const historyBefore = app.history;
-  app.setHistory({ moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['d4', 'e4'], at: 1 }, { tried: ['d4', 'g3', 'e4'], at: 2 }, { tried: ['hint', 'e4'], at: 3 }] }, lines: {} });
+  app.setHistory({ moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['d4', 'e4'], at: 1 }, { tried: ['d4', 'g3', 'e4'], at: 2 }, { tried: ['hint', 'e4'], at: 3 }, { tried: ['e4'], at: Date.now() }] }, lines: {} });
   app.settings.review = { view: 'errors' };
-  const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3')];
+  const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3'), app.squareTipLines(italianRoot, 'e4')];
   app.setHistory(historyBefore);
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
@@ -537,7 +528,7 @@ async function runLichessPage(app) {
   check('review: Lichess, the top 5, numbered', lichess,
     [['e2e4 grey+ 1', 'd2d4 grey 2', 'c2c4 grey 3', 'g1f3 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
   check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
-    [['d2d4 violet ×2', 'g2g3 violet', 'e2e4 white+'], [], ['d4 ×2 (masters)'], ['g3']]);
+    [['d2d4 violet ×2', 'g2g3 violet', 'e2e4 white+ 25%'], [], ['d4 ×2 (masters)'], ['g3'], ['e4 · right first time 25% (last 4 tries) · last tested today']]);
   // The study's own arrows and circles, in their Lichess colours, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);

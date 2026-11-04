@@ -320,11 +320,6 @@
   .review-comment .glyph { margin: 0 6px 0 0; }
   .review-comment p { margin: 0 0 4px; }
   /* The move statistics and your accuracy: the page's text size and colour; small grey headings */
-  .review-stats { font-size: 14px; }
-  .review-stats:empty { display: none; }
-  .review-stats div + div { margin-top: 3px; }
-  .review-stats .muted { color: var(--text); }
-  .review-stats h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
   #practice-title .review-btn { margin-left: 6px; vertical-align: -1px; }
   .moves { display: grid; grid-template-columns: 2.6em 1fr 1fr; margin-top: 14px; max-height: 250px; overflow-y: auto; background: var(--surface-2); border-radius: 3px; font-size: 15px; }
   .moves .num { background: var(--surface-3); color: var(--muted); text-align: center; padding: 3px 0; }
@@ -580,9 +575,9 @@
 
   <!-- Studies: your studies, and a chapter on a board (see Studies page) -->
   <section id="studies-screen" class="hidden">
-    <!-- The board, with the Study | Masters | Lichess | Errors switch under it; beside it the moves, the annotation and
-         comment, and your accuracy; your studies and their chapters (and, while editing, the groups) to the left
-         of the board where there's room, else under your accuracy (see .review-layout) -->
+    <!-- The board, with the Study | Masters | Lichess | Errors switch under it; beside it the moves, and the annotation
+         and comment; your studies and their chapters (and, while editing, the groups) to the left
+         of the board where there's room, else under the comment (see .review-layout) -->
     <div class="review-layout">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
@@ -603,7 +598,6 @@
           </div>
         </div>
         <div id="review-comment" class="panel review-comment"></div>
-        <div id="review-yours" class="panel review-stats"></div>
       </div>
       <!-- Your studies and their chapters, and the groups: to the left of the board where there's room -->
       <div class="studies-col">
@@ -702,7 +696,7 @@
             <li><b>Error</b>: any move you play that isn't your study's move, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
             <li><b>Masters move</b>: one of the top 3 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more.</li>
-            <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Position reached 23k times · masters 1.2k".</li>
+            <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
           </ul>
         </details>
         <details>
@@ -740,7 +734,7 @@
           <ul>
             <li><b>Your move</b>: the position you had to answer, with arrows for the correct move and each error (see Arrow colours). Then its move accuracy, when you last tested it, and your errors in the same colors.</li>
             <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
-            <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and "Position reached 23k times · masters 1.2k".</li>
+            <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and how often the position is reached, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
           </ul>
         </details>
         <details>
@@ -754,6 +748,7 @@
             <tr><td class="error-grey">Grey</td><td>A top-5 Lichess move (Lichess view)</td></tr>
             <tr><td>1, 2, 3 … on an arrow</td><td>Its rank (masters on teal, Lichess on grey)</td></tr>
             <tr><td>×2 on an arrow</td><td>An error you made twice in your last 10 tries</td></tr>
+            <tr><td>75% on the outlined arrow</td><td>Errors: how often you played your study's move right first time (last 10 tries; not move accuracy)</td></tr>
             <tr><td>White outline on teal or grey</td><td>Also in your study</td></tr>
             <tr><td class="error-violet">Violet</td><td>An error: any move you tried that isn't your study's main move</td></tr>
             <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
@@ -816,7 +811,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each numbered by rank, or <b>Errors</b> (your errors at your move here in the last 10 tries, "×2" when made twice, and the correct move). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached), the move's annotation (e.g. !) and comment, and <b>Your accuracy</b> (for your moves: move accuracy, last tested; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each numbered by rank, or <b>Errors</b> (your errors at your move here in the last 10 tries, "×2" when made twice, and the correct move with how often you played it right first time). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
           <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
@@ -1774,14 +1769,6 @@ const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 99.5% shows 9
 // 'untried' (plain) when there's none.
 const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-work';
 
-// The average move accuracy of your tried moves (each once) in these chapters, and how many lines
-// they have.
-function averageScore(chapters) {
-  const scores = chapters.flatMap(ch => yourMoves(ch).map(m => scoreOf(attemptsAt(m)))).filter(s => s != null);
-  return { lines: chapters.reduce((n, ch) => n + chapterLines(ch).length, 0), tried: scores.length,
-    score: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null };
-}
-
 // ---------- Studies list (on the Studies page) ----------
 // Beside the board on the Studies page: your studies, each opening to its chapters. A chapter is
 // clicked to open it on the board. Hidden studies and chapters are left out (except the chapter on the
@@ -2154,7 +2141,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // the study's name during practice. The board shows the position, with arrows for the study's moves there
 // (see reviewArrows; Study | Masters | Lichess | Errors under it). Beside it, tiles: the moves (the position's
 // name and how often it's reached, the tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's
-// annotation and comment; and your accuracy (as on the hover boards). ← → Home End step through the moves, ↑ ↓ the study's
+// annotation and comment. ← → Home End step through the moves, ↑ ↓ the study's
 // chapters; playing one of the study's moves on the board follows it. (In the code it's "review".)
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches) }
@@ -2240,12 +2227,21 @@ function reviewArrows(node) {
 // Your move to play in a position (the study's main move at your turn, on a practiced path), if there is one.
 const yourMoveAt = node => node.children.find(c => c.isYours);
 
-// Errors: at your turn, the errors of your last 10 tries at the move there, coloured as on the hover
-// boards, each made more than once with a badge for how often ("×2"), and the correct move; nothing at
-// the opponent's turn.
+// Errors: at your turn, the errors of your last 10 tries at the move there (violet), each made more than
+// once with a badge for how often ("×2"), and the correct move, with a badge for how often it was right
+// first time ("75%", once tested); nothing at the opponent's turn.
 function errorArrows(node) {
   const m = yourMoveAt(node);
-  return m ? answerArrows(node.position, m, errorCounts(attemptsAt(m), m.san), true) : [];
+  if (!m) return [];
+  const attempts = attemptsAt(m), first = rightFirstTime(attempts, m.san);
+  return answerArrows(node.position, m, errorCounts(attempts, m.san), { counted: true, correctLabel: first == null ? null : `${first}%` });
+}
+
+// The percentage of tries (of the last 10) in which the correct move was played first, with no error or
+// hint before it (not move accuracy: no penalties, no weighting); null when never tested.
+function rightFirstTime(attempts, correct) {
+  if (!attempts.length) return null;
+  return percent(attempts.filter(a => a.tried[0] && withoutCheckMarks(a.tried[0]) === withoutCheckMarks(correct)).length / attempts.length);
 }
 
 // The top moves in a position, for the Masters view (the masters moves, see isMasterMove; teal) or the
@@ -2270,15 +2266,22 @@ function updateReviewToggles() { for (const view of ARROW_VIEWS) $(`arrows-${vie
 
 // What hovering over a square says about the arrows pointing to it, one line per move: with Masters or
 // Lichess, its rank and share there, e.g. "♘f3 · #3 masters move (12%)", "♘f3 · #4 Lichess move (8%)"; with Errors,
-// as in the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)".
+// as in the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)", and for the correct move how
+// often it was right first time and when last tested.
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
   if (view === 'masters') return topMoves(node, view).filter(t => to(t.move)).map(t => `${withFigurines(t.san)} · ${rankAndShareText(masterGamesAt(node.epd), t.san, 'masters', '')}`);
   if (view === 'lichess') return topMoves(node, view).filter(t => to(t.move)).map(t => `${withFigurines(t.san)} · ${rankAndShareText(lichessGamesAt(node.epd), t.san, 'Lichess', '')}`);
   const m = settings.review.view === 'errors' && yourMoveAt(node);
   if (!m) return [];
-  return errorCounts(attemptsAt(m), m.san).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
+  const attempts = attemptsAt(m), first = rightFirstTime(attempts, m.san);
+  const errors = errorCounts(attempts, m.san).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
     .map(([x, n]) => errorLabel(m, x).replace(/ \(|$/, n > 1 ? ` ×${n}$&` : '$&'));
+  // The correct move: "♘f3 · right first time 75% (last 4 tries) · last tested 3 days ago".
+  const last = lastTriedAt(m.key), days = last && daysAgo(last);
+  const correct = first != null && to(parseUci(m.uci)) ? [[withFigurines(m.san), `right first time ${first}% (last ${plural(attempts.length, 'try', 'tries')})`,
+    last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')] : [];
+  return [...correct, ...errors];
 }
 
 // Hovering over the square an arrow points to (Masters, Lichess and Errors) shows squareTipLines (mouse only; the
@@ -2311,40 +2314,17 @@ function showReviewNode(node) {
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
   reviewBoard.setAutoShapes(reviewArrows(node));
   updateReviewToggles();
-  // The position's name, and how often it's reached ("Position reached 23k times").
+  // The position's name, and how often it's reached ("Reached 23k times (Lichess) 46 times (Masters)").
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   $('review-reached').textContent = positionCountText(node.epd) ?? '';
   renderReviewTree();
-  // Under the moves, each tile hidden when empty: the move's annotation (its glyphs, in their Lichess
-  // colours, named on hover) and its comment (at the start, the chapter's introduction); and Your accuracy:
-  // for your moves, as on the hover boards (move accuracy, last tested); at the start, the
-  // chapter's average move accuracy; at a line's last move, its line accuracy and when it was last played
-  // through.
+  // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colours, named
+  // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
+  // until 4 November 2026; removed as a trial.)
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
   $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
-  const heading = node.uci ? hoverBoardHeading(node) : [];
-  // (Not its errors: the Errors view shows them.)
-  const yourRows = node.uci && node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null).rows.slice(heading.length, heading.length + 2) : [];
-  const rows = [...yourRows, ...!node.uci ? [chapterAccuracyText(review.ch)] : lineEndRows(node)].filter(Boolean);
-  $('review-yours').replaceChildren(...rows.length ? [element('h3', {}, 'Your accuracy'), ...rows] : []);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
-}
-
-// "85% average move accuracy (12 of 15 moves tried)", or "Untried".
-function chapterAccuracyText(ch) {
-  const { tried, score } = averageScore([ch]), total = yourMoves(ch).length;
-  return element('div', {}, tried ? `${percent(score)}% average move accuracy (${tried} of ${plural(total, 'move')} tried)` : 'Untried');
-}
-
-// At a line's last move: "92% line accuracy" (untried moves counting 0%) and when it was last played
-// through ("Last played through today", "… 3 days ago", "Not played through yet").
-function lineEndRows(node) {
-  const line = !node.children.length && !node.untested && chapterLines(review.ch).find(l => l.key === node.key);
-  if (!line) return [];
-  const accuracy = itemAccuracy({ line, i: null }), last = lastPlayedAt(line.key), days = last && daysAgo(last);
-  return [accuracy == null ? null : element('div', {}, `${percent(accuracy)}% line accuracy`),
-    element('div', {}, !last ? 'Not played through yet' : days === 'Today' ? 'Last played through today' : `Last played through ${days} ago`)];
 }
 
 function renderReviewTree() {
@@ -3382,8 +3362,9 @@ function glyphBadge(node) {
 const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
 // A violet arrow for each error that's a move, whatever kind (errors: [[x, count], …]; the hint has
-// none), if counted with a badge for a count above 1 ("×2"), and the correct move's (the main move's).
-function answerArrows(pos, m, errors, counted = false) {
+// none), if counted with a badge for a count above 1 ("×2"), and the correct move's (the main move's),
+// with correctLabel in a badge (in the outline's blue) if given.
+function answerArrows(pos, m, errors, { counted = false, correctLabel = null } = {}) {
   const shapes = errors.map(([x, n]) => {
     const mv = san.parseSan(pos, x);
     if (!mv) return null;
@@ -3391,7 +3372,7 @@ function answerArrows(pos, m, errors, counted = false) {
     return { orig, dest, brush: 'violet', ...counted && n > 1 ? { label: { text: `×${n}` } } : {} };
   }).filter(Boolean);
   const [orig, dest] = arrowSquares(pos, parseUci(m.uci));
-  return [...shapes, mainArrow(orig, dest)];
+  return [...shapes, { ...mainArrow(orig, dest), ...correctLabel ? { label: { text: correctLabel, fill: '#3291ff' } } : {} }];
 }
 
 function hideHoverBoard() { $('move-preview')?.classList.add('hidden'); }
@@ -3614,13 +3595,13 @@ function updateStatisticsInfo() {
 // "Position reached 950 / 23k / 1.2M / 1.8bn times" (the same short counts as everywhere), or
 // "Position never reached"; null while the position's statistics haven't downloaded.
 // How often a position is reached in rated Lichess games, with the master games' count once downloaded:
-// "Position reached 23k times · masters 1.2k", "Position never reached · masters 0"; null while its
-// Lichess statistics haven't downloaded.
+// "Reached 23k times (Lichess) 46 times (Masters)", "Never reached (Lichess) 0 times (Masters)"; null
+// while its Lichess statistics haven't downloaded.
 function positionCountText(epd) {
   const lichess = lichessGamesAt(epd), masters = masterGamesAt(epd);
   if (!lichess) return null;
   const n = totalGames(lichess);
-  return (n ? `Position reached ${shortCount(n)} times` : 'Position never reached') + (masters ? ` · masters ${shortCount(totalGames(masters))}` : '');
+  return (n ? `Reached ${shortCount(n)} times (Lichess)` : 'Never reached (Lichess)') + (masters ? ` ${shortCount(totalGames(masters))} times (Masters)` : '');
 }
 
 // A move's share of a position's games as a percentage ("45%", "<1%", "0%"); null when the
