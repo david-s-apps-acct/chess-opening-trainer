@@ -512,8 +512,10 @@ async function runLichessPage(app) {
   // moves c5 and e5 (sharing #1; e5 in the study) and e6.
   const statsBefore = app.moveStats;
   app.setMoveStats(structuredClone(POSITIONS));
-  app.settings.review = { view: 'top' };
-  const tops = [arrowsAt([]), arrowsAt(['e4'])];
+  app.settings.review = { view: 'masters' };
+  const masters = [arrowsAt([]), arrowsAt(['e4'])];
+  app.settings.review = { view: 'lichess' };
+  const lichess = [arrowsAt([]), arrowsAt(['e4'])];
   // Errors: your errors at e4 in the last 10 tries (d4 twice, a masters move: teal; g3: violet; the hint, no
   // arrow), counted, with the correct move; none at the opponent's turn; hovering over d4's square.
   const historyBefore = app.history;
@@ -523,16 +525,18 @@ async function runLichessPage(app) {
   app.setHistory(historyBefore);
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
-  check('review: Top moves, numbered, the study\'s outlined in white, instead of the study\'s arrows', tops,
-    [['e2e4 teal+ 1', 'd2d4 teal 2', 'g1f3 teal 3', 'c2c4 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
+  check('review: Masters, numbered, the study\'s outlined in white, instead of the study\'s arrows', masters,
+    [['e2e4 teal+ 1', 'd2d4 teal 2', 'g1f3 teal 3'], []]);
+  check('review: Lichess, the top 5, numbered', lichess,
+    [['e2e4 grey+ 1', 'd2d4 grey 2', 'c2c4 grey 3', 'g1f3 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
   check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
-    [['d2d4 teal 2', 'g2g3 violet 1', 'e2e4 white+'], [], ['d4 ×2 (masters)'], ['g3']]);
+    [['d2d4 teal ×2', 'g2g3 violet', 'e2e4 white+'], [], ['d4 ×2 (masters)'], ['g3']]);
   // The study's own arrows and circles, in their Lichess colours, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
   check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Centre.']);
-  app.settings.review = { view: 'top' };
-  check('review: with Top moves, not the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), []);
+  app.settings.review = { view: 'masters' };
+  check('review: with Masters, not the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), []);
   app.settings.review = { view: 'study' };
   // Another study in the list: opened, then one of its chapters.
   const twoStudies = structuredClone(LIBRARY);
@@ -563,10 +567,10 @@ async function runLichessPage(app) {
   $('preset-cancel-btn').click();
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: the Study | Top moves | Errors switch; no Move statistics tile; Position reached under the position\'s name; ids unique', [['study', 'top', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
-    $('review-reached').previousElementSibling.id, document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Top moves', 'Errors'], false, 'review-position', true]);
+  check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached under the position\'s name; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
+    $('review-reached').previousElementSibling.id, document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, 'review-position', true]);
   $('arrows-errors').click();
-  check('review: one view at a time, remembered', [['study', 'top', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'true'], 'errors']);
+  check('review: one view at a time, remembered', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'false', 'true'], 'errors']);
   $('arrows-study').click();
   check('review: the comment tile under the moves', [$('review-comment').previousElementSibling.querySelector('#review-tree') !== null, $('review-comment').classList.contains('panel')], [true, true]);
   check('review: no Close button; no accuracy in the chapters list', [!!$('review-close'), chapterRows().some(row => row.querySelector('.rate'))], [false, false]);
