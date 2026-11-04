@@ -163,11 +163,12 @@
   /* Move accuracy: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* On the Practice page, under the chooser: the Studies to practice tile (the preset, how many chapters it has,
-     ✎ and, while editing, the buttons to save them), then the chapters to tick. */
+  /* On the Practice page, under the chooser: the Studies to practice tile (the group, Edit groups, how many
+     chapters it has). */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .studies-to-practice h2 { margin: 0 0 10px; }
+  #practice-message:empty { display: none; }
   /* The Spaced repetition tile: a heading that opens and closes it */
   .tile-toggle { display: flex; align-items: center; gap: 6px; width: 100%; padding: 0; background: none; box-shadow: none; font-size: 18px; font-weight: 600; color: var(--text-strong); text-align: left; }
   .tile-toggle:hover:not(:disabled) { background: none; color: var(--text-strong); }
@@ -175,6 +176,9 @@
   .srs-tile .actions { margin-top: 10px; }
   .preset-row { display: flex; align-items: center; gap: 8px; }
   #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
+  .link-btn { flex: none; padding: 0; background: none; box-shadow: none; color: var(--accent); font-size: 14px; }
+  .link-btn:hover:not(:disabled) { background: none; color: var(--text-strong); text-decoration: underline; }
+  #edit-preset-select { width: 100%; text-overflow: ellipsis; }
   #sel-summary { margin-top: 8px; }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
   .all-row #show-hidden-btn { margin-left: auto; }
@@ -191,7 +195,6 @@
   .hidden-study { opacity: .5; } /* hidden studies, shown in grey while the top eye is open */
   button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
   .toggle-space { width: 24px; flex: none; }
-  .studies { background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); overflow: hidden; }
   .study + .study { border-top: 1px solid var(--border); }
   .row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; min-height: 40px; }
   .study-row { font-weight: 600; }
@@ -202,7 +205,7 @@
   .toggle:hover:not(:disabled) { background: none; color: var(--text); }
   .chapters { background: #2a2825; }
   .chapter-row { padding-left: 36px; border-top: 1px solid var(--border); font-size: 14px; } /* a chapter's tick box under its study's name */
-  .tree { background: #242220; font-size: 14px; } /* a chapter's move tree, on the Review page */
+  .tree { background: #242220; font-size: 14px; } /* a chapter's move tree, on the Studies page */
   .tree-line { line-height: 1.9; }
   .tree-vars { margin: 0 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--border); }
   .tree-toggle { padding: 0 5px; font-size: 12px; line-height: 1.3; margin-left: 2px; box-shadow: none; }
@@ -269,7 +272,7 @@
      Practice page. On a narrow screen the tiles go under the board. */
   /* Three columns where there's room (the study's chapters, 260 pixels; the board; the tiles), with the page wider than
      usual; two (the board; the tiles with the chapters under them); one on a phone. */
-  body[data-page=review] main { max-width: 1440px; }
+  body[data-page=studies] main { max-width: 1440px; }
   .review-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; align-items: start; }
   @media (min-width: 701px) {
     .review-layout { grid-template-columns: auto minmax(260px, 1fr); grid-template-rows: auto 1fr; } /* the chapters straight under the tiles */
@@ -277,22 +280,26 @@
   }
   @media (min-width: 1200px) {
     .review-layout { grid-template-columns: 260px auto minmax(240px, 1fr); }
-    .review-chapters-tile { grid-column: 1; grid-row: 1 / span 2; }
+    .studies-tile { grid-column: 1; grid-row: 1 / span 2; }
     .review-layout > .board-col { grid-column: 2; }
     .review-tiles { grid-column: 3; grid-row: 1 / span 2; }
-    .review-chapters-tile .review-chapters { max-height: 520px; } /* the board's height, more or less */
+    .studies-tile .studies-list { max-height: 520px; } /* the board's height, more or less */
   }
   .review-tiles { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-  .review-layout .review-chapters-tile { min-width: 0; } /* within its column: long names end in "…" */
+  .review-layout .studies-tile { min-width: 0; } /* within its column: long names end in "…" */
   .review-tiles .panel { flex: none; min-width: 0; }
-  .review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  #review-study { flex: 1; min-width: 0; font-weight: 600; text-overflow: ellipsis; }
-  /* The study's chapters, numbered as on Lichess, in a box that scrolls after about 4 (the 5th cut in half,
-     so it's clear the list goes on), with a scroll bar always shown when it scrolls (Safari and Chrome) */
-  .review-chapters { margin-top: 10px; max-height: 130px; overflow-y: auto; overflow-x: hidden; font-size: 14px; }
-  .review-chapters::-webkit-scrollbar { width: 8px; }
-  .review-chapters::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
-  .review-chapters::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
+  .studies-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .studies-head h2 { margin: 0; }
+  .studies-tile .preset-edit { margin-top: 10px; }
+  /* Your studies, each opening to its chapters (numbered as on Lichess), in a box that scrolls, with a scroll
+     bar always shown when it scrolls (Safari and Chrome) */
+  .studies-list { margin-top: 10px; max-height: 400px; overflow-y: auto; overflow-x: hidden; }
+  .studies-list::-webkit-scrollbar { width: 8px; }
+  .studies-list::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 4px; }
+  .studies-list::-webkit-scrollbar-thumb { background: #6b6762; border-radius: 4px; }
+  .studies-list .row { padding: 6px 4px; min-height: 34px; }
+  .studies-list .chapter-row { padding-left: 20px; }
+  .study-chapters { padding: 2px 0 6px 16px; font-size: 14px; }
   /* As on Lichess: the numbers in blue; the chosen chapter in bold blue on a lighter background */
   .review-chapter { display: flex; align-items: center; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
   .review-chapter:hover { background: var(--surface-2); }
@@ -416,7 +423,7 @@
   <h1>Chess Opening Trainer</h1>
   <nav>
     <button id="nav-practice">Practice</button>
-    <button id="nav-review">Review</button>
+    <button id="nav-studies">Studies</button>
     <button id="nav-lichess">Lichess</button>
     <button id="nav-help">Help</button>
   </nav>
@@ -546,43 +553,18 @@
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
-      <!-- Studies to practice: the chosen preset (All, or one of yours) and how many chapters it has; ✎ opens
-           its chapters to tick, with the buttons to save them. Hidden during practice. -->
+      <!-- Studies to practice: the chosen group (All, or one of yours) and how many chapters it has; Edit groups
+           opens the Studies page to change them. Hidden during practice. -->
       <div id="studies-to-practice" class="panel studies-to-practice hidden">
         <h2>Studies to practice</h2>
         <div class="preset-row">
-          <select id="preset-select" aria-label="Preset"></select>
-          <button id="preset-edit-btn" class="icon-btn" aria-controls="practice-studies" aria-label="Edit this preset, or make a new one" title="Edit this preset, or make a new one">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg>
-          </button>
+          <select id="preset-select" aria-label="Group"></select>
+          <button id="edit-groups-link" class="link-btn" title="Make or change groups (Studies page)">Edit groups</button>
         </div>
         <div id="sel-summary" class="muted"></div>
-        <div id="preset-edit" class="preset-edit hidden">
-          <div class="preset-buttons">
-            <button id="preset-save-btn" class="small primary" title="Save the ticked chapters in this preset">Save</button>
-            <button id="preset-new-btn" class="small" title="A new preset with the ticked chapters (untick All first to start empty)">Create new</button>
-            <button id="preset-rename-btn" class="small">Rename</button>
-            <button id="preset-delete-btn" class="small">Delete</button>
-            <button id="preset-cancel-btn" class="small" title="Close without saving (Esc)">Cancel</button>
-          </div>
-          <form id="preset-name-form" class="preset-name-form hidden">
-            <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the preset" autocomplete="off">
-            <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
-            <div id="preset-name-error" class="form-error"></div>
-          </form>
-        </div>
       </div>
-      <!-- The chapters, to tick: only while selecting a preset's chapters -->
-      <div id="practice-studies" class="practice-studies hidden">
-        <div class="studies">
-          <!-- "All" sits above the list, its checkbox lined up with the studies' checkboxes; the eye shows hidden studies. -->
-          <div class="row study-row all-row"><span class="toggle-space"></span>
-            <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
-            <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
-          </div>
-          <div id="studies"></div>
-        </div>
-      </div>
+      <!-- Before your studies are here: any message about fetching them -->
+      <div id="practice-message" class="panel hidden"></div>
       <!-- Spaced repetition: collapsed; ▾ opens the sliders, Show lines, Show positions and Reset. Hidden during practice. -->
       <div id="srs-tile" class="panel srs-tile hidden">
         <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
@@ -599,16 +581,17 @@
     </div>
   </section>
 
-  <!-- Review: a study on a board (see Review page: reviewing a study) -->
-  <section id="review-screen" class="hidden">
-    <!-- The board; beside it the moves, the move's statistics and your accuracy; the study and its chapters
-         to the left of the board where there's room, else under your accuracy (see .review-layout) -->
+  <!-- Studies: your studies, and a chapter on a board (see Studies page) -->
+  <section id="studies-screen" class="hidden">
+    <!-- The board; beside it the moves, the move's statistics and your accuracy; your studies and their chapters
+         (and, while editing, the groups) to the left of the board where there's room, else under your accuracy
+         (see .review-layout) -->
     <div class="review-layout">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
         <div class="review-toggles">
-          <button id="review-masters" aria-pressed="false" title="Top 3 masters moves"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
-          <button id="review-lichess" aria-pressed="false" title="Top 3 Lichess moves"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button>
+          <button id="arrows-masters" aria-pressed="false" title="Top 3 masters moves"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
+          <button id="arrows-lichess" aria-pressed="false" title="Top 3 Lichess moves"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button>
         </div>
         <div id="review-comment" class="review-comment"></div>
       </div>
@@ -626,9 +609,35 @@
         <div id="review-lichess" class="panel review-stats"></div>
         <div id="review-yours" class="panel review-stats"></div>
       </div>
-      <div class="panel review-chapters-tile">
-        <div class="review-head"><select id="review-study" aria-label="Study"></select></div>
-        <div id="review-chapters" class="review-chapters" role="listbox" aria-label="Chapters"></div>
+      <div class="panel studies-tile">
+        <div class="studies-head"><h2>Studies</h2>
+          <button id="preset-edit-btn" class="icon-btn" aria-label="Edit groups" title="Edit groups"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg></button>
+        </div>
+        <!-- While editing: the group, its chapters ticked in the list, and the buttons to save them -->
+        <div id="preset-edit" class="preset-edit hidden">
+          <select id="edit-preset-select" aria-label="Group to edit"></select>
+          <div id="edit-summary" class="muted"></div>
+          <div class="preset-buttons">
+            <button id="preset-save-btn" class="small primary" title="Save the ticked chapters in this group">Save</button>
+            <button id="preset-new-btn" class="small" title="A new group with the ticked chapters (untick All first to start empty)">Create new</button>
+            <button id="preset-rename-btn" class="small">Rename</button>
+            <button id="preset-delete-btn" class="small">Delete</button>
+            <button id="preset-cancel-btn" class="small" title="Close without saving (Esc)">Cancel</button>
+          </div>
+          <form id="preset-name-form" class="preset-name-form hidden">
+            <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the group" autocomplete="off">
+            <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
+            <div id="preset-name-error" class="form-error"></div>
+          </form>
+        </div>
+        <div id="studies-list" class="studies-list">
+          <!-- While editing: "All" above the list, its checkbox lined up with the studies' checkboxes; the eye shows hidden studies. -->
+          <div id="all-row" class="row study-row all-row hidden"><span class="toggle-space"></span>
+            <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
+            <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
+          </div>
+          <div id="studies"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -661,14 +670,14 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies to practice</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-studies">Studies</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
           <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
-          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the preset <b>All</b>); to practise fewer, make a preset with ✎ under <b>Studies to practice</b>.</li>
+          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the group <b>All</b>); to practise fewer, make a group with <b>Edit groups</b> under <b>Studies to practice</b>.</li>
         </ol>
         <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
         <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
@@ -695,7 +704,7 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen preset (Studies to practice). <b>Main lines only</b> leaves out the opponent's side variations.</li>
+          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen group (Studies to practice). <b>Main lines only</b> leaves out the opponent's side variations.</li>
           <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next. Not used with Reverse sides.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
@@ -730,11 +739,11 @@
           <table class="help-table">
             <tr><td>White, blue outline</td><td>Your study's main move (also Hint and Show correct move)</td></tr>
             <tr><td>White</td><td>Another move in your study</td></tr>
-            <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Review page, small board)</td></tr>
+            <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Studies page, small board)</td></tr>
             <tr><td class="error-teal">Teal</td><td>A masters move not in your study</td></tr>
-            <tr><td class="error-grey">Grey</td><td>A top-3 Lichess move not in your study (Review page)</td></tr>
+            <tr><td class="error-grey">Grey</td><td>A top-3 Lichess move not in your study (Studies page)</td></tr>
             <tr><td class="error-violet">Violet</td><td>Any other move you tried</td></tr>
-            <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Review page)</td></tr>
+            <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
           </table>
         </details>
         <details>
@@ -791,18 +800,18 @@
       </div>
 
       <div class="card" id="help-studies">
-        <h2>Studies to practice</h2>
+        <h2>Studies</h2>
         <ul>
-          <li>On the Practice page, <b>Studies to practice</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
-          <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
-          <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name (or its tick box) to tick it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. To look through a chapter, use the header's <b>Review</b> button.</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). The board shows your study's moves and its own arrows and circles; <b>Masters</b> and <b>Lichess</b> under it add the top 3 masters and Lichess moves not in your study (see Arrow colours). Under them: the move's annotation (e.g. !) and its comment. Beside it: the study and its chapters, the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
-          <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
-          <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
+          <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
+          <li>The board shows your study's moves and its own arrows and circles; <b>Masters</b> and <b>Lichess</b> under it add the top 3 masters and Lichess moves not in your study (see Arrow colours). Under them: the move's annotation (e.g. !) and its comment. Beside it: the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
+          <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own.</li>
+          <li>✎ on the Studies page (or <b>Edit groups</b> on the Practice page) edits the groups: choose one, tick its chapters (click a chapter's name or tick box), then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
+          <li>Chapters no longer on Lichess, or in hidden studies, are left out of every group. Groups are included in backups.</li>
         </ul>
         <details>
           <summary>Hiding studies</summary>
-          <p>The eye beside <b>All</b> shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the eye beside All again to put them out of sight. Hidden studies aren't practiced.</p>
+          <p>While editing groups, the eye beside <b>All</b> shows hidden studies (in grey), each with its own eye: click it to hide or unhide that study. Click the eye beside All again to put them out of sight. Hidden studies aren't practiced.</p>
         </details>
         <details>
           <summary>The move tree</summary>
@@ -810,7 +819,7 @@
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
             <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>On the Review page, hover over a move to see it on a small board; click it to show it on the big board.</li>
+            <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
         </details>
       </div>
@@ -951,7 +960,7 @@ const checkedPresets = v => {
     .map(p => ({ name: p.name.trim().toLowerCase() === ALL_PRESET.toLowerCase() ? `${ALL_PRESET} 2` : p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string') }))
     .filter(p => !names.has(p.name.toLowerCase()) && names.add(p.name.toLowerCase()));
 };
-let selection = new Set(); // the chosen preset's chapters (keys such as "studyId/chapterId")
+let selection = new Set(); // the chosen group's (preset's) chapters (keys such as "studyId/chapterId")
 let presets = checkedPresets(store.get('presets', []));
 let chosenPresetName = store.get('chosenPreset', null);
 let hiddenStudies = new Set(store.get('hiddenStudies', [])); // studies hidden from the list and from practice
@@ -1081,9 +1090,9 @@ function showScreen(name) {
   currentScreen = name;
   hideBanner(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
-  document.body.dataset.page = name; // e.g. the Review page is wider
+  document.body.dataset.page = name; // e.g. the Studies page is wider
   // Each page, and its header button (always shown; the current page's is highlighted).
-  for (const s of ['practice', 'review', 'lichess', 'help']) {
+  for (const s of ['practice', 'studies', 'lichess', 'help']) {
     $(s + '-screen').classList.toggle('hidden', s !== name);
     $('nav-' + s).classList.toggle('current', s === name);
     if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
@@ -1264,9 +1273,9 @@ function setUpdateStatus(message, isError = false) {
   const box = $('update-status');
   box.className = 'update-status' + (isError ? ' error' : '');
   box.replaceChildren(...parts);
-  if (!library && parts.length) {
-    $('studies').replaceChildren(element('div', { class: 'row ' + (isError ? 'update-status error' : 'muted') }, ...parts));
-    $('practice-studies').classList.remove('hidden');
+  if (!library && parts.length) { // on the Practice page, until your studies are here
+    $('practice-message').replaceChildren(element('div', { class: isError ? 'update-status error' : 'muted' }, ...parts));
+    $('practice-message').classList.remove('hidden');
   }
   updateLichessStatus();
 }
@@ -1353,7 +1362,7 @@ async function syncStudies() {
 function refreshPage() {
   if (currentScreen === 'lichess') renderLichessPage();
   else if (currentScreen === 'practice' && !practice) renderStudies(); // and the chooser
-  else if (currentScreen === 'review') { // the same chapter and position in the new studies, if they're still there
+  else if (currentScreen === 'studies') { // the same chapter and position in the new studies, if they're still there
     const ch = chapterByKey(review.ch.key);
     if (ch && !parseChapter(ch).error) openReview(ch, { at: pathTo(review.node).map(m => m.san) });
     else $('nav-practice').click();
@@ -1757,49 +1766,77 @@ function averageScore(chapters) {
     score: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null };
 }
 
-// ---------- Studies list (on the Practice page) ----------
-// Under the chooser, the Studies to practice tile: the chosen preset (All, built in, or one of yours) and how
-// many chapters it has; what's practised is always the chosen preset. ✎ beside it opens its chapters
-// to tick (your studies and chapters, the eye for hidden studies, move accuracy; a chapter's name opens it
-// on the Review page) with Save, Create new, Rename, Delete and Cancel (for All, only Create new and
-// Cancel). The tile is hidden during practice, since a session's lines are chosen when it starts.
-let editing = null; // while selecting chapters: { preset, ticks (a Set of chapter keys) }
+// ---------- Studies list (on the Studies page) ----------
+// Beside the board on the Studies page: your studies, each opening to its chapters. A chapter is
+// clicked to open it on the board (hidden studies are left out, except the one shown). ✎ edits the
+// groups (presets in the code: named sets of chapters; All, every chapter, is built in): the chosen
+// group's chapters ticked (a chapter's name then ticks it), the eye for hidden studies, and Save,
+// Create new, Rename, Delete and Cancel (for All, only Create new and Cancel). What's practised is
+// always the chosen group, chosen on the Practice page (the Studies to practice tile, with Edit groups,
+// which opens this); the tile is hidden during practice, since a session's lines are chosen when it
+// starts, and Start practice waits while a group is being edited.
+let editing = null; // while editing a group: { preset, ticks (a Set of chapter keys) }
 
-// The chapters being ticked (while selecting) or practised.
+// The chapters being ticked (while editing) or practised.
 const ticked = () => editing ? editing.ticks : selection;
 
-// The Studies to practice and Spaced repetition tiles: once there are studies, and not during practice;
-// the chapters only while editing a preset. (Start practice is greyed out while editing, so practice never
-// starts mid-edit.)
+// The Practice page's Studies to practice and Spaced repetition tiles: once there are studies, and not
+// during practice (before there are studies, any message about fetching them instead).
 function showPracticeTiles() {
   for (const id of ['studies-to-practice', 'srs-tile']) $(id).classList.toggle('hidden', !library || !!practice);
-  if (library) $('practice-studies').classList.toggle('hidden', !editing);
+  if (library) $('practice-message').classList.add('hidden');
 }
 
+// The Practice page's tile and chooser, and the Studies page's list, as things are now.
 function renderStudies() {
   hideHoverBoard(); hideQuickTip(); // their element may be about to disappear
   showPracticeTiles();
-  if (!library) return; // the list keeps any message about fetching your studies
-  const container = $('studies');
+  if (!library) return;
+  renderPresets();
+  updateSelectionPanel();
+  renderStudiesList();
+  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practised follows the group
+}
+
+function renderStudiesList() {
+  const container = $('studies'), shown = review && studyOfChapter(review.ch);
+  $('all-row').classList.toggle('hidden', !editing);
   container.replaceChildren();
   if (!library.studies.length) {
     container.append(element('div', { class: 'row muted' }, `No studies found for ${library.username}. Create them at lichess.org/study.`));
   }
   for (const study of library.studies) {
-    // Hidden studies are left out, or shown dimmed (and can't be ticked) with the top eye open.
+    // Hidden studies are left out (except the one on the board, when not editing), or, while editing with
+    // the top eye open, shown dimmed (and can't be ticked).
     const isHidden = hiddenStudies.has(study.id);
-    if (isHidden && !showHiddenStudies) continue;
-    const studyEl = element('div', { class: 'study' + (isHidden ? ' hidden-study' : '') }, studyRow(study, isHidden));
+    if (isHidden && !(editing ? showHiddenStudies : study === shown)) continue;
+    const studyEl = element('div', { class: 'study' + (isHidden && editing ? ' hidden-study' : '') }, studyRow(study, isHidden));
     if (openStudies.has(study.id)) {
-      studyEl.append(element('div', { class: 'chapters' }, study.chapters.map(ch => chapterRow(ch, isHidden))));
+      studyEl.append(editing ? element('div', { class: 'chapters' }, study.chapters.map(ch => chapterRow(ch, isHidden)))
+        : element('div', { class: 'study-chapters', role: 'listbox', 'aria-label': study.name }, study.chapters.map(chapterLink)));
     }
     container.append(studyEl);
   }
   if (library.studies.length && !container.children.length) {
-    container.append(element('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye at the top to see them.'));
+    container.append(element('div', { class: 'row muted' }, editing ? 'All your studies are hidden. Click the eye at the top to see them.' : 'All your studies are hidden. ✎, then the eye, to see them.'));
   }
-  updateSelectionPanel();
-  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practised follows the ticks
+  // The chapter on the board, in view.
+  const list = $('studies-list'), row = !editing && list.querySelector('.review-chapter.current');
+  if (row) {
+    const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+    list.scrollTop = Math.max(0, Math.min(list.scrollTop, top), top + row.offsetHeight - list.clientHeight);
+  }
+}
+
+// A chapter to open (not editing): numbered as on Lichess, with the dot for the side you play; the one on
+// the board highlighted; one that can't be shown greyed out, with the reason on hover.
+function chapterLink(c, k) {
+  const p = parseChapter(c), current = c === review?.ch;
+  return element('div', { class: 'review-chapter' + (current ? ' current' : '') + (p.error ? ' unavailable' : ''), role: 'option', 'aria-selected': String(current),
+    'aria-disabled': p.error ? 'true' : null, onclick: p.error ? null : () => openReview(c) },
+    element('span', { class: 'review-chapter-num' }, `${k + 1}.`),
+    element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : [c.name, openingName(p)].filter(Boolean).join(': ') }, c.name),
+    p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }));
 }
 
 // A ▸ / ▾ triangle that shows or hides something (titles: [when closed, when open]).
@@ -1813,8 +1850,8 @@ function opener(name, onOpen) {
     onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } }, name);
 }
 
-// A study's row: its triangle (show or hide its chapters), checkbox (all its chapters), name, eye
-// (while the top eye is open) and chapter count. (Move accuracy is shown on the Review page.)
+// A study's row: its triangle (show or hide its chapters), checkbox (all its chapters; while editing),
+// name, eye (while editing with the top eye open) and chapter count.
 function studyRow(study, isHidden) {
   const keys = study.chapters.map(c => c.key);
   const nTicked = keys.filter(k => ticked().has(k)).length;
@@ -1822,14 +1859,14 @@ function studyRow(study, isHidden) {
   const toggleStudy = () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); };
   return element('div', { class: 'row study-row' },
     triangle(open, ['Show chapters', 'Hide chapters'], toggleStudy),
-    element('input', {
+    editing && element('input', {
       type: 'checkbox', id: 'st-' + study.id, disabled: isHidden,
       checked: nTicked === keys.length && keys.length > 0,
       indeterminate: nTicked > 0 && nTicked < keys.length,
       onchange: e => setTicked(keys, e.target.checked),
     }),
     element('span', { class: 'name', title: study.name }, opener(study.name, toggleStudy),
-      showHiddenStudies ? hideStudyButton(study, isHidden) : null,
+      editing && showHiddenStudies ? hideStudyButton(study, isHidden) : null,
       element('span', { class: 'muted', style: 'font-weight:400' }, ' · ', opener(plural(study.chapters.length, 'chapter'), toggleStudy))));
 }
 
@@ -1957,14 +1994,15 @@ function toggleHideStudy(study) {
 
 $('show-hidden-btn').addEventListener('click', () => { showHiddenStudies = !showHiddenStudies; renderStudies(); });
 
+// How many chapters the chosen group has (Practice page) and, while editing, are ticked (Studies page).
 function updateSelectionPanel() {
-  const all = visibleChapters();
-  const selected = all.filter(c => ticked().has(c.key));
-  const all_ = $('all-box');
-  all_.checked = all.length > 0 && selected.length === all.length;
-  all_.indeterminate = selected.length > 0 && selected.length < all.length;
-  $('sel-summary').textContent = `${plural(selected.length, 'chapter')} selected`;
-  renderPresets();
+  const all = visibleChapters(), count = keys => all.filter(c => keys.has(c.key)).length;
+  $('sel-summary').textContent = `${plural(count(selection), 'chapter')} selected`;
+  if (!editing) return;
+  const n = count(editing.ticks), all_ = $('all-box');
+  all_.checked = all.length > 0 && n === all.length;
+  all_.indeterminate = n > 0 && n < all.length;
+  $('edit-summary').textContent = `${plural(n, 'chapter')} selected`;
   // The eye by All: a line through it while hidden studies are out of sight.
   setToggle('show-hidden-btn', showHiddenStudies, showHiddenStudies ? 'Stop showing hidden studies' : 'Show hidden studies');
 }
@@ -1984,11 +2022,15 @@ const chosenPreset = () => presets.find(p => p.name === chosenPresetName)
 // What's practised: the chosen preset's chapters (after a change of preset, hidden studies or studies).
 function useChosenPreset() { selection = new Set(chaptersOf(chosenPreset())); }
 
+// The groups' drop-downs: the Practice page's (what's practised; greyed out while a group is being
+// edited) and, while editing, the Studies page's (the group being edited); and the editing buttons.
 function renderPresets() {
   const preset = chosenPreset();
-  $('preset-select').replaceChildren(element('option', { value: '' }, ALL_PRESET),
-    ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p => element('option', { value: p.name }, p.name)));
-  $('preset-select').value = preset.builtIn ? '' : preset.name;
+  for (const id of ['preset-select', 'edit-preset-select']) {
+    $(id).replaceChildren(element('option', { value: '' }, ALL_PRESET),
+      ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p => element('option', { value: p.name }, p.name)));
+    $(id).value = preset.builtIn ? '' : preset.name;
+  }
   $('preset-select').disabled = !!editing;
   $('preset-edit-btn').classList.toggle('hidden', !!editing);
   $('preset-edit').classList.toggle('hidden', !editing);
@@ -2008,11 +2050,24 @@ $('preset-select').addEventListener('change', e => {
   renderStudies(); // and the chooser
 });
 
-// ✎: the chosen preset's chapters, ticked, to change; Cancel (or Esc) leaves them as they were.
+// ✎: the chosen group's chapters, ticked, to change; Cancel (or Esc) leaves them as they were. Another
+// group from the drop-down is chosen (as on the Practice page), and its chapters ticked instead.
 function startEditing() {
   editing = { preset: chosenPreset(), ticks: new Set(selection) };
+  hideNameForm();
   renderStudies();
 }
+$('edit-preset-select').addEventListener('change', e => {
+  chosenPresetName = e.target.value || null;
+  savePresets();
+  useChosenPreset();
+  startEditing();
+});
+// The Practice page's Edit groups: the Studies page, editing the chosen group.
+$('edit-groups-link').addEventListener('click', () => {
+  $('nav-studies').click();
+  if (currentScreen === 'studies') startEditing();
+});
 function stopEditing() {
   editing = null;
   hideNameForm();
@@ -2020,7 +2075,7 @@ function stopEditing() {
 }
 $('preset-edit-btn').addEventListener('click', startEditing);
 $('preset-cancel-btn').addEventListener('click', stopEditing);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && editing && currentScreen === 'practice' && !typingInTextBox()) stopEditing(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && editing && currentScreen === 'studies' && !typingInTextBox()) stopEditing(); });
 
 $('preset-save-btn').addEventListener('click', () => {
   const preset = presets.find(p => p === editing?.preset);
@@ -2033,7 +2088,7 @@ $('preset-save-btn').addEventListener('click', () => {
 
 $('preset-delete-btn').addEventListener('click', () => {
   const preset = chosenPreset();
-  if (preset.builtIn || !confirm(`Delete the preset "${preset.name}"? All will be chosen.`)) return;
+  if (preset.builtIn || !confirm(`Delete the group "${preset.name}"? All will be chosen.`)) return;
   presets = presets.filter(p => p !== preset);
   chosenPresetName = null;
   savePresets();
@@ -2071,10 +2126,10 @@ $('preset-name-form').addEventListener('submit', e => {
   const renaming = namingMode === 'rename' ? chosenPreset() : null;
   if (!name) { $('preset-name-error').textContent = 'Type a name.'; return; }
   if (name.toLowerCase() === ALL_PRESET.toLowerCase() || presets.some(p => p !== renaming && p.name.toLowerCase() === name.toLowerCase())) {
-    $('preset-name-error').textContent = `There's already a preset called ${name}.`;
+    $('preset-name-error').textContent = `There's already a group called ${name}.`;
     return;
   }
-  if (renaming) { renaming.name = name; chosenPresetName = name; savePresets(); hideNameForm(); renderPresets(); return; } // still selecting
+  if (renaming) { renaming.name = name; chosenPresetName = name; savePresets(); hideNameForm(); renderPresets(); return; } // still editing
   presets.push({ name, chapters: [...editing.ticks] });
   chosenPresetName = name;
   savePresets();
@@ -2082,21 +2137,19 @@ $('preset-name-form').addEventListener('submit', e => {
   stopEditing();
 });
 
-// ---------- Review page: reviewing a study ----------
-// A study opened on a board, on its own page, at one of its chapters, to look through before (or
-// instead of) practicing; it works offline. Opened from the header's Review button, a chapter's name in
-// the Practice page's studies list, or the icon by the study's name during practice. The board shows the
-// position, with arrows for the study's moves there (see reviewArrows). Beside it, tiles: the study (a
-// drop-down of your studies with the study's move accuracy, its chapters as a numbered list, as on
-// Lichess, each with its move accuracy); the moves (the position's name, the
-// tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's statistics; and your accuracy (as on the
-// hover boards). Under the board, the move's annotation and comment. ← → Home End step through the moves, ↑ ↓ the
-// chapters; playing one of the study's moves on the board follows it. (The header's buttons leave it.)
+// ---------- Studies page: reviewing a chapter ----------
+// A chapter on a board, to look through before (or instead of) practicing; it works offline. Opened from
+// the header's Studies button, a chapter in the studies list beside it (see Studies list), or the icon by
+// the study's name during practice. The board shows the position, with arrows for the study's moves there
+// (see reviewArrows). Beside it, tiles: the moves (the position's name, the tree with the current move
+// highlighted, ⏮ ◀ ▶ ⏭); the move's statistics; and your accuracy (as on the hover boards). Under the
+// board, the move's annotation and comment. ← → Home End step through the moves, ↑ ↓ the study's
+// chapters; playing one of the study's moves on the board follows it. (In the code it's "review".)
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches) }
 
 // The small board icon after the study's name on the Practice page: it ends practice and opens the line's
-// study on the Review page (see reviewFromPractice).
+// chapter on the Studies page (see reviewFromPractice).
 function reviewButton(title, open) {
   const btn = element('button', { class: 'icon-btn review-btn', title, 'aria-label': title, onclick: e => { e.stopPropagation(); open(); } });
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 3h6v6H3zM9 9h6v6H9zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" fill="currentColor"/></svg>';
@@ -2108,7 +2161,7 @@ function openReview(ch, { at = [] } = {}) {
   const parsed = parseChapter(ch);
   if (parsed.error) return;
   review = { ch, parsed, node: parsed.root, openSet: new Set() };
-  showScreen('review');
+  showScreen('studies');
   if (!reviewBoard) {
     ownShapeNames($('review-board'), 'review');
     reviewBoard = Chessground($('review-board'), {
@@ -2118,38 +2171,14 @@ function openReview(ch, { at = [] } = {}) {
     });
     window.addEventListener('resize', () => reviewBoard.redrawAll());
   }
-  const study = studyOfChapter(ch);
-  // The studies (hidden ones left out, except this one), a study with no chapter that can be shown greyed out.
-  reviewedChapters.set(study.id, ch.key);
-  $('review-study').replaceChildren(...library.studies.filter(st => st === study || !hiddenStudies.has(st.id)).map(st =>
-    element('option', { value: st.id, disabled: st.chapters.every(c => parseChapter(c).error) }, st.name)));
-  $('review-study').value = study.id;
-  // The chapters, numbered as on Lichess, each with the dot for the side you play; one that can't be
-  // shown is greyed out, with the reason on hover.
-  $('review-chapters').replaceChildren(...study.chapters.map((c, k) => {
-    const p = parseChapter(c);
-    return element('div', { class: 'review-chapter' + (c === ch ? ' current' : '') + (p.error ? ' unavailable' : ''), role: 'option', 'aria-selected': String(c === ch),
-      'aria-disabled': p.error ? 'true' : null, title: p.error || null, onclick: p.error ? null : () => openReview(c) },
-      element('span', { class: 'review-chapter-num' }, `${k + 1}.`), element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, c.name), p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }));
-  }));
-  const list = $('review-chapters'), row = list.querySelector('.current');
-  list.scrollTop = Math.max(0, Math.min(list.scrollTop, row.offsetTop - list.offsetTop), row.offsetTop - list.offsetTop + row.offsetHeight - list.clientHeight); // in view
+  openStudies.add(studyOfChapter(ch).id); // its study open in the list, with the chapter highlighted
+  renderStudies();
   reviewBoard.set({ orientation: parsed.yourColor });
   let node = parsed.root;
   for (const x of at) node = node.children.find(c => c.san === x) || node;
   showReviewNode(node);
   reviewBoard.redrawAll();
 }
-
-// Another study from the drop-down: the chapter last looked at in it during this visit, or its first
-// chapter that can be shown.
-const reviewedChapters = new Map(); // study id -> chapter key
-$('review-study').addEventListener('change', e => {
-  e.target.blur(); // so the arrow keys step through the moves again
-  const study = library.studies.find(st => st.id === e.target.value);
-  const ch = chapterByKey(reviewedChapters.get(study.id)) || study.chapters.find(c => !parseChapter(c).error);
-  if (ch) openReview(ch);
-});
 
 // ↑ and ↓: the previous and next chapter that can be shown.
 function stepChapter(d) {
@@ -2158,12 +2187,12 @@ function stepChapter(d) {
   if (next) openReview(next);
 }
 
-// The header's Review button: the chapter and position last looked at (the studies may have been
-// updated since), or else the first ticked chapter (or the first chapter) that can be shown. Before
-// there are studies, as the Practice button.
-$('nav-review').addEventListener('click', () => {
+// The header's Studies button: the chapter and position last looked at (the studies may have been
+// updated since), or else the chosen group's first chapter (or the first chapter) that can be shown.
+// Before there are studies, as the Practice button.
+$('nav-studies').addEventListener('click', () => {
   if (!library) return $('nav-practice').click();
-  if (currentScreen === 'review') return;
+  if (currentScreen === 'studies') return;
   const last = review && chapterByKey(review.ch.key);
   if (last) return openReview(last, { at: pathTo(review.node).map(m => m.san) });
   const first = [...tickedChapters(), ...visibleChapters()].find(c => !parseChapter(c).error);
@@ -2171,7 +2200,7 @@ $('nav-review').addEventListener('click', () => {
 });
 
 // From the Practice page, while a line or position is tested (or after it, while Next waits): practice
-// ends as with End practice, and the line's study opens on the review page at the position on the board
+// ends as with End practice, and the line's chapter opens on the Studies page at the position on the board
 // (the live one, or an earlier one being looked at).
 function reviewFromPractice() {
   const { line } = practice, shown = practice.viewing ?? practice.movesPlayed;
@@ -2200,14 +2229,14 @@ function reviewArrows(node) {
   return [...extra, ...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
 }
 
-for (const [id, which] of [['review-masters', 'masters'], ['review-lichess', 'lichess']]) $(id).addEventListener('click', () => {
+for (const [id, which] of [['arrows-masters', 'masters'], ['arrows-lichess', 'lichess']]) $(id).addEventListener('click', () => {
   settings.review[which] = !settings.review[which];
   saveSettings();
   updateReviewToggles();
   if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
 });
 function updateReviewToggles() {
-  for (const [id, which] of [['review-masters', 'masters'], ['review-lichess', 'lichess']]) $(id).setAttribute('aria-pressed', String(settings.review[which]));
+  for (const [id, which] of [['arrows-masters', 'masters'], ['arrows-lichess', 'lichess']]) $(id).setAttribute('aria-pressed', String(settings.review[which]));
 }
 
 function showReviewNode(node) {
@@ -2283,7 +2312,7 @@ const reviewStep = {
 };
 for (const k of Object.keys(reviewStep)) $(`review-${k}`).addEventListener('click', () => review && showReviewNode(reviewStep[k]()));
 document.addEventListener('keydown', e => {
-  if (currentScreen !== 'review' || !review || typingInTextBox()) return;
+  if (currentScreen !== 'studies' || !review || typingInTextBox()) return;
   const step = { ArrowLeft: 'prev', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key];
   if (step) { e.preventDefault(); showReviewNode(reviewStep[step]()); }
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); stepChapter(e.key === 'ArrowUp' ? -1 : 1); }
@@ -2593,8 +2622,8 @@ function renderChooser() {
   $('chooser-reversed-label').classList.toggle('hidden', kind !== 'lines');
   $('chooser-reversed').checked = settings.practice.reversed;
   const { items, note } = practicable(kind);
-  $('chooser-start').disabled = !items.length;
-  $('chooser-note').textContent = note;
+  $('chooser-start').disabled = !items.length || !!editing;
+  $('chooser-note').textContent = editing ? 'Finish editing the group first (Studies page).' : note;
 }
 
 // The Practice page's Spaced repetition tile: the sliders' values. It starts closed each time the app opens,
@@ -3101,7 +3130,7 @@ function updateNames() {
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
   $('practice-title').replaceChildren(chapterTitle(ch) + (session.reversed ? ' (reversed)' : ''), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
-    reviewButton('End practice and review this study', reviewFromPractice));
+    reviewButton('End practice and open this chapter on the Studies page', reviewFromPractice));
   updatePositionName();
 }
 
@@ -3934,7 +3963,7 @@ async function init() {
   if (loggedIn === false && library) return showLichess();
   // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
   if (library) { showChooser(); keepData(); syncStudies().then(startDownloads); } // the Practice page
-  else if (token) { showScreen('practice'); $('studies').replaceChildren(); fetchStudies(); } // the message shows in the studies list
+  else if (token) { showScreen('practice'); fetchStudies(); } // the message shows on the Practice page
   else { showLichess(); showSplash(true); } // not started yet: the welcome
 }
 

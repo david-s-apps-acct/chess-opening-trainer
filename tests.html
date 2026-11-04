@@ -431,27 +431,35 @@ async function runLichessPage(app) {
   app.setToken(null);
   app.setSettings({});
 
-  // Reviewing a study: on its own page at its first chapter; → plays the main move, ← goes back; the
-  // list changes chapter; the header's buttons leave it (no Close).
+  // The Studies page: a chapter on a board, at the chosen group's first chapter; → plays the main move, ←
+  // goes back; the studies list beside it changes chapter, and (✎) edits the groups; the header's buttons
+  // leave it (no Close).
+  const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   app.setLibrary(structuredClone(LIBRARY));
-  $('nav-practice').click(); // nothing practised: the board, the chooser, and the studies list under it
-  check('Studies to practice: under the chooser, the chapters closed, the board shown; no Studies button', [!$('studies-to-practice').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
-    !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!$('nav-studies'), $('sel-summary').textContent],
-    [true, true, true, true, false, `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} selected`]);
-  $('preset-edit-btn').click();
-  check('Studies to practice: Select chapters opens them, with Save as new and Cancel for All', [!$('practice-studies').classList.contains('hidden'),
-    ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden'))], [true, ['preset-new-btn', 'preset-cancel-btn']]);
+  $('nav-practice').click(); // nothing practised: the board, the chooser, and Studies to practice under it
+  check('Studies to practice: under the chooser, the board shown; the group and Edit groups, no chapters here', [!$('studies-to-practice').classList.contains('hidden'),
+    !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!document.querySelector('#practice-screen #studies, #practice-screen #preset-edit-btn'),
+    !!$('edit-groups-link'), $('sel-summary').textContent],
+    [true, true, true, false, true, `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} selected`]);
+  $('edit-groups-link').click();
+  check('Edit groups: the Studies page, editing the group; Create new and Cancel for All', [!$('studies-screen').classList.contains('hidden'), !$('preset-edit').classList.contains('hidden'), !$('all-row').classList.contains('hidden'),
+    ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden'))], [true, true, true, ['preset-new-btn', 'preset-cancel-btn']]);
   if (!document.querySelector('#studies .chapter-row')) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
   const firstBox = document.querySelector('#studies .chapter-row input'), wasTicked = firstBox.checked;
   document.querySelector('#studies .chapter-row label').click(); // its name
-  check('chapter list: clicking a chapter\'s name ticks it (it doesn\'t leave the page)', [firstBox.checked !== wasTicked, !$('practice-screen').classList.contains('hidden')], [true, true]);
-  $('preset-cancel-btn').click();
-  $('nav-review').click(); // the first selected chapter, on the Review page
+  check('editing: clicking a chapter\'s name ticks it (it doesn\'t open it)', [firstBox.checked !== wasTicked, !$('studies-screen').classList.contains('hidden')], [true, true]);
+  $('nav-practice').click();
+  check('editing: Start practice waits, with the drop-down', [$('chooser-start').disabled, $('chooser-note').textContent, $('preset-select').disabled], [true, 'Finish editing the group first (Studies page).', true]);
+  $('nav-studies').click();
+  key('Escape');
+  check('editing: Esc cancels; the chapters to open, no tick boxes', [$('preset-edit').classList.contains('hidden'), $('all-row').classList.contains('hidden'), !!document.querySelector('#studies input'), !!document.querySelector('#studies .review-chapter')], [true, true, false, true]);
+  $('nav-practice').click();
+  $('nav-studies').click(); // the chapter last looked at: the group's first
   const current = () => $('review-tree').querySelector('.current')?.textContent ?? null;
-  const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   const rowText = row => [...row.querySelectorAll('.review-chapter-num, .review-chapter-name')].map(e => e.textContent).join(' ');
-  const chapterShown = () => { const row = $('review-chapters').querySelector('.current'); return row && rowText(row); };
-  check('review: its own page, at the first chapter, at the start', [!$('review-screen').classList.contains('hidden'), $('nav-review').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
+  const chapterRows = () => [...document.querySelectorAll('#studies .review-chapter')];
+  const chapterShown = () => { const row = document.querySelector('#studies .review-chapter.current'); return row && rowText(row); };
+  check('Studies page: its own page, at the first chapter, at the start', [!$('studies-screen').classList.contains('hidden'), $('nav-studies').classList.contains('current'), chapterShown(), $('review-position').textContent, current()],
     [true, true, '1. Italian', 'Starting position', null]);
   key('ArrowRight'); key('ArrowRight');
   const afterTwo = current();
@@ -473,8 +481,8 @@ async function runLichessPage(app) {
   const yoursAtE5 = $('review-yours').childElementCount;
   key('ArrowLeft');
   check('review: Your accuracy for your moves only (e5 isn\'t a line\'s end), in its own tile; the comment under the board', [yoursAtE4, yoursAtE5, $('review-comment').textContent], ['Your accuracy', 0, 'Best by test.']);
-  check('review: the chapters, numbered', [...$('review-chapters').children].map(rowText), ['1. Italian', '2. Sicilian']);
-  $('review-chapters').children[1].click();
+  check('review: the chapters, numbered', chapterRows().map(rowText), ['1. Italian', '2. Sicilian']);
+  chapterRows()[1].click();
   const atStart = current();
   key('ArrowRight');
   check('review: another chapter clicked, from its start; then → steps', [chapterShown(), atStart, current()], ['2. Sicilian', null, 'e4']);
@@ -511,24 +519,31 @@ async function runLichessPage(app) {
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
   check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Centre.']);
-  // Another study from the drop-down: its first chapter; back to the first study: the chapter you were on.
+  // Another study in the list: opened, then one of its chapters.
   const twoStudies = structuredClone(LIBRARY);
   twoStudies.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: 'EEEEEEEE/FFFFFFFF', id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
-  $('review-chapters').children[1].click(); // the Sicilian, in the first study
+  chapterRows()[1].click(); // the Sicilian, in the first study
   app.setLibrary(twoStudies);
   app.refreshPage(); // as after your studies are updated from Lichess
-  check('review: after the studies are updated, the same chapter and position', [!$('review-screen').classList.contains('hidden'), chapterShown()], [true, '2. Sicilian']);
-  const chooseStudy = id => { $('review-study').value = id; $('review-study').dispatchEvent(new Event('change')); };
-  check('review: the studies in the drop-down', [...$('review-study').options].map(o => o.textContent), ['Test Study', 'Other Study']);
-  chooseStudy('EEEEEEEE');
-  const other = chapterShown();
-  chooseStudy('AAAAAAAA');
-  check('review: another study, then back to the chapter you were on', [other, chapterShown()], ['1. Side line', '2. Sicilian']);
+  check('review: after the studies are updated, the same chapter and position', [!$('studies-screen').classList.contains('hidden'), chapterShown()], [true, '2. Sicilian']);
+  const studyNames = () => [...document.querySelectorAll('#studies .study-row .name > .opener')].map(e => e.textContent);
+  check('Studies page: your studies, in the list', studyNames(), ['Test Study', 'Other Study']);
+  document.querySelectorAll('#studies .study-row .name > .opener')[1].click(); // its chapters
+  chapterRows().find(row => rowText(row) === '1. Side line').click();
+  check('Studies page: another study\'s chapter', chapterShown(), '1. Side line');
+  app.setHidden(['EEEEEEEE']);
+  chapterRows()[1].click(); // the Sicilian
+  check('Studies page: a hidden study left out', studyNames(), ['Test Study']);
+  app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: no Close button; no accuracy in the study drop-down or the chapters list', [!!$('review-close'), !!document.querySelector('.review-head .rate'),
-    [...$('review-chapters').children].some(row => row.querySelector('.rate'))], [false, false, false]);
+  check('review: the Masters and Lichess toggles, and the Move statistics tile, each its own', [$('arrows-masters').textContent, $('arrows-lichess').textContent, $('review-lichess').classList.contains('review-stats'),
+    document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], ['Masters', 'Lichess', true, true]);
+  $('arrows-lichess').click();
+  check('review: a toggle turns on and is remembered', [$('arrows-lichess').getAttribute('aria-pressed'), app.settings.review.lichess], ['true', true]);
+  $('arrows-lichess').click();
+  check('review: no Close button; no accuracy in the chapters list', [!!$('review-close'), chapterRows().some(row => row.querySelector('.rate'))], [false, false]);
   key('Escape');
-  check('review: Esc doesn\'t leave the page', !$('review-screen').classList.contains('hidden'), true);
+  check('review: Esc doesn\'t leave the page', !$('studies-screen').classList.contains('hidden'), true);
   $('nav-practice').click();
   check('review: the header\'s Practice button goes back to the Practice page, with Studies to practice', [!$('practice-screen').classList.contains('hidden'), !$('studies-to-practice').classList.contains('hidden')], [true, true]);
   // From Practice: the icon by the study's name ends practice and opens the study at the position on the
@@ -536,12 +551,12 @@ async function runLichessPage(app) {
   app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC'))[0]); // the Sicilian: you're Black, so 1. e4 is played first
   await until(() => app.practice?.movesPlayed === 1, 'the opponent\'s first move');
   $('practice-title').querySelector('.review-btn').click();
-  check('practice → review: practice ended, the study at the position, Review highlighted', [app.practice, !$('review-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-review').classList.contains('current')],
+  check('practice → Studies page: practice ended, the chapter at the position, Studies highlighted', [app.practice, !$('studies-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-studies').classList.contains('current')],
     [null, true, '2. Sicilian', 'e4', true]);
-  // The header's Review button: back where you left it.
+  // The header's Studies button: back where you left it.
   $('nav-lichess').click();
-  $('nav-review').click();
-  check('Review button: the chapter and position last looked at', [!$('review-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
+  $('nav-studies').click();
+  check('Studies button: the chapter and position last looked at', [!$('studies-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
 }
 
@@ -788,7 +803,7 @@ function runPositions(app) {
   $('chooser-start').click();
   check('chooser: practising, Studies to practice hidden', $('studies-to-practice').classList.contains('hidden'), true);
   check('chooser: practising positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
-    $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('practice-studies').classList.contains('hidden'),
+    $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('srs-tile').classList.contains('hidden'),
     document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [true, true, true, true, true, false]);
   $('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
@@ -835,10 +850,10 @@ function runPresets(app) {
   // From All: Save as new, with the Sicilian unticked.
   $('preset-edit-btn').click();
   tick(C, false);
-  check('presets: while selecting, the count follows the ticks; what\'s practised doesn\'t change yet', [$('sel-summary').textContent, app.selection.length], ['1 chapter selected', 2]);
+  check('presets: while editing, the count follows the ticks; what\'s practised doesn\'t change yet', [$('edit-summary').textContent, $('sel-summary').textContent, app.selection.length], ['1 chapter selected', '2 chapters selected', 2]);
   $('preset-new-btn').click();
   nameIt('Italian');
-  check('presets: Save as new: chosen, practised, the chapters closed', [app.presets, $('preset-select').value, app.selection, $('practice-studies').classList.contains('hidden')],
+  check('presets: Save as new: chosen, practised, editing closed', [app.presets, $('preset-select').value, app.selection, $('preset-edit').classList.contains('hidden')],
     [[{ name: 'Italian', chapters: [B] }], 'Italian', [B], true]);
   $('preset-edit-btn').click();
   check('presets: your own preset: Save, Save as new, Rename, Delete, Cancel', ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')).length, 5);
@@ -846,16 +861,23 @@ function runPresets(app) {
   nameIt('all');
   const allTaken = $('preset-name-error').textContent;
   nameIt('italian');
-  check('presets: names must differ, and All is taken', [allTaken, $('preset-name-error').textContent, app.presets.length], ["There's already a preset called all.", "There's already a preset called italian.", 1]);
+  check('presets: names must differ, and All is taken', [allTaken, $('preset-name-error').textContent, app.presets.length], ["There's already a group called all.", "There's already a group called italian.", 1]);
   $('preset-name-cancel').click();
   // Save, Cancel.
   tick(C, true);
   $('preset-save-btn').click();
-  check('presets: Save', [app.presets[0].chapters.sort(), app.selection.sort(), $('practice-studies').classList.contains('hidden')], [[B, C], [B, C], true]);
+  check('presets: Save', [app.presets[0].chapters.sort(), app.selection.sort(), $('preset-edit').classList.contains('hidden')], [[B, C], [B, C], true]);
   $('preset-edit-btn').click();
   tick(C, false);
   $('preset-cancel-btn').click();
   check('presets: Cancel leaves it as it was', [app.presets[0].chapters.length, app.selection.length], [2, 2]);
+  // Another group chosen while editing: its chapters ticked, and chosen to practise.
+  $('preset-edit-btn').click();
+  $('edit-preset-select').value = '';
+  $('edit-preset-select').dispatchEvent(new Event('change'));
+  check('groups: another group chosen while editing', [$('edit-summary').textContent, $('preset-select').value, $('preset-save-btn').classList.contains('hidden')], ['2 chapters selected', '', true]);
+  $('preset-cancel-btn').click();
+  choose('Italian');
   // Rename, Delete.
   $('preset-edit-btn').click();
   $('preset-rename-btn').click();
@@ -863,7 +885,7 @@ function runPresets(app) {
   check('presets: long names', app.presets[0].name.length > 60, true);
   $('preset-rename-btn').click();
   nameIt('Both');
-  check('presets: Rename (still selecting)', [app.presets[0].name, $('preset-select').value, $('practice-studies').classList.contains('hidden')], ['Both', 'Both', false]);
+  check('presets: Rename (still editing)', [app.presets[0].name, $('preset-select').value, $('preset-edit').classList.contains('hidden')], ['Both', 'Both', false]);
   $('preset-delete-btn').click();
   check('presets: Delete: All chosen', [app.presets.length, $('preset-select').value, app.selection.length, options()], [0, '', 2, ['All']]);
   // A preset's chapters in a hidden study are kept by Save (they can't be ticked); All leaves them out.
