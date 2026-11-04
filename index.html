@@ -310,12 +310,11 @@
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
-  .review-comment { margin-top: 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
+  .panel.review-comment { padding: 12px 14px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
   .review-comment:empty { display: none; }
-  /* Under the board: Top moves, on and off, with its arrows' colours */
-  .review-toggles { display: flex; gap: 8px; margin-top: 10px; }
-  .review-toggles button { padding: 5px 12px; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
-  .review-toggles button[aria-pressed=true], .review-toggles button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
+  /* Under the board: Study | Top moves | Errors, the arrows shown (one at a time), with their colours */
+  .review-view { margin-top: 10px; }
+  .review-view button { padding: 6px 10px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; } /* thirds of the board's width */
   .arrow-swatch { width: 14px; height: 4px; border-radius: 2px; }
   .arrow-swatch + .arrow-swatch { margin-left: -4px; }
   .review-comment .glyph { margin: 0 6px 0 0; }
@@ -581,20 +580,20 @@
 
   <!-- Studies: your studies, and a chapter on a board (see Studies page) -->
   <section id="studies-screen" class="hidden">
-    <!-- The board; beside it the moves, the move's statistics and your accuracy; your studies and their chapters
-         (and, while editing, the groups) to the left of the board where there's room, else under your accuracy
-         (see .review-layout) -->
+    <!-- The board, with the Study | Top moves | Errors switch under it; beside it the moves, the annotation and
+         comment, and your accuracy; your studies and their chapters (and, while editing, the groups) to the left
+         of the board where there's room, else under your accuracy (see .review-layout) -->
     <div class="review-layout">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
-        <div class="review-toggles">
-          <button id="top-moves" aria-pressed="false" title="Masters moves (teal) and other top-5 Lichess moves (grey), numbered by rank, instead of your study's arrows"><span class="arrow-swatch" style="background: #00a3a3"></span><span class="arrow-swatch" style="background: #9e9e9e"></span>Top moves</button>
+        <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
+          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-top" aria-pressed="false" title="Masters moves (teal) and other top-5 Lichess moves (grey), numbered by rank"><span class="arrow-swatch" style="background: #00a3a3"></span><span class="arrow-swatch" style="background: #9e9e9e"></span>Top moves</button><button id="arrows-errors" aria-pressed="false" title="Your errors here (last 10 tries), with how often"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
         </div>
-        <div id="review-comment" class="review-comment"></div>
       </div>
       <div class="review-tiles">
         <div class="panel">
           <div id="review-position" class="muted"></div>
+          <div id="review-reached" class="muted"></div>
           <div id="review-tree" class="tree review-tree"></div>
           <div class="move-nav">
             <button id="review-first" title="Start (Home)" aria-label="Start">⏮</button>
@@ -603,7 +602,7 @@
             <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
           </div>
         </div>
-        <div id="review-lichess" class="panel review-stats"></div>
+        <div id="review-comment" class="panel review-comment"></div>
         <div id="review-yours" class="panel review-stats"></div>
       </div>
       <!-- Your studies and their chapters, and the groups: to the left of the board where there's room -->
@@ -753,7 +752,7 @@
             <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Studies page, small board)</td></tr>
             <tr><td class="error-teal">Teal</td><td>A masters move</td></tr>
             <tr><td class="error-grey">Grey</td><td>Another top-5 Lichess move (Top moves)</td></tr>
-            <tr><td>1, 2, 3 … on teal or grey</td><td>Its rank: masters on teal, Lichess on grey</td></tr>
+            <tr><td>1, 2, 3 … on an arrow</td><td>Top moves: its rank (masters on teal, Lichess on grey). Errors: how often you played it</td></tr>
             <tr><td>White outline on teal or grey</td><td>Also in your study</td></tr>
             <tr><td class="error-violet">Violet</td><td>Any other move you tried</td></tr>
             <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
@@ -816,7 +815,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>The board shows your study's moves and its own arrows and circles; <b>Top moves</b> under it shows instead the masters moves and the other top-5 Lichess moves, numbered by rank; hover over the square an arrow points to for its shares (see Arrow colours). Under them: the move's annotation (e.g. !) and its comment. Beside it: the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Top moves</b> (the masters moves and the other top-5 Lichess moves, numbered by rank) or <b>Errors</b> (your errors at your move here in the last 10 tries, numbered by how often, and the correct move). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached), the move's annotation (e.g. !) and comment, and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
           <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
@@ -1008,6 +1007,8 @@ let moveStats = {};
 const RATING_BANDS = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
 const SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
 
+const ARROW_VIEWS = ['study', 'top', 'errors']; // the Studies page's switch
+
 // Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
 // November 2026; they're fixed now, see ERROR_PENALTIES, and a saved setting is ignored.)
 const DEFAULT_SETTINGS = {
@@ -1022,8 +1023,8 @@ const DEFAULT_SETTINGS = {
     reversed: false,
     weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
   },
-  // The Studies page: Top moves (the masters moves and other top-5 Lichess moves as arrows, instead of the study's).
-  review: { topMoves: false },
+  // The Studies page: the arrows on the board: 'study' (the study's), 'top' (Top moves) or 'errors' (your errors).
+  review: { view: 'study' },
 };
 
 // Saved settings, with anything missing or invalid replaced by its default.
@@ -1042,7 +1043,7 @@ function checkedSettings(saved) {
       reversed: typeof p.reversed === 'boolean' ? p.reversed : dp.reversed,
       weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
-    review: valuesOf(d.review, v.review, x => typeof x === 'boolean'),
+    review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
   };
 }
 
@@ -2150,9 +2151,9 @@ $('preset-name-form').addEventListener('submit', e => {
 // A chapter on a board, to look through before (or instead of) practicing; it works offline. Opened from
 // the header's Studies button, a chapter in the studies list beside it (see Studies list), or the icon by
 // the study's name during practice. The board shows the position, with arrows for the study's moves there
-// (see reviewArrows). Beside it, tiles: the moves (the position's name, the tree with the current move
-// highlighted, ⏮ ◀ ▶ ⏭); the move's statistics; and your accuracy (as on the hover boards). Under the
-// board, the move's annotation and comment. ← → Home End step through the moves, ↑ ↓ the study's
+// (see reviewArrows; Study | Top moves | Errors under it). Beside it, tiles: the moves (the position's
+// name and how often it's reached, the tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's
+// annotation and comment; and your accuracy (as on the hover boards). ← → Home End step through the moves, ↑ ↓ the study's
 // chapters; playing one of the study's moves on the board follows it. (In the code it's "review".)
 let reviewBoard = null;
 let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches) }
@@ -2222,16 +2223,28 @@ function reviewFromPractice() {
 // The moves from the root to a node, in order.
 const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
 
-// The arrows in a position (see BRUSHES): the study's moves (white, the main one outlined in blue),
-// then its own arrows and circles, as drawn; or, with Top moves on, the top moves instead (see topMoves);
-// and the glyph of the move just played (see glyphBadge).
+// The arrows in a position (see BRUSHES), by the switch under the board: Study, the study's moves (white,
+// the main one outlined in blue), then its own arrows and circles, as drawn; Top moves (see topMoves); or
+// Errors (see errorArrows). And the glyph of the move just played (see glyphBadge).
 function reviewArrows(node) {
-  const pos = node.position;
-  if (!settings.review.topMoves) return [...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
+  const pos = node.position, view = settings.review.view;
+  if (view === 'errors') return [...errorArrows(node), ...glyphBadge(node)];
+  if (view !== 'top') return [...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
   return [...topMoves(node).map(({ move, brush, rank, inStudy }) => {
     const [orig, dest] = arrowSquares(pos, move);
     return { orig, dest, brush, label: { text: String(rank) }, ...inStudy ? { modifiers: { hilite: true } } : {} };
   }), ...glyphBadge(node)];
+}
+
+// Your move to play in a position (the study's main move at your turn, on a practiced path), if there is one.
+const yourMoveAt = node => node.children.find(c => c.isYours);
+
+// Errors: at your turn, the errors of your last 10 tries at the move there, coloured as on the hover
+// boards, each with a badge for how often you played it, and the correct move; nothing at the opponent's
+// turn.
+function errorArrows(node) {
+  const m = yourMoveAt(node);
+  return m ? answerArrows(node.position, m, errorCounts(attemptsAt(m), m.san), true) : [];
 }
 
 // Top moves in a position: the masters moves (see isMasterMove; teal), then any other top-5 Lichess
@@ -2247,34 +2260,44 @@ function topMoves(node) {
   return tops.map(t => ({ ...t, move: san.parseSan(node.position, t.san), inStudy: inStudy.has(withoutCheckMarks(t.san)) })).filter(t => t.move);
 }
 
-$('top-moves').addEventListener('click', () => {
-  settings.review.topMoves = !settings.review.topMoves;
+for (const view of ARROW_VIEWS) $(`arrows-${view}`).addEventListener('click', () => {
+  settings.review.view = view;
   saveSettings();
   updateReviewToggles();
   if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
 });
-function updateReviewToggles() { $('top-moves').setAttribute('aria-pressed', String(settings.review.topMoves)); }
+function updateReviewToggles() { for (const view of ARROW_VIEWS) $(`arrows-${view}`).setAttribute('aria-pressed', String(settings.review.view === view)); }
 
-// With Top moves on, hovering over the square a top move's arrow points to shows its ranks and shares,
-// e.g. "♘f3 · #2 masters move (30%) · #3 Lichess move (15%)", one line per move (mouse only; the arrows'
-// badges can't be hovered, as chessground's arrow layer ignores the pointer).
-let topMoveSquare = null;
+// What hovering over a square says about the arrows pointing to it, one line per move: with Top moves,
+// its ranks and shares, e.g. "♘f3 · #2 masters move (30%) · #3 Lichess move (15%)"; with Errors, as in
+// the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)".
+function squareTipLines(node, square) {
+  const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square;
+  if (settings.review.view === 'top') return topMoves(node).filter(t => to(t.move)).map(t => [withFigurines(t.san),
+    rankAndShareText(masterGamesAt(node.epd), t.san, 'masters', 'Not played by masters'),
+    rankAndShareText(lichessGamesAt(node.epd), t.san, 'Lichess', 'Not played in Lichess games')].filter(Boolean).join(' · '));
+  const m = settings.review.view === 'errors' && yourMoveAt(node);
+  if (!m) return [];
+  return errorCounts(attemptsAt(m), m.san).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
+    .map(([x, n]) => errorLabel(m, x).replace(/ \(|$/, n > 1 ? ` ×${n}$&` : '$&'));
+}
+
+// Hovering over the square an arrow points to (Top moves and Errors) shows squareTipLines (mouse only; the
+// arrows' badges can't be hovered, as chessground's arrow layer ignores the pointer).
+let tipSquare = null;
 $('review-board').addEventListener('mousemove', e => {
-  const square = review && settings.review.topMoves ? reviewBoard.getKeyAtDomPos([e.clientX, e.clientY]) : null;
-  if (square === topMoveSquare) return;
-  topMoveSquare = square;
-  const pos = review?.node.position, epd = review?.node.epd;
-  const here = square ? topMoves(review.node).filter(t => arrowSquares(pos, t.move)[1] === square) : [];
-  if (!here.length) return hideQuickTip();
+  const square = review ? reviewBoard.getKeyAtDomPos([e.clientX, e.clientY]) : null;
+  if (square === tipSquare) return;
+  tipSquare = square;
+  const lines = square ? squareTipLines(review.node, square) : [];
+  if (!lines.length) return hideQuickTip();
   let tip = $('quick-tip');
   if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
-  tip.replaceChildren(...here.map(t => element('div', {}, [withFigurines(t.san),
-    rankAndShareText(masterGamesAt(epd), t.san, 'masters', 'Not played by masters'),
-    rankAndShareText(lichessGamesAt(epd), t.san, 'Lichess', 'Not played in Lichess games')].filter(Boolean).join(' · '))));
+  tip.replaceChildren(...lines.map(line => element('div', {}, line)));
   tip.classList.remove('hidden');
   placePopup(tip, { getBoundingClientRect: () => ({ left: e.clientX + 12, right: e.clientX + 12, top: e.clientY, bottom: e.clientY + 12 }) });
 });
-$('review-board').addEventListener('mouseleave', () => { topMoveSquare = null; hideQuickTip(); });
+$('review-board').addEventListener('mouseleave', () => { tipSquare = null; hideQuickTip(); });
 
 function showReviewNode(node) {
   review.node = node;
@@ -2289,22 +2312,21 @@ function showReviewNode(node) {
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
   reviewBoard.setAutoShapes(reviewArrows(node));
   updateReviewToggles();
+  // The position's name, and how often it's reached ("Position reached 23k times").
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
+  $('review-reached').textContent = positionCountText(lichessGamesAt(node.epd)) ?? '';
   renderReviewTree();
-  // Under the board, the move's annotation (its glyphs, in their Lichess colours, named on hover) and its
-  // comment; at the start, the chapter's introduction; nothing when there's neither.
+  // Under the moves, each tile hidden when empty: the move's annotation (its glyphs, in their Lichess
+  // colours, named on hover) and its comment (at the start, the chapter's introduction); and Your accuracy:
+  // for your moves, as on the hover boards (move accuracy, last tested, errors); at the start, the
+  // chapter's average move accuracy; at a line's last move, its line accuracy and when it was last played
+  // through.
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
   $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
-  // Under the moves, two tiles, each hidden when empty: the move's Lichess and masters statistics (ranks,
-  // "Position reached …"); and Your accuracy: for your moves, as on the hover boards (move accuracy, last
-  // tested, errors); at the start, the chapter's average move accuracy; at a line's last move, its line
-  // accuracy and when it was last played through.
   const heading = node.uci ? hoverBoardHeading(node) : [];
-  const lichessRows = node.uci ? heading.slice(1) : [positionCountText(lichessGamesAt(node.epd)) && element('div', { class: 'muted' }, positionCountText(lichessGamesAt(node.epd)))];
   const yourRows = node.uci && node.color === parsed.yourColor && !node.untested ? yourMoveBoard(node, null).rows.slice(heading.length) : [];
-  const tile = (id, title, rows) => { rows = rows.filter(Boolean); $(id).replaceChildren(...rows.length ? [element('h3', {}, title), ...rows] : []); };
-  tile('review-lichess', 'Move statistics', lichessRows);
-  tile('review-yours', 'Your accuracy', [...yourRows, ...!node.uci ? [chapterAccuracyText(review.ch)] : lineEndRows(node)]);
+  const rows = [...yourRows, ...!node.uci ? [chapterAccuracyText(review.ch)] : lineEndRows(node)].filter(Boolean);
+  $('review-yours').replaceChildren(...rows.length ? [element('h3', {}, 'Your accuracy'), ...rows] : []);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
 }
@@ -3364,14 +3386,15 @@ const errorColor = (m, x) => x === 'hint' || x === 'show' ? 'violet' : ERROR_COL
 const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
 // An arrow for each error that's a move (errors: [[x, count], …]; the hint has none; an alternative
-// as the study's move, see studyMoveArrow) and the correct move's (the main move's).
-function answerArrows(pos, m, errors) {
-  const shapes = errors.map(([x]) => {
+// as the study's move, see studyMoveArrow), with a badge for its count if counted, and the correct
+// move's (the main move's).
+function answerArrows(pos, m, errors, counted = false) {
+  const shapes = errors.map(([x, n]) => {
     const alt = alternativesAt(m)?.[x], mv = san.parseSan(pos, x);
-    if (alt) return studyMoveArrow(pos, alt);
     if (!mv) return null;
     const [orig, dest] = arrowSquares(pos, mv);
-    return { orig, dest, brush: errorColor(m, x) };
+    const arrow = alt ? studyMoveArrow(pos, alt) : { orig, dest, brush: errorColor(m, x) };
+    return counted ? { ...arrow, label: { text: String(n) } } : arrow;
   }).filter(Boolean);
   const [orig, dest] = arrowSquares(pos, parseUci(m.uci));
   return [...shapes, mainArrow(orig, dest)];

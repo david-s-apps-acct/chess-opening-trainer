@@ -57,7 +57,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
   setToken(t) { token = t; },
-  restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, parseChapter, refreshPage,
+  restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, squareTipLines, parseChapter, refreshPage,
   get token() { return token; },
   loginAddress, finishLogIn,
   get downloading() { return downloadsRunning; },
@@ -161,7 +161,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } }, review: { topMoves: false } });
+    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } }, review: { view: 'study' } });
   check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
     [undefined, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
@@ -512,19 +512,28 @@ async function runLichessPage(app) {
   // moves c5 and e5 (sharing #1; e5 in the study) and e6.
   const statsBefore = app.moveStats;
   app.setMoveStats(structuredClone(POSITIONS));
-  app.settings.review = { topMoves: true };
+  app.settings.review = { view: 'top' };
   const tops = [arrowsAt([]), arrowsAt(['e4'])];
-  app.settings.review = { topMoves: false };
+  // Errors: your errors at e4 in the last 10 tries (d4 twice, a masters move: teal; g3: violet; the hint, no
+  // arrow), counted, with the correct move; none at the opponent's turn; hovering over d4's square.
+  const historyBefore = app.history;
+  app.setHistory({ moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['d4', 'e4'], at: 1 }, { tried: ['d4', 'g3', 'e4'], at: 2 }, { tried: ['hint', 'e4'], at: 3 }] }, lines: {} });
+  app.settings.review = { view: 'errors' };
+  const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3')];
+  app.setHistory(historyBefore);
+  app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
   check('review: Top moves, numbered, the study\'s outlined in white, instead of the study\'s arrows', tops,
     [['e2e4 teal+ 1', 'd2d4 teal 2', 'g1f3 teal 3', 'c2c4 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
+  check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
+    [['d2d4 teal 2', 'g2g3 violet 1', 'e2e4 white+'], [], ['d4 ×2 (masters)'], ['g3']]);
   // The study's own arrows and circles, in their Lichess colours, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
   check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Centre.']);
-  app.settings.review = { topMoves: true };
+  app.settings.review = { view: 'top' };
   check('review: with Top moves, not the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), []);
-  app.settings.review = { topMoves: false };
+  app.settings.review = { view: 'study' };
   // Another study in the list: opened, then one of its chapters.
   const twoStudies = structuredClone(LIBRARY);
   twoStudies.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: 'EEEEEEEE/FFFFFFFF', id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
@@ -554,11 +563,12 @@ async function runLichessPage(app) {
   $('preset-cancel-btn').click();
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: the Top moves toggle, and the Move statistics tile, each its own', [$('top-moves').textContent, $('review-lichess').classList.contains('review-stats'),
-    document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], ['Top moves', true, true]);
-  $('top-moves').click();
-  check('review: Top moves turns on and is remembered', [$('top-moves').getAttribute('aria-pressed'), app.settings.review.topMoves], ['true', true]);
-  $('top-moves').click();
+  check('review: the Study | Top moves | Errors switch; no Move statistics tile; Position reached under the position\'s name; ids unique', [['study', 'top', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
+    $('review-reached').previousElementSibling.id, document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Top moves', 'Errors'], false, 'review-position', true]);
+  $('arrows-errors').click();
+  check('review: one view at a time, remembered', [['study', 'top', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'true'], 'errors']);
+  $('arrows-study').click();
+  check('review: the comment tile under the moves', [$('review-comment').previousElementSibling.querySelector('#review-tree') !== null, $('review-comment').classList.contains('panel')], [true, true]);
   check('review: no Close button; no accuracy in the chapters list', [!!$('review-close'), chapterRows().some(row => row.querySelector('.rate'))], [false, false]);
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('studies-screen').classList.contains('hidden'), true);
