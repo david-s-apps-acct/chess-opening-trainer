@@ -197,8 +197,12 @@ function run(app) {
   // Short counts
   check('short counts', [950, 23400, 999600, 1234567, 999960000, 1846500000].map(app.shortCount), ['950', '23k', '1.0M', '1.2M', '1.0bn', '1.8bn']);
 
-  check('position counts use the same short counts', [undefined, explorer([]), explorer([['e4', 950]]), explorer([['e4', 1846500000]])].map(app.positionCountText),
-    [null, 'Position never reached', 'Position reached 950 times', 'Position reached 1.8bn times']);
+  // Position reached: the Lichess count, with the masters count once downloaded.
+  const statsBeforeCounts = app.moveStats;
+  app.setMoveStats({ a: { lichess: explorer([]) }, b: { lichess: explorer([['e4', 950]]), masters: explorer([]) }, c: { lichess: explorer([['e4', 1846500000]]), masters: explorer([['e4', 1200]]) }, d: { masters: explorer([['e4', 5]]) } });
+  check('position counts use the same short counts, with the masters count', ['none', 'a', 'b', 'c', 'd'].map(app.positionCountText),
+    [null, 'Position never reached', 'Position reached 950 times · masters 0', 'Position reached 1.8bn times · masters 1k', null]);
+  app.setMoveStats(statsBeforeCounts);
 
   // Wrong moves counted over attempts
   check('error counts, the hint included', app.errorCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'e4'] }], 'e4'), [['d4', 2], ['hint', 1], ['c4', 1]]);
@@ -514,9 +518,11 @@ async function runLichessPage(app) {
   app.setMoveStats(structuredClone(POSITIONS));
   app.settings.review = { view: 'masters' };
   const masters = [arrowsAt([]), arrowsAt(['e4'])];
+  const mastersTip = app.squareTipLines(italianRoot, 'd4');
   app.settings.review = { view: 'lichess' };
   const lichess = [arrowsAt([]), arrowsAt(['e4'])];
-  // Errors: your errors at e4 in the last 10 tries (d4 twice, a masters move: teal; g3: violet; the hint, no
+  const lichessTip = app.squareTipLines(italianRoot, 'd4');
+  // Errors: your errors at e4 in the last 10 tries (d4 twice, a masters move; g3; all violet; the hint, no
   // arrow), counted, with the correct move; none at the opponent's turn; hovering over d4's square.
   const historyBefore = app.history;
   app.setHistory({ moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['d4', 'e4'], at: 1 }, { tried: ['d4', 'g3', 'e4'], at: 2 }, { tried: ['hint', 'e4'], at: 3 }] }, lines: {} });
@@ -527,10 +533,11 @@ async function runLichessPage(app) {
   app.setMoveStats(statsBefore);
   check('review: Masters, numbered, the study\'s outlined in white, instead of the study\'s arrows', masters,
     [['e2e4 teal+ 1', 'd2d4 teal 2', 'g1f3 teal 3'], []]);
+  check('review: hovering over a square: only the view\'s rank', [mastersTip, lichessTip], [['d4 · #2 masters move (30%)'], ['d4 · #2 Lichess move (30%)']]);
   check('review: Lichess, the top 5, numbered', lichess,
     [['e2e4 grey+ 1', 'd2d4 grey 2', 'c2c4 grey 3', 'g1f3 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
   check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
-    [['d2d4 teal ×2', 'g2g3 violet', 'e2e4 white+'], [], ['d4 ×2 (masters)'], ['g3']]);
+    [['d2d4 violet ×2', 'g2g3 violet', 'e2e4 white+'], [], ['d4 ×2 (masters)'], ['g3']]);
   // The study's own arrows and circles, in their Lichess colours, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
@@ -631,16 +638,16 @@ async function runPractice(app) {
   // The status's lines, each [text, its colour: 'white', 'teal', 'grey' or 'violet'].
   const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.className.replace('error-', '')]);
   check('practice: a masters move and top-3 Lichess move, one fact per line, as on the hover boards', statusLines(),
-    [['Not your preferred move', 'teal'], ['#2 masters move (30%)', 'teal'], ['#2 Lichess move (30%)', 'grey']]);
+    [['Not your preferred move', 'violet'], ['#2 masters move (30%)', 'teal'], ['#2 Lichess move (30%)', 'grey']]);
   await new Promise(r => setTimeout(r, 3800));
   check('practice: after 3 seconds the message fades to "Your move", with where you are in the line', status(), 'Your move (1 of 6 in line)');
   await play('e2e4');
   await play('b1c3');
-  check('practice: alternative message, white', statusLines()[0], ['Alternative move, not your preferred move', 'white']);
+  check('practice: alternative message, violet', statusLines()[0], ['Alternative move, not your preferred move', 'violet']);
   await play('g1f3');
   await play('f1b5');
-  check('practice: marked alternative message, white, taken back at once', [statusLines()[0], yourTurn()],
-    [['Alternative move marked as a mistake', 'white'], true]);
+  check('practice: marked alternative message, violet, taken back at once', [statusLines()[0], yourTurn()],
+    [['Alternative move marked as a mistake', 'violet'], true]);
   const d6Line = app.chapterLines(app.chapterByKey('AAAAAAAA/BBBBBBBB')).find(l => l.key.endsWith('Nf3 d6 d4'));
   check('practice: a marked alternative with a reply in the study', app.errorStatus(d6Line.moves[4], 'Bc4').slice(0, 2).map(d => d.textContent),
     ['Alternative move marked as a dubious move', 'Your study answers 3… h6']);
@@ -720,7 +727,7 @@ async function runPractice(app) {
   app.startSession('lines', [{ line: main, i: null }], { mainLinesOnly: true });
   await playReversed('e7e5');
   await playReversed('d7d6');
-  check('reversed, main lines only: another reply is an alternative', statusLines()[0], ['Alternative move, not your preferred move', 'white']);
+  check('reversed, main lines only: another reply is an alternative', statusLines()[0], ['Alternative move, not your preferred move', 'violet']);
   await until(yourTurnReversed, 'the alternative to be taken back');
   document.getElementById('hint-btn').click();
   document.getElementById('hint-btn').click();
