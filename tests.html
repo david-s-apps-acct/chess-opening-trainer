@@ -161,7 +161,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } }, review: { masters: false, lichess: false } });
+    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 } }, review: { topMoves: false } });
   check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
     [undefined, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, reversed: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50 } }]);
@@ -507,21 +507,24 @@ async function runLichessPage(app) {
   check('review: the board\'s arrowheads named for it', [reviewSvg.querySelectorAll('marker').length > 0,
     [...reviewSvg.querySelectorAll('marker')].every(m => m.id.endsWith('-review')),
     [...reviewSvg.querySelectorAll('[marker-end]')].every(l => l.getAttribute('marker-end').endsWith('-review)'))], [true, true, true]);
-  // At the start: masters moves d4 and Nf3; top-3 Lichess moves d4, c4 and Nf3 (sharing #3); e4 is in the study.
+  // Top moves, instead of the study's: at the start, the masters moves e4 (in the study: outlined), d4 and Nf3,
+  // numbered by masters rank, then the other top-5 Lichess move c4 (#3 with Nf3); after 1. e4, the Lichess
+  // moves c5 and e5 (sharing #1; e5 in the study) and e6.
   const statsBefore = app.moveStats;
   app.setMoveStats(structuredClone(POSITIONS));
-  app.settings.review = { masters: true, lichess: false };
-  const mastersOnly = arrowsAt([]);
-  app.settings.review = { masters: true, lichess: true };
-  const both = arrowsAt([]);
-  app.settings.review = { masters: false, lichess: false };
+  app.settings.review = { topMoves: true };
+  const tops = [arrowsAt([]), arrowsAt(['e4'])];
+  app.settings.review = { topMoves: false };
   app.setMoveStats(statsBefore);
-  check('review: the masters and Lichess toggles (teal for a move in both)', [mastersOnly, both],
-    [['d2d4 teal', 'g1f3 teal', 'e2e4 white+'], ['d2d4 teal', 'c2c4 grey', 'g1f3 teal', 'e2e4 white+']]);
+  check('review: Top moves, numbered, the study\'s outlined in white, instead of the study\'s arrows', tops,
+    [['e2e4 teal+ 1', 'd2d4 teal 2', 'g1f3 teal 3', 'c2c4 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
   // The study's own arrows and circles, in their Lichess colours, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
   check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Centre.']);
+  app.settings.review = { topMoves: true };
+  check('review: with Top moves, not the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), []);
+  app.settings.review = { topMoves: false };
   // Another study in the list: opened, then one of its chapters.
   const twoStudies = structuredClone(LIBRARY);
   twoStudies.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: 'EEEEEEEE/FFFFFFFF', id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
@@ -534,7 +537,9 @@ async function runLichessPage(app) {
   const otherRow = document.querySelectorAll('#studies .study-row')[1];
   if (otherRow.querySelector('.toggle').getAttribute('aria-expanded') === 'false') otherRow.querySelector('.name > .opener').click(); // its chapters
   chapterRows().find(row => rowText(row) === '1. Side line').click();
-  check('Studies page: another study\'s chapter', chapterShown(), '1. Side line');
+  check('Studies page: another study\'s chapter; one study open at a time', [chapterShown(), chapterRows().map(rowText),
+    [...document.querySelectorAll('#studies .study-row .toggle')].map(t => t.getAttribute('aria-expanded'))], ['1. Side line', ['1. Side line'], ['false', 'true']]);
+  document.querySelector('#studies .study-row .name > .opener').click(); // the first study's chapters (the other's close)
   app.setHidden(['EEEEEEEE']);
   chapterRows()[1].click(); // the Sicilian
   check('Studies page: a hidden study left out', studyNames(), ['Test Study']);
@@ -545,15 +550,15 @@ async function runLichessPage(app) {
   check('Studies page: the eye shows hidden studies (dimmed); a chapter hidden with its own eye', [...withEye, chapterRows().map(rowText)], [['Test Study', 'Other Study'], 'true', true, ['2. Sicilian']]);
   $('preset-edit-btn').click();
   check('Studies page: editing lists every study and chapter, with no eyes', [studyNames(), document.querySelectorAll('#studies .chapter-row').length, !!document.querySelector('#studies .hide-btn'), $('show-hidden-btn').classList.contains('hidden')],
-    [['Test Study', 'Other Study'], 3, false, true]); // both studies open: the hidden Italian too
+    [['Test Study', 'Other Study'], 2, false, true]); // the open study's chapters: the hidden Italian too
   $('preset-cancel-btn').click();
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: the Masters and Lichess toggles, and the Move statistics tile, each its own', [$('arrows-masters').textContent, $('arrows-lichess').textContent, $('review-lichess').classList.contains('review-stats'),
-    document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], ['Masters', 'Lichess', true, true]);
-  $('arrows-lichess').click();
-  check('review: a toggle turns on and is remembered', [$('arrows-lichess').getAttribute('aria-pressed'), app.settings.review.lichess], ['true', true]);
-  $('arrows-lichess').click();
+  check('review: the Top moves toggle, and the Move statistics tile, each its own', [$('top-moves').textContent, $('review-lichess').classList.contains('review-stats'),
+    document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], ['Top moves', true, true]);
+  $('top-moves').click();
+  check('review: Top moves turns on and is remembered', [$('top-moves').getAttribute('aria-pressed'), app.settings.review.topMoves], ['true', true]);
+  $('top-moves').click();
   check('review: no Close button; no accuracy in the chapters list', [!!$('review-close'), chapterRows().some(row => row.querySelector('.rate'))], [false, false]);
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('studies-screen').classList.contains('hidden'), true);

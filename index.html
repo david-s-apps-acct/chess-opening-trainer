@@ -312,11 +312,12 @@
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
   .review-comment { margin-top: 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
   .review-comment:empty { display: none; }
-  /* Under the board: arrows for the top 3 masters and Lichess moves, on and off, each with its arrow's colour */
+  /* Under the board: Top moves, on and off, with its arrows' colours */
   .review-toggles { display: flex; gap: 8px; margin-top: 10px; }
   .review-toggles button { padding: 5px 12px; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
   .review-toggles button[aria-pressed=true], .review-toggles button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   .arrow-swatch { width: 14px; height: 4px; border-radius: 2px; }
+  .arrow-swatch + .arrow-swatch { margin-left: -4px; }
   .review-comment .glyph { margin: 0 6px 0 0; }
   .review-comment p { margin: 0 0 4px; }
   /* The move statistics and your accuracy: the page's text size and colour; small grey headings */
@@ -587,8 +588,7 @@
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
         <div class="review-toggles">
-          <button id="arrows-masters" aria-pressed="false" title="Top 3 masters moves"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
-          <button id="arrows-lichess" aria-pressed="false" title="Top 3 Lichess moves"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button>
+          <button id="top-moves" aria-pressed="false" title="Masters moves (teal) and other top-5 Lichess moves (grey), numbered by rank, instead of your study's arrows"><span class="arrow-swatch" style="background: #00a3a3"></span><span class="arrow-swatch" style="background: #9e9e9e"></span>Top moves</button>
         </div>
         <div id="review-comment" class="review-comment"></div>
       </div>
@@ -681,13 +681,18 @@
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li><b>Connect to Lichess</b>: sign in to Lichess if asked and allow the app to read your studies; you're brought back and your studies, private ones included, are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
-          <li>Used the app before (in another browser, say)? <b>Restore backup</b> (Backup card) brings back your stats and the move statistics; otherwise press <b>Download statistics</b>. Either opens Practice.</li>
-          <li><b>Practice</b> (where the app opens): choose <b>Lines</b> or <b>Positions</b> and press <b>Start practice</b>. At first it's all your chapters (the group <b>All</b>); to practise fewer, make a group on the <b>Studies</b> page (<b>Groups</b>, ✎) and choose it under <b>Studies to practice</b>.</li>
+          <li><b>Make your repertoire on Lichess</b> (lichess.org/study). One study per opening, one chapter per line. Set each chapter's <b>Orientation</b> to the side you play: that decides which moves you're tested on. Mark moves with ?, ?! and so on as you like.</li>
+          <li><b>Connect to Lichess</b> (Lichess page). Your studies are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
+          <li><b>Restore a backup, or download the statistics.</b> Used the app before? <b>Restore backup</b>. Otherwise check the <b>rating bands and time controls</b> (Move statistics, suggested from your Lichess rating) and press <b>Download statistics</b>.</li>
+          <li><b>Choose what to practise.</b> Start with <b>All</b>, or make a group on the Studies page (<b>Groups</b>, ✎).</li>
+          <li><b>Practise.</b> On the Practice page, choose <b>Lines</b> (whole lines) or <b>Positions</b> (single moves) and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck.</li>
         </ol>
-        <p>Move statistics from Lichess and master games download in the background; you can practice meanwhile. Once opened online, the app also works offline, except for anything that needs Lichess.</p>
-        <p>To install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. On an iPad or iPhone the installed app keeps its own data, separate from Safari's: connect to Lichess there, and restore a backup to bring your stats.</p>
-        <p>The app practices the openings in your Lichess studies, so you need a Lichess account with studies (create them at lichess.org/study). New studies appear here the next time the app opens.</p>
+        <ul>
+          <li>Look through a chapter first on the <b>Studies</b> page (offline too).</li>
+          <li>Save a backup now and then (Lichess page): your stats live only in this browser.</li>
+          <li>Install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. The installed app keeps its own data: connect to Lichess there, and restore a backup to bring your stats.</li>
+        </ul>
+        <p>Statistics download in the background; you can practise meanwhile. New studies appear the next time the app opens. Once opened online, the app works offline, except for anything that needs Lichess.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -746,8 +751,10 @@
             <tr><td>White, blue outline</td><td>Your study's main move (also Hint and Show correct move)</td></tr>
             <tr><td>White</td><td>Another move in your study</td></tr>
             <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Studies page, small board)</td></tr>
-            <tr><td class="error-teal">Teal</td><td>A masters move not in your study</td></tr>
-            <tr><td class="error-grey">Grey</td><td>A top-3 Lichess move not in your study (Studies page)</td></tr>
+            <tr><td class="error-teal">Teal</td><td>A masters move</td></tr>
+            <tr><td class="error-grey">Grey</td><td>Another top-5 Lichess move (Top moves)</td></tr>
+            <tr><td>1, 2, 3 … on teal or grey</td><td>Its rank: masters on teal, Lichess on grey</td></tr>
+            <tr><td>White outline on teal or grey</td><td>Also in your study</td></tr>
             <tr><td class="error-violet">Violet</td><td>Any other move you tried</td></tr>
             <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
           </table>
@@ -809,7 +816,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>The board shows your study's moves and its own arrows and circles; <b>Masters</b> and <b>Lichess</b> under it add the top 3 masters and Lichess moves not in your study (see Arrow colours). Under them: the move's annotation (e.g. !) and its comment. Beside it: the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>The board shows your study's moves and its own arrows and circles; <b>Top moves</b> under it shows instead the masters moves and the other top-5 Lichess moves, numbered by rank; hover over the square an arrow points to for its shares (see Arrow colours). Under them: the move's annotation (e.g. !) and its comment. Beside it: the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
           <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
@@ -1015,8 +1022,8 @@ const DEFAULT_SETTINGS = {
     reversed: false,
     weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
   },
-  // The Review page: arrows for the top 3 masters moves and the top 3 Lichess moves.
-  review: { masters: false, lichess: false },
+  // The Studies page: Top moves (the masters moves and other top-5 Lichess moves as arrows, instead of the study's).
+  review: { topMoves: false },
 };
 
 // Saved settings, with anything missing or invalid replaced by its default.
@@ -1050,7 +1057,7 @@ let settings = checkedSettings(store.get('settings'));
 const saveSettings = () => store.set('settings', settings);
 
 // The studies list's open/closed state (not remembered).
-const openStudies = new Set();       // studies whose chapters are listed
+let openStudy = null;                // the study (id) whose chapters are listed: one at a time
 let showHidden = false;              // the top eye: hidden studies and chapters are listed (in grey)
 
 // ---------- Page helpers ----------
@@ -1822,7 +1829,7 @@ function renderStudiesList() {
     if (!listed(study.id, study.chapters.includes(shown))) continue;
     const studyHidden = !editing && hidden.has(study.id);
     const studyEl = element('div', { class: 'study' + (studyHidden ? ' hidden-study' : '') }, studyRow(study, studyHidden));
-    if (openStudies.has(study.id)) {
+    if (openStudy === study.id) {
       studyEl.append(editing ? element('div', { class: 'chapters' }, study.chapters.map(chapterRow))
         : element('div', { class: 'study-chapters', role: 'listbox', 'aria-label': study.name },
           study.chapters.map((c, k) => listed(c.key, c === shown) ? chapterLink(c, k) : null).filter(Boolean)));
@@ -1869,8 +1876,8 @@ function opener(name, onOpen) {
 function studyRow(study, isHidden) {
   const keys = study.chapters.map(c => c.key);
   const nTicked = keys.filter(k => ticked().has(k)).length;
-  const open = openStudies.has(study.id);
-  const toggleStudy = () => { open ? openStudies.delete(study.id) : openStudies.add(study.id); renderStudies(); };
+  const open = openStudy === study.id;
+  const toggleStudy = () => { openStudy = open ? null : study.id; renderStudies(); }; // opening one closes any other
   return element('div', { class: 'row study-row' },
     triangle(open, ['Show chapters', 'Hide chapters'], toggleStudy),
     editing && element('input', {
@@ -2173,7 +2180,7 @@ function openReview(ch, { at = [] } = {}) {
     });
     window.addEventListener('resize', () => reviewBoard.redrawAll());
   }
-  openStudies.add(studyOfChapter(ch).id); // its study open in the list, with the chapter highlighted
+  openStudy = studyOfChapter(ch).id; // its study open in the list (any other closed), with the chapter highlighted
   renderStudies();
   reviewBoard.set({ orientation: parsed.yourColor });
   let node = parsed.root;
@@ -2215,31 +2222,59 @@ function reviewFromPractice() {
 // The moves from the root to a node, in order.
 const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
 
-// The arrows in a position (see BRUSHES): the study's moves (white, the main one outlined in blue);
-// the glyph of the move just played (see glyphBadge); with the toggles on, the top 3 masters moves (teal; masters moves, see
-// isMasterMove) and the top 3 Lichess moves (grey) that aren't in the study (teal for a move in both);
-// then the study's own arrows and circles, as drawn.
+// The arrows in a position (see BRUSHES): the study's moves (white, the main one outlined in blue),
+// then its own arrows and circles, as drawn; or, with Top moves on, the top moves instead (see topMoves);
+// and the glyph of the move just played (see glyphBadge).
 function reviewArrows(node) {
-  const pos = node.position, inStudy = new Set(node.children.map(c => withoutCheckMarks(c.san)));
-  const outside = new Map(); // SAN -> brush
-  const top = (stats, brush, keep) => { for (const m of stats?.moves ?? []) if (!inStudy.has(withoutCheckMarks(m.san)) && keep(m.san)) outside.set(m.san, brush); };
-  const lichess = lichessGamesAt(node.epd);
-  if (settings.review.lichess) top(lichess, 'grey', x => moveRank(lichess, x) <= 3);
-  if (settings.review.masters) top(masterGamesAt(node.epd), 'teal', x => isMasterMove(node.epd, x));
-  const extra = [...outside].map(([x, brush]) => [san.parseSan(pos, x), brush]).filter(([mv]) => mv)
-    .map(([mv, brush]) => { const [orig, dest] = arrowSquares(pos, mv); return { orig, dest, brush }; });
-  return [...extra, ...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
+  const pos = node.position;
+  if (!settings.review.topMoves) return [...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
+  return [...topMoves(node).map(({ move, brush, rank, inStudy }) => {
+    const [orig, dest] = arrowSquares(pos, move);
+    return { orig, dest, brush, label: { text: String(rank) }, ...inStudy ? { modifiers: { hilite: true } } : {} };
+  }), ...glyphBadge(node)];
 }
 
-for (const [id, which] of [['arrows-masters', 'masters'], ['arrows-lichess', 'lichess']]) $(id).addEventListener('click', () => {
-  settings.review[which] = !settings.review[which];
+// Top moves in a position: the masters moves (see isMasterMove; teal), then any other top-5 Lichess
+// move (grey), each with its rank there (masters or Lichess; moves played equally often share a rank),
+// whether it's in the study (outlined in white), its SAN and its move. Nothing while statistics are missing.
+function topMoves(node) {
+  const masters = masterGamesAt(node.epd), lichess = lichessGamesAt(node.epd);
+  const inStudy = new Set(node.children.map(c => withoutCheckMarks(c.san)));
+  const tops = [
+    ...(masters?.moves ?? []).filter(m => isMasterMove(node.epd, m.san)).map(m => ({ san: m.san, brush: 'teal', rank: moveRank(masters, m.san) })),
+    ...(lichess?.moves ?? []).filter(m => !isMasterMove(node.epd, m.san) && moveRank(lichess, m.san) <= 5).map(m => ({ san: m.san, brush: 'grey', rank: moveRank(lichess, m.san) })),
+  ];
+  return tops.map(t => ({ ...t, move: san.parseSan(node.position, t.san), inStudy: inStudy.has(withoutCheckMarks(t.san)) })).filter(t => t.move);
+}
+
+$('top-moves').addEventListener('click', () => {
+  settings.review.topMoves = !settings.review.topMoves;
   saveSettings();
   updateReviewToggles();
   if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
 });
-function updateReviewToggles() {
-  for (const [id, which] of [['arrows-masters', 'masters'], ['arrows-lichess', 'lichess']]) $(id).setAttribute('aria-pressed', String(settings.review[which]));
-}
+function updateReviewToggles() { $('top-moves').setAttribute('aria-pressed', String(settings.review.topMoves)); }
+
+// With Top moves on, hovering over the square a top move's arrow points to shows its ranks and shares,
+// e.g. "♘f3 · #2 masters move (30%) · #3 Lichess move (15%)", one line per move (mouse only; the arrows'
+// badges can't be hovered, as chessground's arrow layer ignores the pointer).
+let topMoveSquare = null;
+$('review-board').addEventListener('mousemove', e => {
+  const square = review && settings.review.topMoves ? reviewBoard.getKeyAtDomPos([e.clientX, e.clientY]) : null;
+  if (square === topMoveSquare) return;
+  topMoveSquare = square;
+  const pos = review?.node.position, epd = review?.node.epd;
+  const here = square ? topMoves(review.node).filter(t => arrowSquares(pos, t.move)[1] === square) : [];
+  if (!here.length) return hideQuickTip();
+  let tip = $('quick-tip');
+  if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
+  tip.replaceChildren(...here.map(t => element('div', {}, [withFigurines(t.san),
+    rankAndShareText(masterGamesAt(epd), t.san, 'masters', 'Not played by masters'),
+    rankAndShareText(lichessGamesAt(epd), t.san, 'Lichess', 'Not played in Lichess games')].filter(Boolean).join(' · '))));
+  tip.classList.remove('hidden');
+  placePopup(tip, { getBoundingClientRect: () => ({ left: e.clientX + 12, right: e.clientX + 12, top: e.clientY, bottom: e.clientY + 12 }) });
+});
+$('review-board').addEventListener('mouseleave', () => { topMoveSquare = null; hideQuickTip(); });
 
 function showReviewNode(node) {
   review.node = node;
@@ -3294,8 +3329,8 @@ function errorKind(m, x) {
 // your study, outlined in blue for the main move (chessground's hilite; also Hint's circle is white,
 // and Show correct move's arrow the main move's); once a move with a glyph is played, the glyph in a
 // corner of its square (see glyphBadge);
-// teal for a masters move outside your study; grey for a top-3 Lichess move outside it (the Review
-// page's toggles); violet for any other move you tried; the study's own arrows and circles in their
+// teal for a masters move; grey for another top-5 Lichess move (the Studies page's Top moves, which
+// numbers them by rank and outlines in white those in your study); violet for any other move you tried; the study's own arrows and circles in their
 // Lichess colours (Review page only). Text about a move (the Practice page's error messages, the
 // hover boards' "Errors: …") takes its arrow's colour, lightened to read on the dark background.
 const BRUSHES = {
