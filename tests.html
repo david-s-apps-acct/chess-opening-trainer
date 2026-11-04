@@ -522,11 +522,11 @@ async function runLichessPage(app) {
   app.setHistory(historyBefore);
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
-  check('review: Masters, numbered, the study\'s outlined in white, instead of the study\'s arrows', masters,
-    [['e2e4 teal+ 1', 'd2d4 teal 2', 'g1f3 teal 3'], []]);
+  check('review: Masters, with their shares, the study\'s outlined in white, instead of the study\'s arrows', masters,
+    [['e2e4 teal+ 40%', 'd2d4 teal 30%', 'g1f3 teal 15%'], []]);
   check('review: hovering over a square: only the view\'s rank', [mastersTip, lichessTip], [['d4 · #2 masters move (30%)'], ['d4 · #2 Lichess move (30%)']]);
-  check('review: Lichess, the top 5, numbered', lichess,
-    [['e2e4 grey+ 1', 'd2d4 grey 2', 'c2c4 grey 3', 'g1f3 grey 3'], ['c7c5 grey 1', 'e7e5 grey+ 1', 'e7e6 grey 3']]);
+  check('review: Lichess, the top 5, with their shares', lichess,
+    [['e2e4 grey+ 50%', 'd2d4 grey 30%', 'c2c4 grey 10%', 'g1f3 grey 10%'], ['c7c5 grey 38%', 'e7e5 grey+ 38%', 'e7e6 grey 25%']]);
   check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
     [['d2d4 violet ×2', 'g2g3 violet', 'e2e4 white+ 25%'], [], ['d4 ×2 (masters)'], ['g3'], ['e4 · right first time 25% (last 4 tries) · last tested today']]);
   // The study's own arrows and circles, in their Lichess colours, after the study's moves.

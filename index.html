@@ -582,7 +582,7 @@
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
         <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
-          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, numbered by rank"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Top 5 Lichess moves, numbered by rank"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your errors here (last 10 tries); ×2: made twice"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
+          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Top 5 Lichess moves, with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your errors here (last 10 tries); ×2: made twice"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
         </div>
       </div>
       <div class="review-tiles">
@@ -746,7 +746,7 @@
             <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Studies page, small board)</td></tr>
             <tr><td class="error-teal">Teal</td><td>A masters move</td></tr>
             <tr><td class="error-grey">Grey</td><td>A top-5 Lichess move (Lichess view)</td></tr>
-            <tr><td>1, 2, 3 … on an arrow</td><td>Its rank (masters on teal, Lichess on grey)</td></tr>
+            <tr><td>45% on a teal or grey arrow</td><td>How often it's played (masters on teal, Lichess on grey)</td></tr>
             <tr><td>×2 on an arrow</td><td>An error you made twice in your last 10 tries</td></tr>
             <tr><td>75% on the outlined arrow</td><td>Errors: how often you played your study's move right first time (last 10 tries; not move accuracy)</td></tr>
             <tr><td>White outline on teal or grey</td><td>Also in your study</td></tr>
@@ -811,7 +811,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each numbered by rank, or <b>Errors</b> (your errors at your move here in the last 10 tries, "×2" when made twice, and the correct move with how often you played it right first time). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each with how often it's played, or <b>Errors</b> (your errors at your move here in the last 10 tries, "×2" when made twice, and the correct move with how often you played it right first time). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
           <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
@@ -2218,9 +2218,9 @@ function reviewArrows(node) {
   const pos = node.position, view = settings.review.view;
   if (view === 'errors') return [...errorArrows(node), ...glyphBadge(node)];
   if (view === 'study') return [...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
-  return [...topMoves(node, view).map(({ move, brush, rank, inStudy }) => {
+  return [...topMoves(node, view).map(({ move, brush, share, inStudy }) => {
     const [orig, dest] = arrowSquares(pos, move);
-    return { orig, dest, brush, label: { text: String(rank) }, ...inStudy ? { modifiers: { hilite: true } } : {} };
+    return { orig, dest, brush, label: { text: share }, ...inStudy ? { modifiers: { hilite: true } } : {} };
   }), ...glyphBadge(node)];
 }
 
@@ -2245,14 +2245,14 @@ function rightFirstTime(attempts, correct) {
 }
 
 // The top moves in a position, for the Masters view (the masters moves, see isMasterMove; teal) or the
-// Lichess view (the top 5 Lichess moves; grey), each with its rank there (moves played equally often
-// share a rank), whether it's in the study (outlined in white), its SAN and its move. Nothing while
+// Lichess view (the top 5 Lichess moves; grey), each with its share of the games there (on its arrow,
+// e.g. "45%"), whether it's in the study (outlined in white), its SAN and its move. Nothing while
 // statistics are missing.
 function topMoves(node, view) {
   const stats = view === 'masters' ? masterGamesAt(node.epd) : lichessGamesAt(node.epd);
   const keep = view === 'masters' ? x => isMasterMove(node.epd, x) : x => moveRank(stats, x) <= 5;
   const inStudy = new Set(node.children.map(c => withoutCheckMarks(c.san)));
-  return (stats?.moves ?? []).filter(m => keep(m.san)).map(m => ({ san: m.san, brush: view === 'masters' ? 'teal' : 'grey', rank: moveRank(stats, m.san),
+  return (stats?.moves ?? []).filter(m => keep(m.san)).map(m => ({ san: m.san, brush: view === 'masters' ? 'teal' : 'grey', share: shareText(stats, m.san),
     move: san.parseSan(node.position, m.san), inStudy: inStudy.has(withoutCheckMarks(m.san)) })).filter(t => t.move);
 }
 
