@@ -384,14 +384,16 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Opponent's mistakes from the engine (4 November 2026; not built, its use still to decide)
 
-- **The user's definition:** an opponent's mistake is a move (1) from any position in a study where it's the opponent's move, (2) that drops the opponent's winning chances by **10 points or more** (Lichess's own "mistake" threshold, so blunders count too). The move needn't be in the study.
-- **The evaluations come from Lichess's cloud-eval API** (the user's choice). A move with no cloud evaluation is treated as fine (the user's reasoning: a position nobody has analysed is very unlikely to occur).
+- **The user's definition, in two steps** (to save downloads):
+  1. **Suspect moves:** opponent moves, from any position in a study where it's the opponent's move, that are among the position's top 10 Lichess moves, played in at least 50 games, and whose result for the side playing them is 5 points or more below the position's (e.g. Black scores 50% from the position but 38% after the move). These come from the move statistics already downloaded. The move needn't be in the study.
+  2. **Of those, the ones that drop the opponent's winning chances by 10 points or more** by Lichess's cloud evaluation (Lichess's own "mistake" threshold, so blunders count too). Only suspect moves (and the positions they're played from) get cloud evaluations. A move with no cloud evaluation is treated as fine (the user's reasoning: a position nobody has analysed is very unlikely to occur).
+  - The 50 games and 5 points were Claude's suggestion, accepted by the user (the user first proposed 10 points; 5 also catches mistakes that aren't often punished at the user's level).
 - *Claude's details, for the user to accept or reject:*
-  - The candidate moves are the moves in the position's Lichess move statistics (up to 10 most played, at the chosen ratings and time controls).
   - Winning chances are Lichess's formula, on a 0–100 scale: from 0.00, 10 points is about −1.1.
-  - The evaluations download in the background after the masters statistics, throttled like them, and are kept in IndexedDB and in backups.
+  - The cloud evaluations download in the background after the masters statistics, throttled like them, and are kept in IndexedDB and in backups.
 - **Separate from the study's own glyphs** (the user's decision): a study's ?, ?? and ?! keep their meaning and behaviour (`isMistake`), and the engine's verdict is a separate thing.
-- **Still to decide:** what uses it (nothing does yet: "Prefer opponent's mistakes" was removed), and what it's called on screen, since "mistake" is reserved for the study's marking.
+- **Names (the user's decision):** the first group are **suspect moves**, the sub-group **mistakes**. *To settle with the user:* "mistake" is today reserved for the study's ?, ?? and ?! (CLAUDE.md terminology, `isMistake`), so the two meanings need reconciling.
+- **Still to decide:** what uses it (nothing does yet: "Prefer opponent's mistakes" was removed).
 - Note: the cloud evaluations of line ends were downloaded once before and removed (see Position evaluation).
 
 ### Hint
