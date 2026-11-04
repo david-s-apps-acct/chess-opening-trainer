@@ -396,7 +396,7 @@ The last selection is remembered between visits (stored in the browser, like the
 - **Use (the user's decision):** somewhere in the Practice section, to be decided later. The opponent plays a punish move and you give a **refutation** (the user's provisional name).
 - **Judging a refutation (the user's decisions):** completely separate from the studies (the simplest): the engine decides even where the study answers the punish move. A refutation is correct if it's within **5 points of winning chances** of the engine's best move (Lichess's inaccuracy threshold), so several moves can be correct.
   - *Claude's details, for the user to accept or reject:* the engine's moves come from the same cloud evaluation that confirms the punish move (the position after it), asked for Lichess's top 5 moves (`multiPv=5`), so no extra downloads; a move not among them counts as incorrect; after an incorrect refutation the app shows the engine's best, e.g. "Engine: ♘xe5 (+1.8)".
-  - *Claude's reading of "completely separate", to confirm:* refutations don't count towards move accuracy, line accuracy or spaced repetition, and an incorrect one isn't called an "error" (which means a move that isn't your study's); they'd have their own record.
+  - *"Completely separate" (Claude's reading, confirmed by the user):* refutations don't count towards move accuracy, line accuracy or spaced repetition, and an incorrect one isn't called an "error" (which means a move that isn't your study's); they'd have their own record.
 - Note: the cloud evaluations of line ends were downloaded once before and removed (see Position evaluation).
 
 ### Hint
