@@ -393,7 +393,10 @@ The last selection is remembered between visits (stored in the browser, like the
   - The cloud evaluations download in the background after the masters statistics, throttled like them, and are kept in IndexedDB and in backups.
 - **Separate from the study's own glyphs** (the user's decision): a study's ?, ?? and ?! keep their meaning and behaviour (`isMistake`), and the engine's verdict is a separate thing.
 - **Names (the user's decision, provisional: "we can refine the name later"):** the first group are **suspect moves**, the sub-group **punish moves** (the opponent's moves worth learning to punish). "Mistake" stays reserved for the study's ?, ?? and ?! (`isMistake`).
-- **Still to decide:** what uses it (nothing does yet: "Prefer opponent's mistakes" was removed).
+- **Use (the user's decision):** somewhere in the Practice section, to be decided later. The opponent plays a punish move and you give a **refutation** (the user's provisional name).
+- **Judging a refutation (the user's decisions):** completely separate from the studies (the simplest): the engine decides even where the study answers the punish move. A refutation is correct if it's within **5 points of winning chances** of the engine's best move (Lichess's inaccuracy threshold), so several moves can be correct.
+  - *Claude's details, for the user to accept or reject:* the engine's moves come from the same cloud evaluation that confirms the punish move (the position after it), asked for Lichess's top 5 moves (`multiPv=5`), so no extra downloads; a move not among them counts as incorrect; after an incorrect refutation the app shows the engine's best, e.g. "Engine: ♘xe5 (+1.8)".
+  - *Claude's reading of "completely separate", to confirm:* refutations don't count towards move accuracy, line accuracy or spaced repetition, and an incorrect one isn't called an "error" (which means a move that isn't your study's); they'd have their own record.
 - Note: the cloud evaluations of line ends were downloaded once before and removed (see Position evaluation).
 
 ### Hint
