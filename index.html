@@ -307,6 +307,11 @@
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
   .review-comment { margin-top: 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
   .review-comment:empty { display: none; }
+  /* Under the board: arrows for the top 3 masters and Lichess moves, on and off, each with its arrow's colour */
+  .review-toggles { display: flex; gap: 8px; margin-top: 10px; }
+  .review-toggles button { padding: 5px 12px; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
+  .review-toggles button[aria-pressed=true], .review-toggles button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
+  .arrow-swatch { width: 14px; height: 4px; border-radius: 2px; }
   .review-comment .glyph { margin: 0 6px 0 0; }
   .review-comment p { margin: 0 0 4px; }
   /* The move statistics and your accuracy: the page's text size and colour; small grey headings */
@@ -335,7 +340,7 @@
   .status > * { transition: opacity .6s ease; }
   .status.fading > * { opacity: 0; } /* an error's message fading before "Your move" */
   .status.bad, .status .bad { color: var(--bad); }
-  .error-blue { color: #6ea8f0; } .error-amber { color: #e69d00; } .error-red { color: var(--bad); } /* see ERROR_COLORS */
+  .error-teal { color: #2fc4c4; } .error-violet { color: #a98bff; } .error-grey { color: #9e9e9e; } /* see ERROR_COLORS; white is the usual text */
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
@@ -601,6 +606,10 @@
     <div class="review-layout">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
+        <div class="review-toggles">
+          <button id="review-masters" aria-pressed="false" title="Top 3 masters moves"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
+          <button id="review-lichess" aria-pressed="false" title="Top 3 Lichess moves"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button>
+        </div>
         <div id="review-comment" class="review-comment"></div>
       </div>
       <div class="review-tiles">
@@ -704,16 +713,29 @@
             <li>How masters rate it: "#3 masters move (12%)" or "Not a masters move".</li>
             <li>How often it's played on Lichess: "#4 Lichess move (8%)" or "Not played in Lichess games".</li>
           </ul>
-          <p>Red means bad news; blue marks an alternative or masters move, amber a move your study marks ?!, ? or ??. After 3 seconds the message gives way to "Your move (3 of 5 in line)". After an error, Hint also shows what your study says about the move you tried.</p>
+          <p>Each line takes the colour of the move's arrow (see Arrow colours). After 3 seconds the message gives way to "Your move (3 of 5 in line)". After an error, Hint also shows what your study says about the move you tried.</p>
         </details>
         <details>
           <summary>The small board</summary>
           <p>Hover over (or tap) a move in the move list, the move tree or the Show lines table.</p>
           <ul>
-            <li><b>Your move</b>: the position you had to answer, a green arrow for the correct move and a pale arrow for each error (blue: alternative or masters move; amber: an alternative marked ?!, ? or ??; red: any other error). Then its move accuracy, when you last tested it, and your errors in the same colors.</li>
-            <li><b>The opponent's move</b>: the position after it, with a white arrow (amber if your study marks it ?!, ? or ??).</li>
+            <li><b>Your move</b>: the position you had to answer, with arrows for the correct move and each error (see Arrow colours). Then its move accuracy, when you last tested it, and your errors in the same colors.</li>
+            <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
             <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and "Position reached 23k times".</li>
           </ul>
+        </details>
+        <details>
+          <summary>Arrow colours</summary>
+          <p>The same on every board, as on Lichess:</p>
+          <table class="help-table">
+            <tr><td>White, blue outline</td><td>Your study's main move (also Hint and Show correct move)</td></tr>
+            <tr><td>White</td><td>Another move in your study</td></tr>
+            <tr><td><span class="glyph dubious">?!</span> <span class="glyph mistake">?</span> <span class="glyph blunder">??</span> on an arrow</td><td>A move your study marks</td></tr>
+            <tr><td class="error-teal">Teal</td><td>A masters move not in your study</td></tr>
+            <tr><td class="error-grey">Grey</td><td>A top-3 Lichess move not in your study (Review page)</td></tr>
+            <tr><td class="error-violet">Violet</td><td>Any other move you tried</td></tr>
+            <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Review page)</td></tr>
+          </table>
         </details>
         <details>
           <summary>Move accuracy</summary>
@@ -774,7 +796,7 @@
           <li>On the Practice page, <b>Studies to practice</b> shows the chosen preset and how many chapters it has. What you practise is always the chosen preset: <b>All</b> (every chapter outside hidden studies; it can't be renamed or deleted) or one of your own. It's hidden during practice.</li>
           <li>✎ beside the preset opens its chapters to tick, with <b>Save</b>, <b>Create new</b> (a new preset from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> and <b>Cancel</b> (or Esc). For All, only Create new and Cancel.</li>
           <li>In the chapters: click a study's name, ▸ or "7 chapters" to show its chapters; click a chapter's name (or its tick box) to tick it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. To look through a chapter, use the header's <b>Review</b> button.</li>
-          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). Under the board: the move's annotation (e.g. !) and its comment. Beside it: the study and its chapters, the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
+          <li>The <b>Review page</b> shows a chapter on a board, with its study's other chapters (offline too). The header's <b>Review</b> button goes back to the chapter and position you last looked at (at first, your first selected chapter). The board shows your study's moves and its own arrows and circles; <b>Masters</b> and <b>Lichess</b> under it add the top 3 masters and Lichess moves not in your study (see Arrow colours). Under them: the move's annotation (e.g. !) and its comment. Beside it: the study and its chapters, the moves, the move's <b>Move statistics</b> (Lichess and masters ranks, how often the position is reached) and <b>Your accuracy</b> (for your moves: move accuracy, last tested, errors; at a chapter's start, its average move accuracy; at a line's last move, its line accuracy). On the Practice page, the small board icon after the study's name ends practice and opens the line's study there, at the position on the board.</li>
           <li>The Review page shows each study's and chapter's average move accuracy once you've tried a move there, with a <span class="needs-work">violet background</span> below 100%.</li>
           <li>Chapters no longer on Lichess, or in hidden studies, are left out of every preset. Presets are included in backups.</li>
         </ul>
@@ -829,7 +851,7 @@
 
 <script type="module">
 import { Chessground } from 'https://cdn.jsdelivr.net/npm/chessground@9.2.1/+esm';
-import { parseUci, parseSquare, makeUci, pgn, san, fen, compat, variant } from 'https://cdn.jsdelivr.net/npm/chessops@0.15.1/+esm';
+import { parseUci, parseSquare, makeSquare, makeUci, pgn, san, fen, compat, variant } from 'https://cdn.jsdelivr.net/npm/chessops@0.15.1/+esm';
 const LICHESS = 'https://lichess.org';
 const EXPLORER = 'https://explorer.lichess.org'; // Lichess Opening Explorer (needs the token)
 const MAX_LINES_PER_CHAPTER = 5000;
@@ -977,6 +999,8 @@ const DEFAULT_SETTINGS = {
     reversed: false,
     weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
   },
+  // The Review page: arrows for the top 3 masters moves and the top 3 Lichess moves.
+  review: { masters: false, lichess: false },
 };
 
 // Saved settings, with anything missing or invalid replaced by its default.
@@ -995,6 +1019,7 @@ function checkedSettings(saved) {
       reversed: typeof p.reversed === 'boolean' ? p.reversed : dp.reversed,
       weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
+    review: valuesOf(d.review, v.review, x => typeof x === 'boolean'),
   };
 }
 
@@ -1426,7 +1451,8 @@ function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear()
 
 // A chapter is parsed once into a tree of moves. The root holds the starting position; every move
 // node holds:
-//   san, uci, moveNumber, color (the side that plays it), notes (comment and glyphs), nags,
+//   san, uci, moveNumber, color (the side that plays it), notes (comment and glyphs), drawn (the
+//   study's own arrows and circles after it, as chessground shapes; the root's too), nags,
 //   epdBefore, position (after the move: a chessops position), fen and epd (of that position),
 //   parent, children (the study's continuations, main one first), path (the SANs up to and
 //   including this move), key (the chapter key and the path, "studyId/chapterId|e4 e5 Nf3": a move
@@ -1456,7 +1482,7 @@ function parseChapter(ch) {
 
 function moveTree(chapterKey, game, start, yourColor) {
   const fen = fenOf(start);
-  const root = { position: start, fen, epd: epdOf(fen), path: [], key: chapterKey + '|', children: [] };
+  const root = { position: start, fen, epd: epdOf(fen), path: [], key: chapterKey + '|', children: [], drawn: drawnShapes(game.comments) };
   const grow = (pgnNode, parent) => {
     const before = parent.position;
     const yourTurn = before.turn === yourColor;
@@ -1470,7 +1496,7 @@ function moveTree(chapterKey, game, start, yourColor) {
       const untested = !!parent.untested || (yourTurn && variationIndex > 0);
       const node = {
         san: moveSan, uci: makeUci(move), moveNumber: before.fullmoves, color: before.turn,
-        notes: moveNotes(child.data), nags: child.data.nags || [], epdBefore: parent.epd,
+        notes: moveNotes(child.data), drawn: drawnShapes(child.data.comments), nags: child.data.nags || [], epdBefore: parent.epd,
         position, fen, epd: epdOf(fen), parent, children: [], path: [...parent.path, moveSan], key: `${chapterKey}|${[...parent.path, moveSan].join(' ')}`,
         variationIndex, untested, isYours: yourTurn && !untested,
       };
@@ -1575,6 +1601,10 @@ const GLYPHS = {
 
 // Comment text without Lichess's embedded arrows, circles and evals.
 const commentText = comments => (comments || []).map(c => pgn.parseComment(c).text.trim()).filter(Boolean);
+// The arrows and circles drawn in a study ([%cal …] and [%csl …] in the comments), as chessground
+// shapes in their Lichess colours (chessground's green, red, blue and yellow).
+const drawnShapes = comments => (comments || []).flatMap(c => pgn.parseComment(c).shapes).map(s =>
+  s.from === s.to ? { orig: makeSquare(s.from), brush: s.color } : { orig: makeSquare(s.from), dest: makeSquare(s.to), brush: s.color });
 
 function moveNotes(node) {
   const text = commentText(node.comments);
@@ -2082,7 +2112,7 @@ function openReview(ch, { at = [] } = {}) {
   if (!reviewBoard) {
     reviewBoard = Chessground($('review-board'), {
       coordinates: true, animation: { enabled: true, duration: 150 }, highlight: { lastMove: true, check: true },
-      premovable: { enabled: false }, drawable: { enabled: false, visible: true, brushes: ERROR_ARROWS },
+      premovable: { enabled: false }, drawable: { enabled: false, visible: true, brushes: BRUSHES },
       movable: { free: false, showDests: true, events: { after: onReviewMove } },
     });
     window.addEventListener('resize', () => reviewBoard.redrawAll());
@@ -2153,14 +2183,30 @@ function reviewFromPractice() {
 // The moves from the root to a node, in order.
 const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
 
-// The study's moves in a position, as arrows in the hover boards' colours: at your turn green for the
-// main move and blue for the alternatives, at the opponent's white; amber for a move marked ?, ?? or ?!.
-function reviewArrows(node, yourColor) {
-  const yourTurn = node.position.turn === yourColor;
-  return node.children.map(c => {
-    const [orig, dest] = arrowSquares(node.position, parseUci(c.uci));
-    return { orig, dest, brush: isMistake(c) ? 'yellow' : !yourTurn ? 'white' : c.variationIndex === 0 ? 'green' : 'blue' };
-  });
+// The arrows in a position (see BRUSHES): the study's moves (white, the main one outlined in blue, a
+// marked one with its glyph); with the toggles on, the top 3 masters moves (teal; masters moves, see
+// isMasterMove) and the top 3 Lichess moves (grey) that aren't in the study (teal for a move in both);
+// then the study's own arrows and circles, as drawn.
+function reviewArrows(node) {
+  const pos = node.position, inStudy = new Set(node.children.map(c => withoutCheckMarks(c.san)));
+  const outside = new Map(); // SAN -> brush
+  const top = (stats, brush, keep) => { for (const m of stats?.moves ?? []) if (!inStudy.has(withoutCheckMarks(m.san)) && keep(m.san)) outside.set(m.san, brush); };
+  const lichess = lichessGamesAt(node.epd);
+  if (settings.review.lichess) top(lichess, 'grey', x => moveRank(lichess, x) <= 3);
+  if (settings.review.masters) top(masterGamesAt(node.epd), 'teal', x => isMasterMove(node.epd, x));
+  const extra = [...outside].map(([x, brush]) => [san.parseSan(pos, x), brush]).filter(([mv]) => mv)
+    .map(([mv, brush]) => { const [orig, dest] = arrowSquares(pos, mv); return { orig, dest, brush }; });
+  return [...extra, ...node.children.map(c => studyMoveArrow(pos, c)), ...node.drawn];
+}
+
+for (const [id, which] of [['review-masters', 'masters'], ['review-lichess', 'lichess']]) $(id).addEventListener('click', () => {
+  settings.review[which] = !settings.review[which];
+  saveSettings();
+  updateReviewToggles();
+  if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
+});
+function updateReviewToggles() {
+  for (const [id, which] of [['review-masters', 'masters'], ['review-lichess', 'lichess']]) $(id).setAttribute('aria-pressed', String(settings.review[which]));
 }
 
 function showReviewNode(node) {
@@ -2174,7 +2220,8 @@ function showReviewNode(node) {
     if (ok.length) dests.set(from, ok);
   }
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
-  reviewBoard.setAutoShapes(reviewArrows(node, parsed.yourColor));
+  reviewBoard.setAutoShapes(reviewArrows(node));
+  updateReviewToggles();
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   renderReviewTree();
   // Under the board, the move's annotation (its glyphs, in their Lichess colours, named on hover) and its
@@ -2764,31 +2811,29 @@ async function rejectMove(status) {
   fadeToYourMove();
 }
 
-// The status after an error, one fact per line, each coloured like the move on the hover boards
-// (see ERROR_COLORS):
-//   what the move is: "Not your preferred move" (red; blue for a masters move); for one of your
-//     study's alternatives, "Alternative move, not your preferred move" (blue), or, for one the study
-//     marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (amber), followed by the
+// The status after an error, one fact per line, each coloured like the move's arrow (see
+// ERROR_COLORS):
+//   what the move is: "Not your preferred move" (violet; teal for a masters move); for one of your
+//     study's alternatives, "Alternative move, not your preferred move" (white), or, for one the study
+//     marks ?!, ? or ??, e.g. "Alternative move marked as a mistake" (white), followed by the
 //     opponent's reply from that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
-//   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; blue),
-//     otherwise "Not a masters move" (red);
-//   how often Lichess games play it: "#4 Lichess move (8%)", plain for the top 3 and red from #4,
-//     or "Not played in Lichess games" (red).
+//   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; teal),
+//     otherwise "Not a masters move" (violet);
+//   how often Lichess games play it: "#2 Lichess move (27%)", grey for the top 3 and violet from #4,
+//     or "Not played in Lichess games" (violet).
 // The percentages are the move's share of the games there, as on the hover boards. A line is left
-// out while its statistics haven't downloaded. For a move the study marks ?!, ? or ??, the masters
-// and Lichess lines are red.
+// out while its statistics haven't downloaded.
 function errorStatus(expected, played) {
   const epd = expected.epdBefore, alt = alternativesAt(expected)?.[played], marked = isMistake(alt);
   const masters = masterGamesAt(epd), lichess = lichessGamesAt(epd);
   const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
-  const line = (text, color) => element('div', { class: color ? 'error-' + color : null }, text);
-  const stat = (good, color) => marked ? 'red' : good ? color : 'red';
+  const line = (text, color) => element('div', { class: 'error-' + color }, text);
   return [
-    marked ? line(`Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`, 'amber')
-      : alt ? line('Alternative move, not your preferred move', 'blue') : line('Not your preferred move', isMasters ? 'blue' : 'red'),
-    marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'amber'),
-    masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', stat(isMasters, 'blue')),
-    lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', stat(lichessRank && lichessRank <= 3, null)),
+    marked ? line(`Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`, 'white')
+      : alt ? line('Alternative move, not your preferred move', 'white') : line('Not your preferred move', isMasters ? 'teal' : 'violet'),
+    marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'white'),
+    masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', isMasters ? 'teal' : 'violet'),
+    lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', lichessRank && lichessRank <= 3 ? 'grey' : 'violet'),
   ].filter(Boolean);
 }
 
@@ -2800,7 +2845,7 @@ $('hint-btn').addEventListener('click', () => {
   if (hintStep()) {
     // "Show correct move": an arrow shows the move; the player still has to play it.
     practice.tried.push('show');
-    setShapes([{ orig: from, dest: to, brush: 'green' }]);
+    setShapes([mainArrow(from, to)]);
     setStatus([`The move is ${moveLabel(expected)}. Play it on the board.`, practice.hintComment]);
     updateBoard();
     return;
@@ -2808,7 +2853,7 @@ $('hint-btn').addEventListener('click', () => {
   // After a wrong move, the status also shows what the study says about it.
   const w = lastWrongMove();
   practice.tried.push('hint');
-  setShapes([{ orig: from, brush: 'green' }]);
+  setShapes([{ orig: from, brush: 'white' }]);
   const notes = w && alternativesAt(expected)?.[w]?.notes;
   if (notes) practice.hintComment = element('div', { class: 'hint-note' },
     element('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w })} (your move)`),
@@ -3088,7 +3133,7 @@ $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 // ---------- Hover board (the small board shown when hovering over a move) ----------
 // Your moves: the position before the move, an arrow for the correct move and one for each error
 // over its last 10 attempts (or this attempt, in the practice move list). The opponent's moves: the
-// position after the move, highlighted as on Lichess, with an arrow. Colours: see ERROR_COLORS.
+// position after the move, highlighted as on Lichess, with an arrow. Colours: see BRUSHES.
 
 let hoverBoard = null;
 
@@ -3117,7 +3162,7 @@ function showHoverBoard(el, m, orientation, thisTime = null) {
   const config = {
     ...boardPosition(position, lastMove), orientation,
     viewOnly: true, coordinates: false, animation: { enabled: false },
-    drawable: { enabled: false, visible: true, brushes: ERROR_ARROWS },
+    drawable: { enabled: false, visible: true, brushes: BRUSHES },
   };
   if (!hoverBoard) hoverBoard = Chessground(box.querySelector('.cg-wrap'), config);
   else hoverBoard.set(config); // lastMove: undefined clears the previous highlight
@@ -3167,12 +3212,9 @@ function lastTestedText(time) {
 }
 
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
-// on Lichess, with the move as a white arrow, or amber if the study marks it ?!, ? or ?? (see
-// ERROR_COLORS).
+// on Lichess, with the move's arrow (see studyMoveArrow).
 function opponentMoveBoard(m) {
-  const [orig, dest] = arrowSquares(m.parent.position, parseUci(m.uci));
-  const mistake = isMistake(m);
-  return { position: m.position, lastMove: squaresOf(m), shapes: [{ orig, dest, brush: mistake ? 'yellow' : 'white' }], rows: [
+  return { position: m.position, lastMove: squaresOf(m), shapes: [studyMoveArrow(m.parent.position, m)], rows: [
     ...hoverBoardHeading(m),
     m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
 }
@@ -3197,27 +3239,50 @@ function errorKind(m, x) {
   return isMasterMove(m.epdBefore, x) ? 'masters' : 'wrong';
 }
 
-// The colours of moves on the hover boards, as arrows and in their "Errors: …" lists: green for your
-// correct move; for an error, blue for an alternative or masters move, amber for a move the study
-// marks ?!, ? or ?? (the opponent's marked moves are amber too), red for anything else (the hint
-// included); white for the opponent's move. Errors' arrows are a little lighter than the others.
-const ERROR_COLORS = { alternative: 'blue', masters: 'blue', marked: 'amber', wrong: 'red' };
-const ERROR_BRUSHES = { blue: 'errorBlue', amber: 'errorAmber', red: 'errorRed' };
-// The errors' arrows: chessground's blue, amber ("yellow") and red, the same width as the other
-// arrows and only a little lighter than the correct move's solid arrow.
-const errorArrow = (key, color) => ({ key, color, opacity: 0.85, lineWidth: 10 });
-const ERROR_ARROWS = { errorBlue: errorArrow('eb', '#003088'), errorAmber: errorArrow('ea', '#e68f00'), errorRed: errorArrow('er', '#882020') };
-const errorColor = (m, x) => x === 'hint' || x === 'show' ? 'red' : ERROR_COLORS[errorKind(m, x)];
+// The arrow colours, the same on every board (as on Lichess, which keeps green, red, blue and amber
+// for the arrows and circles drawn in a study, and white for the study's moves): white for a move in
+// your study, outlined in blue for the main move (chessground's hilite; also Hint's circle is white,
+// and Show correct move's arrow the main move's), with the glyph of a move marked ?!, ? or ?? on it;
+// teal for a masters move outside your study; grey for a top-3 Lichess move outside it (the Review
+// page's toggles); violet for any other move you tried; the study's own arrows and circles in their
+// Lichess colours (Review page only). Text about a move (the Practice page's error messages, the
+// hover boards' "Errors: …") takes its arrow's colour, lightened to read on the dark background.
+const BRUSHES = {
+  teal: { key: 'teal', color: '#00a3a3', opacity: 1, lineWidth: 10 },
+  grey: { key: 'grey', color: '#9e9e9e', opacity: 1, lineWidth: 10 },
+  violet: { key: 'violet', color: '#8a5cf6', opacity: 1, lineWidth: 10 },
+};
+const mainArrow = (orig, dest) => ({ orig, dest, brush: 'white', modifiers: { hilite: true } });
+// The glyphs' Lichess colours, for the label on a marked move's arrow (as .glyph.mistake and so on).
+const MISTAKE_FILLS = { 2: '#e69d00', 4: '#df5353', 6: '#53b2ea' };
+// A move in the study (a move node), from position pos: white, outlined for the main move, with the
+// glyph of a move marked ?!, ? or ??.
+function studyMoveArrow(pos, node) {
+  const [orig, dest] = arrowSquares(pos, parseUci(node.uci));
+  const arrow = node.variationIndex === 0 ? mainArrow(orig, dest) : { orig, dest, brush: 'white' };
+  const mark = node.nags.find(n => MISTAKE_NAGS.includes(n));
+  return mark ? { ...arrow, label: { text: GLYPHS[mark][0], fill: MISTAKE_FILLS[mark] } } : arrow;
+}
+// An error's colour (as text and arrow): white for one of your alternatives (marked or not), teal for
+// a masters move, violet for anything else (the hint and Show correct move included).
+const ERROR_COLORS = { alternative: 'white', masters: 'teal', marked: 'white', wrong: 'violet' };
+const errorColor = (m, x) => x === 'hint' || x === 'show' ? 'violet' : ERROR_COLORS[errorKind(m, x)];
 
 // A list of elements separated by commas.
 const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
-// An arrow for each error that's a move (errors: [[x, count], …]; the hint has none) and one for the
-// correct move.
+// An arrow for each error that's a move (errors: [[x, count], …]; the hint has none; an alternative
+// as the study's move, see studyMoveArrow) and the correct move's (the main move's).
 function answerArrows(pos, m, errors) {
-  const arrow = (mv, brush) => { const [orig, dest] = arrowSquares(pos, mv); return { orig, dest, brush }; };
-  const shapes = errors.map(([x]) => [san.parseSan(pos, x), ERROR_BRUSHES[errorColor(m, x)]]).filter(([mv]) => mv).map(([mv, b]) => arrow(mv, b));
-  return [...shapes, arrow(parseUci(m.uci), 'green')];
+  const shapes = errors.map(([x]) => {
+    const alt = alternativesAt(m)?.[x], mv = san.parseSan(pos, x);
+    if (alt) return studyMoveArrow(pos, alt);
+    if (!mv) return null;
+    const [orig, dest] = arrowSquares(pos, mv);
+    return { orig, dest, brush: errorColor(m, x) };
+  }).filter(Boolean);
+  const [orig, dest] = arrowSquares(pos, parseUci(m.uci));
+  return [...shapes, mainArrow(orig, dest)];
 }
 
 function hideHoverBoard() { $('move-preview')?.classList.add('hidden'); }
@@ -3652,8 +3717,8 @@ $('disconnect-btn').addEventListener('click', () => {
 
 // The welcome splash: over the Lichess page each time the app opens until you've started (connected).
 // Get started (or Enter: it has the focus), × or Esc closes it.
-// Its board: the Ruy Lopez after 1. e4 e5 2. Nf3 Nc6 3. Bb5, with the app's own arrows: green for the
-// study's move (3… a6), blue for an alternative (3… Nf6, the Berlin). Not playable.
+// Its board: the Ruy Lopez after 1. e4 e5 2. Nf3 Nc6 3. Bb5, with the app's own arrows: the study's
+// main move outlined (3… a6), an alternative white (3… Nf6, the Berlin). Not playable.
 let splashBoard = null;
 function showSplash(open) {
   $('welcome-splash').classList.toggle('hidden', !open);
@@ -3663,7 +3728,7 @@ function showSplash(open) {
   splashBoard = Chessground(document.querySelector('.splash-board .cg-wrap'), {
     fen: 'r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3', lastMove: ['f1', 'b5'],
     viewOnly: true, coordinates: false, animation: { enabled: false },
-    drawable: { enabled: false, visible: true, autoShapes: [{ orig: 'a7', dest: 'a6', brush: 'green' }, { orig: 'g8', dest: 'f6', brush: 'blue' }] },
+    drawable: { enabled: false, visible: true, autoShapes: [mainArrow('a7', 'a6'), { orig: 'g8', dest: 'f6', brush: 'white' }] },
   });
 }
 for (const id of ['welcome-splash-start', 'welcome-splash-close']) $(id).addEventListener('click', () => showSplash(false));
