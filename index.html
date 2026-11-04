@@ -339,7 +339,6 @@
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status > * { transition: opacity .6s ease; }
   .status.fading > * { opacity: 0; } /* an error's message fading before "Your move" */
-  .status.bad, .status .bad { color: var(--bad); }
   .error-teal { color: #2fc4c4; } .error-violet { color: #a98bff; } .error-grey { color: #9e9e9e; } /* the arrows' teal, violet and grey (see BRUSHES), lighter */
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
@@ -1135,8 +1134,7 @@ function quickTip(el, text, delay = 0) {
     clearTimeout(quickTipTimer);
     if (lastClick) return;
     quickTipTimer = setTimeout(() => {
-      let tip = $('quick-tip');
-      if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
+      const tip = quickTipBox();
       tip.textContent = typeof text === 'function' ? text() : text;
       tip.classList.remove('hidden');
       placePopup(tip, el);
@@ -1147,6 +1145,13 @@ function quickTip(el, text, delay = 0) {
 }
 
 function hideQuickTip() { clearTimeout(quickTipTimer); $('quick-tip')?.classList.add('hidden'); }
+
+// The quick tip's box (made the first time it's needed), also used by the Studies page's board.
+function quickTipBox() {
+  let tip = $('quick-tip');
+  if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
+  return tip;
+}
 
 // The page's own explanations: any element with data-tip shows it on hover.
 for (const el of document.querySelectorAll('[data-tip]')) quickTip(el, () => el.dataset.tip); // read when shown, so it can change
@@ -1909,9 +1914,9 @@ function openingName(parsed) {
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
 // Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
-// are italics; moves with a move-quality glyph take its color. On the Review page, hovering over a move
-// shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted). Branches open and close in openSet, and the tree is drawn
-// again by redraw.
+// are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
+// shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted).
+// Branches open and close in openSet, and the tree is drawn again by redraw.
 function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
   const parsed = parseChapter(ch);
   const box = element('div', { class: 'tree' });
@@ -2259,10 +2264,10 @@ function topMoves(node, view) {
 for (const view of ARROW_VIEWS) $(`arrows-${view}`).addEventListener('click', () => {
   settings.review.view = view;
   saveSettings();
-  updateReviewToggles();
+  updateArrowsSwitch();
   if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
 });
-function updateReviewToggles() { for (const view of ARROW_VIEWS) $(`arrows-${view}`).setAttribute('aria-pressed', String(settings.review.view === view)); }
+function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view}`).setAttribute('aria-pressed', String(settings.review.view === view)); }
 
 // What hovering over a square says about the arrows pointing to it, one line per move: with Masters or
 // Lichess, its rank and share there, e.g. "♘f3 · #3 masters move (12%)", "♘f3 · #4 Lichess move (8%)"; with Errors,
@@ -2293,8 +2298,7 @@ $('review-board').addEventListener('mousemove', e => {
   tipSquare = square;
   const lines = square ? squareTipLines(review.node, square) : [];
   if (!lines.length) return hideQuickTip();
-  let tip = $('quick-tip');
-  if (!tip) { tip = element('div', { id: 'quick-tip', class: 'note-pop hidden' }); document.body.append(tip); }
+  const tip = quickTipBox();
   tip.replaceChildren(...lines.map(line => element('div', {}, line)));
   tip.classList.remove('hidden');
   placePopup(tip, { getBoundingClientRect: () => ({ left: e.clientX + 12, right: e.clientX + 12, top: e.clientY, bottom: e.clientY + 12 }) });
@@ -2313,7 +2317,7 @@ function showReviewNode(node) {
   }
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
   reviewBoard.setAutoShapes(reviewArrows(node));
-  updateReviewToggles();
+  updateArrowsSwitch();
   // The position's name, and how often it's reached ("Reached 23k times (Lichess) 46 times (Masters)").
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   $('review-reached').textContent = positionCountText(node.epd) ?? '';
@@ -3257,10 +3261,10 @@ function showHoverBoard(el, m, orientation, thisTime = null) {
   hoverBoard.redrawAll();
 }
 
-// The rows shared by every hover board (the practice move list, the Review page and the
+// The rows shared by every hover board (the practice move list, the Studies page and the
 // Test probabilities table alike): the move, then its rank and share among all Lichess games and
-// among master games (each left out until downloaded), e.g. "#2 Lichess move (27%)", then "Position
-// reached 23k times": the Lichess games reaching the position after the move.
+// among master games (each left out until downloaded), e.g. "#2 Lichess move (27%)", then how often the
+// position after the move is reached: "Reached 23k times (Lichess) 46 times (Masters)".
 function hoverBoardHeading(m) {
   const countText = positionCountText(m.epd), count = countText && element('div', { class: 'muted' }, countText);
   const masters = masterGamesAt(m.epdBefore);
@@ -3329,12 +3333,12 @@ function errorKind(m, x) {
 // for the arrows and circles drawn in a study, and white for the study's moves): white for a move in
 // your study, outlined in blue for the main move (chessground's hilite; also Hint's circle is white,
 // and Show correct move's arrow the main move's); once a move with a glyph is played, the glyph in a
-// corner of its square (see glyphBadge);
-// teal for a masters move; grey for a top-5 Lichess move (the Studies page's Masters and Lichess views,
-// which number them by rank and outline in white those in your study); violet for any error (any move you
-// tried that isn't your study's main move, whatever kind; the kind is in the text, e.g. "(masters)"); the study's own arrows and circles in their
-// Lichess colours (Review page only). Text about a move (the Practice page's error messages, the
-// hover boards' "Errors: …") takes its arrow's colour, lightened to read on the dark background.
+// corner of its square (see glyphBadge); teal for a masters move; grey for a top-5 Lichess move (the
+// Studies page's Masters and Lichess views, which give each its share and outline in white those in your
+// study); violet for any error (any move you tried that isn't your study's main move, whatever kind; the
+// kind is in the text, e.g. "(masters)"); the study's own arrows and circles in their Lichess colours
+// (Studies page only). Text about a move (the Practice page's error messages, the hover boards'
+// "Errors: …") takes its arrow's colour, lightened to read on the dark background.
 const BRUSHES = {
   teal: { key: 'teal', color: '#00a3a3', opacity: 1, lineWidth: 10 },
   grey: { key: 'grey', color: '#9e9e9e', opacity: 1, lineWidth: 10 },
@@ -3351,7 +3355,7 @@ function studyMoveArrow(pos, node) {
 const QUALITY_FILLS = { 1: '#629924', 2: '#e69d00', 3: '#21c43a', 4: '#df5353', 5: '#f075e1', 6: '#53b2ea' };
 // Once a move with a move-quality glyph (!!, !, !?, ?!, ?, ??) has been played, as on Lichess: the
 // glyph in its colour at the top-right corner of the square it went to (none otherwise). On the
-// Review page and the hover boards showing the position after a move, not on the Practice board.
+// Studies page and the hover boards showing the position after a move, not on the Practice board.
 function glyphBadge(node) {
   const n = node.uci && node.nags.find(x => QUALITY_FILLS[x]);
   if (!n) return [];
