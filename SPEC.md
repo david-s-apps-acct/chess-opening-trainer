@@ -382,6 +382,18 @@ The last selection is remembered between visits (stored in the browser, like the
 
 - There used to be a Lichess cloud evaluation of each line's final position (e.g. "Line complete. Evaluation +0.4" after a line, "+0.1" at the end of each line in a chapter's move tree, and a Position evaluation card on the Options page), downloaded automatically in the background from Lichess's cloud-eval API. The user removed it, since it wasn't used for anything important and the evaluations are available in the original Lichess studies; this also simplified the code and reduced the Lichess downloads. Saved evaluations are dropped (they aren't loaded or included in backups any more), and the future idea of a Stockfish fallback for missing evaluations went with it.
 
+### Both sides and your choices (5 November 2026; not built, still being thought through)
+
+- **Why (the user's reasons):** a study may give you two choices at one of your moves (e.g. an aggressive A against a weaker player, a solid B against a stronger one), and a study may be meant for both sides (e.g. the user's Ruy Lopez, played as White and as Black).
+- **Each chapter has a toggle: play its main side, or both sides** (the user's decision). The setting is remembered in the study groups, so different groups can have different settings. In the built-in **All**, every chapter plays its main side only (Claude's suggestion, accepted by the user).
+- **Reverse sides goes** (the user's decision). Playing only the other side of a chapter (e.g. only Black from a White study) is no longer possible; accepted by the user.
+- **Main lines only** accepts only the main line, for either side (the user's decision): your study's main move at your turns, the opponent's main move at theirs.
+- **Main lines only off:** any of your study's moves at a position is accepted, and the line follows it (Claude's reading of the user's decision, to confirm). Moves the study marks ?, ?? or ?! stay errors (Claude's detail, for the user to accept or reject).
+- **Accuracy is per position within a chapter** (the user's decision: it better matches how chess is played): the position where it's your move has one record, whichever of your study's moves you play; the same position in another chapter keeps its own (no mixing across chapters).
+- **Many more lines; line accuracy works as now** (the user's point). *Claude's detail:* a line's key gets the side added, since the same line played as White and as Black ends on the same move.
+- **Spaced repetition for the alternative lines needs more thought** (the user's decision).
+- *Not yet settled:* whether "move accuracy" (CLAUDE.md terminology) keeps its name now it's per position; how the Studies page shows the two sides' accuracy for a chapter played both ways; the error definition (a move that isn't one of your study's moves).
+
 ### Punish moves (4 November 2026; not built, its use still to decide)
 
 - **The user's definition, in two steps** (to save downloads):
