@@ -392,7 +392,15 @@ The last selection is remembered between visits (stored in the browser, like the
 - **Accuracy is per position within a chapter** (the user's decision: it better matches how chess is played): the position where it's your move has one record, whichever of your study's moves you play; the same position in another chapter keeps its own (no mixing across chapters).
 - **Many more lines; line accuracy works as now** (the user's point). *Claude's detail:* a line's key gets the side added, since the same line played as White and as Black ends on the same move.
 - **Spaced repetition for the alternative lines needs more thought** (the user's decision). *Claude's suggestions, for the user to consider:* (1) a line through one of your other choices starts just after that choice (the app plays the moves up to and including it, e.g. "from 6. d3"), so habit doesn't keep those lines untried; (2) a line's or position's Frequency counts only the opponent's moves (the product of their shares; your own moves count as 100%), so a rarely played choice of yours doesn't sink its lines.
-- *Not yet settled:* whether "move accuracy" (CLAUDE.md terminology) keeps its name now it's per position; how the Studies page shows the two sides' accuracy for a chapter played both ways; the error definition (a move that isn't one of your study's moves).
+- **Right or wrong, with no partial penalties** (the user's decisions, 5 November 2026):
+  - **Correct:** your study's main move, or one of its unmarked alternatives (with Main lines only off).
+  - **Incorrect:** a move the study marks ?, ?? or ?!, any move not in the study, or the hint (and Show correct move).
+  - **With Main lines only ticked,** an unmarked alternative is just taken back: not incorrect, no penalty. (The user's reason: otherwise a position would need two accuracy records, one with Main lines only and one without.)
+  - **Each attempt is 100% or 0%:** 100% if the first move tried is correct, 0% otherwise; one slip and needing the hint count the same. Move accuracy is then the weighted average of the last 10 attempts, as now.
+  - **The reduced penalty for a masters move goes,** and with it the error penalties (`ERROR_PENALTIES`, `pointsFor`, points 0–10). A masters move still shows teal and "(masters)" in the error lists.
+  - *Claude's details, for the user to accept or reject:* an alternative taken back (Main lines only) doesn't count as the first try, so the next move tried decides the attempt; it's listed after the errors as e.g. "♗b5 (alternative)" on the hover boards, but isn't an error.
+  - *To decide later:* the Studies page's "right first time" percentage on the correct move's arrow and move accuracy now mean nearly the same (one unweighted, one weighted), so one of them could go.
+- *Not yet settled:* whether "move accuracy" (CLAUDE.md terminology) keeps its name now it's per position; how the Studies page shows the two sides' accuracy for a chapter played both ways; the error definition (now: an incorrect attempt, as above), and the CLAUDE.md terminology for move accuracy (no longer "points × 10").
 
 ### Punish moves (4 November 2026; not built, its use still to decide)
 
