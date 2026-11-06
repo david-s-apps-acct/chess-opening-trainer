@@ -294,6 +294,8 @@
   .review-tiles { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
   .studies-col { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
   .studies-col .panel { flex: none; min-width: 0; } /* within its column: long names end in "…" */
+  .groups-tile { cursor: pointer; } /* the whole tile opens Edit group */
+  .groups-tile:hover { background: var(--surface-2); }
   .review-tiles .panel { flex: none; min-width: 0; }
   .studies-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .studies-head h2 { margin: 0; }
@@ -614,7 +616,7 @@
       <!-- Your studies and their chapters, and the groups: to the left of the board where there's room -->
       <div class="studies-col">
         <!-- Groups: ✎ edits them, in an overlay (see Edit group below) -->
-        <div class="panel groups-tile">
+        <div class="panel groups-tile" title="Edit groups">
           <div class="studies-head"><h2>Groups</h2>
             <button id="preset-edit-btn" class="icon-btn" aria-label="Edit groups" title="Edit groups"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg></button>
           </div>
@@ -713,7 +715,6 @@
             <li><b>Line</b>: one path through a chapter: one of your study's moves at each of your turns, and every reply your study gives the opponent.</li>
             <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. It's correct too, unless the study marks it ?, ?? or ?!, or Main lines only is ticked.</li>
             <li><b>Move accuracy</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
-            <li><b>Line accuracy</b>: the share of your moves right first time in a completed line.</li>
             <li><b>Error</b>: any move you play that isn't one of your study's moves, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
             <li><b>Masters move</b>: one of the top 3 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more.</li>
@@ -733,12 +734,11 @@
           <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
-          <li>A line behind one of your other choices (e.g. your 3. Bb5 where the main move is 3. Bc4) starts just after it, set up on the board, so it gets practised too.</li>
-          <li>A chapter set to both sides in its group (see Studies) gives lines for each side; the heading says e.g. "(as black)" for its other side.</li>
+          <li>A chapter set to both sides in its group (see Studies) gives lines for each side.</li>
           <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
           <li><b>Skip</b> goes on to the next one; <b>End practice</b> stops. The moves you've answered still count.</li>
           <li>Comments from your study appear as blue bubbles in the move list; hover over one to read it. Click a move, or use ◀ ▶ or the arrow keys, to look back.</li>
-          <li>At the end of a line you see how it went, e.g. "5 of 6 moves correct" and "83% line accuracy". Press <b>Next line</b> (<b>Next position</b> for positions), or Enter.</li>
+          <li>At the end of a line you see how it went, e.g. "5 of 6 moves correct". Press <b>Next line</b> (<b>Next position</b> for positions), or Enter.</li>
           <li>You can visit other pages mid-line; <b>Practice</b> takes you back. The bell under the board turns sounds on and off.</li>
         </ul>
         <details>
@@ -806,7 +806,7 @@
               <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
               <li><b>Weakness</b>: 1 + 2 × (1 − accuracy): 1 at 100%, 3 at 0%.</li>
               <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × accuracy</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
-              <li><b>Last tested</b>: a line counts only when played all the way through, from its start (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its line accuracy (untried positions count as 0%); a position, its move accuracy.</li>
+              <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its weakest position's move accuracy (untried positions count as 0%); a position, its own.</li>
             </ul>
             <table class="help-table">
               <tr><th>Example</th><th>Need</th></tr>
@@ -822,11 +822,11 @@
       <div class="card" id="help-studies">
         <h2>Studies</h2>
         <ul>
-          <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
+          <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
           <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its own side; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
-          <li>✎ in the Studies page's <b>Groups</b> tile opens <b>Edit group</b>, with every study and chapter: choose a group, then click a chapter's circle (or its name) to choose: not played (a dashed ring), its own side (white or black), or both sides (half and half). Then <b>Save</b>, <b>Create new</b> (a new group from the chapters chosen; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc, or ×). For All, only Create new and Cancel.</li>
+          <li>The Studies page's <b>Groups</b> tile (click it, or its ✎) opens <b>Edit group</b>, with every study and chapter: choose a group, then click a chapter's circle (or its name) to choose: not played (a dashed ring), its own side (white or black), or both sides (half and half). Then <b>Save</b>, <b>Create new</b> (a new group from the chapters chosen; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc, or ×). For All, only Create new and Cancel.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are included in backups.</li>
         </ul>
         <details>
@@ -1571,12 +1571,9 @@ const opposite = color => color === 'white' ? 'black' : 'white';
 // A chapter's lines when you play side (the chapter's own side by default): at your turns each of your
 // study's moves (see choicesAt), at the opponent's every move the study gives. Each line: { key,
 // chapterKey, yourColor (the side you play), root, moves (move nodes), isMainLine (every move on it
-// is the study's main one), start (where you take over: after your last move on it that isn't a main
-// move, so that habit doesn't keep the lines behind your other choices untried; the app sets up the
-// moves before it), testable (it has a move of yours from its start: a line that ends with one of your
-// other choices has none, and is only there to follow when you play that choice) }. A line's key is its
-// last move's, with the side added for the chapter's other side ("… Nf3 (black)"). Lines are always
-// practiced to their end.
+// is the study's main one) }. A line's key is its last move's, with the side added for the chapter's
+// other side ("… Nf3 (black)"). Lines are always practiced from move 1 to their end. (Briefly, on 6
+// November 2026, a line behind one of your other choices started just after it.)
 function chapterLines(ch, side = parseChapter(ch).yourColor) {
   const cacheKey = `${ch.key} ${side}`;
   if (linesByChapter.has(cacheKey)) return linesByChapter.get(cacheKey);
@@ -1585,10 +1582,9 @@ function chapterLines(ch, side = parseChapter(ch).yourColor) {
   const walk = (node, moves) => {
     const next = node.position.turn === side ? choicesAt(node) : node.children;
     if (!next.length) {
-      const start = moves.reduce((s, m, i) => m.color === side && m.variationIndex > 0 ? i + 1 : s, 0);
       if (!moves.some(m => m.color === side) || lines.length >= MAX_LINES_PER_CHAPTER) return;
       lines.push({ key: side === parsed.yourColor ? node.key : `${node.key} (${side})`, chapterKey: ch.key, yourColor: side, root: parsed.root,
-        moves, isMainLine: moves.every(m => m.variationIndex === 0), start, testable: moves.slice(start).some(m => m.color === side) });
+        moves, isMainLine: moves.every(m => m.variationIndex === 0) });
       return;
     }
     for (const child of next) walk(child, [...moves, child]);
@@ -1599,7 +1595,7 @@ function chapterLines(ch, side = parseChapter(ch).yourColor) {
 }
 
 // The lines a chapter is practised with, from each of its sides.
-const practisedLines = ch => sidesOf(ch).flatMap(side => chapterLines(ch, side).filter(l => l.testable));
+const practisedLines = ch => sidesOf(ch).flatMap(side => chapterLines(ch, side));
 
 // Every move node in a chapter's tree, in order (each move, then everything after it).
 function allMoveNodes(ch) {
@@ -1610,8 +1606,8 @@ function allMoveNodes(ch) {
   return out;
 }
 
-// The moves of yours in a line from where you take over (their indexes).
-const yourMoveIndexes = line => line.moves.flatMap((m, i) => i >= line.start && m.color === line.yourColor ? [i] : []);
+// The moves of yours in a line (their indexes).
+const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.color === line.yourColor ? [i] : []);
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
 // applies (Lichess's name for the position, or for the last named position before it), then the
@@ -1865,7 +1861,7 @@ function renderGroupEditor() {
   list.parentElement.scrollTop = scroll;
 }
 
-// A chapter to open: numbered as on Lichess, with the dot for the side you play; the one on
+// A chapter to open: numbered as on Lichess; the one on
 // the board highlighted; one that can't be shown greyed out, with the reason on hover; a hidden one dimmed;
 // its eye while the top eye is open.
 function chapterLink(c, k) {
@@ -1874,7 +1870,6 @@ function chapterLink(c, k) {
     'aria-disabled': p.error ? 'true' : null, onclick: p.error ? null : () => openReview(c) },
     element('span', { class: 'review-chapter-num' }, `${k + 1}.`),
     element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : [c.name, openingName(p)].filter(Boolean).join(': ') }, c.name),
-    p.error ? null : element('span', { class: 'side-dot ' + p.yourColor, 'aria-label': 'you play ' + p.yourColor }),
     showHidden ? hideButton(c.key, isHidden, 'chapter') : null);
 }
 
@@ -1917,7 +1912,7 @@ function chapterRow(ch) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
   const on = editing.ticks.has(ch.key), both = on && editing.both.has(ch.key), own = parsed.yourColor;
-  const lines = parsed.error || !on ? [] : [own, ...both ? [opposite(own)] : []].flatMap(side => chapterLines(ch, side).filter(l => l.testable));
+  const lines = parsed.error || !on ? [] : [own, ...both ? [opposite(own)] : []].flatMap(side => chapterLines(ch, side));
   const title = !on ? `Not played. Click: ${own}` : both ? 'You play both sides. Click: not played' : `You play ${own}. Click: both sides`;
   const next = () => !on ? setTicked([ch.key], true) : !both ? setBothSides(ch.key, true) : setTicked([ch.key], false);
   return element('div', { class: 'row chapter-row' + (on ? '' : ' unplayed') },
@@ -2113,7 +2108,8 @@ function stopEditing() {
   hideNameForm();
   if (library) renderStudies();
 }
-$('preset-edit-btn').addEventListener('click', startEditing);
+// The whole Groups tile opens Edit group (its ✎ is the sign).
+document.querySelector('.groups-tile').addEventListener('click', startEditing);
 $('preset-cancel-btn').addEventListener('click', stopEditing);
 $('group-editor-close').addEventListener('click', stopEditing);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && editing && currentScreen === 'studies' && !typingInTextBox()) stopEditing(); });
@@ -2404,8 +2400,9 @@ document.addEventListener('keydown', e => {
 //   untried: an item never tried (a line none of whose positions have been tried) has no accuracy or
 //     due; it gets 6 in their place.
 // A position's accuracy is its move accuracy (with or without Main lines only, as ticked), and last
-// tested is when it was last tried. A line's accuracy is its line accuracy, with untried positions
-// counting as 0%, and last tested is when it was last played through from its start to the end.
+// tested is when it was last tried. A line's accuracy is its weakest position's (the lowest move
+// accuracy of your positions in it, untried ones counting as 0%), and last tested is when it was last
+// played through from move 1 to the end.
 //
 // Each slider (settings.practice.weights, 0–100, shared by lines and positions) is a power on its
 // part: 0 ignores it, 50 (the default) counts it as it is, 100 raises it to the 6th power, so the
@@ -2420,7 +2417,7 @@ const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
 // The four sliders: their names, and what each means (shown when hovering over its name).
 const WEIGHTS = [
   { key: 'frequency', name: 'Frequency', definition: "How often opponents on Lichess lead to it (your own moves don't count). Higher: common ones come up more." },
-  { key: 'accuracy', name: 'Accuracy', definition: 'Move accuracy (line accuracy for a line). Higher: weak ones come up more.' },
+  { key: 'accuracy', name: 'Accuracy', definition: 'Move accuracy (for a line, its weakest position). Higher: weak ones come up more.' },
   { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
   { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none are left.' },
 ];
@@ -2459,7 +2456,7 @@ function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kin
 function itemAccuracy({ line, i }, mainOnly) {
   if (i != null) return shareAt(line.moves[i].parent, mainOnly);
   const scores = yourMoveIndexes(line).map(k => shareAt(line.moves[k].parent, mainOnly));
-  return scores.every(s => s == null) ? null : scores.reduce((sum, s) => sum + (s ?? 0), 0) / scores.length;
+  return scores.every(s => s == null) ? null : Math.min(...scores.map(s => s ?? 0));
 }
 
 const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].parent.key) : lastPlayedAt(line.key);
@@ -2545,7 +2542,8 @@ let board = null;
 //   since the user may have moved on).
 let practice = null;
 
-// Whether move i of the line is one you play: your side's, from where you took over (practice.from).
+// Whether move i of the line is one you play: your side's, from where practice began (practice.from:
+// a single position's move, or move 1).
 const isTested = i => i >= practice.from && practice.line.moves[i]?.color === practice.line.yourColor;
 const testedColor = () => practice.line.yourColor;
 
@@ -2650,7 +2648,7 @@ const KINDS = {
   lines: {
     noun: 'line', label: 'Lines', mainLines: 'Main lines only',
     mainLinesTitle: 'Only main moves, for both sides',
-    columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested', 'Chance next'],
+    columns: ['Line', 'End position reached (times)', 'Lowest move accuracy', 'Last tested', 'Chance next'],
   },
   positions: {
     noun: 'position', label: 'Positions', mainLines: 'Positions from main lines only',
@@ -2799,10 +2797,10 @@ function nextItem() {
   startLine(pick.line, pick.i);
 }
 
-// Starts a line from its start (see chapterLines), or with singleAt (the index of one of your moves),
-// tests just that move as a single position.
+// Starts a line from move 1, or with singleAt (the index of one of your moves), tests just that move as
+// a single position.
 function startLine(line, singleAt = null) {
-  const from = singleAt ?? line.start;
+  const from = singleAt ?? 0;
   practice = {
     line, singleAt, from, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, isOver: false,
     lastMove: undefined, shapes: [], viewing: null, savedStatus: null, hintComment: null, bubblePopped: -1, run: {},
@@ -2817,8 +2815,8 @@ function startLine(line, singleAt = null) {
   updateNames();
   setShapes([]);
   if (from > 0) {
-    // Set up the position where you take over instantly (no sounds); the earlier moves appear in
-    // the move list, with bubbles for their comments.
+    // Set up the position before the move instantly (no sounds); the earlier moves appear in the move
+    // list, with bubbles for their comments.
     practice.position = line.moves[from - 1].position.clone();
     practice.movesPlayed = from;
     practice.lastMove = squaresOf(line.moves[from - 1]);
@@ -2842,16 +2840,12 @@ function lastWrongMove() {
   return practice.tried.filter(x => x !== 'hint' && x !== 'show' && !correct.some(c => c.san === x)
     && !(alts[x] && !isMarkedAlternative(alts[x]))).pop();
 }
-// Under "Line complete.": "5 of 6 moves correct" (or "No errors.") and "83% line accuracy". A move is
-// correct when it was right first time (see firstTryRight); the line accuracy is the share of this
-// line's attempts that were. (The moves that weren't are highlighted in the move list, with details on
-// hover.)
+// Under "Line complete.": "5 of 6 moves correct" (or "No errors."). A move is correct when it was right
+// first time (see firstTryRight). (The moves that weren't are highlighted in the move list, with details
+// on hover.) (Until 6 November 2026 "83% line accuracy" followed.)
 function lineSummary() {
-  const attempts = practice.attempts;
-  const correct = attempts.filter(rightThisTime).length;
-  const accuracy = attempts.length ? percent(correct / attempts.length) : 100;
-  return [element('div', {}, correct < attempts.length ? `${correct} of ${plural(attempts.length, 'move')} correct` : 'No errors.'),
-    element('div', {}, `${accuracy}% line accuracy`)];
+  const attempts = practice.attempts, correct = attempts.filter(rightThisTime).length;
+  return [element('div', {}, correct < attempts.length ? `${correct} of ${plural(attempts.length, 'move')} correct` : 'No errors.')];
 }
 
 // Play opponent moves until it's your turn or the line ends.
@@ -3185,8 +3179,8 @@ document.addEventListener('keydown', e => {
 
 // ---------- Practice: names and sounds ----------
 
-// The practice panel's heading, as in the positions table: the study and chapter ("(as black)" after it
-// when it's played from the chapter's other side; the chapter's introductory comment as a bubble), then the position reached,
+// The practice panel's heading, as in the positions table: the study and chapter (the board shows which
+// side you play; the chapter's introductory comment as a bubble), then the position reached,
 // named by its opening and the moves since (see positionName), e.g. "Italian Game: Giuoco Piano,
 // 4. c3 ♘f6". The position line follows the board: the line as it's played, or an earlier position
 // being looked at.
@@ -3194,8 +3188,7 @@ function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  const otherSide = practice.line.yourColor !== parseChapter(ch).yourColor ? ` (as ${practice.line.yourColor})` : '';
-  $('practice-title').replaceChildren(chapterTitle(ch) + otherSide, intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
+  $('practice-title').replaceChildren(chapterTitle(ch), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
     reviewButton('End practice and open this chapter on the Studies page', reviewFromPractice));
   updatePositionName();
 }
