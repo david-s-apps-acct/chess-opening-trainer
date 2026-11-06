@@ -210,12 +210,16 @@
   .side { font-size: 12px; color: var(--muted); white-space: nowrap; } /* e.g. "variant not supported" */
   .side-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--muted); margin-left: 6px; vertical-align: 0; }
   .side-dot.white { background: #fff; }
-  .side-dot.black { background: #222; }
-  .side-dot.both { background: linear-gradient(90deg, #fff 50%, #222 50%); }
-  /* While editing a group, the side circle is a button: the chapter's own side or both. */
-  .side-btn { background: none; border: 0; padding: 0 2px; margin: 0; cursor: pointer; line-height: 1; }
-  .side-btn .side-dot { margin-left: 4px; }
-  .side-btn:hover .side-dot { border-color: var(--text); }
+  .side-dot.black { background: #222; border-color: #aaa; } /* a light edge, so it isn't taken for an empty ring */
+  .side-dot.both { background: linear-gradient(90deg, #fff 50%, #222 50%); border-color: #aaa; }
+  .side-dot.off { background: none; border-style: dashed; }
+  /* While editing a group, each chapter's circle (in place of a tick box): not played, its own side, or both. */
+  .side-btn { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; box-shadow: none; }
+  .side-btn .side-dot { width: 13px; height: 13px; margin: 0; }
+  .side-btn:hover:not(:disabled) { background: none; }
+  .side-btn:hover:not(:disabled) .side-dot { border-color: var(--text); }
+  .chapter-row.unplayed .name { opacity: .55; }
+  .chapter-row .chapter-label { cursor: pointer; }
   /* Move scores: only moves that need work are highlighted, with a violet background (a color
      chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
      the tint, the weaker the move. 100% and never tried: plain. */
@@ -807,7 +811,7 @@
           <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its own side; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
-          <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), and click a chapter's dot to play it from both sides (half white, half black) or only its own, then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
+          <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, click a chapter's circle (or its name) to choose: not played (a dashed ring), its own side (white or black), or both sides (half and half); then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are included in backups.</li>
         </ul>
         <details>
@@ -1890,24 +1894,24 @@ function studyRow(study, isHidden) {
       !editing && showHidden ? hideButton(study.id, isHidden, 'study') : null));
 }
 
-// A chapter's row while editing (indented under its study's name): its checkbox, its name (a label:
-// clicking it ticks the chapter; the opening on hover), the side you play (a button: the chapter's own
-// side or both sides, a half-white, half-black circle) and "· 5 lines" (or why it has none to practice).
+// A chapter's row while editing (indented under its study's name): its circle, in place of a tick box
+// (an empty dashed ring: not played, the name dimmed; white or black: its own side; half and half: both
+// sides), which clicking it or the chapter's name cycles through; its name (the opening on hover) and
+// "· 5 lines" (or why it has none to practice: such a chapter's ring can't be clicked).
 function chapterRow(ch) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
-  const both = editing.both.has(ch.key), own = parsed.yourColor;
-  const lines = parsed.error ? [] : [own, ...both ? [opposite(own)] : []].flatMap(side => chapterLines(ch, side).filter(l => l.testable));
-  const sideTitle = both ? `You play both sides. Click: ${own} only` : `You play ${own}. Click: both sides`;
-  return element('div', { class: 'row chapter-row' },
+  const on = ticked().has(ch.key), both = on && editing.both.has(ch.key), own = parsed.yourColor;
+  const lines = parsed.error || !on ? [] : [own, ...both ? [opposite(own)] : []].flatMap(side => chapterLines(ch, side).filter(l => l.testable));
+  const title = !on ? `Not played. Click: ${own}` : both ? 'You play both sides. Click: not played' : `You play ${own}. Click: both sides`;
+  const next = () => !on ? setTicked([ch.key], true) : !both ? setBothSides(ch.key, true) : setTicked([ch.key], false);
+  return element('div', { class: 'row chapter-row' + (on ? '' : ' unplayed') },
     element('span', { class: 'toggle-space' }), // indented under its study
-    element('input', { type: 'checkbox', id, checked: ticked().has(ch.key),
-      onchange: e => setTicked([ch.key], e.target.checked) }),
-    element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
-      parsed.error ? null : element('button', { class: 'side-btn', title: sideTitle, 'aria-label': sideTitle, 'aria-pressed': String(both), onclick: () => setBothSides(ch.key, !both) },
-        element('span', { class: 'side-dot ' + (both ? 'both' : own) })),
+    element('button', { id, class: 'side-btn', title: parsed.error ? null : title, 'aria-label': `${ch.name}: ${parsed.error ? parsed.error : title}`,
+      disabled: !!parsed.error, onclick: next }, element('span', { class: 'side-dot ' + (!on || parsed.error ? 'off' : both ? 'both' : own) })),
+    element('span', { class: 'name' }, quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : next }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
-    parsed.error ? element('span', { class: 'side' }, parsed.error) : !lines.length ? element('span', { class: 'side' }, 'no lines to practice') : null);
+    parsed.error ? element('span', { class: 'side' }, parsed.error) : null);
 }
 
 // A chapter played from both sides, or only its own, in the group being edited.
@@ -2001,10 +2005,11 @@ function hideButton(id, isHidden, what) {
   return btn;
 }
 
-// Ticks or unticks chapters (by key) while editing, and redraws the list.
+// Ticks or unticks chapters (by key) while editing, and redraws the list. Ticked, a chapter plays from
+// its own side unless it's already set to both; unticked, it's not played.
 function setTicked(keys, on) {
   if (!editing) return;
-  for (const k of keys) on ? editing.ticks.add(k) : editing.ticks.delete(k);
+  for (const k of keys) on ? editing.ticks.add(k) : (editing.ticks.delete(k), editing.both.delete(k));
   renderStudies();
 }
 

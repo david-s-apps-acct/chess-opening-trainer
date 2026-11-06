@@ -441,9 +441,9 @@ async function runLichessPage(app) {
   check('Groups ✎: editing the group; Create new and Cancel for All', [!$('studies-screen').classList.contains('hidden'), !$('preset-edit').classList.contains('hidden'), !$('all-row').classList.contains('hidden'),
     ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden'))], [true, true, true, ['preset-new-btn', 'preset-cancel-btn']]);
   if (!document.querySelector('#studies .chapter-row')) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
-  const firstBox = document.querySelector('#studies .chapter-row input'), wasTicked = firstBox.checked;
-  document.querySelector('#studies .chapter-row label').click(); // its name
-  check('editing: clicking a chapter\'s name ticks it (it doesn\'t open it)', [firstBox.checked !== wasTicked, !$('studies-screen').classList.contains('hidden')], [true, true]);
+  const firstDot = () => document.querySelector('#studies .chapter-row .side-dot').className, wasDot = firstDot();
+  document.querySelector('#studies .chapter-row .chapter-label').click(); // its name
+  check('editing: clicking a chapter\'s name changes its circle (it doesn\'t open it)', [firstDot() !== wasDot, !$('studies-screen').classList.contains('hidden')], [true, true]);
   $('nav-practice').click();
   check('editing: Start practice waits, with the drop-down', [$('chooser-start').disabled, $('chooser-note').textContent, $('preset-select').disabled], [true, 'Finish editing the group first (Studies page).', true]);
   $('nav-studies').click();
@@ -851,11 +851,11 @@ function runPresets(app) {
   const nameIt = name => { $('preset-name').value = name; $('preset-name-form').requestSubmit(); };
   const options = () => [...$('preset-select').options].map(o => o.textContent);
   const choose = name => { $('preset-select').value = name; $('preset-select').dispatchEvent(new Event('change')); };
+  // A chapter's circle clicked until it's played (from its own side) or not.
+  const circle = key => $('ch-' + key.replace(/[^A-Za-z0-9]/g, '_'));
   const tick = (key, on) => {
-    if (!$('ch-' + key.replace(/[^A-Za-z0-9]/g, '_'))) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
-    const box = $('ch-' + key.replace(/[^A-Za-z0-9]/g, '_'));
-    box.checked = on;
-    box.dispatchEvent(new Event('change'));
+    if (!circle(key)) document.querySelector('#studies .study-row .opener').click(); // the study's chapters
+    for (let n = 0; n < 3 && circle(key).querySelector('.side-dot').classList.contains('off') === on; n++) circle(key).click();
   };
   app.setPresets([]);
   choose('');
@@ -878,11 +878,12 @@ function runPresets(app) {
   $('preset-name-cancel').click();
   // Save, Cancel; a chapter played from both sides.
   tick(C, true);
-  const sideBtn = () => document.querySelector('#studies .chapter-row .side-btn');
-  const sideBefore = [sideBtn().title, sideBtn().querySelector('.side-dot').className];
-  sideBtn().click();
-  check('groups: a chapter\'s dot: its own side, or both', [...sideBefore, sideBtn().title, sideBtn().querySelector('.side-dot').className],
-    ['You play white. Click: both sides', 'side-dot white', 'You play both sides. Click: white only', 'side-dot both']);
+  const sideBtn = () => circle(B);
+  const sideStates = [];
+  for (let n = 0; n < 3; n++) { sideStates.push([sideBtn().title, sideBtn().querySelector('.side-dot').className, sideBtn().closest('.chapter-row').classList.contains('unplayed')]); sideBtn().click(); }
+  check('groups: a chapter\'s circle cycles: its own side, both, not played (dimmed), then its own side again', [...sideStates, sideBtn().querySelector('.side-dot').className],
+    [['You play white. Click: both sides', 'side-dot white', false], ['You play both sides. Click: not played', 'side-dot both', false], ['Not played. Click: white', 'side-dot off', true], 'side-dot white']);
+  sideBtn().click(); // both
   $('preset-save-btn').click();
   check('presets: Save, with the chapter from both sides', [app.presets[0].chapters.sort(), app.presets[0].bothSides, app.selection.sort(), $('preset-edit').classList.contains('hidden'),
     app.practiceItems('lines').some(({ line }) => line.yourColor === 'black' && line.chapterKey === B)], [[B, C], [B], [B, C], true, true]);
