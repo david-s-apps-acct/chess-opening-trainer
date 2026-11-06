@@ -175,7 +175,7 @@
   .srs-tile .actions { margin-top: 10px; }
   .preset-row { display: flex; align-items: center; gap: 8px; }
   #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
-  #edit-preset-select { width: 100%; text-overflow: ellipsis; }
+  #edit-preset-select { flex: 1 1 240px; max-width: 360px; text-overflow: ellipsis; }
   #sel-summary { margin-top: 8px; }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
   /* The Lichess page's lines: account, connected, fetched, statistics */
@@ -297,7 +297,6 @@
   .review-tiles .panel { flex: none; min-width: 0; }
   .studies-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .studies-head h2 { margin: 0; }
-  .groups-tile .preset-edit { margin-top: 10px; }
   /* Your studies, each opening to its chapters (numbered as on Lichess), in a box that scrolls, with a scroll
      bar always shown when it scrolls (Safari and Chrome) */
   .studies-list { margin-top: 10px; max-height: 400px; overflow-y: auto; overflow-x: hidden; }
@@ -372,6 +371,13 @@
   .practice-chooser p:empty { display: none; }
   .table-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; overflow-y: auto; }
   .table-overlay .table-card { width: 100%; max-width: 960px; }
+  /* Edit group: the list scrolls inside the card, so the group and its buttons stay in view. */
+  .table-overlay .group-card { max-width: 720px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; gap: 10px; }
+  .group-card .preset-edit { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; }
+  .group-card .preset-buttons { flex-basis: 100%; }
+  .group-key { font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding-left: 2px; }
+  .group-key .side-dot { margin: 0 2px 0 0; }
+  .group-list { overflow-y: auto; min-height: 0; border: 1px solid var(--border); border-radius: 6px; }
   .table-overlay .welcome-card { width: 100%; max-width: 560px; padding: 0; overflow: hidden; }
   /* The welcome splash: a blue band with the title, then a small board (the Ruy Lopez) beside the text (above it on a phone) */
   .splash-band { background: var(--accent); padding: 14px 20px; align-items: center; }
@@ -582,7 +588,7 @@
   <!-- Studies: your studies, and a chapter on a board (see Studies page) -->
   <section id="studies-screen" class="hidden">
     <!-- The board, with the Study | Masters | Lichess | Errors switch under it; beside it the moves, and the annotation
-         and comment; your studies and their chapters (and, while editing, the groups) to the left
+         and comment; your studies and their chapters (and the groups) to the left
          of the board where there's room, else under the comment (see .review-layout) -->
     <div class="review-layout">
       <div class="board-col">
@@ -607,28 +613,10 @@
       </div>
       <!-- Your studies and their chapters, and the groups: to the left of the board where there's room -->
       <div class="studies-col">
-        <!-- Groups: ✎ edits them; while editing, the group, how many chapters are ticked in the list, and the
-             buttons to save them -->
+        <!-- Groups: ✎ edits them, in an overlay (see Edit group below) -->
         <div class="panel groups-tile">
           <div class="studies-head"><h2>Groups</h2>
             <button id="preset-edit-btn" class="icon-btn" aria-label="Edit groups" title="Edit groups"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25zM20.71 6.04a1 1 0 0 0 0-1.41l-1.34-1.34a1 1 0 0 0-1.41 0l-1.13 1.13 2.75 2.75 1.13-1.13z" fill="currentColor"/></svg></button>
-          </div>
-          <!-- While editing: the group, its chapters ticked in the list, and the buttons to save them -->
-          <div id="preset-edit" class="preset-edit hidden">
-            <select id="edit-preset-select" aria-label="Group to edit"></select>
-            <div id="edit-summary" class="muted"></div>
-            <div class="preset-buttons">
-              <button id="preset-save-btn" class="small primary" title="Save the ticked chapters in this group">Save</button>
-              <button id="preset-new-btn" class="small" title="A new group with the ticked chapters (untick All first to start empty)">Create new</button>
-              <button id="preset-rename-btn" class="small">Rename</button>
-              <button id="preset-delete-btn" class="small">Delete</button>
-              <button id="preset-cancel-btn" class="small" title="Close without saving (Esc)">Cancel</button>
-            </div>
-            <form id="preset-name-form" class="preset-name-form hidden">
-              <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the group" autocomplete="off">
-              <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
-              <div id="preset-name-error" class="form-error"></div>
-            </form>
           </div>
         </div>
         <div class="panel studies-tile">
@@ -636,10 +624,6 @@
             <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
           </div>
           <div id="studies-list" class="studies-list">
-            <!-- While editing: "All" above the list, its checkbox lined up with the studies' checkboxes -->
-            <div id="all-row" class="row study-row all-row hidden"><span class="toggle-space"></span>
-              <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
-            </div>
             <div id="studies"></div>
           </div>
         </div>
@@ -657,6 +641,37 @@
           <p>Practice the openings in your Lichess studies using spaced repetition.</p>
           <div class="actions"><button id="welcome-splash-start" class="primary">Get started</button></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit group: over the Studies page while a group is edited (✎ in the Groups tile): the group, its
+       buttons, a key to the circles, and every study and chapter -->
+  <div id="group-editor" class="table-overlay hidden">
+    <div class="card table-card group-card" role="dialog" aria-modal="true" aria-labelledby="group-editor-title">
+      <div class="overlay-head"><h2 id="group-editor-title">Edit group</h2><button id="group-editor-close" class="icon-btn overlay-close" aria-label="Close without saving" title="Close without saving (Esc)">×</button></div>
+      <div id="preset-edit" class="preset-edit">
+        <select id="edit-preset-select" aria-label="Group to edit"></select>
+        <span id="edit-summary" class="muted"></span>
+        <div class="preset-buttons">
+          <button id="preset-save-btn" class="small primary" title="Save the chapters chosen in this group">Save</button>
+          <button id="preset-new-btn" class="small" title="A new group with the chapters chosen (untick All first to start empty)">Create new</button>
+          <button id="preset-rename-btn" class="small">Rename</button>
+          <button id="preset-delete-btn" class="small">Delete</button>
+          <button id="preset-cancel-btn" class="small" title="Close without saving (Esc)">Cancel</button>
+        </div>
+        <form id="preset-name-form" class="preset-name-form hidden">
+          <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the group" autocomplete="off">
+          <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
+          <div id="preset-name-error" class="form-error"></div>
+        </form>
+      </div>
+      <div class="group-key muted"><span><span class="side-dot off"></span> Not played</span><span><span class="side-dot white"></span><span class="side-dot black"></span> Own side</span><span><span class="side-dot both"></span> Both sides</span></div>
+      <div class="group-list">
+        <div id="all-row" class="row study-row all-row"><span class="toggle-space"></span>
+          <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
+        </div>
+        <div id="edit-studies"></div>
       </div>
     </div>
   </div>
@@ -811,7 +826,7 @@
           <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its own side; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
-          <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, click a chapter's circle (or its name) to choose: not played (a dashed ring), its own side (white or black), or both sides (half and half); then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
+          <li>✎ in the Studies page's <b>Groups</b> tile opens <b>Edit group</b>, with every study and chapter: choose a group, then click a chapter's circle (or its name) to choose: not played (a dashed ring), its own side (white or black), or both sides (half and half). Then <b>Save</b>, <b>Create new</b> (a new group from the chapters chosen; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc, or ×). For All, only Create new and Cancel.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are included in backups.</li>
         </ul>
         <details>
@@ -1777,15 +1792,13 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // clicked to open it on the board. Hidden studies and chapters are left out (except the chapter on the
 // board), or, with the eye by the Studies heading, shown dimmed, each with its own eye. Above, the Groups
 // tile's ✎ edits the groups (presets in the code: named sets of chapters; All, every chapter, is built
-// in): every study and chapter is listed, the chosen group's chapters ticked (a chapter's name then
-// ticks it), with Save, Create new, Rename, Delete and Cancel (for All, only Create new and Cancel).
+// in) in the Edit group overlay: every study and chapter is listed, each chapter with its circle (not
+// played, its own side, or both), with Save, Create new, Rename, Delete and Cancel (for All, only Create
+// new and Cancel); Esc and × cancel too, and a click outside does nothing (unsaved changes would be lost).
 // Only groups decide what's practised: the group chosen on the Practice page (the Studies to practice
-// tile); the tile is hidden during practice, since a session's lines are chosen when it starts, and
-// Start practice waits while a group is being edited.
-let editing = null; // while editing a group: { preset, ticks (a Set of chapter keys), both (those played from both sides) }
+// tile); the tile is hidden during practice, since a session's lines are chosen when it starts.
+let editing = null; // while editing a group: { preset, ticks (a Set of chapter keys), both (those played from both sides), open (the studies whose chapters are listed) }
 
-// The chapters being ticked (while editing) or practised.
-const ticked = () => editing ? editing.ticks : selection;
 
 // The Practice page's Studies to practice and Spaced repetition tiles: once there are studies, and not
 // during practice (before there are studies, any message about fetching them instead).
@@ -1802,44 +1815,57 @@ function renderStudies() {
   renderPresets();
   updateSelectionPanel();
   renderStudiesList();
+  renderGroupEditor();
   if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practised follows the group
 }
 
 function renderStudiesList() {
   const container = $('studies'), shown = review?.ch;
-  $('all-row').classList.toggle('hidden', !editing);
-  $('show-hidden-btn').classList.toggle('hidden', !!editing);
   setToggle('show-hidden-btn', showHidden, showHidden ? 'Stop showing hidden studies and chapters' : 'Show hidden studies and chapters');
-  // Listed: everything while editing; otherwise what isn't hidden (all of it with the eye open), and the
-  // chapter on the board.
-  const listed = (id, isShown) => editing || showHidden || !hidden.has(id) || isShown;
+  // Listed: what isn't hidden (all of it with the eye open), and the chapter on the board.
+  const listed = (id, isShown) => showHidden || !hidden.has(id) || isShown;
   container.replaceChildren();
   if (!library.studies.length) {
     container.append(element('div', { class: 'row muted' }, `No studies found for ${library.username}. Create them at lichess.org/study.`));
   }
   for (const study of library.studies) {
     if (!listed(study.id, study.chapters.includes(shown))) continue;
-    const studyHidden = !editing && hidden.has(study.id);
-    const studyEl = element('div', { class: 'study' + (studyHidden ? ' hidden-study' : '') }, studyRow(study, studyHidden));
-    if (openStudy === study.id) {
-      studyEl.append(editing ? element('div', { class: 'chapters' }, study.chapters.map(chapterRow))
-        : element('div', { class: 'study-chapters', role: 'listbox', 'aria-label': study.name },
-          study.chapters.map((c, k) => listed(c.key, c === shown) ? chapterLink(c, k) : null).filter(Boolean)));
-    }
+    const studyHidden = hidden.has(study.id), open = openStudy === study.id;
+    const studyEl = element('div', { class: 'study' + (studyHidden ? ' hidden-study' : '') },
+      studyRow(study, open, () => { openStudy = open ? null : study.id; renderStudies(); }, showHidden ? hideButton(study.id, studyHidden, 'study') : null)); // opening one closes any other
+    if (open) studyEl.append(element('div', { class: 'study-chapters', role: 'listbox', 'aria-label': study.name },
+      study.chapters.map((c, k) => listed(c.key, c === shown) ? chapterLink(c, k) : null).filter(Boolean)));
     container.append(studyEl);
   }
   if (library.studies.length && !container.children.length) {
     container.append(element('div', { class: 'row muted' }, 'All your studies are hidden. Click the eye to see them.'));
   }
   // The chapter on the board, in view.
-  const list = $('studies-list'), row = !editing && list.querySelector('.review-chapter.current');
+  const list = $('studies-list'), row = list.querySelector('.review-chapter.current');
   if (row) {
     const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
     list.scrollTop = Math.max(0, Math.min(list.scrollTop, top), top + row.offsetHeight - list.clientHeight);
   }
 }
 
-// A chapter to open (not editing): numbered as on Lichess, with the dot for the side you play; the one on
+// The Edit group overlay while a group is edited: every study (several can be open at once, since there's
+// room), with its tick box, and its chapters' circles.
+function renderGroupEditor() {
+  $('group-editor').classList.toggle('hidden', !editing);
+  if (!editing) return;
+  const list = $('edit-studies'), scroll = list.parentElement.scrollTop;
+  list.replaceChildren(...library.studies.map(study => {
+    const open = editing.open.has(study.id);
+    const keys = study.chapters.map(c => c.key), nTicked = keys.filter(k => editing.ticks.has(k)).length;
+    const box = element('input', { type: 'checkbox', id: 'st-' + study.id, checked: nTicked === keys.length && keys.length > 0,
+      indeterminate: nTicked > 0 && nTicked < keys.length, onchange: e => setTicked(keys, e.target.checked) });
+    return element('div', { class: 'study' }, studyRow(study, open, () => { open ? editing.open.delete(study.id) : editing.open.add(study.id); renderGroupEditor(); }, null, box),
+      open ? element('div', { class: 'chapters' }, study.chapters.map(chapterRow)) : null);
+  }));
+  list.parentElement.scrollTop = scroll;
+}
+
+// A chapter to open: numbered as on Lichess, with the dot for the side you play; the one on
 // the board highlighted; one that can't be shown greyed out, with the reason on hover; a hidden one dimmed;
 // its eye while the top eye is open.
 function chapterLink(c, k) {
@@ -1875,23 +1901,12 @@ function opener(name, onOpen) {
     onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } }, name);
 }
 
-// A study's row: its triangle (show or hide its chapters), checkbox (all its chapters; while editing),
-// name, and eye (while the top eye is open, not editing).
-function studyRow(study, isHidden) {
-  const keys = study.chapters.map(c => c.key);
-  const nTicked = keys.filter(k => ticked().has(k)).length;
-  const open = openStudy === study.id;
-  const toggleStudy = () => { openStudy = open ? null : study.id; renderStudies(); }; // opening one closes any other
+// A study's row: its triangle and name (clicking either shows or hides its chapters: toggle), and, after
+// the triangle, a tick box (while editing a group) or, after the name, its eye (while the top eye is open).
+function studyRow(study, open, toggle, eye = null, box = null) {
   return element('div', { class: 'row study-row' },
-    triangle(open, ['Show chapters', 'Hide chapters'], toggleStudy),
-    editing && element('input', {
-      type: 'checkbox', id: 'st-' + study.id,
-      checked: nTicked === keys.length && keys.length > 0,
-      indeterminate: nTicked > 0 && nTicked < keys.length,
-      onchange: e => setTicked(keys, e.target.checked),
-    }),
-    element('span', { class: 'name', title: study.name }, opener(study.name, toggleStudy),
-      !editing && showHidden ? hideButton(study.id, isHidden, 'study') : null));
+    triangle(open, ['Show chapters', 'Hide chapters'], toggle), box,
+    element('span', { class: 'name', title: study.name }, opener(study.name, toggle), eye));
 }
 
 // A chapter's row while editing (indented under its study's name): its circle, in place of a tick box
@@ -1901,7 +1916,7 @@ function studyRow(study, isHidden) {
 function chapterRow(ch) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
-  const on = ticked().has(ch.key), both = on && editing.both.has(ch.key), own = parsed.yourColor;
+  const on = editing.ticks.has(ch.key), both = on && editing.both.has(ch.key), own = parsed.yourColor;
   const lines = parsed.error || !on ? [] : [own, ...both ? [opposite(own)] : []].flatMap(side => chapterLines(ch, side).filter(l => l.testable));
   const title = !on ? `Not played. Click: ${own}` : both ? 'You play both sides. Click: not played' : `You play ${own}. Click: both sides`;
   const next = () => !on ? setTicked([ch.key], true) : !both ? setBothSides(ch.key, true) : setTicked([ch.key], false);
@@ -2022,7 +2037,7 @@ function toggleHidden(id) {
 
 $('show-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; renderStudies(); });
 
-// How many chapters the chosen group has (Practice page) and, while editing, are ticked (Studies page).
+// How many chapters the chosen group has (Practice page) and, while editing, are chosen (Edit group).
 function updateSelectionPanel() {
   const all = allChapters(), count = keys => all.filter(c => keys.has(c.key)).length;
   $('sel-summary').textContent = `${plural(count(selection), 'chapter')} selected`;
@@ -2053,8 +2068,8 @@ function useChosenPreset() {
   bothSides = new Set(preset.bothSides.filter(k => selection.has(k)));
 }
 
-// The groups' drop-downs: the Practice page's (what's practised; greyed out while a group is being
-// edited) and, while editing, the Studies page's (the group being edited); and the editing buttons.
+// The groups' drop-downs: the Practice page's (what's practised) and Edit group's (the group being
+// edited); and the editing buttons.
 function renderPresets() {
   const preset = chosenPreset();
   for (const id of ['preset-select', 'edit-preset-select']) {
@@ -2062,9 +2077,6 @@ function renderPresets() {
       ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p => element('option', { value: p.name }, p.name)));
     $(id).value = preset.builtIn ? '' : preset.name;
   }
-  $('preset-select').disabled = !!editing;
-  $('preset-edit-btn').classList.toggle('hidden', !!editing);
-  $('preset-edit').classList.toggle('hidden', !editing);
   for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Create new
   $('preset-save-btn').disabled = $('preset-new-btn').disabled = !editing?.ticks.size;
 }
@@ -2084,7 +2096,8 @@ $('preset-select').addEventListener('change', e => {
 // ✎: the chosen group's chapters, ticked, to change; Cancel (or Esc) leaves them as they were. Another
 // group from the drop-down is chosen (as on the Practice page), and its chapters ticked instead.
 function startEditing() {
-  editing = { preset: chosenPreset(), ticks: new Set(selection), both: new Set(bothSides) };
+  const open = new Set(library.studies.filter(st => st.chapters.some(c => selection.has(c.key))).map(st => st.id)); // the group's studies
+  editing = { preset: chosenPreset(), ticks: new Set(selection), both: new Set(bothSides), open: editing?.open ?? open };
   hideNameForm();
   renderStudies();
 }
@@ -2102,6 +2115,7 @@ function stopEditing() {
 }
 $('preset-edit-btn').addEventListener('click', startEditing);
 $('preset-cancel-btn').addEventListener('click', stopEditing);
+$('group-editor-close').addEventListener('click', stopEditing);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && editing && currentScreen === 'studies' && !typingInTextBox()) stopEditing(); });
 
 $('preset-save-btn').addEventListener('click', () => {
@@ -2369,7 +2383,7 @@ const reviewStep = {
 };
 for (const k of Object.keys(reviewStep)) $(`review-${k}`).addEventListener('click', () => review && showReviewNode(reviewStep[k]()));
 document.addEventListener('keydown', e => {
-  if (currentScreen !== 'studies' || !review || typingInTextBox()) return;
+  if (currentScreen !== 'studies' || !review || editing || typingInTextBox()) return; // not under Edit group
   const step = { ArrowLeft: 'prev', ArrowRight: 'next', Home: 'first', End: 'last' }[e.key];
   if (step) { e.preventDefault(); showReviewNode(reviewStep[step]()); }
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); stepChapter(e.key === 'ArrowUp' ? -1 : 1); }
@@ -2681,8 +2695,8 @@ function renderChooser() {
   $('chooser-main-text').textContent = k.mainLines;
   $('chooser-main-label').title = k.mainLinesTitle;
   const { items, note } = practicable(kind);
-  $('chooser-start').disabled = !items.length || !!editing;
-  $('chooser-note').textContent = editing ? 'Finish editing the group first (Studies page).' : note;
+  $('chooser-start').disabled = !items.length;
+  $('chooser-note').textContent = note;
 }
 
 // The Practice page's Spaced repetition tile: the sliders' values. It starts closed each time the app opens,
