@@ -211,6 +211,11 @@
   .side-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--muted); margin-left: 6px; vertical-align: 0; }
   .side-dot.white { background: #fff; }
   .side-dot.black { background: #222; }
+  .side-dot.both { background: linear-gradient(90deg, #fff 50%, #222 50%); }
+  /* While editing a group, the side circle is a button: the chapter's own side or both. */
+  .side-btn { background: none; border: 0; padding: 0 2px; margin: 0; cursor: pointer; line-height: 1; }
+  .side-btn .side-dot { margin-left: 4px; }
+  .side-btn:hover .side-dot { border-color: var(--text); }
   /* Move scores: only moves that need work are highlighted, with a violet background (a color
      chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
      the tint, the weaker the move. 100% and never tried: plain. */
@@ -355,7 +360,6 @@
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .chooser-frame { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--muted); border-radius: 4px; padding: 10px 12px; }
   .chooser-frame > button { align-self: flex-start; }
-  .chooser-frame.off { opacity: .45; } /* not used when playing the reversed sides */
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -530,10 +534,9 @@
         <div id="practice-chooser" class="practice-chooser hidden">
           <div class="chooser-frame">
             <div class="kind-switch" role="group" aria-label="What to practice">
-              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines, from move 1">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="One of your moves at a time, from move 3">Positions</button>
+              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="One of your moves at a time, from move 3">Positions</button>
             </div>
             <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
-            <label id="chooser-reversed-label" title="You play the opponent's moves; the app plays yours"><input type="checkbox" id="chooser-reversed"> Reverse sides (not scored)</label>
           </div>
           <p id="chooser-note" class="muted"></p>
           <button id="chooser-start" class="primary chooser-start">Start practice</button>
@@ -558,7 +561,7 @@
       <div id="practice-message" class="panel hidden"></div>
       <!-- Spaced repetition: collapsed; ▾ opens the sliders, Show lines, Show positions and Reset. Hidden during practice. -->
       <div id="srs-tile" class="panel srs-tile hidden">
-        <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates. Not used with Reverse sides.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
+        <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
         <div id="srs-body" class="hidden">
           <div id="weight-rows" class="weight-rows"></div>
           <div class="actions">
@@ -688,11 +691,11 @@
         <details>
           <summary>Words used in the app</summary>
           <ul>
-            <li><b>Line</b>: one path through a chapter: your main move at each of your turns, and every reply your study gives the opponent.</li>
-            <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. Alternatives aren't tested; only the main move is correct.</li>
-            <li><b>Move accuracy</b>: how well you know one of your moves, from 0% to 100% (see Practice).</li>
-            <li><b>Line accuracy</b>: the average move accuracy of your moves in a completed line.</li>
-            <li><b>Error</b>: any move you play that isn't your study's move, or the hint. Errors cost move accuracy.</li>
+            <li><b>Line</b>: one path through a chapter: one of your study's moves at each of your turns, and every reply your study gives the opponent.</li>
+            <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. It's correct too, unless the study marks it ?, ?? or ?!, or Main lines only is ticked.</li>
+            <li><b>Move accuracy</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
+            <li><b>Line accuracy</b>: the share of your moves right first time in a completed line.</li>
+            <li><b>Error</b>: any move you play that isn't one of your study's moves, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
             <li><b>Masters move</b>: one of the top 3 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
@@ -707,10 +710,12 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines, from move 1) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen group (Studies to practice). <b>Main lines only</b> leaves out the opponent's side variations.</li>
-          <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next. Not used with Reverse sides.</li>
+          <li>Choose <b>Lines</b> (whole lines) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen group (Studies to practice). <b>Main lines only</b> keeps to the main moves, for both sides: only your main move is correct.</li>
+          <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
-          <li>Play your moves on the board. Only your study's main move is correct; keep trying as long as you like. Each error gets a short message.</li>
+          <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
+          <li>A line behind one of your other choices (e.g. your 3. Bb5 where the main move is 3. Bc4) starts just after it, set up on the board, so it gets practised too.</li>
+          <li>A chapter set to both sides in its group (see Studies) gives lines for each side; the heading says e.g. "(as black)" for its other side.</li>
           <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
           <li><b>Skip</b> goes on to the next one; <b>End practice</b> stops. The moves you've answered still count.</li>
           <li>Comments from your study appear as blue bubbles in the move list; hover over one to read it. Click a move, or use ◀ ▶ or the arrow keys, to look back.</li>
@@ -721,7 +726,7 @@
           <summary>Error messages</summary>
           <p>One fact per line, e.g.:</p>
           <ul>
-            <li>What the move is: "Not your preferred move", "Alternative move, not your preferred move", or "Alternative move marked as a mistake" with your study's answer, e.g. "Your study answers 4… ♘xe4".</li>
+            <li>What the move is: "Not your preferred move", "Alternative move, not your preferred move" (with Main lines only), or "Alternative move marked as a mistake" with your study's answer, e.g. "Your study answers 4… ♘xe4".</li>
             <li>How masters rate it: "#3 masters move (12%)" or "Not a masters move".</li>
             <li>How often it's played on Lichess: "#4 Lichess move (8%)" or "Not played in Lichess games".</li>
           </ul>
@@ -731,7 +736,7 @@
           <summary>The small board</summary>
           <p>Hover over (or tap) a move in the move list, the move tree or the Show lines table.</p>
           <ul>
-            <li><b>Your move</b>: the position you had to answer, with arrows for the correct move and each error (see Arrow colours). Then its move accuracy, when you last tested it, and your errors in the same colors.</li>
+            <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colours). Then the position's move accuracy, when you last tested it, and your errors in the same colors.</li>
             <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
             <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and how often the position is reached, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
           </ul>
@@ -747,30 +752,23 @@
             <tr><td class="error-grey">Grey</td><td>A top-5 Lichess move (Lichess view)</td></tr>
             <tr><td>45% on a teal or grey arrow</td><td>How often it's played (masters on teal, Lichess on grey)</td></tr>
             <tr><td>×2 on an arrow</td><td>An error you made twice in your last 10 tries</td></tr>
-            <tr><td>75% on the outlined arrow</td><td>Errors: how often you played your study's move right first time (last 10 tries; not move accuracy)</td></tr>
+            <tr><td>75% on the outlined arrow</td><td>Errors: the position's move accuracy</td></tr>
             <tr><td>White outline on teal or grey</td><td>Also in your study</td></tr>
-            <tr><td class="error-violet">Violet</td><td>An error: any move you tried that isn't your study's main move</td></tr>
+            <tr><td class="error-violet">Violet</td><td>An error: any move you tried that isn't one of your study's moves</td></tr>
             <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
           </table>
         </details>
         <details>
           <summary>Move accuracy</summary>
-          <p>Each try at one of your moves starts at 100%. Each error before the right move costs a penalty, every time you make it (never below 0%):</p>
-          <table class="help-table">
-            <tr><th>Error</th><th>Default</th></tr>
-            <tr><td>Alternative move (unmarked)</td><td>−20%</td></tr>
-            <tr><td>Masters move</td><td>−20%</td></tr>
-            <tr><td>Any other move, or an alternative marked ?!, ? or ??</td><td>−50%</td></tr>
-            <tr><td>Hint, or Show correct move</td><td>−100%</td></tr>
-          </table>
-          <p>A move's accuracy is the average of its last 10 tries, the latest counting most (100%, then 90%, 80% … down to 10%). Moves below 100% get a violet background.</p>
+          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, a move the study marks ?, ?? or ?!, or the hint. Move accuracy is the share right first time over your last 10 tries. Below 100%, a move gets a violet background.</p>
+          <p>Each position has two: with <b>Main lines only</b>, only the main move is right (tries without it where you played one of your alternatives are left out); without it, any of your study's moves. You see the one for the current setting.</p>
           <details>
             <summary>What counts as a try</summary>
             <ul>
               <li>Each of your moves in a line, and the move in a single position.</li>
               <li>With Skip or End practice: the moves answered so far, and the move you're on if you'd already tried something there.</li>
-              <li>Every line through the same point in a chapter shares that move's accuracy. The same position in another chapter, or by another move order, has its own.</li>
-              <li>When your studies are updated, accuracies of moves no longer in them are dropped.</li>
+              <li>Every line through the same position in a chapter shares its accuracy, whichever of your moves you play there. The same position in another chapter, or by another move order, has its own.</li>
+              <li>When your studies are updated, accuracies of positions no longer in them are dropped.</li>
             </ul>
           </details>
         </details>
@@ -778,18 +776,18 @@
           <summary>Spaced repetition</summary>
           <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
-            <li>The four sliders, in the Spaced repetition tile on the Practice page, set how much each counts (not with Reverse sides): <b>Frequency</b> (how often the position is reached on Lichess), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones) and <b>Untried</b>. 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
+            <li>The four sliders, in the Spaced repetition tile on the Practice page, set how much each counts: <b>Frequency</b> (how often opponents on Lichess lead to it), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones) and <b>Untried</b>. 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
             <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely to be tested next, with their position reached, accuracy, when last tested and chance of coming up next.</li>
           </ul>
           <details>
             <summary>How the priority is worked out</summary>
             <p>With every slider at 50%: <b>priority = frequency × need</b>. Each slider raises its part to a power: 0 at 0%, 1 at 50%, 6 at 100%.</p>
             <ul>
-              <li><b>Frequency</b>: 0.2 to 1, by the times the position was reached on Lichess (a line: its final position), on a log scale; 0.6 until its statistics download.</li>
+              <li><b>Frequency</b>: 0.2 to 1, by the shares of the opponent's moves on the way, multiplied (a line: all of them; your own moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale; 0.6 until the statistics download.</li>
               <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
               <li><b>Weakness</b>: 1 + 2 × (1 − accuracy): 1 at 100%, 3 at 0%.</li>
               <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × accuracy</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
-              <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever its move is tried, in a line or on its own, so it can be more recent than any line through it. A line uses its line accuracy (untried moves count as 0%); a position, its move accuracy.</li>
+              <li><b>Last tested</b>: a line counts only when played all the way through, from its start (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its line accuracy (untried positions count as 0%); a position, its move accuracy.</li>
             </ul>
             <table class="help-table">
               <tr><th>Example</th><th>Need</th></tr>
@@ -800,20 +798,16 @@
             </table>
           </details>
         </details>
-        <details>
-          <summary>Reverse sides</summary>
-          <p><b>Reverse sides (not scored)</b>, for Lines: you play the opponent's moves from your studies and the app plays yours. Any reply your study gives is correct, and the line follows it; with Main lines only, just the main reply. Hint gives the main reply. Nothing is recorded, and lines come up by how often they're reached (the sliders aren't used).</p>
-        </details>
       </div>
 
       <div class="card" id="help-studies">
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening; the dot after it shows the side you play. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each with how often it's played, or <b>Errors</b> (your errors at your move here in the last 10 tries, "×2" when made twice, and the correct move with how often you played it right first time). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the top 5 Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
-          <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
+          <li><b>Groups</b>: what you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its own side; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
+          <li>✎ in the Studies page's <b>Groups</b> tile edits the groups (every study and chapter is listed): choose one, tick its chapters (click a chapter's name or tick box), and click a chapter's dot to play it from both sides (half white, half black) or only its own, then <b>Save</b>, <b>Create new</b> (a new group from the ticks; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (or Esc). For All, only Create new and Cancel. Practice waits until you've finished.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are included in backups.</li>
         </ul>
         <details>
@@ -824,7 +818,7 @@
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
-            <li>Your moves with move accuracy below 100% have a violet background. Your alternative moves, and the moves after them, are in italics (they aren't tested).</li>
+            <li>Your moves with move accuracy below 100% have a violet background (moves of the other side too, once you've played it). Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
@@ -955,8 +949,9 @@ async function saveMoveStats(epds = Object.keys(moveStats)) {
 
 let token = store.get('token', null);
 let library = null; // the studies fetched from Lichess: { fetchedAt, username, ratings, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
-// Presets: named sets of chapters, [{ name, chapters: [chapter keys] }], and the name of the one chosen
-// (null for the built-in All: every chapter, worked out each time, not stored).
+// Presets: named sets of chapters, [{ name, chapters: [chapter keys], bothSides: [the chapters among them
+// played from both sides; the others from the chapter's own side] }], and the name of the one chosen
+// (null for the built-in All: every chapter, from its own side, worked out each time, not stored).
 // What's practised is always the chosen preset's chapters (selection, worked out from it: see
 // useChosenPreset). A preset of your own can't be called "All": one that is (e.g. from a backup) becomes
 // "All 2".
@@ -964,10 +959,12 @@ const ALL_PRESET = 'All';
 const checkedPresets = v => {
   const names = new Set([ALL_PRESET.toLowerCase()]);
   return (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.name.trim() && Array.isArray(p.chapters))
-    .map(p => ({ name: p.name.trim().toLowerCase() === ALL_PRESET.toLowerCase() ? `${ALL_PRESET} 2` : p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string') }))
+    .map(p => ({ name: p.name.trim().toLowerCase() === ALL_PRESET.toLowerCase() ? `${ALL_PRESET} 2` : p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string'),
+      bothSides: (Array.isArray(p.bothSides) ? p.bothSides : []).filter(k => typeof k === 'string' && p.chapters.includes(k)) }))
     .filter(p => !names.has(p.name.toLowerCase()) && names.add(p.name.toLowerCase()));
 };
 let selection = new Set(); // the chosen group's (preset's) chapters (keys such as "studyId/chapterId")
+let bothSides = new Set(); // those of them played from both sides
 let presets = checkedPresets(store.get('presets', []));
 let chosenPresetName = store.get('chosenPreset', null);
 // The studies (by id) and chapters (by key, "studyId/chapterId") hidden from the Studies page's list. Only
@@ -977,17 +974,29 @@ let hidden = new Set(store.get('hidden', null) ?? store.get('hiddenStudies', [])
 const saveHidden = () => { store.set('hidden', [...hidden]); store.remove('hiddenStudies'); };
 
 // Your history (see Move results and grading):
-//   moves: move key (a move of yours in a chapter) -> its last 10 attempts, oldest first, each
-//          { tried: what you did, in order (moves as SAN, "hint", "show"), at: when (null if unknown) }
-//   lines: line key -> the last 10 times it was played from move 1 to the end, oldest first
-// Only these facts are stored. In memory each attempt also has its points (0–10), worked out from
-// what was tried with the current penalties and data (see rescoreHistory).
-const emptyHistory = () => ({ moves: {}, lines: {} });
-const validHistory = h => !!h && typeof h === 'object' && !!h.moves && typeof h.moves === 'object' && !!h.lines && typeof h.lines === 'object'
-  && Object.values(h.moves).every(Array.isArray) && Object.values(h.lines).every(Array.isArray);
-let history = validHistory(store.get('history')) ? store.get('history') : emptyHistory();
+//   positions: position key (a position in a chapter where it's your move: its tree node's key) -> its
+//          last 10 attempts, oldest first, each { tried: what you did, in order (moves as SAN, "hint",
+//          "show"), at: when (null if unknown), main: whether Main lines only was ticked }
+//   lines: line key -> the last 10 times it was played from its start to the end, oldest first
+// Whether an attempt was right is worked out from what was tried (see firstTryRight). (Until 6 November
+// 2026 attempts were kept by your move, under "moves", and scored with penalties; checkedHistory moves
+// them to their positions, as made with Main lines only, since only the main move counted then.)
+const emptyHistory = () => ({ positions: {}, lines: {} });
+const isAttemptList = v => !!v && typeof v === 'object' && Object.values(v).every(Array.isArray);
+function checkedHistory(h) {
+  if (!h || typeof h !== 'object' || !isAttemptList(h.lines)) return null;
+  if (isAttemptList(h.positions)) return { positions: h.positions, lines: h.lines };
+  if (!isAttemptList(h.moves)) return null;
+  const positions = {};
+  for (const [key, attempts] of Object.entries(h.moves)) {
+    const [chapter, path = ''] = key.split('|');
+    positions[`${chapter}|${path.split(' ').slice(0, -1).join(' ')}`] = attempts.map(({ tried, at }) => ({ tried, at, main: true }));
+  }
+  return { positions, lines: h.lines };
+}
+let history = checkedHistory(store.get('history')) ?? emptyHistory();
 const storedHistory = () => ({
-  moves: Object.fromEntries(Object.entries(history.moves).map(([key, attempts]) => [key, attempts.map(({ tried, at }) => ({ tried, at }))])),
+  positions: Object.fromEntries(Object.entries(history.positions).map(([key, attempts]) => [key, attempts.map(({ tried, at, main }) => ({ tried, at, main }))])),
   lines: history.lines,
 });
 const saveHistory = () => store.set('history', storedHistory());
@@ -1005,17 +1014,15 @@ const SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'corresp
 const ARROW_VIEWS = ['study', 'masters', 'lichess', 'errors']; // the Studies page's switch
 
 // Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
-// November 2026; they're fixed now, see ERROR_PENALTIES, and a saved setting is ignored.)
+// November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
 const DEFAULT_SETTINGS = {
   sounds: false,
   games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
-  // The Practice page: lines or positions; main lines only, for each; reverse sides (lines only: you
-  // play the opponent's moves, not scored); and the four spaced-repetition sliders (0–100, shared; see
-  // Spaced repetition).
+  // The Practice page: lines or positions; main lines only, for each; and the four spaced-repetition
+  // sliders (0–100, shared; see Spaced repetition).
   practice: {
     kind: 'lines',
     mainLinesOnly: { lines: false, positions: false },
-    reversed: false,
     weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50 },
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
@@ -1035,7 +1042,6 @@ function checkedSettings(saved) {
     practice: {
       kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
       mainLinesOnly: valuesOf(dp.mainLinesOnly, p.mainLinesOnly, x => typeof x === 'boolean'),
-      reversed: typeof p.reversed === 'boolean' ? p.reversed : dp.reversed,
       weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
@@ -1319,15 +1325,14 @@ function chooseDefaultGames() {
   saveSettings();
 }
 
-// Puts studies just fetched in place of the stored ones: saved, and your stats for moves no longer
-// in them dropped; the tries' points worked out again (a backup restored before them has none yet).
+// Puts studies just fetched in place of the stored ones: saved, and your stats for positions no longer
+// in them dropped.
 async function useStudies(fetched) {
   library = fetched;
   chooseDefaultGames();
   await saveLibrary();
   forgetParsedChapters();
   pruneAfterRefresh();
-  rescoreHistory();
 }
 
 // Fetching your studies when there are none yet (connecting), with "Fetching…"
@@ -1389,11 +1394,11 @@ function refreshPage() {
 function pruneAfterRefresh() {
   const chapters = allChapters();
   const chapterKeys = new Set(chapters.map(c => c.key));
-  const moveKeys = new Set(chapters.flatMap(ch => yourMoves(ch).map(m => m.key)));
+  const positionKeys = new Set(chapters.flatMap(ch => { const p = parseChapter(ch); return p.error ? [] : [p.root, ...allMoveNodes(ch)].map(n => n.key); }));
   hidden = new Set([...hidden].filter(id => chapterKeys.has(id) || library.studies.some(s => s.id === id)));
   saveHidden();
-  const lineKeys = new Set(chapters.flatMap(ch => chapterLines(ch).map(l => l.key)));
-  history.moves = Object.fromEntries(Object.entries(history.moves).filter(([k]) => moveKeys.has(k)));
+  const lineKeys = new Set(chapters.flatMap(ch => ['white', 'black'].flatMap(side => chapterLines(ch, side).map(l => l.key))));
+  history.positions = Object.fromEntries(Object.entries(history.positions).filter(([k]) => positionKeys.has(k)));
   history.lines = Object.fromEntries(Object.entries(history.lines).filter(([k]) => lineKeys.has(k)));
   saveHistory();
   useChosenPreset(); // its chapters still on Lichess
@@ -1471,7 +1476,7 @@ const chapterByKey = key => allChapters().find(c => c.key === key);
 const studyOfChapter = ch => library.studies.find(s => s.chapters.includes(ch));
 const chapterTitle = ch => `${studyOfChapter(ch).name} · ${ch.name}`; // "My repertoire · Italian"
 const parsedChapters = new Map();   // chapter key -> { game, yourColor, intro, root } or { error } (see parseChapter)
-const linesByChapter = new Map(); // chapter key -> lines
+const linesByChapter = new Map(); // chapter key and side ("studyId/chapterId white") -> lines
 function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear(); }
 
 // A chapter is parsed once into a tree of moves. The root holds the starting position; every move
@@ -1480,14 +1485,10 @@ function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear()
 //   study's own arrows and circles after it, as chessground shapes; the root's too), nags,
 //   epdBefore, position (after the move: a chessops position), fen and epd (of that position),
 //   parent, children (the study's continuations, main one first), path (the SANs up to and
-//   including this move), key (the chapter key and the path, "studyId/chapterId|e4 e5 Nf3": a move
-//   of yours is recorded under it, a line under its last move's, and a branch point under its own;
-//   the root's ends in "|"), variationIndex (0 for the main continuation, 1, 2 … for the others),
-//   untested (it's an alternative at your move, or follows one: never practiced),
-//   isYours (your move, on a practiced path),
-//   alternatives (at your moves: the study's other moves there, by SAN; each is a move node, whose
-//     first child is the opponent's reply in that variation),
-//   replies (at the opponent's moves where the study gives several: all of them, as move nodes).
+//   including this move), key (the chapter key and the path, "studyId/chapterId|e4 e5 Nf3": your
+//   attempts in the position after it are recorded under it, a line under its last move's; the
+//   root's ends in "|"), variationIndex (0 for the main continuation, 1, 2 … for the others).
+// Which moves are yours depends on the side played (a chapter can be played from both sides).
 function parseChapter(ch) {
   if (parsedChapters.has(ch.key)) return parsedChapters.get(ch.key);
   let result;
@@ -1499,18 +1500,17 @@ function parseChapter(ch) {
   else {
     const o = (game.headers.get('Orientation') || 'white').toLowerCase();
     const yourColor = o === 'black' ? 'black' : 'white';
-    result = { game, yourColor, intro: commentText(game.comments), root: moveTree(ch.key, game, start.value, yourColor) };
+    result = { game, yourColor, intro: commentText(game.comments), root: moveTree(ch.key, game, start.value) };
   }
   parsedChapters.set(ch.key, result);
   return result;
 }
 
-function moveTree(chapterKey, game, start, yourColor) {
+function moveTree(chapterKey, game, start) {
   const fen = fenOf(start);
   const root = { position: start, fen, epd: epdOf(fen), path: [], key: chapterKey + '|', children: [], drawn: drawnShapes(game.comments) };
   const grow = (pgnNode, parent) => {
     const before = parent.position;
-    const yourTurn = before.turn === yourColor;
     pgnNode.children.forEach((child, variationIndex) => {
       const move = san.parseSan(before, child.data.san);
       if (!move) return;
@@ -1518,55 +1518,69 @@ function moveTree(chapterKey, game, start, yourColor) {
       position.play(move);
       const moveSan = san.makeSan(before, move);
       const fen = fenOf(position);
-      const untested = !!parent.untested || (yourTurn && variationIndex > 0);
       const node = {
         san: moveSan, uci: makeUci(move), moveNumber: before.fullmoves, color: before.turn,
         notes: moveNotes(child.data), drawn: drawnShapes(child.data.comments), nags: child.data.nags || [], epdBefore: parent.epd,
         position, fen, epd: epdOf(fen), parent, children: [], path: [...parent.path, moveSan], key: `${chapterKey}|${[...parent.path, moveSan].join(' ')}`,
-        variationIndex, untested, isYours: yourTurn && !untested,
+        variationIndex,
       };
       parent.children.push(node);
       grow(child, node);
     });
-    const [main, ...others] = parent.children;
-    if (yourTurn && main?.variationIndex === 0 && !main.untested && others.length) {
-      main.alternatives = Object.fromEntries(others.map(n => [n.san, n]));
-    }
-    if (!yourTurn && parent.children.length > 1) for (const n of parent.children) n.replies = parent.children;
   };
   grow(game.moves, root);
   return root;
 }
 
-// Whose turn it is after a move node (or at the root).
-const yourTurnAfter = (node, yourColor) => node.position.turn === yourColor;
+// Your study's moves in a position (a node) where it's your move: its main move and its unmarked
+// alternatives (a move the study marks ?, ?? or ?! isn't one: playing it is an error), or with Main
+// lines only, just the main move.
+const isMarkedAlternative = n => n.variationIndex > 0 && isMistake(n);
+const choicesAt = (node, mainOnly = false) => mainOnly ? node.children.slice(0, 1) : node.children.filter(c => !isMarkedAlternative(c));
 
-// The practiced continuations from a node: at your turn only the study's main move, at the
-// opponent's every reply the study gives.
-const practicedChildren = (node, yourColor) =>
-  yourTurnAfter(node, yourColor) ? node.children.filter(c => c.variationIndex === 0) : node.children;
+// Whether a move is practised when playing side: not after (or as) one of that side's marked
+// alternatives.
+function practisedAs(m, side) {
+  for (let n = m; n.parent; n = n.parent) if (n.color === side && isMarkedAlternative(n)) return false;
+  return true;
+}
 
-// All lines in a chapter: the main move at your turns, every variation at the opponent's. Each
-// line: { key, chapterKey, yourColor, root, moves (move nodes), isMainLine (every opponent move
-// taken is the study's main one) }. Lines are always practiced to their end.
-function chapterLines(ch) {
-  if (linesByChapter.has(ch.key)) return linesByChapter.get(ch.key);
+// The sides a chapter is practised from: its own side, or both if its group says so.
+const sidesOf = ch => { const own = parseChapter(ch).yourColor; return bothSides.has(ch.key) ? [own, opposite(own)] : [own]; };
+const opposite = color => color === 'white' ? 'black' : 'white';
+
+// A chapter's lines when you play side (the chapter's own side by default): at your turns each of your
+// study's moves (see choicesAt), at the opponent's every move the study gives. Each line: { key,
+// chapterKey, yourColor (the side you play), root, moves (move nodes), isMainLine (every move on it
+// is the study's main one), start (where you take over: after your last move on it that isn't a main
+// move, so that habit doesn't keep the lines behind your other choices untried; the app sets up the
+// moves before it), testable (it has a move of yours from its start: a line that ends with one of your
+// other choices has none, and is only there to follow when you play that choice) }. A line's key is its
+// last move's, with the side added for the chapter's other side ("… Nf3 (black)"). Lines are always
+// practiced to their end.
+function chapterLines(ch, side = parseChapter(ch).yourColor) {
+  const cacheKey = `${ch.key} ${side}`;
+  if (linesByChapter.has(cacheKey)) return linesByChapter.get(cacheKey);
   const parsed = parseChapter(ch);
   const lines = [];
-  const walk = (node, moves, isMainLine) => {
-    const next = practicedChildren(node, parsed.yourColor);
+  const walk = (node, moves) => {
+    const next = node.position.turn === side ? choicesAt(node) : node.children;
     if (!next.length) {
-      if (!moves.some(m => m.isYours) || lines.length >= MAX_LINES_PER_CHAPTER) return;
-      lines.push({ key: node.key, chapterKey: ch.key, yourColor: parsed.yourColor, root: parsed.root, moves, isMainLine });
+      const start = moves.reduce((s, m, i) => m.color === side && m.variationIndex > 0 ? i + 1 : s, 0);
+      if (!moves.some(m => m.color === side) || lines.length >= MAX_LINES_PER_CHAPTER) return;
+      lines.push({ key: side === parsed.yourColor ? node.key : `${node.key} (${side})`, chapterKey: ch.key, yourColor: side, root: parsed.root,
+        moves, isMainLine: moves.every(m => m.variationIndex === 0), start, testable: moves.slice(start).some(m => m.color === side) });
       return;
     }
-    const yourTurn = yourTurnAfter(node, parsed.yourColor);
-    next.forEach((child, i) => walk(child, [...moves, child], isMainLine && (yourTurn || i === 0)));
+    for (const child of next) walk(child, [...moves, child]);
   };
-  if (!parsed.error) walk(parsed.root, [], true);
-  linesByChapter.set(ch.key, lines);
+  if (!parsed.error) walk(parsed.root, []);
+  linesByChapter.set(cacheKey, lines);
   return lines;
 }
+
+// The lines a chapter is practised with, from each of its sides.
+const practisedLines = ch => sidesOf(ch).flatMap(side => chapterLines(ch, side).filter(l => l.testable));
 
 // Every move node in a chapter's tree, in order (each move, then everything after it).
 function allMoveNodes(ch) {
@@ -1577,10 +1591,8 @@ function allMoveNodes(ch) {
   return out;
 }
 
-// Your practiced moves in a chapter, each once (however many lines pass through it).
-const yourMoves = ch => allMoveNodes(ch).filter(m => m.isYours);
-
-const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.isYours ? [i] : []);
+// The moves of yours in a line from where you take over (their indexes).
+const yourMoveIndexes = line => line.moves.flatMap((m, i) => i >= line.start && m.color === line.yourColor ? [i] : []);
 
 // A position's name, following the usual convention in chess books: the deepest opening name that
 // applies (Lichess's name for the position, or for the last named position before it), then the
@@ -1686,20 +1698,37 @@ window.addEventListener('scroll', hideCommentPopup, { passive: true });
 
 const HISTORY_LENGTH = 10;
 
-const attemptsAt = m => history.moves[m.key] || [];
+// A position's attempts (a node: the root, or the move before your move).
+const attemptsAt = node => history.positions[node.key] || [];
 
-// When a move was last tried, and when a line was last played through (null if unknown or never).
-const lastTriedAt = key => history.moves[key]?.at(-1)?.at ?? null;
+// When a position was last tried, and when a line was last played through (null if unknown or never).
+const lastTriedAt = key => history.positions[key]?.at(-1)?.at ?? null;
 const lastPlayedAt = key => history.lines[key]?.at(-1) ?? null;
 
-// A move's score: the weighted average points of its last 10 attempts, as a fraction of 10 (0–1).
-// The most recent attempt counts 100%, the one before 90%, then 80% … down to 10% for the 10th.
-function scoreOf(attempts) {
-  if (!attempts.length) return null;
-  let sum = 0, weights = 0;
-  attempts.forEach((a, k) => { const w = 1 - (attempts.length - 1 - k) / 10; sum += w * a.points; weights += w; }); // oldest first
-  return sum / weights / 10;
+// Whether Main lines only is ticked for what's practised (or, between sessions, the kind chosen).
+const mainOnlyNow = () => session ? session.mainOnly : settings.practice.mainLinesOnly[settings.practice.kind];
+
+// An attempt is right if its first move is one of your study's moves there (see choicesAt): with Main
+// lines only (mainOnly), only the main move. Each position has these two move accuracies, from the same
+// attempts; with Main lines only, attempts made without it whose first move was one of your
+// alternatives are left out (you were free to choose it). Returns true, false, or null (left out).
+function firstTryRight(a, node, mainOnly) {
+  const first = a.tried[0], is = c => !!first && withoutCheckMarks(first) === withoutCheckMarks(c.san);
+  if (choicesAt(node, true).some(is)) return true;
+  if (choicesAt(node).some(is)) return mainOnly ? (a.main ? false : null) : true;
+  return false;
 }
+
+// A position's move accuracy: the share of its last 10 attempts right first time (0–1), and how many
+// attempts count; null when none.
+function accuracyAt(node, mainOnly = mainOnlyNow()) {
+  const results = attemptsAt(node).map(a => firstTryRight(a, node, mainOnly)).filter(r => r != null);
+  return results.length ? { share: results.filter(Boolean).length / results.length, tries: results.length } : null;
+}
+const shareAt = (node, mainOnly) => accuracyAt(node, mainOnly)?.share ?? null;
+const accuracyText = a => `${percent(a.share)}% move accuracy (last ${plural(a.tries, 'try', 'tries')})`;
+// Whether an attempt in practice was right first time: one try (the attempt ends with a correct move).
+const rightThisTime = a => a.tried.length === 1 && a.tried[0] !== 'hint' && a.tried[0] !== 'show';
 
 const MASTERS_TOP = 3, MASTERS_SHARE = 0.1;
 
@@ -1711,62 +1740,27 @@ function isMasterMove(epd, s) {
   return moveRank(st, s) <= MASTERS_TOP;
 }
 
-// Each attempt at one of your moves starts at 10 points (100%), and each thing tried before the
-// correct move costs its penalty (a fixed percentage, ERROR_PENALTIES; 10% = 1 point): an
-// unmarked alternative from the study, or a masters move (once, even if it's both: the alternative's
-// penalty); an error (an alternative marked ?, ?? or ?!, or any other move); the hint and Show
-// correct move (each the hint's penalty). Never below 0. Repeats cost each time.
-const ERROR_PENALTIES = { alternative: 20, masters: 20, error: 50, hint: 100 }; // percentages (fixed)
-function pointsFor(tried, yourMove) {
-  const penalty = kind => ERROR_PENALTIES[kind] / 10; // a percentage, in points
-  let points = 10;
-  for (const step of tried) {
-    if (step === 'hint' || step === 'show') { points -= penalty('hint'); continue; }
-    if (withoutCheckMarks(step) === withoutCheckMarks(yourMove.san)) break; // the correct move ends the attempt
-    const alt = yourMove.alternatives?.[step];
-    if (isMistake(alt)) points -= penalty('error'); // the study's marking wins
-    else if (alt) points -= penalty('alternative');
-    else if (isMasterMove(yourMove.epdBefore, step)) points -= penalty('masters');
-    else points -= penalty('error');
-  }
-  return Math.max(0, points);
-}
-
-// When the app opens (and after a restore or a change of penalties), every attempt's points are
-// worked out from what was tried, with the current rules and data (e.g. masters statistics
-// downloaded since). Points aren't stored.
-function rescoreHistory() {
-  if (!library) return;
-  const moves = new Map(allChapters().flatMap(ch => yourMoves(ch).map(m => [m.key, m])));
-  for (const [key, attempts] of Object.entries(history.moves)) {
-    const move = moves.get(key);
-    if (move) for (const a of attempts) a.points = pointsFor(a.tried, move);
-  }
-}
-
-// Saves this line's attempts into your history (not with Reverse sides, which isn't recorded).
+// Saves this line's attempts into your history, each under its position.
 function saveAttempts() {
-  if (session.reversed) return;
-  for (const { index, tried, points, at } of practice.attempts) {
-    const key = practice.line.moves[index].key;
-    history.moves[key] = [...history.moves[key] || [], { tried, points, at }].slice(-HISTORY_LENGTH);
+  for (const { index, tried, main, at } of practice.attempts) {
+    const key = practice.line.moves[index].parent.key;
+    history.positions[key] = [...history.positions[key] || [], { tried, at, main }].slice(-HISTORY_LENGTH);
   }
   saveHistory();
 }
 
-// The errors in a list of attempts (everything tried other than the correct move: moves, "hint" and
-// "show"), with how often each was made, in the order first made: [['Bc4', 2], ['hint', 1]].
+// The errors in a list of attempts (everything tried other than the correct moves, SANs: moves, "hint"
+// and "show"), with how often each was made, in the order first made: [['Bc4', 2], ['hint', 1]].
 function errorCounts(attempts, correct) {
-  const counts = new Map();
+  const counts = new Map(), ok = new Set(correct.map(withoutCheckMarks));
   for (const a of attempts) {
-    for (const x of a.tried) if (withoutCheckMarks(x) !== withoutCheckMarks(correct)) counts.set(x, (counts.get(x) || 0) + 1);
+    for (const x of a.tried) if (!ok.has(withoutCheckMarks(x))) counts.set(x, (counts.get(x) || 0) + 1);
   }
   return [...counts];
 }
 
-// One attempt, as recorded when the move is played (or the line is ended on it); with Reverse sides,
-// unscored (points null).
-const newAttempt = (expected, index) => ({ index, tried: practice.tried, points: session.reversed ? null : pointsFor(practice.tried, expected), at: Date.now() });
+// One attempt, as recorded when the move is played (or the line is ended on it).
+const newAttempt = index => ({ index, tried: practice.tried, main: session.mainOnly, at: Date.now() });
 
 const percent = s => Math.floor(s * 100 + 1e-9); // floor, so e.g. 99.5% shows 99%, not 100%
 
@@ -1784,7 +1778,7 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // Only groups decide what's practised: the group chosen on the Practice page (the Studies to practice
 // tile); the tile is hidden during practice, since a session's lines are chosen when it starts, and
 // Start practice waits while a group is being edited.
-let editing = null; // while editing a group: { preset, ticks (a Set of chapter keys) }
+let editing = null; // while editing a group: { preset, ticks (a Set of chapter keys), both (those played from both sides) }
 
 // The chapters being ticked (while editing) or practised.
 const ticked = () => editing ? editing.ticks : selection;
@@ -1854,6 +1848,18 @@ function chapterLink(c, k) {
     showHidden ? hideButton(c.key, isHidden, 'chapter') : null);
 }
 
+// Whether a move is shown as one of yours (its accuracy, the "your move" hover board): a move of the
+// chapter's own side (own) that's practised, or any move whose position you've tried (e.g. played from
+// the other side).
+const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
+
+// Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
+// its chapter's side, from the node's key), as counted now (Main lines only, see mainOnlyNow).
+function yourMovesAt(node) {
+  const own = parseChapter(chapterByKey(node.key.split('|')[0])).yourColor;
+  return node.children.some(c => isShownAsYours(c, own)) ? choicesAt(node, mainOnlyNow()) : [];
+}
+
 // A ▸ / ▾ triangle that shows or hides something (titles: [when closed, when open]).
 const triangle = (open, [showTitle, hideTitle], onClick) =>
   element('button', { class: 'toggle', title: open ? hideTitle : showTitle, 'aria-expanded': String(open), onclick: onClick }, open ? '▾' : '▸');
@@ -1885,21 +1891,29 @@ function studyRow(study, isHidden) {
 }
 
 // A chapter's row while editing (indented under its study's name): its checkbox, its name (a label:
-// clicking it ticks the chapter; the opening on hover), the side you play and "· 5 lines" (or why it has
-// none to practice).
+// clicking it ticks the chapter; the opening on hover), the side you play (a button: the chapter's own
+// side or both sides, a half-white, half-black circle) and "· 5 lines" (or why it has none to practice).
 function chapterRow(ch) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
-  const lines = chapterLines(ch);
+  const both = editing.both.has(ch.key), own = parsed.yourColor;
+  const lines = parsed.error ? [] : [own, ...both ? [opposite(own)] : []].flatMap(side => chapterLines(ch, side).filter(l => l.testable));
+  const sideTitle = both ? `You play both sides. Click: ${own} only` : `You play ${own}. Click: both sides`;
   return element('div', { class: 'row chapter-row' },
     element('span', { class: 'toggle-space' }), // indented under its study
     element('input', { type: 'checkbox', id, checked: ticked().has(ch.key),
       onchange: e => setTicked([ch.key], e.target.checked) }),
-    // The side you play: a small white or black circle right after the chapter name.
     element('span', { class: 'name' }, quickTip(element('label', { for: id }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
-      parsed.error ? null : element('span', { class: 'side-dot ' + parsed.yourColor, title: 'You play ' + parsed.yourColor, 'aria-label': 'you play ' + parsed.yourColor }),
+      parsed.error ? null : element('button', { class: 'side-btn', title: sideTitle, 'aria-label': sideTitle, 'aria-pressed': String(both), onclick: () => setBothSides(ch.key, !both) },
+        element('span', { class: 'side-dot ' + (both ? 'both' : own) })),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : !lines.length ? element('span', { class: 'side' }, 'no lines to practice') : null);
+}
+
+// A chapter played from both sides, or only its own, in the group being edited.
+function setBothSides(key, on) {
+  on ? editing.both.add(key) : editing.both.delete(key);
+  renderStudies();
 }
 
 // The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
@@ -1913,8 +1927,8 @@ function openingName(parsed) {
 
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
-// Your moves below 100% move accuracy are violet; side variations at your moves (never practiced)
-// are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
+// Your moves below 100% move accuracy are violet (each side's moves with its own accuracy: see
+// isShownAsYours); moves after (or as) one of your marked alternatives (never practised) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
 // shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted).
 // Branches open and close in openSet, and the tree is drawn again by redraw.
 function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
@@ -1924,7 +1938,7 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   // up to and including it.
   const moveEls = (node, path, showNo) => {
     const moves = [...path, node];
-    const cls = node.isYours ? scoreClass(scoreOf(attemptsAt(node))) : node.untested ? 'untested-move' : 'opp';
+    const cls = isShownAsYours(node, parsed.yourColor) ? scoreClass(shareAt(node.parent)) : !practisedAs(node, parsed.yourColor) ? 'untested-move' : 'opp';
     const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
     const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
     if (pick) { // hovering shows the move on the small hover board; clicking shows it on the big one
@@ -2022,12 +2036,17 @@ function chaptersOf(preset) {
   return preset.chapters.filter(k => existing.has(k));
 }
 
-// The chosen preset: one of yours, or All (every chapter, worked out each time).
+// The chosen preset: one of yours, or All (every chapter from its own side, worked out each time).
 const chosenPreset = () => presets.find(p => p.name === chosenPresetName)
-  || { name: ALL_PRESET, builtIn: true, chapters: allChapters().map(c => c.key) };
+  || { name: ALL_PRESET, builtIn: true, chapters: allChapters().map(c => c.key), bothSides: [] };
 
-// What's practised: the chosen preset's chapters (after a change of preset or studies).
-function useChosenPreset() { selection = new Set(chaptersOf(chosenPreset())); }
+// What's practised: the chosen preset's chapters, and from which sides (after a change of preset or
+// studies).
+function useChosenPreset() {
+  const preset = chosenPreset();
+  selection = new Set(chaptersOf(preset));
+  bothSides = new Set(preset.bothSides.filter(k => selection.has(k)));
+}
 
 // The groups' drop-downs: the Practice page's (what's practised; greyed out while a group is being
 // edited) and, while editing, the Studies page's (the group being edited); and the editing buttons.
@@ -2060,7 +2079,7 @@ $('preset-select').addEventListener('change', e => {
 // ✎: the chosen group's chapters, ticked, to change; Cancel (or Esc) leaves them as they were. Another
 // group from the drop-down is chosen (as on the Practice page), and its chapters ticked instead.
 function startEditing() {
-  editing = { preset: chosenPreset(), ticks: new Set(selection) };
+  editing = { preset: chosenPreset(), ticks: new Set(selection), both: new Set(bothSides) };
   hideNameForm();
   renderStudies();
 }
@@ -2084,6 +2103,7 @@ $('preset-save-btn').addEventListener('click', () => {
   const preset = presets.find(p => p === editing?.preset);
   if (!preset) return;
   preset.chapters = [...editing.ticks];
+  preset.bothSides = [...editing.both].filter(k => editing.ticks.has(k));
   savePresets();
   useChosenPreset();
   stopEditing();
@@ -2133,7 +2153,7 @@ $('preset-name-form').addEventListener('submit', e => {
     return;
   }
   if (renaming) { renaming.name = name; chosenPresetName = name; savePresets(); hideNameForm(); renderPresets(); return; } // still editing
-  presets.push({ name, chapters: [...editing.ticks] });
+  presets.push({ name, chapters: [...editing.ticks], bothSides: [...editing.both].filter(k => editing.ticks.has(k)) });
   chosenPresetName = name;
   savePresets();
   useChosenPreset();
@@ -2229,24 +2249,14 @@ function reviewArrows(node) {
   }), ...glyphBadge(node)];
 }
 
-// Your move to play in a position (the study's main move at your turn, on a practiced path), if there is one.
-const yourMoveAt = node => node.children.find(c => c.isYours);
-
-// Errors: at your turn, the errors of your last 10 tries at the move there (violet), each made more than
-// once with a badge for how often ("×2"), and the correct move, with a badge for how often it was right
-// first time ("75%", once tested); nothing at the opponent's turn.
+// Errors: in a position of yours, the errors of your last 10 tries there (violet), each made more than
+// once with a badge for how often ("×2"), and your study's moves (the main one first, with its move
+// accuracy in a badge, "75%", once tested); nothing in the opponent's positions.
 function errorArrows(node) {
-  const m = yourMoveAt(node);
-  if (!m) return [];
-  const attempts = attemptsAt(m), first = rightFirstTime(attempts, m.san);
-  return answerArrows(node.position, m, errorCounts(attempts, m.san), { counted: true, correctLabel: first == null ? null : `${first}%` });
-}
-
-// The percentage of tries (of the last 10) in which the correct move was played first, with no error or
-// hint before it (not move accuracy: no penalties, no weighting); null when never tested.
-function rightFirstTime(attempts, correct) {
-  if (!attempts.length) return null;
-  return percent(attempts.filter(a => a.tried[0] && withoutCheckMarks(a.tried[0]) === withoutCheckMarks(correct)).length / attempts.length);
+  const correct = yourMovesAt(node);
+  if (!correct.length) return [];
+  const accuracy = accuracyAt(node);
+  return answerArrows(node.position, correct, errorCounts(attemptsAt(node), correct.map(c => c.san)), { counted: true, correctLabel: accuracy && `${percent(accuracy.share)}%` });
 }
 
 // The top moves in a position, for the Masters view (the masters moves, see isMasterMove; teal) or the
@@ -2271,22 +2281,21 @@ function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view
 
 // What hovering over a square says about the arrows pointing to it, one line per move: with Masters or
 // Lichess, its rank and share there, e.g. "♘f3 · #3 masters move (12%)", "♘f3 · #4 Lichess move (8%)"; with Errors,
-// as in the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)", and for the correct move how
-// often it was right first time and when last tested.
+// as in the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)", and for your study's moves the
+// position's move accuracy and when it was last tested.
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
   if (view === 'masters') return topMoves(node, view).filter(t => to(t.move)).map(t => `${withFigurines(t.san)} · ${rankAndShareText(masterGamesAt(node.epd), t.san, 'masters', '')}`);
   if (view === 'lichess') return topMoves(node, view).filter(t => to(t.move)).map(t => `${withFigurines(t.san)} · ${rankAndShareText(lichessGamesAt(node.epd), t.san, 'Lichess', '')}`);
-  const m = settings.review.view === 'errors' && yourMoveAt(node);
-  if (!m) return [];
-  const attempts = attemptsAt(m), first = rightFirstTime(attempts, m.san);
-  const errors = errorCounts(attempts, m.san).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
-    .map(([x, n]) => errorLabel(m, x).replace(/ \(|$/, n > 1 ? ` ×${n}$&` : '$&'));
-  // The correct move: "♘f3 · right first time 75% (last 4 tries) · last tested 3 days ago".
-  const last = lastTriedAt(m.key), days = last && daysAgo(last);
-  const correct = first != null && to(parseUci(m.uci)) ? [[withFigurines(m.san), `right first time ${first}% (last ${plural(attempts.length, 'try', 'tries')})`,
-    last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')] : [];
-  return [...correct, ...errors];
+  const correct = settings.review.view === 'errors' ? yourMovesAt(node) : [];
+  if (!correct.length) return [];
+  const errors = errorCounts(attemptsAt(node), correct.map(c => c.san)).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
+    .map(([x, n]) => errorLabel(correct[0], x).replace(/ \(|$/, n > 1 ? ` ×${n}$&` : '$&'));
+  // Your study's moves: "♘f3 · 75% move accuracy (last 4 tries) · last tested 3 days ago".
+  const accuracy = accuracyAt(node), last = lastTriedAt(node.key), days = last && daysAgo(last);
+  const yours = accuracy ? correct.filter(c => to(parseUci(c.uci))).map(c => [withFigurines(c.san), accuracyText(accuracy),
+    last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')) : [];
+  return [...yours, ...errors];
 }
 
 // Hovering over the square an arrow points to (Masters, Lichess and Errors) shows squareTipLines (mouse only; the
@@ -2365,17 +2374,19 @@ document.addEventListener('keydown', e => {
 // What's practised: all the lines (or positions) of the chosen preset's chapters (Studies to practice), from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of four parts, one per slider:
-//   frequency: 0.2 to 1, by the rated Lichess games reaching the position (a line's final position),
-//     on a log scale up to the most frequent item; 0.6 while its statistics haven't downloaded.
+//   frequency: 0.2 to 1, by how likely your opponents are to lead you there: the product of the shares
+//     (in rated Lichess games) of the opponent's moves on the way (for a line, all of them; your own
+//     moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale from the
+//     least likely item (0.2) to the most likely; 0.6 while statistics are missing.
 //   accuracy (weakness): 1 + 2 × (1 − accuracy): 1 at 100% accuracy, 3 at 0%.
 //   last played (due): days since last tested ÷ the item's interval, kept between 0.1 and 3, or 3
 //     when the last test time isn't known; the interval is 2^(7 × accuracy) days: 1 day at 0%, about
 //     11 days at 50%, 128 days at 100%.
-//   untried: an item never tried (a line none of whose moves have been tried) has no accuracy or
+//   untried: an item never tried (a line none of whose positions have been tried) has no accuracy or
 //     due; it gets 6 in their place.
-// A position's accuracy is its move accuracy, and last tested is when its move was last tried. A
-// line's accuracy is its line accuracy, with untried moves counting as 0%, and last tested is when it
-// was last played through from move 1 to the end.
+// A position's accuracy is its move accuracy (with or without Main lines only, as ticked), and last
+// tested is when it was last tried. A line's accuracy is its line accuracy, with untried positions
+// counting as 0%, and last tested is when it was last played through from its start to the end.
 //
 // Each slider (settings.practice.weights, 0–100, shared by lines and positions) is a power on its
 // part: 0 ignores it, 50 (the default) counts it as it is, 100 raises it to the 6th power, so the
@@ -2389,7 +2400,7 @@ const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
 
 // The four sliders: their names, and what each means (shown when hovering over its name).
 const WEIGHTS = [
-  { key: 'frequency', name: 'Frequency', definition: 'How often the position is reached on Lichess (for a line, its final position). Higher: common ones come up more.' },
+  { key: 'frequency', name: 'Frequency', definition: "How often opponents on Lichess lead to it (your own moves don't count). Higher: common ones come up more." },
   { key: 'accuracy', name: 'Accuracy', definition: 'Move accuracy (line accuracy for a line). Higher: weak ones come up more.' },
   { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
   { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none are left.' },
@@ -2407,46 +2418,62 @@ function weightedPick(items, weight) {
 
 const tickedChapters = () => allChapters().filter(c => selection.has(c.key));
 
-// Whether every opponent move before move i is the study's main move.
-const onMainLines = (line, i) => !line.moves.slice(0, i).some(m => !m.isYours && m.variationIndex !== 0);
+// Whether every move up to and including move i is the study's main move.
+const onMainLines = (line, i) => line.moves.slice(0, i + 1).every(m => m.variationIndex === 0);
 
 // What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked
-// chapters (i is null: played from move 1); for 'positions', every move of yours in them from move 3
-// (FIRST_POSITION_MOVE), once each (i: the move tested as a single position).
+// chapters, from each side practised (i is null: played from its start); for 'positions', every
+// position of yours in them from move 3 (FIRST_POSITION_MOVE), once each (i: the move tested there as a
+// single position).
 const FIRST_POSITION_MOVE = 3;
 function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind]) {
-  const lines = tickedChapters().flatMap(chapterLines);
+  const lines = tickedChapters().flatMap(practisedLines);
   if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
-  const items = new Map(); // move key -> item
-  for (const line of lines) for (const i of yourMoveIndexes(line)) {
-    const key = line.moves[i].key;
-    if (line.moves[i].moveNumber < FIRST_POSITION_MOVE) continue; // your first moves are practiced in lines only
-    if (!items.has(key) && (!mainLinesOnly || onMainLines(line, i))) items.set(key, { line, i });
-  }
+  const items = new Map(); // position key -> item
+  for (const line of lines) line.moves.forEach((m, i) => {
+    if (m.color !== line.yourColor || m.moveNumber < FIRST_POSITION_MOVE) return; // your first moves are practiced in lines only
+    if (!items.has(m.parent.key) && (!mainLinesOnly || onMainLines(line, i))) items.set(m.parent.key, { line, i });
+  });
   return [...items.values()];
 }
 
-function itemAccuracy({ line, i }) {
-  if (i != null) return scoreOf(attemptsAt(line.moves[i]));
-  const scores = yourMoveIndexes(line).map(k => scoreOf(attemptsAt(line.moves[k])));
+function itemAccuracy({ line, i }, mainOnly) {
+  if (i != null) return shareAt(line.moves[i].parent, mainOnly);
+  const scores = yourMoveIndexes(line).map(k => shareAt(line.moves[k].parent, mainOnly));
   return scores.every(s => s == null) ? null : scores.reduce((sum, s) => sum + (s ?? 0), 0) / scores.length;
 }
 
-const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].key) : lastPlayedAt(line.key);
+const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].parent.key) : lastPlayedAt(line.key);
 
 const itemEpd = ({ line, i }) => i != null ? line.moves[i].epdBefore : line.moves[line.moves.length - 1].epd;
 
-// Each item's facts and the parts of its priority: { item, accuracy, lastTested, games (null while
-// its statistics haven't downloaded), frequency, weakness, due, untried }.
-function itemFacts(items, now = Date.now()) {
-  const games = items.map(item => { const stats = lichessGamesAt(itemEpd(item)); return stats ? totalGames(stats) : null; });
-  const top = Math.log1p(Math.max(0, ...games.filter(g => g != null)));
+// How likely your opponents are to lead you to an item, as a log: the sum of the logs of the shares of
+// the opponent's moves on the way (-Infinity if one is never played; null while statistics are missing).
+function logReach({ line, i }) {
+  let sum = 0;
+  for (const m of line.moves.slice(0, i ?? line.moves.length)) {
+    if (m.color === line.yourColor) continue;
+    const stats = lichessGamesAt(m.epdBefore);
+    if (!stats) return null;
+    const n = totalGames(stats);
+    sum += n ? Math.log(gamesWith(stats, m.san) / n) : -Infinity;
+  }
+  return sum;
+}
+
+// Each item's facts and the parts of its priority: { item, accuracy, lastTested, games (the games
+// reaching it, for the Test probabilities table; null while its statistics haven't downloaded),
+// frequency, weakness, due, untried }, with or without Main lines only (mainOnly).
+function itemFacts(items, mainOnly = mainOnlyNow(), now = Date.now()) {
+  const reach = items.map(logReach);
+  const least = Math.min(0, ...reach.filter(r => r != null && r > -Infinity));
   return items.map((item, k) => {
-    const accuracy = itemAccuracy(item), lastTested = itemLastTested(item), g = games[k];
+    const stats = lichessGamesAt(itemEpd(item));
+    const accuracy = itemAccuracy(item, mainOnly), lastTested = itemLastTested(item), r = reach[k];
     const interval = 2 ** (7 * (accuracy ?? 0));
     return {
-      item, accuracy, lastTested, games: g,
-      frequency: g == null ? UNKNOWN_FREQUENCY : top ? 0.2 + 0.8 * Math.log1p(g) / top : 0.2,
+      item, accuracy, lastTested, games: stats ? totalGames(stats) : null,
+      frequency: r == null ? UNKNOWN_FREQUENCY : r === -Infinity ? 0.2 : least < 0 ? 0.2 + 0.8 * (1 - r / least) : 1,
       weakness: 1 + 2 * (1 - (accuracy ?? 0)),
       due: lastTested ? Math.min(3, Math.max(0.1, (now - lastTested) / DAY_MS / interval)) : 3,
       untried: accuracy == null,
@@ -2465,7 +2492,7 @@ function priorityOf(facts, weights = settings.practice.weights) {
   });
 }
 
-const priorities = items => priorityOf(itemFacts(items));
+const priorities = (items, mainOnly) => priorityOf(itemFacts(items, mainOnly));
 
 // ---------- Practice: the board ----------
 
@@ -2499,30 +2526,23 @@ let board = null;
 //   since the user may have moved on).
 let practice = null;
 
-// The moves you play in this line, and their color: your study's moves, or, with Reverse sides
-// (session.reversed), the opponent's.
-const isTested = m => !!m && (session.reversed ? !m.isYours : !!m.isYours);
-const testedColor = () => session.reversed ? opposite(practice.line.yourColor) : practice.line.yourColor;
-const testedIndexes = line => line.moves.flatMap((m, i) => isTested(m) ? [i] : []);
-const opposite = color => color === 'white' ? 'black' : 'white';
+// Whether move i of the line is one you play: your side's, from where you took over (practice.from).
+const isTested = i => i >= practice.from && practice.line.moves[i]?.color === practice.line.yourColor;
+const testedColor = () => practice.line.yourColor;
 
-// The moves that count as correct instead of the line's move m (main first): just m; reversed, any
-// reply the study gives there (one of the chapter's lines continues with it), or with main lines
-// only, the study's main reply.
+// The moves that count as correct instead of the line's move m (its own first): your study's moves
+// there (see choicesAt) that one of the lines being practised continues with.
 function correctMoves(m) {
-  if (!session.reversed) return [m];
-  const replies = m.parent.children.filter(c => lineThrough(c, practice.movesPlayed));
-  return session.reversed.mainLinesOnly ? replies.slice(0, 1) : replies;
+  const i = practice.movesPlayed;
+  return [m, ...choicesAt(m.parent, session.mainOnly).filter(c => c !== m && lineThrough(c, i))];
 }
-// A line of this chapter whose move i is the move node m.
-const lineThrough = (m, i) => m === practice.line.moves[i] ? practice.line : chapterLines(chapterByKey(practice.line.chapterKey)).find(l => l.moves[i] === m);
+// A line of this chapter, from the same side, whose move i is the move node m.
+const lineThrough = (m, i) => m === practice.line.moves[i] ? practice.line
+  : chapterLines(chapterByKey(practice.line.chapterKey), practice.line.yourColor).find(l => l.moves[i] === m);
 
-// The study's other moves that count as alternatives to the correct move m, by SAN: at your moves,
-// its alternatives; reversed with main lines only, the study's other replies (without main lines
-// only, every reply is correct).
-const alternativesAt = m => session?.reversed && !m.isYours
-  ? Object.fromEntries(session.reversed.mainLinesOnly ? m.parent.children.filter(c => c !== m).map(c => [c.san, c]) : [])
-  : m.alternatives;
+// The study's other moves in the position before m, by SAN (each a move node, whose first child is the
+// opponent's reply in that variation).
+const alternativesAt = m => Object.fromEntries(m.parent.children.filter(c => c !== m).map(c => [c.san, c]));
 
 function ensureBoard() {
   if (board) return;
@@ -2564,7 +2584,7 @@ function updateBoard(lastMove) {
     $('practice-status').className = s.cls;
     $('practice-status').replaceChildren(...s.nodes);
   }
-  const yourTurn = isTested(practice.line.moves[practice.movesPlayed]) && !practice.busy;
+  const yourTurn = isTested(practice.movesPlayed) && !practice.busy;
   board.set({
     ...boardPosition(practice.position, lastMove ?? practice.lastMove),
     orientation: testedColor(),
@@ -2601,25 +2621,21 @@ function choosePromotion(color) {
 
 // ---------- Practice: choosing what to practise ----------
 // The Practice page when nothing is in progress: the Lines | Positions switch with its main-lines
-// checkbox (and, for lines, Reverse sides), and Start practice; under it the Studies to practice and
-// Spaced repetition tiles (the sliders, with Show lines, Show positions and Reset). Everything here is
-// kept in settings.practice.
-//
-// Reverse sides (lines only, not scored): you play the opponent's moves from your studies and the app
-// plays yours. Any reply the study gives counts as correct and the line follows it; with main lines
-// only, just the study's main reply (its other replies are alternatives). Lines come up by how often
-// their final position is reached (the sliders aren't used), and nothing is recorded.
+// checkbox, and Start practice; under it the Studies to practice and Spaced repetition tiles (the
+// sliders, with Show lines, Show positions and Reset). Everything here is kept in settings.practice.
+// (Reverse sides, playing the opponent's moves unscored, went on 6 November 2026: a group can have a
+// chapter played from both sides instead.)
 
 // Lines and positions, the two kinds of practice: their words.
 const KINDS = {
   lines: {
     noun: 'line', label: 'Lines', mainLines: 'Main lines only',
-    mainLinesTitle: "Only the opponent's main moves",
+    mainLinesTitle: 'Only main moves, for both sides',
     columns: ['Line', 'End position reached (times)', 'Line accuracy', 'Last tested', 'Chance next'],
   },
   positions: {
     noun: 'position', label: 'Positions', mainLines: 'Positions from main lines only',
-    mainLinesTitle: "Only positions reached by the opponent's main moves",
+    mainLinesTitle: 'Only positions reached by main moves, and only the main move',
     columns: ['Position', 'Position reached (times)', 'Move accuracy', 'Last tested', 'Chance next'],
   },
 };
@@ -2642,14 +2658,11 @@ function showChooser() {
   renderChooser();
 }
 
-// Playing the reversed sides, as chosen: { mainLinesOnly }, or null (always null for positions).
-const reversedSides = () => settings.practice.kind === 'lines' && settings.practice.reversed ? { mainLinesOnly: settings.practice.mainLinesOnly.lines } : null;
-
-// The items a kind of practice would use now (those with any chance of coming up; reversed, the lines
-// with a move of the opponent's), and a note when there are none.
-function practicable(kind, reversed = reversedSides()) {
-  const all = practiceItems(kind).filter(({ line }) => !reversed || line.moves.some(m => !m.isYours));
-  const chances = chancesOf(all, reversed);
+// The items a kind of practice would use now (those with any chance of coming up), and a note when there
+// are none.
+function practicable(kind) {
+  const all = practiceItems(kind);
+  const chances = priorities(all, settings.practice.mainLinesOnly[kind]);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
   return { items, note: !all.length ? `No ${noun}s to practice: select some chapters.`
@@ -2662,8 +2675,6 @@ function renderChooser() {
   $('chooser-main').checked = mainLinesOnly[kind];
   $('chooser-main-text').textContent = k.mainLines;
   $('chooser-main-label').title = k.mainLinesTitle;
-  $('chooser-reversed-label').classList.toggle('hidden', kind !== 'lines');
-  $('chooser-reversed').checked = settings.practice.reversed;
   const { items, note } = practicable(kind);
   $('chooser-start').disabled = !items.length || !!editing;
   $('chooser-note').textContent = editing ? 'Finish editing the group first (Studies page).' : note;
@@ -2684,10 +2695,9 @@ $('srs-toggle').addEventListener('click', () => openSpacedRepetition($('srs-body
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); renderWeights(); };
 
 $('chooser-main').addEventListener('change', e => changePractice(p => { p.mainLinesOnly[p.kind] = e.target.checked; }));
-$('chooser-reversed').addEventListener('change', e => changePractice(p => { p.reversed = e.target.checked; }));
 addSliders($('weight-rows'), 'weight', WEIGHTS, (key, value) => changePractice(p => { p.weights[key] = value; }));
 $('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
-$('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items, reversedSides()));
+$('chooser-start').addEventListener('click', () => startSession(settings.practice.kind, practicable(settings.practice.kind).items));
 for (const kind of Object.keys(KINDS)) {
   $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
   $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // in the Spaced repetition tile
@@ -2705,7 +2715,7 @@ const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
 
 function showProbabilities(kind) {
   const k = KINDS[kind], { mainLinesOnly, weights } = settings.practice;
-  const facts = itemFacts(practiceItems(kind));
+  const facts = itemFacts(practiceItems(kind), mainLinesOnly[kind]);
   const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
   const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
@@ -2718,7 +2728,7 @@ function showProbabilities(kind) {
   $('probabilities-rows').replaceChildren(...rows.map(probabilityRow), ...others.length ? [element('tr', { class: 'muted' },
     element('td', {}, `Other ${k.noun}s to be tested (${others.length})`), element('td'), element('td'), element('td'),
     element('td', { class: 'num' }, `${Math.max(0, 100 - shownPercent).toFixed(1)}%`))] : []);
-  $('probabilities-note').textContent = rows.length ? '' : practicable(kind, null).note;
+  $('probabilities-note').textContent = rows.length ? '' : practicable(kind).note;
   $('probabilities').classList.remove('hidden');
   $('probabilities-close').focus();
 }
@@ -2748,18 +2758,14 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('probab
 // ---------- Practice: playing lines ----------
 
 // What's being practised: { kind: 'lines' or 'positions', items (see practiceItems), previous (the
-// item practised last), reversed (playing the reversed sides: { mainLinesOnly }, or null) }. Null
-// when nothing is.
+// item practised last), mainOnly (Main lines only, as ticked when it started) }. Null when nothing is.
 let session = null;
-
-// Each item's chance of coming up: its priority, or reversed, just its frequency.
-const chancesOf = (items, reversed) => reversed ? itemFacts(items).map(p => p.frequency) : priorities(items);
 
 // Practise lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
-function startSession(kind, items, reversed = null) {
+function startSession(kind, items) {
   if (!items.length) return;
-  session = { kind, items, previous: null, reversed };
+  session = { kind, items, previous: null, mainOnly: settings.practice.mainLinesOnly[kind] };
   showScreen('practice');
   ensureBoard();
   board.redrawAll();
@@ -2767,18 +2773,19 @@ function startSession(kind, items, reversed = null) {
 }
 
 function nextItem() {
-  const { items, previous, reversed } = session;
-  const chances = chancesOf(items, reversed);
+  const { items, previous } = session;
+  const chances = priorities(items, session.mainOnly);
   const choices = items.map((item, k) => ({ item, chance: chances[k] })).filter(c => c.item !== previous);
   const pick = session.previous = choices.length ? weightedPick(choices, c => c.chance).item : items[0];
   startLine(pick.line, pick.i);
 }
 
-// Starts a line from move 1, or with singleAt (the index of one of your moves), tests just that move
-// as a single position.
+// Starts a line from its start (see chapterLines), or with singleAt (the index of one of your moves),
+// tests just that move as a single position.
 function startLine(line, singleAt = null) {
+  const from = singleAt ?? line.start;
   practice = {
-    line, singleAt, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, isOver: false,
+    line, singleAt, from, position: line.root.position.clone(), movesPlayed: 0, tried: [], attempts: [], busy: false, isOver: false,
     lastMove: undefined, shapes: [], viewing: null, savedStatus: null, hintComment: null, bubblePopped: -1, run: {},
   };
   hideBoardNotice(true);
@@ -2790,12 +2797,12 @@ function startLine(line, singleAt = null) {
   hideCommentPopup();
   updateNames();
   setShapes([]);
-  if (singleAt > 0) {
-    // Set up the position before the move instantly (no sounds); the earlier moves appear in
+  if (from > 0) {
+    // Set up the position where you take over instantly (no sounds); the earlier moves appear in
     // the move list, with bubbles for their comments.
-    practice.position = line.moves[singleAt - 1].position.clone();
-    practice.movesPlayed = singleAt;
-    practice.lastMove = squaresOf(line.moves[singleAt - 1]);
+    practice.position = line.moves[from - 1].position.clone();
+    practice.movesPlayed = from;
+    practice.lastMove = squaresOf(line.moves[from - 1]);
   }
   updateBoard();
   advance();
@@ -2812,26 +2819,26 @@ async function pause(ms) {
 // Show correct move; and the last wrong move tried (a marked alternative or a move not in the study).
 const hintStep = () => practice.tried.includes('show') ? 2 : practice.tried.includes('hint') ? 1 : 0;
 function lastWrongMove() {
-  const correct = correctMoves(practice.line.moves[practice.movesPlayed]), alts = alternativesAt(correct[0]);
+  const m = practice.line.moves[practice.movesPlayed], correct = correctMoves(m), alts = alternativesAt(m);
   return practice.tried.filter(x => x !== 'hint' && x !== 'show' && !correct.some(c => c.san === x)
-    && !(alts?.[x] && !isMistake(alts[x]))).pop();
+    && !(alts[x] && !isMarkedAlternative(alts[x]))).pop();
 }
-// Under "Line complete.": "5 of 6 moves correct" (or "No errors.") and "83% line accuracy" (not
-// with Reverse sides, which isn't scored). A move is correct when it was found first time, with no
-// hint; the line accuracy is the average of this line's attempts. (The moves that weren't are
-// highlighted in the move list, with details on hover.)
+// Under "Line complete.": "5 of 6 moves correct" (or "No errors.") and "83% line accuracy". A move is
+// correct when it was right first time (see firstTryRight); the line accuracy is the share of this
+// line's attempts that were. (The moves that weren't are highlighted in the move list, with details on
+// hover.)
 function lineSummary() {
   const attempts = practice.attempts;
-  const correct = attempts.filter(a => a.tried.length === 1).length;
-  const accuracy = attempts.length ? Math.round(attempts.reduce((sum, a) => sum + a.points, 0) / attempts.length * 10) : 100;
+  const correct = attempts.filter(rightThisTime).length;
+  const accuracy = attempts.length ? percent(correct / attempts.length) : 100;
   return [element('div', {}, correct < attempts.length ? `${correct} of ${plural(attempts.length, 'move')} correct` : 'No errors.'),
-    session.reversed ? null : element('div', {}, `${accuracy}% line accuracy`)].filter(Boolean);
+    element('div', {}, `${accuracy}% line accuracy`)];
 }
 
 // Play opponent moves until it's your turn or the line ends.
 async function advance() {
   if (practice.singleAt != null && practice.movesPlayed > practice.singleAt) return endSinglePosition();
-  while (practice.movesPlayed < practice.line.moves.length && !isTested(practice.line.moves[practice.movesPlayed])) {
+  while (practice.movesPlayed < practice.line.moves.length && !isTested(practice.movesPlayed)) {
     practice.busy = true;
     updateBoard();
     setStatus('Opponent to move…');
@@ -2849,7 +2856,7 @@ async function advance() {
 // "Your move", with where it is in a line, e.g. "Your move (3 of 5 in line)".
 function yourMoveText() {
   if (practice.singleAt != null) return 'Your move';
-  const yours = testedIndexes(practice.line);
+  const yours = practice.line.moves.flatMap((m, i) => isTested(i) ? [i] : []);
   return `Your move (${yours.indexOf(practice.movesPlayed) + 1} of ${yours.length} in line)`;
 }
 
@@ -2880,15 +2887,15 @@ async function onYourMove(orig, dest) {
 
   const correct = correctMoves(expected), answer = correct.find(c => c.san === played);
   if (answer) {
-    if (answer !== expected) practice.line = lineThrough(answer, practice.movesPlayed); // reversed: on along the reply played
-    practice.attempts.push(newAttempt(answer, practice.movesPlayed));
+    if (answer !== expected) practice.line = lineThrough(answer, practice.movesPlayed); // on along your other choice
+    practice.attempts.push(newAttempt(practice.movesPlayed));
     playMove(answer);
     setStatus('Correct.'); // status messages are standard grey
     if (await pause(250)) advance();
     return;
   }
   // An error. There's no limit: the correct move is only shown when you ask for it.
-  return rejectMove(errorStatus(correct[0], played));
+  return rejectMove(errorStatus(expected, played));
 }
 
 // Puts a wrong move back, after showing its message for a moment.
@@ -2904,8 +2911,8 @@ async function rejectMove(status) {
 
 // The status after an error, one fact per line:
 //   what the move is, in violet, like every error's arrow: "Not your preferred move"; for one of your
-//     study's alternatives, "Alternative move, not your preferred move", or, for one the study marks
-//     ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from
+//     study's alternatives (with Main lines only), "Alternative move, not your preferred move", or, for
+//     one the study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from
 //     that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
 //   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; teal),
 //     otherwise "Not a masters move" (violet);
@@ -2914,7 +2921,7 @@ async function rejectMove(status) {
 // The percentages are the move's share of the games there, as on the hover boards. A line is left
 // out while its statistics haven't downloaded.
 function errorStatus(expected, played) {
-  const epd = expected.epdBefore, alt = alternativesAt(expected)?.[played], marked = isMistake(alt);
+  const epd = expected.epdBefore, alt = alternativesAt(expected)[played], marked = !!alt && isMarkedAlternative(alt);
   const masters = masterGamesAt(epd), lichess = lichessGamesAt(epd);
   const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
   const line = (text, color) => element('div', { class: 'error-' + color }, text);
@@ -2929,8 +2936,8 @@ function errorStatus(expected, played) {
 
 $('hint-btn').addEventListener('click', () => {
   if (!practice || practice.busy) return;
-  if (!isTested(practice.line.moves[practice.movesPlayed])) return;
-  const expected = correctMoves(practice.line.moves[practice.movesPlayed])[0]; // reversed: the study's main reply
+  if (!isTested(practice.movesPlayed)) return;
+  const expected = practice.line.moves[practice.movesPlayed]; // the line's move
   const [from, to] = moveSquares(expected);
   if (hintStep()) {
     // "Show correct move": an arrow shows the move; the player still has to play it.
@@ -2944,7 +2951,7 @@ $('hint-btn').addEventListener('click', () => {
   const w = lastWrongMove();
   practice.tried.push('hint');
   setShapes([{ orig: from, brush: 'white' }]);
-  const notes = w && alternativesAt(expected)?.[w]?.notes;
+  const notes = w && alternativesAt(expected)[w]?.notes;
   if (notes) practice.hintComment = element('div', { class: 'hint-note' },
     element('span', { class: 'note-move' }, `${moveLabel({ ...expected, san: w })} (your move)`),
     notes.nags.map(n => [glyphSpan(n), element('span', { class: 'muted' }, ' ' + GLYPHS[n][1])]),
@@ -2965,8 +2972,7 @@ $('skip-btn').addEventListener('click', () => {
 // The move you're on, when a line is stopped on it: it counts (as an error) only if you'd already
 // tried a move or used the hint on it.
 function addAttemptOnCurrentMove() {
-  const expected = practice.line.moves[practice.movesPlayed];
-  if (isTested(expected) && practice.tried.length) practice.attempts.push(newAttempt(expected, practice.movesPlayed));
+  if (isTested(practice.movesPlayed) && practice.tried.length) practice.attempts.push(newAttempt(practice.movesPlayed));
 }
 
 // "End practice": stop the session and go back to the chooser. A line (or single position) stopped
@@ -3021,14 +3027,12 @@ function finish(nextLabel) {
   showNextButton(nextLabel);
 }
 
-// A line played all the way through, from move 1 to the end: recorded as a play-through, whose time
+// A line played all the way through, from its start to the end: recorded as a play-through, whose time
 // is when its last move was attempted, and summed up.
 function endLine() {
   const { line, attempts } = practice;
-  if (!session.reversed) { // Reverse sides isn't recorded
-    history.lines[line.key] = [...history.lines[line.key] || [], attempts.at(-1)?.at ?? Date.now()].slice(-HISTORY_LENGTH);
-    saveHistory();
-  }
+  history.lines[line.key] = [...history.lines[line.key] || [], attempts.at(-1)?.at ?? Date.now()].slice(-HISTORY_LENGTH);
+  saveHistory();
   finish('Next line');
   setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
   // The same, over the board where you're looking, fading away after a few seconds.
@@ -3102,7 +3106,7 @@ function renderMoveList() {
     if (m.color === 'black' && i === 0) cells.push(element('span', { class: 'mv empty' }, '…'));
     // Once the line is over, moves you got wrong this time get the violet background.
     const attempt = practice.attempts.find(r => r.index === i);
-    const missedNow = attempt && (attempt.points == null ? attempt.tried.length > 1 : attempt.points < 10);
+    const missedNow = attempt && !rightThisTime(attempt);
     // The move, its glyphs and its comment bubble; a missed move has them all in one fixed-width
     // violet box, so boxes line up down the column.
     const content = [withFigurines(m.san), glyphMarks(m), hasComment(m) ? commentBubble(moveLabel(m), m.notes, i === newest, i === newest && pop) : null];
@@ -3162,8 +3166,8 @@ document.addEventListener('keydown', e => {
 
 // ---------- Practice: names and sounds ----------
 
-// The practice panel's heading, as in the positions table: the study and chapter ("(reversed)" after
-// it with Reverse sides; the chapter's introductory comment as a bubble), then the position reached,
+// The practice panel's heading, as in the positions table: the study and chapter ("(as black)" after it
+// when it's played from the chapter's other side; the chapter's introductory comment as a bubble), then the position reached,
 // named by its opening and the moves since (see positionName), e.g. "Italian Game: Giuoco Piano,
 // 4. c3 ♘f6". The position line follows the board: the line as it's played, or an earlier position
 // being looked at.
@@ -3171,7 +3175,8 @@ function updateNames() {
   if (!practice) return;
   const ch = chapterByKey(practice.line.chapterKey);
   const intro = parseChapter(ch).intro;
-  $('practice-title').replaceChildren(chapterTitle(ch) + (session.reversed ? ' (reversed)' : ''), intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
+  const otherSide = practice.line.yourColor !== parseChapter(ch).yourColor ? ` (as ${practice.line.yourColor})` : '';
+  $('practice-title').replaceChildren(chapterTitle(ch) + otherSide, intro.length ? commentBubble('', { text: intro, nags: [] }, false) : '',
     reviewButton('End practice and open this chapter on the Studies page', reviewFromPractice));
   updatePositionName();
 }
@@ -3228,10 +3233,10 @@ $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 let hoverBoard = null;
 
 // Gives el the hover board for move m: shown on hover, focus or tap, next to anchor, the board
-// turned to orientation (the side you play). A move by that side (unless untested) is one of yours;
-// with Reverse sides those are the opponent's moves. With thisTime ({ attempt }, in the practice
-// move list) a move of yours is described by this attempt (undefined for a move not played this
-// time); otherwise by its last 10 attempts.
+// turned to orientation (the side you play). With thisTime ({ attempt }, in the practice move list) a
+// move by that side is one of yours, described by this attempt (undefined for a move not played this
+// time); otherwise a move is yours as on the Studies page (see isShownAsYours), described by its
+// position's last 10 attempts.
 function addHoverBoard(el, m, orientation, thisTime = null, anchor = el) {
   const show = () => showHoverBoard(anchor, m, orientation, thisTime);
   for (const event of ['mouseenter', 'focus', 'click']) el.addEventListener(event, show);
@@ -3240,7 +3245,8 @@ function addHoverBoard(el, m, orientation, thisTime = null, anchor = el) {
 }
 
 function showHoverBoard(el, m, orientation, thisTime = null) {
-  const { position, lastMove, shapes, rows } = m.color === orientation && !m.untested ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m);
+  const yours = thisTime ? m.color === orientation : isShownAsYours(m, orientation);
+  const { position, lastMove, shapes, rows } = yours ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m, orientation);
   let box = $('move-preview');
   if (!box) {
     box = element('div', { id: 'move-preview', class: 'move-preview hidden' },
@@ -3277,19 +3283,21 @@ function hoverBoardHeading(m) {
 // Before one of your moves the opponent's previous move is highlighted (no arrow).
 const previousOpponentMove = m => m.parent.uci && squaresOf(m.parent);
 
-// Your move: the position before it, an arrow for the correct move and one for each error, then,
-// under the shared heading, the move accuracy, when it was last tested, and the errors ("Errors: d4
-// (alternative ?!), a3 ×2, hint"), coloured as their arrows. In the practice move list (thisTime) it's
-// about this attempt; elsewhere, about the last 10 attempts.
+// Your move: the position before it, an arrow for the correct move (in the practice move list, the move
+// played; elsewhere your study's moves there) and one for each error, then, under the shared heading,
+// the move accuracy, when it was last tested, and the errors ("Errors: d4 (alternative ?!), a3 ×2,
+// hint"), coloured as their arrows. In the practice move list (thisTime) it's about this attempt;
+// elsewhere, about the position's last 10 attempts.
 function yourMoveBoard(m, thisTime) {
-  const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(m);
-  const errors = errorCounts(attempts, m.san);
-  const accuracy = thisTime ? (!attempts.length ? 'Not tested this time' : attempts[0].points == null ? null : `${attempts[0].points * 10}% move accuracy`)
-    : attempts.length ? `${percent(scoreOf(attempts))}% move accuracy (last ${plural(attempts.length, 'try', 'tries')})` : 'Untried';
-  return { position: m.parent.position, lastMove: previousOpponentMove(m), shapes: answerArrows(m.parent.position, m, errors), rows: [
+  const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(m.parent);
+  const correct = thisTime ? [m] : choicesAt(m.parent, mainOnlyNow());
+  const errors = errorCounts(attempts, correct.map(c => c.san)), overall = accuracyAt(m.parent);
+  const accuracy = thisTime ? (!attempts.length ? 'Not tested this time' : `${rightThisTime(attempts[0]) ? 100 : 0}% move accuracy`)
+    : overall ? accuracyText(overall) : 'Untried';
+  return { position: m.parent.position, lastMove: previousOpponentMove(m), shapes: answerArrows(m.parent.position, correct, errors), rows: [
     ...hoverBoardHeading(m),
-    accuracy && element('div', {}, accuracy),
-    thisTime ? null : lastTestedText(lastTriedAt(m.key)),
+    element('div', {}, accuracy),
+    thisTime ? null : lastTestedText(lastTriedAt(m.parent.key)),
     errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) =>
       element('span', { class: 'error-violet' }, errorLabel(m, x) + (n > 1 ? ` ×${n}` : ''))))) : null] };
 }
@@ -3303,29 +3311,28 @@ function lastTestedText(time) {
 
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
 // on Lichess, with the move's arrow (see studyMoveArrow).
-function opponentMoveBoard(m) {
+function opponentMoveBoard(m, orientation) {
   return { position: m.position, lastMove: squaresOf(m), shapes: [studyMoveArrow(m.parent.position, m), ...glyphBadge(m)], rows: [
     ...hoverBoardHeading(m),
-    m.untested ? element('div', { class: 'muted' }, 'Alternative move, not tested') : null] };
+    !practisedAs(m, orientation) ? element('div', { class: 'muted' }, 'Not tested') : null] };
 }
 
-// One thing tried before the correct move m, for the hover board's "Errors: …" row, labelled by
-// how it was scored: "a3 (alternative)" and "b3 (masters)" (the alternative and masters penalties);
-// an alternative the study marks ?, ?? or ?! shows the mark, "a3 (alternative ?!)"; anything else is
-// unlabelled, and "hint" or "show correct move". A move that is both an unmarked alternative and a
-// masters move is labelled "(alternative)".
+// One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labelled by
+// what it is: "a3 (alternative)" (one of your study's alternatives, an error with Main lines only), an
+// alternative the study marks ?, ?? or ?! with the mark, "a3 (alternative ?!)", "b3 (masters)" (see
+// isMasterMove); anything else unlabelled; and "hint" or "show correct move".
 function errorLabel(m, x) {
   if (x === 'hint') return 'hint';
   if (x === 'show') return 'show correct move';
-  const mark = alternativesAt(m)?.[x]?.nags.find(n => MISTAKE_NAGS.includes(n));
+  const mark = alternativesAt(m)[x]?.nags.find(n => MISTAKE_NAGS.includes(n));
   const label = { alternative: 'alternative', masters: 'masters', marked: `alternative ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
   return withFigurines(x) + (label ? ` (${label})` : '');
 }
-// How a move tried instead of m was scored: 'alternative', 'masters', 'marked' (an alternative the
-// study marks ?, ?? or ?!) or 'wrong' (the last two cost the error penalty).
+// What a move tried instead of m is: 'alternative', 'marked' (an alternative the study marks ?, ?? or
+// ?!), 'masters' or 'wrong'.
 function errorKind(m, x) {
-  const alt = alternativesAt(m)?.[x];
-  if (alt) return isMistake(alt) ? 'marked' : 'alternative';
+  const alt = alternativesAt(m)[x];
+  if (alt) return isMarkedAlternative(alt) ? 'marked' : 'alternative';
   return isMasterMove(m.epdBefore, x) ? 'masters' : 'wrong';
 }
 
@@ -3366,17 +3373,19 @@ function glyphBadge(node) {
 const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
 // A violet arrow for each error that's a move, whatever kind (errors: [[x, count], …]; the hint has
-// none), if counted with a badge for a count above 1 ("×2"), and the correct move's (the main move's),
-// with correctLabel in a badge (in the outline's blue) if given.
-function answerArrows(pos, m, errors, { counted = false, correctLabel = null } = {}) {
+// none), if counted with a badge for a count above 1 ("×2"), and the correct moves' (move nodes; the
+// first with correctLabel in a badge, in the outline's blue, if given).
+function answerArrows(pos, correct, errors, { counted = false, correctLabel = null } = {}) {
   const shapes = errors.map(([x, n]) => {
     const mv = san.parseSan(pos, x);
     if (!mv) return null;
     const [orig, dest] = arrowSquares(pos, mv);
     return { orig, dest, brush: 'violet', ...counted && n > 1 ? { label: { text: `×${n}` } } : {} };
   }).filter(Boolean);
-  const [orig, dest] = arrowSquares(pos, parseUci(m.uci));
-  return [...shapes, { ...mainArrow(orig, dest), ...correctLabel ? { label: { text: correctLabel, fill: '#3291ff' } } : {} }];
+  return [...shapes, ...correct.map((m, k) => {
+    const [orig, dest] = arrowSquares(pos, parseUci(m.uci));
+    return { ...mainArrow(orig, dest), ...k === 0 && correctLabel ? { label: { text: correctLabel, fill: '#3291ff' } } : {} };
+  })];
 }
 
 function hideHoverBoard() { $('move-preview')?.classList.add('hidden'); }
@@ -3430,7 +3439,7 @@ function allStudyPositions() {
     position.depth = Math.min(position.depth, depth);
     if (parent) position.parents.push(parent);
     if (onMainLine) position.onMainLine = true;
-    if (!yourTurnAfter(node, yourColor) && node.children.length > 1) position.isBranchPoint = true;
+    if (node.position.turn !== yourColor && node.children.length > 1) position.isBranchPoint = true;
     for (const child of node.children) {
       const moveSan = withoutCheckMarks(child.san);
       position.studyMoves.add(moveSan);
@@ -3856,7 +3865,7 @@ $('welcome-start-btn').addEventListener('click', leaveWelcome);
 // ---------- Backup ----------
 
 const BACKUP_APP = 'chess-opening-trainer';
-const BACKUP_VERSION = 5; // backups from earlier versions can't be restored
+const BACKUP_VERSION = 6; // version 5's history is moved to positions (see checkedHistory); earlier ones can't be restored
 
 // The Lichess account whose studies these are: recorded in backups, to warn when one is restored
 // under another.
@@ -3909,9 +3918,9 @@ function backupSaved() {
 function restoreQuestion(b) {
   const here = ownAccount();
   if (b.account && here && b.account !== here) return `This backup is from ${b.account}'s account, but you're connected as ${here}. Restore anyway? Your stats would be replaced.`;
-  const n = Object.keys(b.history.moves).length;
+  const n = Object.keys(checkedHistory(b.history)?.positions ?? {}).length;
   const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
-  return `Replace your history and settings with the backup${when} (${plural(n, 'move')} with results)? This can't be undone.`;
+  return `Replace your history and settings with the backup${when} (${plural(n, 'position')} with results)? This can't be undone.`;
 }
 
 $('restore-btn').addEventListener('click', () => $('restore-file').click());
@@ -3926,15 +3935,14 @@ $('restore-file').addEventListener('change', async e => {
     showBanner("That file isn't an Opening Trainer backup.", true);
     return;
   }
-  if (b.version !== BACKUP_VERSION || !validHistory(b.history)) {
+  if (![5, BACKUP_VERSION].includes(b.version) || !checkedHistory(b.history)) {
     showBanner('This backup is from an earlier version and can\'t be restored.', true);
     return;
   }
   if (!confirm(restoreQuestion(b))) return;
 
-  history = b.history;
+  history = checkedHistory(b.history);
   settings = checkedSettings(b.settings);
-  rescoreHistory(); // points worked out with the current rules and data
   const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
   presets = checkedPresets(b.presets);
   chosenPresetName = presets.some(p => p.name === b.chosenPreset) ? b.chosenPreset : null; // else All
@@ -3955,7 +3963,7 @@ $('restore-file').addEventListener('change', async e => {
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
   refreshPage();
   startDownloads(); // statistics for the backup's games, if they're other games
-  showBanner(`Backup restored: history for ${plural(Object.keys(history.moves).length, 'move')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
+  showBanner(`Backup restored: history for ${plural(Object.keys(history.positions).length, 'position')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
 });
 
 // ---------- Navigation ----------
@@ -3998,7 +4006,6 @@ async function init() {
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting
-  rescoreHistory(); // attempts scored again with the current rules and data
   // Back from logging in with Lichess (if that failed, the Lichess page says why).
   const loggedIn = await finishLogIn();
   if (loggedIn) return connected();
