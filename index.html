@@ -323,6 +323,14 @@
   .review-tree { padding: 6px 10px 8px; margin-top: 8px; max-height: 340px; overflow-y: auto; border-radius: 3px; border-top: none; }
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
+  /* Under the moves: how often the position is reached, and the Lichess games' results as a bar */
+  .panel.review-stats { padding: 10px 14px; font-size: 14px; }
+  .review-stats:empty { display: none; }
+  .win-bar { display: flex; height: 18px; margin-top: 6px; border-radius: 3px; overflow: hidden; font-size: 12px; font-weight: 600; line-height: 18px; }
+  .win-bar span { display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-align: center; }
+  .win-bar .white-wins { background: #f0f0f0; color: #222; }
+  .win-bar .draws { background: #8b8985; color: #fff; }
+  .win-bar .black-wins { background: #2b2a28; color: #ddd; box-shadow: inset 0 0 0 1px #4a4743; }
   .panel.review-comment { padding: 12px 14px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
   .review-comment:empty { display: none; }
   /* A critical position (see criticalAt): its tile on the Studies page, with an orange edge, and the
@@ -681,7 +689,6 @@
       <div class="review-tiles">
         <div class="panel">
           <div id="review-position" class="muted"></div>
-          <div id="review-reached" class="muted"></div>
           <div id="review-tree" class="tree review-tree"></div>
           <div class="move-nav">
             <button id="review-first" title="Start (Home)" aria-label="Start">⏮</button>
@@ -691,6 +698,7 @@
             <button id="review-all" class="review-all"></button>
           </div>
         </div>
+        <div id="review-stats" class="panel review-stats"></div>
         <div id="review-comment" class="panel review-comment"></div>
         <div id="review-errors" class="panel review-errors" aria-live="polite"></div>
         <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
@@ -877,7 +885,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves; under them, how often the position is reached and a bar of the Lichess games' results (White wins, draws, Black wins, at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -891,7 +899,7 @@
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
             <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% move accuracy, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position. Select the move to see a tile about that position.</li>
-            <li><b>Study</b> shows all the dots and tiles; <b>Errors</b> only the violet ones, <b>Masters</b> only the teal ones, <b>Lichess</b> only the orange ones.</li>
+            <li>Each view shows its own dots and tiles: <b>Errors</b> the violet ones, <b>Masters</b> the teal ones, <b>Lichess</b> the orange ones. <b>Study</b> keeps to what's in your study, with none.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
@@ -2042,11 +2050,12 @@ function isOffMastersPath(node, own) {
     && !!masters && totalGames(masters) >= MASTERS_MIN_GAMES && !isMasterMove(node.epd, main.san);
 }
 
-// The Studies page's marks by the arrows switch: Study shows them all (an overview); Errors only the
-// violet ones (your errors), Masters only the teal ones (off the masters' path), Lichess only the orange
-// ones (critical positions, from Lichess games). The same goes for the dots in the tree and the tiles.
+// The Studies page's marks by the arrows switch: Errors shows only the violet ones (your errors), Masters
+// only the teal ones (off the masters' path), Lichess only the orange ones (critical positions, from
+// Lichess games). Study keeps the tree to what's in the study (the user's choice): none of them.
+// The same goes for the dots in the tree and the tiles.
 const MARK_VIEWS = { weak: 'errors', masters: 'masters', critical: 'lichess' };
-const showsMark = (mark, view = settings.review.view) => view === 'study' || MARK_VIEWS[mark] === view;
+const showsMark = (mark, view = settings.review.view) => MARK_VIEWS[mark] === view;
 
 // Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
 // its chapter's side, from the node's key), as counted now (Main lines only, see mainOnlyNow).
@@ -2562,11 +2571,11 @@ const KEY_ARROWS = [
 ];
 const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
-  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position where you made errors: below 100% move accuracy (select it to see them)', views: ['study', 'errors'] },
-  { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)", views: ['study', 'masters'] },
+  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position where you made errors: below 100% move accuracy (select it to see them)', views: ['errors'] },
+  { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)", views: ['masters'] },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
-  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position', views: ['study', 'lichess'] },
+  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position', views: ['lichess'] },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
@@ -2645,9 +2654,8 @@ function showReviewNode(node) {
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
   reviewBoard.setAutoShapes(reviewArrows(node));
   updateArrowsSwitch();
-  // The position's name, and how often it's reached ("Reached 23k times (Lichess) 46 times (Masters)").
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
-  $('review-reached').textContent = positionCountText(node.epd) ?? '';
+  renderStatsTile(node);
   renderReviewTree();
   // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colors, named
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
@@ -2672,6 +2680,23 @@ function renderErrorsTile(node) {
     element('h3', {}, 'Your move here'),
     element('p', {}, [accuracyText(accuracy), last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')),
     errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(correct[0], x) + (n > 1 ? ` ×${n}` : ''))))) : null);
+}
+
+// Under the moves: how often the position is reached ("Reached 23k times (Lichess) 46 times (Masters)")
+// and, when Lichess games reach it, their results as a bar, as on Lichess: White wins, draws, Black wins
+// (at your chosen ratings and time controls), each with its share when there's room. Hidden until the
+// position's Lichess statistics have downloaded.
+function renderStatsTile(node) {
+  const text = positionCountText(node.epd), lichess = lichessGamesAt(node.epd), n = lichess && totalGames(lichess);
+  if (!text) return $('review-stats').replaceChildren();
+  const part = (cls, games, name) => {
+    const share = games / n * 100;
+    return element('span', { class: cls, style: `width: ${share}%` }, share >= 12 ? `${Math.round(share)}%` : '');
+  };
+  const bar = n ? element('div', { class: 'win-bar', title: `Lichess games: White wins ${Math.round(lichess.white / n * 100)}%, draws ${Math.round(lichess.draws / n * 100)}%, Black wins ${Math.round(lichess.black / n * 100)}%`,
+    role: 'img', 'aria-label': `White wins ${Math.round(lichess.white / n * 100)}%, draws ${Math.round(lichess.draws / n * 100)}%, Black wins ${Math.round(lichess.black / n * 100)}%` },
+    part('white-wins', lichess.white), part('draws', lichess.draws), part('black-wins', lichess.black)) : null;
+  $('review-stats').replaceChildren(element('div', { class: 'muted' }, text), bar);
 }
 
 // The tiles under the comment for the position on the board, each when the view shows its mark (see

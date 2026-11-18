@@ -637,6 +637,11 @@ async function runLichessPage(app) {
   {
     const kept = app.moveStats;
     app.setMoveStats(structuredClone(CRITICAL));
+    const critView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
+    $('arrows-study').click();
+    key('Home');
+    const inStudy = [$('review-tree').querySelectorAll('.critical-dot').length, $('review-critical').children.length];
+    $('arrows-lichess').click(); // critical positions show with Lichess only
     key('Home');
     const tileAt = () => [...$('review-critical').children].map(e => e.textContent);
     const atStart = tileAt();
@@ -651,17 +656,18 @@ async function runLichessPage(app) {
     const notCritical = tileAt();
     check('critical: the tile at your move; at the opponent\'s, its heading says so; none elsewhere', [atStart, afterE4, notCritical],
       [['Critical position', '28% of Lichess games go wrong here', '♘h3 19% · win rate −29a4 9% · win rate −15'], ["Critical position · opponent's move", '30% of Lichess games go wrong here', '♗a3 30% · win rate −23'], []]);
-    check('critical: a dot after the move leading to one; the hover board\'s row', [dots, hover.includes('Critical: 28% go wrong here')], [['e4'], true]);
+    check('critical: a dot after the move leading to one; the hover board\'s row; none in Study', [dots, hover.includes('Critical: 28% go wrong here'), inStudy], [['e4'], true, [0, 0]]);
+    critView.click();
     // A position of yours below 100%: a violet dot after the move leading to it (before the first move
     // for the start), no background.
     {
       const keptHistory = app.history;
       const wrong = [{ tried: ['d4', 'Nf3'], at: 1, main: false }];
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': wrong }, lines: {} });
-      const tree = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'));
+      const tree = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' });
       const after = [tree.querySelectorAll('.needs-work').length, [...tree.querySelectorAll('.weak-dot')].map(d => [d.previousElementSibling.textContent, d.title])];
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': wrong }, lines: {} });
-      const start = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB')).querySelector('.tree-line').firstElementChild.className;
+      const start = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelector('.tree-line').firstElementChild.className;
       check('tree: a violet dot after the move leading to a position with errors, before the first move for the start; no background', [after, start],
         [[0, [['e5', 'Your errors here: below 100% move accuracy']]], 'tree-dot weak-dot']);
       app.setHistory(keptHistory);
@@ -671,11 +677,14 @@ async function runLichessPage(app) {
       const keptHistory = app.history, keptStats = app.moveStats;
       app.setMoveStats({});
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'hint', 'Nf3'], at: null, main: false }] }, lines: {} });
+      const viewWas = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
+      $('arrows-errors').click(); // the errors tile shows in Errors
       key('Home'); key('ArrowRight'); key('ArrowRight'); // after 1… e5: your move
       const atE5 = [...$('review-errors').children].map(e => e.textContent);
       key('ArrowRight'); // 2. ♘f3
       const atNf3 = $('review-errors').children.length;
       app.setHistory(keptHistory); app.setMoveStats(keptStats);
+      viewWas.click();
       key('Home');
       check('errors tile: at the position with errors (after the move with the dot), its errors; not after your move', [atE5, atNf3],
         [['Your move here', '0% move accuracy (last 1 try)', 'Errors: d4, hint'], 0]);
@@ -702,9 +711,25 @@ async function runLichessPage(app) {
       const fewGames = [dotsAfter(), tiles()];
       app.setHistory(keptHistory); app.setMoveStats(keptStats);
       wasView.click(); key('Home');
-      check('masters dot and tile; each view shows its own dots and tiles, Study all', [seen, masterTile, fewGames], [
-        { study: [['weak-dot', 'masters-dot'], ['errors', 'masters']], masters: [['masters-dot'], ['masters']], errors: [['weak-dot'], ['errors']], lichess: [[], []] },
+      check('masters dot and tile; each view shows its own dots and tiles, Study neither', [seen, masterTile, fewGames], [
+        { study: [[], []], masters: [['masters-dot'], ['masters']], errors: [['weak-dot'], ['errors']], lichess: [[], []] },
         ['Not a masters move', 'Your study: ♘f3 (0%)', 'Masters play: ♘c3 50% · d4 33% · ♗c4 17%'], [[], []]]);
+    }
+    // Under the moves: how often the position is reached, and the Lichess results as a bar (hidden until downloaded).
+    {
+      const keptStats = app.moveStats;
+      app.setMoveStats({ [START]: { lichess: withResults([['e4', 50, 10, 40], ['d4', 4, 0, 6]]), masters: explorer([['e4', 46]]) } });
+      key('Home');
+      const bar = $('review-stats').querySelector('.win-bar');
+      const shown = [$('review-stats').firstChild.textContent, [...bar.children].map(e => [e.className, e.style.width, e.textContent]), bar.title];
+      app.setMoveStats({});
+      key('ArrowRight'); key('Home');
+      const none = $('review-stats').children.length;
+      app.setMoveStats(keptStats);
+      key('Home');
+      check('stats tile: how often reached, and the results bar (labels when there\'s room); hidden until downloaded', [shown, none], [
+        ['Reached 110 times (Lichess) 46 times (Masters)', [['white-wins', '49.0909%', '49%'], ['draws', '9.09091%', ''], ['black-wins', '41.8182%', '42%']],
+         'Lichess games: White wins 49%, draws 9%, Black wins 42%'], 0]);
     }
     // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
     // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
@@ -815,12 +840,12 @@ async function runLichessPage(app) {
   $('nav-studies').click();
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached under the position\'s name; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
-    $('review-reached').previousElementSibling.id, document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, 'review-position', true]);
+  check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached in its own tile under the moves; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
+    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null, document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, true, true]);
   $('arrows-errors').click();
   check('review: one view at a time, remembered', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'false', 'true'], 'errors']);
   $('arrows-study').click();
-  check('review: the comment tile under the moves', [$('review-comment').previousElementSibling.querySelector('#review-tree') !== null, $('review-comment').classList.contains('panel')], [true, true]);
+  check('review: the comment tile under the moves and their statistics', [$('review-comment').previousElementSibling.id, $('review-comment').classList.contains('panel')], ['review-stats', true]);
   check('review: no Close button; no accuracy in the chapters list', [!!$('review-close'), chapterRows().some(row => row.querySelector('.rate'))], [false, false]);
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('studies-screen').classList.contains('hidden'), true);
