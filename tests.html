@@ -715,21 +715,23 @@ async function runLichessPage(app) {
         { study: [[], []], masters: [['masters-dot'], ['masters']], errors: [['weak-dot'], ['errors']], lichess: [[], []] },
         ['Not a masters move', 'Your study: ♘f3 (0%)', 'Masters play: ♘c3 50% · d4 33% · ♗c4 17%'], [[], []]]);
     }
-    // Under the moves: how often the position is reached, and the Lichess results as a bar (hidden until downloaded).
+    // Under the moves, with Masters or Lichess only: that database's count and results bar (hidden until downloaded).
     {
       const keptStats = app.moveStats;
-      app.setMoveStats({ [START]: { lichess: withResults([['e4', 50, 10, 40], ['d4', 4, 0, 6]]), masters: explorer([['e4', 46]]) } });
-      key('Home');
-      const bar = $('review-stats').querySelector('.win-bar');
-      const shown = [$('review-stats').firstChild.textContent, [...bar.children].map(e => [e.className, e.style.width, e.textContent]), bar.title];
-      app.setMoveStats({});
+      const viewWas = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
+      app.setMoveStats({ [START]: { lichess: withResults([['e4', 50, 10, 40], ['d4', 4, 0, 6]]), masters: withResults([['e4', 20, 20, 6]]) } });
+      const tile = () => [...$('review-stats').children].map(e => e.classList.contains('win-bar') ? [[...e.children].map(p => p.textContent), e.title] : e.textContent);
+      const seen = {};
+      for (const view of ['study', 'errors', 'masters', 'lichess']) { $('arrows-' + view).click(); key('Home'); seen[view] = tile(); }
+      app.setMoveStats({ [START]: { masters: withResults([['e4', 20, 20, 6]]) } });
       key('ArrowRight'); key('Home');
-      const none = $('review-stats').children.length;
+      const notYet = tile(); // Lichess, not downloaded
       app.setMoveStats(keptStats);
-      key('Home');
-      check('stats tile: how often reached, and the results bar (labels when there\'s room); hidden until downloaded', [shown, none], [
-        ['Reached 110 times (Lichess) 46 times (Masters)', [['white-wins', '49.0909%', '49%'], ['draws', '9.09091%', ''], ['black-wins', '41.8182%', '42%']],
-         'Lichess games: White wins 49%, draws 9%, Black wins 42%'], 0]);
+      viewWas.click(); key('Home');
+      check('stats tile: with Masters or Lichess only, that database\'s count and results bar; hidden until downloaded', [seen, notYet], [{
+        study: [], errors: [],
+        masters: ['Reached 46 times (Masters)', [['43%', '43%', '13%'], 'Master games: White wins 43%, draws 43%, Black wins 13%']],
+        lichess: ['Reached 110 times (Lichess)', [['49%', '', '42%'], 'Lichess games: White wins 49%, draws 9%, Black wins 42%']] }, []]);
     }
     // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
     // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.

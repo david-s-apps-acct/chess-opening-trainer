@@ -885,7 +885,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves; under them, how often the position is reached and a bar of the Lichess games' results (White wins, draws, Black wins, at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -2655,7 +2655,6 @@ function showReviewNode(node) {
   reviewBoard.setAutoShapes(reviewArrows(node));
   updateArrowsSwitch();
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
-  renderStatsTile(node);
   renderReviewTree();
   // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colors, named
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
@@ -2682,26 +2681,31 @@ function renderErrorsTile(node) {
     errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(correct[0], x) + (n > 1 ? ` ×${n}` : ''))))) : null);
 }
 
-// Under the moves: how often the position is reached ("Reached 23k times (Lichess) 46 times (Masters)")
-// and, when Lichess games reach it, their results as a bar, as on Lichess: White wins, draws, Black wins
-// (at your chosen ratings and time controls), each with its share when there's room. Hidden until the
-// position's Lichess statistics have downloaded.
+// Under the moves, with Masters or Lichess (not with Study or Errors): how often that database's games
+// reach the position ("Reached 46 times (Masters)", "Reached 23k times (Lichess)", "Never reached
+// (Lichess)") and their results as a bar, as on Lichess: White wins, draws, Black wins (Lichess games at
+// your chosen ratings and time controls), each with its share when there's room. Hidden until that
+// database's statistics for the position have downloaded.
+const STATS_VIEWS = { masters: { label: 'Masters', games: 'Master games', at: epd => masterGamesAt(epd) }, lichess: { label: 'Lichess', games: 'Lichess games', at: epd => lichessGamesAt(epd) } };
 function renderStatsTile(node) {
-  const text = positionCountText(node.epd), lichess = lichessGamesAt(node.epd), n = lichess && totalGames(lichess);
-  if (!text) return $('review-stats').replaceChildren();
-  const part = (cls, games, name) => {
+  const db = STATS_VIEWS[settings.review.view], stats = db?.at(node.epd);
+  if (!stats) return $('review-stats').replaceChildren();
+  const n = totalGames(stats), pct = games => Math.round(games / n * 100);
+  const part = (cls, games) => {
     const share = games / n * 100;
     return element('span', { class: cls, style: `width: ${share}%` }, share >= 12 ? `${Math.round(share)}%` : '');
   };
-  const bar = n ? element('div', { class: 'win-bar', title: `Lichess games: White wins ${Math.round(lichess.white / n * 100)}%, draws ${Math.round(lichess.draws / n * 100)}%, Black wins ${Math.round(lichess.black / n * 100)}%`,
-    role: 'img', 'aria-label': `White wins ${Math.round(lichess.white / n * 100)}%, draws ${Math.round(lichess.draws / n * 100)}%, Black wins ${Math.round(lichess.black / n * 100)}%` },
-    part('white-wins', lichess.white), part('draws', lichess.draws), part('black-wins', lichess.black)) : null;
-  $('review-stats').replaceChildren(element('div', { class: 'muted' }, text), bar);
+  const summary = n && `White wins ${pct(stats.white)}%, draws ${pct(stats.draws)}%, Black wins ${pct(stats.black)}%`;
+  $('review-stats').replaceChildren(
+    element('div', { class: 'muted' }, n ? `Reached ${shortCount(n)} times (${db.label})` : `Never reached (${db.label})`),
+    n ? element('div', { class: 'win-bar', title: `${db.games}: ${summary}`, role: 'img', 'aria-label': summary },
+      part('white-wins', stats.white), part('draws', stats.draws), part('black-wins', stats.black)) : null);
 }
 
 // The tiles under the comment for the position on the board, each when the view shows its mark (see
 // showsMark): your errors (violet), off the masters' path (teal), critical (orange).
 function renderPositionTiles(node) {
+  renderStatsTile(node); // and, under the moves, the statistics tile
   renderErrorsTile(node);
   renderMastersTile(node);
   renderCriticalTile(node);
