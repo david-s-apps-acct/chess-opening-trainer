@@ -41,10 +41,15 @@ export const app = {
   checkedSettings, chapterByKey, chapterLines, allStudyPositions,
   renderChapterTree,
   positionName, firstTryRight, accuracyAt, checkedHistory, mergedHistory, isMasterMove, isLichessMove, criticalAt, moveRank, errorCounts,
-  setBothSides(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
+  saveHistory, mainColor,
+  setSaveMoveStats(f) { saveMoveStats = f; },
+  storageFull(on) { store.set = on ? () => false : () => {}; },
+  playBothColors(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
   parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
   // Saving and network requests switched off, so stored data is never touched.
   isolate() {
+    const realGet = store.get;
+    store.get = (key, fallback) => key === 'history' ? (window.testStoredHistory ?? fallback) : realGet(key, fallback); // never your real history
     store.set = () => {}; store.remove = () => {};
     saveMoveStats = async () => {}; saveLibrary = async () => {};
     explorerPace.ms = 0; // no 2 s pace in the tests (except the test of it)
@@ -194,6 +199,25 @@ function run(app) {
     check('merge backup: lines combined', [merged.lines.L, merged.lines.M], [[10, 20, 30], [5]]);
     check('merge backup: the same either way round, and merging again changes nothing', [JSON.stringify(app.mergedHistory(there, here)) === JSON.stringify(merged),
       JSON.stringify(app.mergedHistory(merged, there)) === JSON.stringify(merged)], [true, true]);
+  }
+  // Damaged history entries (e.g. a hand-edited backup) are left out.
+  check('history: damaged entries left out', app.checkedHistory({ positions: { P: [null, { tried: 'e4' }, { tried: ['e4'], at: 'x', main: 1 }] }, lines: { L: [5, 'x', null] } }),
+    { positions: { P: [{ tried: ['e4'], at: null, main: true }] }, lines: { L: [5] } });
+  // Saving merges in what another tab or window saved meanwhile; storage full: a message.
+  {
+    const kept = app.history;
+    window.testStoredHistory = { positions: { P: [{ tried: ['d4'], at: 2, main: false }] }, lines: { L: [9] } };
+    app.setHistory({ positions: { P: [{ tried: ['e4'], at: 1, main: false }] }, lines: {} });
+    app.saveHistory();
+    const merged = [app.history.positions.P.map(a => a.at), app.history.lines.L];
+    window.testStoredHistory = undefined;
+    app.storageFull(true);
+    app.saveHistory();
+    app.storageFull(false);
+    check('history: tries another tab saved meanwhile are kept; storage full says so', [...merged, document.getElementById('banner').textContent],
+      [[1, 2], [9], "Couldn't save your practice: this browser's storage is full. Save a backup, then free some space."]);
+    app.setHistory(kept);
+    document.getElementById('banner').classList.add('hidden');
   }
   // Critical positions: more than 20% of the games play a move 10 points or more worse for the side playing it
   {
@@ -390,6 +414,30 @@ async function runLichessPage(app) {
   check('update: changed during practice, replaced when it ends', [duringPractice, app.library.studies[0].chapters.length], [2, 1]);
   await wait(100);
   await until(() => !app.downloading, 'the downloads to finish');
+  // A chapter deleted on Lichess keeps its history; an empty list from Lichess is ignored; a chapter turned
+  // to the other side keeps each line's play-throughs with the side that played it.
+  {
+    const keptHistory = app.history;
+    app.setLibrary({ ...app.parseStudyExport(ITALIAN + '\n\n' + SICILIAN, 'tester'), fetchedAt: 0 });
+    app.setHistory({ positions: { 'AAAAAAAA/CCCCCCCC|e4': [{ tried: ['c5'], at: 1, main: false }] },
+      lines: { 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3': [5], 'AAAAAAAA/BBBBBBBB|e4 c5 (black)': [6] } });
+    app.setToken('lip_test');
+    window.fetch = exportOf(ITALIAN);
+    await app.syncStudies();
+    const deleted = [app.library.studies[0].chapters.length, Object.keys(app.history.positions)];
+    window.fetch = exportOf('');
+    await app.syncStudies();
+    const empty = app.library.studies.length;
+    window.fetch = exportOf(ITALIAN.replace('[Orientation "white"]', '[Orientation "black"]'));
+    await app.syncStudies();
+    const turned = Object.keys(app.history.lines).sort();
+    app.setToken(null);
+    window.fetch = isolated;
+    check('update: history kept for a deleted chapter; an empty list ignored; a turned chapter\'s lines moved', [deleted, empty, turned],
+      [[1, ['AAAAAAAA/CCCCCCCC|e4']], 1, ['AAAAAAAA/BBBBBBBB|e4 c5', 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3 (white)']]);
+    app.setHistory(keptHistory);
+    check('groups: a chapter no longer on Lichess counts as White', app.mainColor('XXXXXXXX/YYYYYYYY'), 'white');
+  }
   window.fetch = isolated;
 
   // Restoring a backup from another Lichess account asks so; otherwise (or with no account recorded) the usual question.
@@ -443,6 +491,27 @@ async function runLichessPage(app) {
     app.setToken(null);
     const gaps = times.slice(1).map((t, i) => t - times[i]);
     check('download: the requests paced, each at least the pace after the one before', [times.length, gaps.every(g => g >= 55)], [3, true]);
+  }
+
+  // Storage full: the download stops and says so. A garbled answer is skipped, not saved.
+  {
+    app.setMoveStats({});
+    app.setToken('lip_test');
+    let requests = 0;
+    window.fetch = async () => { requests++; return new Response(JSON.stringify(explorer([['e4', 1]])), { status: 200 }); };
+    app.setSaveMoveStats(async () => false);
+    await app.downloadExplorer('lichess');
+    app.setSaveMoveStats(async () => {});
+    const full = [requests, $('lichess-status').textContent];
+    requests = 0;
+    app.setMoveStats({});
+    window.fetch = async () => { requests++; return new Response('{ not json', { status: 200 }); };
+    await app.downloadExplorer('lichess');
+    window.fetch = isolated;
+    app.setToken(null);
+    $('lichess-status').textContent = ''; $('lichess-status').classList.add('hidden');
+    check('download: storage full, it stops and says so; garbled answers are skipped', [...full, requests === epds.length, Object.keys(app.moveStats).length],
+      [1, "This browser's storage is full, so the statistics can't be saved. Free some space, then reopen the app.", true, 0]);
   }
 
   // The games the move statistics come from: the default from your Lichess rating, set once.
@@ -687,6 +756,19 @@ async function runLichessPage(app) {
   $('practice-title').querySelector('.review-btn').click();
   check('practice → Studies page: practice ended, the chapter at the position, Studies highlighted', [app.practice, !$('studies-screen').classList.contains('hidden'), chapterShown(), current(), $('nav-studies').classList.contains('current')],
     [null, true, '2. Sicilian', 'e4', true]);
+  // The same with the chapter gone from Lichess meanwhile: the Practice page instead.
+  {
+    const lib = app.library;
+    app.startLine(app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC'))[0]);
+    await until(() => app.practice?.movesPlayed === 1, 'the opponent\'s first move');
+    const without = structuredClone(lib);
+    without.studies[0].chapters = without.studies[0].chapters.filter(c => c.key !== 'AAAAAAAA/CCCCCCCC');
+    app.setLibrary(without);
+    $('practice-title').querySelector('.review-btn').click();
+    check('practice → Studies page: a chapter no longer on Lichess, the Practice page instead', [app.practice, !$('practice-chooser').classList.contains('hidden'), $('studies-screen').classList.contains('hidden')],
+      [null, true, true]);
+    app.setLibrary(lib);
+  }
   // The header's Studies button: back where you left it.
   $('nav-lichess').click();
   $('nav-studies').click();
@@ -817,7 +899,7 @@ async function runPractice(app) {
 
   // 6. Both sides: the Italian as Black. The heading says so; the board is turned; White's moves are
   // the app's, every one the study gives; your positions are recorded too.
-  app.setBothSides(['AAAAAAAA/BBBBBBBB']);
+  app.playBothColors(['AAAAAAAA/BBBBBBBB']);
   const asBlack = app.chapterLines(italianCh, 'black');
   check('both sides: the chapter\'s lines from each side, practiced', [app.practiceItems('lines').length, asBlack[0].key],
     [app.chapterLines(italianCh).length + asBlack.length, 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d4 exd4 cxd4 Bb4+ (black)']);
@@ -840,7 +922,7 @@ async function runPractice(app) {
   await playRest();
   check('both sides: that line played through', [summary(), app.history.lines[afterD6.key]?.length], [['No errors.'], 1]);
   app.endSession();
-  app.setBothSides([]);
+  app.playBothColors([]);
   check('chooser: no Reverse sides', !!document.getElementById('chooser-reversed'), false);
   app.setSettings({});
 }
