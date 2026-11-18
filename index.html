@@ -328,6 +328,11 @@
   /* A critical position (see criticalAt): its tile on the Studies page, with an orange edge, and the
      orange dot after a move leading to one in the move tree. Orange, as amber is the study authors',
      violet the errors', and teal and gray the masters and Lichess moves'. */
+  /* A move of yours below 100% (the violet dot), selected: its errors, with a violet edge */
+  .panel.review-errors { padding: 12px 14px; border-left: 4px solid #8a5cf6; }
+  .review-errors:empty { display: none; }
+  .review-errors h3 { margin: 0 0 4px; font-size: 15px; color: #a98bff; }
+  .review-errors p { margin: 0 0 4px; }
   .panel.review-critical { padding: 12px 14px; border-left: 4px solid var(--critical); }
   .review-critical:empty { display: none; }
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
@@ -681,6 +686,7 @@
           </div>
         </div>
         <div id="review-comment" class="panel review-comment"></div>
+        <div id="review-errors" class="panel review-errors" aria-live="polite"></div>
         <div id="review-critical" class="panel review-critical" aria-live="polite"></div>
       </div>
       <!-- The color key, opened by the ? at the end of the arrows switch (see renderColorKey) -->
@@ -877,7 +883,7 @@
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Your moves with move accuracy below 100% have a violet dot after them (moves of the other side too, once you've played it). Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
+            <li>Your moves with move accuracy below 100% have a violet dot after them (moves of the other side too, once you've played it). Select one to see a tile with its move accuracy, when you last tested it and your errors there. Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
@@ -2014,6 +2020,8 @@ function chapterLink(c, k) {
 // chapter's own side (own) that's practiced, or any move whose position you've tried (e.g. played from
 // the other side).
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
+// A move of yours below 100% move accuracy (the move tree's violet dot).
+const isWeakMove = (m, own) => isShownAsYours(m, own) && scoreClass(shareAt(m.parent)) === 'needs-work';
 
 // Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
 // its chapter's side, from the node's key), as counted now (Main lines only, see mainOnlyNow).
@@ -2109,7 +2117,7 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   const moveEls = (node, path, showNo) => {
     const moves = [...path, node];
     const cls = isShownAsYours(node, parsed.yourColor) ? scoreClass(shareAt(node.parent)) : !practisedAs(node, parsed.yourColor) ? 'untested-move' : 'opp';
-    const weak = cls === 'needs-work'; // a violet dot after it (not the background, as elsewhere)
+    const weak = cls === 'needs-work'; // a violet dot after it (not the background, as elsewhere; see isWeakMove)
     const el = element('span', { class: 'tree-move ' + (weak ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
     if (pick) { // hovering shows the move on the small hover board; clicking shows it on the big one
       el.addEventListener('click', () => pick(node));
@@ -2521,7 +2529,7 @@ const KEY_ARROWS = [
 ];
 const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
-  { sample: '♘f3<span class="tree-dot weak-dot"></span>', meaning: 'Your move, below 100% move accuracy' },
+  { sample: '♘f3<span class="tree-dot weak-dot"></span>', meaning: 'Your move, below 100% move accuracy (select it for its errors)' },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
   { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position' },
@@ -2612,9 +2620,26 @@ function showReviewNode(node) {
   // until 4 November 2026; removed as a trial.)
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
   $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
+  renderErrorsTile(node);
   renderCriticalTile(node);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
+}
+
+// Under the comment, when the move selected is one of yours below 100% (the violet dot; see
+// isWeakMove): "Your move 3. ♗c4", its move accuracy and when it was last tested, and the errors of
+// its last 10 tries, labeled as on the hover boards ("Errors: d4 ×2 (masters), ♘c3 (alternative),
+// hint"). It describes the position you answered (before the move), as the dot does. (A fuller
+// "Your accuracy" tile was removed on 4 November 2026 as a trial; this one is only for weak moves.)
+function renderErrorsTile(node) {
+  const weak = node.uci && isWeakMove(node, review.parsed.yourColor);
+  if (!weak) return $('review-errors').replaceChildren();
+  const accuracy = accuracyAt(node.parent), last = lastTriedAt(node.parent.key), days = last && daysAgo(last);
+  const errors = errorCounts(attemptsAt(node.parent), choicesAt(node.parent, mainOnlyNow()).map(c => c.san));
+  $('review-errors').replaceChildren(
+    element('h3', {}, `Your move ${moveLabel(node)}`),
+    element('p', {}, [accuracyText(accuracy), last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')),
+    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(node, x) + (n > 1 ? ` ×${n}` : ''))))) : null);
 }
 
 // Under the comment, when the position on the board is critical (see criticalAt), at either side's

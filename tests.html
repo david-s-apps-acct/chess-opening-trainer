@@ -661,6 +661,20 @@ async function runLichessPage(app) {
         [...tree.querySelectorAll('.weak-dot')].map(d => [d.previousElementSibling.textContent, d.title])], [0, [['e4', 'Below 100% move accuracy']]]);
       app.setHistory(keptHistory);
     }
+    // Selecting a move with the violet dot: a tile with its errors; none for the opponent's move.
+    {
+      const keptHistory = app.history, keptStats = app.moveStats;
+      app.setMoveStats({});
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['d4', 'hint', 'e4'], at: null, main: false }] }, lines: {} });
+      key('Home'); key('ArrowRight'); // 1. e4
+      const atE4 = [...$('review-errors').children].map(e => e.textContent);
+      key('ArrowRight'); // 1… e5
+      const atE5 = $('review-errors').children.length;
+      app.setHistory(keptHistory); app.setMoveStats(keptStats);
+      key('Home');
+      check('errors tile: a move with the violet dot selected, its errors; none for the opponent\'s', [atE4, atE5],
+        [['Your move 1. e4', '0% move accuracy (last 1 try)', 'Errors: d4, hint'], 0]);
+    }
     // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
     // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
     const keyOpen = () => !$('color-key').classList.contains('hidden');
