@@ -9,7 +9,7 @@ To rebuild: put the HTML back where noted, restore the state variables and the h
 ### Describe what to practice (natural-language selection)
 
 - It's optional and off by default: a "Use natural language to select practice lines" checkbox in the Anthropic API key section of the System page turns it on (remembered between visits and included in backups). Its description says this requires an Anthropic API key and that each request costs a small amount. If it's ticked but no key is stored, the section says "Add an Anthropic API key below to use this."
-- When it's on, the Studies page shows a text box above the list with a Select button; when it's off, the box isn't shown at all. It stays off until ticked, even if an API key is already saved. The Help page explains turning it on on the System page. Its placeholder text is "Describe what to practice..." in italics, in the same soft grey as the "· 2 chapters" text in the study list; example requests appear as a tooltip when hovering over the box. The user types a request such as "all openings where I am white", "Italian and Ruy Lopez only", "lines longer than 10 moves", or a combination.
+- When it's on, the Studies page shows a text box above the list with a Select button; when it's off, the box isn't shown at all. It stays off until ticked, even if an API key is already saved. The Help page explains turning it on on the System page. Its placeholder text is "Describe what to practice..." in italics, in the same soft gray as the "· 2 chapters" text in the study list; example requests appear as a tooltip when hovering over the box. The user types a request such as "all openings where I am white", "Italian and Ruy Lopez only", "lines longer than 10 moves", or a combination.
 - The app sends the request, plus a compact catalog of all the user's chapters, to Claude, which returns the matching chapters as structured JSON (`output_config.format` with a JSON schema) along with a one-sentence explanation.
 - The catalog has one line per chapter: a short id (c1, c2, …), study name, chapter name, side played, Lichess's `Opening` and `ECO` tags, the first 8 moves of the main line, the number of lines, the shortest and longest line in full moves, and the chapter's score (the average move score, as on the Studies page). The instructions tell Claude to recognize common alternative opening names (e.g. "Spanish" = Ruy Lopez) and to combine conditions the way the user means them.
 - Requests about line length select whole chapters: every chapter containing at least one matching line.
@@ -34,7 +34,7 @@ CSS:
 ```css
   .ask { display: flex; gap: 8px; margin-bottom: 6px; }
   .ask input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: 3px; }
-  .ask input::placeholder { color: var(--muted); opacity: 1; font-style: italic; } /* same grey as "· 2 chapters" */
+  .ask input::placeholder { color: var(--muted); opacity: 1; font-style: italic; } /* same gray as "· 2 chapters" */
   .ask-result { font-size: 14px; min-height: 1.4em; margin: 0 2px 10px; color: var(--muted); }
   .ask-result.error { color: var(--bad); }
 ```

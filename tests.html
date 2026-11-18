@@ -41,22 +41,23 @@ export const app = {
   checkedSettings, chapterByKey, chapterLines, allStudyPositions,
   renderChapterTree,
   positionName, firstTryRight, accuracyAt, checkedHistory, mergedHistory, isMasterMove, isLichessMove, criticalAt, moveRank, errorCounts,
-  setBothSides(keys) { bothSides = new Set(keys); },
+  setBothSides(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
   parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
   // Saving and network requests switched off, so stored data is never touched.
   isolate() {
     store.set = () => {}; store.remove = () => {};
     saveMoveStats = async () => {}; saveLibrary = async () => {};
+    explorerPace.ms = 0; // no 2 s pace in the tests (except the test of it)
     window.fetch = async () => new Response('', { status: 404 });
   },
   setSelection(keys) { selection = new Set(keys); },
   get practice() { return practice; },
   get history() { return history; },
-  startLine(line) { startSession('lines', [{ line, i: null }]); }, // practising just this line
+  startLine(line) { startSession('lines', [{ line, i: null }]); }, // practicing just this line
   startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
-  onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies,
+  onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies, explorerPace,
   setToken(t) { token = t; },
   restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, squareTipLines, parseChapter, refreshPage,
   get token() { return token; },
@@ -320,7 +321,7 @@ async function runLichessPage(app) {
   window.fetch = async (url, init) => { revoked = [String(url), init.method, init.headers.Authorization]; return new Response(null, { status: 204 }); };
   $('disconnect-btn').click();
   window.fetch = isolated;
-  check('Disconnect: cancelled on Lichess, forgotten here, Connect again', [revoked, app.token, $('lichess-connected').textContent, $('connect-btn').classList.contains('hidden')],
+  check('Disconnect: canceled on Lichess, forgotten here, Connect again', [revoked, app.token, $('lichess-connected').textContent, $('connect-btn').classList.contains('hidden')],
     [['https://lichess.org/api/token', 'DELETE', 'Bearer lio_login'], null, 'Not connected.', false]);
   app.setToken('lip_pasted');
   revoked = null;
@@ -338,7 +339,7 @@ async function runLichessPage(app) {
   window.fetch = async url => String(url).includes('/api/account') ? new Response(JSON.stringify({ username: 'tester' }))
     : String(url).includes('export.pgn') ? new Response(ITALIAN + '\n\n' + SICILIAN) : new Response('', { status: 404 });
   await app.fetchStudies({ welcome: true });
-  check('welcome: studies fetched, then Getting started with Download statistics, Backup (Save greyed out), nothing downloading', [!$('lichess-screen').classList.contains('hidden'), $('getting-started').classList.contains('hidden'),
+  check('welcome: studies fetched, then Getting started with Download statistics, Backup (Save grayed out), nothing downloading', [!$('lichess-screen').classList.contains('hidden'), $('getting-started').classList.contains('hidden'),
     $('getting-started-ready').textContent, $('welcome-start-btn').textContent, $('backup-card').classList.contains('hidden'), $('backup-btn').disabled, app.downloading],
     [true, false, 'Your study is ready.', 'Download statistics', false, true, false]);
   $('welcome-start-btn').click();
@@ -362,7 +363,7 @@ async function runLichessPage(app) {
     [true, 'lio_new', 'https://lichess.org/api/token', 'liu_code', 'v3rifier', '']);
   localStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' })); // as Connect leaves it (saving is off here)
   history.replaceState(null, '', location.pathname + '?error=access_denied&state=st4te');
-  check('login: cancelled on Lichess', [await app.finishLogIn(), $('update-status').textContent], [false, 'Connecting was cancelled on Lichess.']);
+  check('login: canceled on Lichess', [await app.finishLogIn(), $('update-status').textContent], [false, 'Connecting was canceled on Lichess.']);
   localStorage.setItem('cot.login', JSON.stringify({ verifier: 'v3rifier', state: 'st4te' })); // as Connect leaves it (saving is off here)
   history.replaceState(null, '', location.pathname + '?code=liu_code&state=other');
   check('login: a state that doesn\'t match is refused', await app.finishLogIn(), false);
@@ -429,6 +430,21 @@ async function runLichessPage(app) {
   app.setToken(null);
   check('download: positions restored meanwhile are skipped', [requests, epds.every(epd => app.moveStats[epd]?.lichess)], [1, true]);
 
+  // The requests are paced (2 s apart in the app; 60 ms here).
+  {
+    app.setMoveStats({});
+    app.setToken('lip_test');
+    const times = [];
+    window.fetch = async () => { times.push(performance.now()); if (times.length === 3) for (const epd of epds) app.moveStats[epd] ||= { lichess: explorer([['e4', 1]]) }; return new Response(JSON.stringify(explorer([['e4', 1]])), { status: 200 }); };
+    app.explorerPace.ms = 60; app.explorerPace.next = 0;
+    await app.downloadExplorer('lichess');
+    app.explorerPace.ms = 0;
+    window.fetch = isolated;
+    app.setToken(null);
+    const gaps = times.slice(1).map((t, i) => t - times[i]);
+    check('download: the requests paced, each at least the pace after the one before', [times.length, gaps.every(g => g >= 55)], [3, true]);
+  }
+
   // The games the move statistics come from: the default from your Lichess rating, set once.
   const before2 = { library: app.library, moveStats: app.moveStats };
   const defaultFor = ratings => { app.setSettings({}); app.setLibrary({ ...structuredClone(LIBRARY), ratings }); app.chooseDefaultGames(); return app.settings.games; };
@@ -478,7 +494,7 @@ async function runLichessPage(app) {
   // leave it (no Close).
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   app.setLibrary(structuredClone(LIBRARY));
-  $('nav-practice').click(); // nothing practised: the board, the chooser, and Studies to practice under it
+  $('nav-practice').click(); // nothing practiced: the board, the chooser, and Studies to practice under it
   check('Studies to practice: under the chooser, the board shown; the group (its hint: edited on the Groups page), no chapters here', [!$('studies-to-practice').classList.contains('hidden'),
     !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!document.querySelector('#practice-screen #studies, #practice-screen #edit-studies'),
     $('preset-select').title, $('sel-summary').textContent],
@@ -525,6 +541,24 @@ async function runLichessPage(app) {
   const hoverShown = !$('move-preview').classList.contains('hidden') && $('move-preview').innerText.startsWith('1… e5'), stillAt = current();
   e5.dispatchEvent(new MouseEvent('mouseleave'));
   check('review: hovering over a move shows the hover board, not the big board', [hoverShown, stillAt, $('move-preview').classList.contains('hidden')], [true, 'e4', true]);
+  // + All / − All: every variation in the tree; − All keeps the ones leading to the move shown.
+  {
+    const toggles = () => [...$('review-tree').querySelectorAll('.tree-toggle')].map(b => b.textContent).join('');
+    const all = $('review-all'), before = [all.textContent, all.classList.contains('hidden'), toggles()];
+    all.click();
+    const opened = [all.textContent, all.title, toggles()];
+    [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === '♘c3').click(); // in a variation
+    all.click();
+    const closed = [all.textContent, toggles(), current()];
+    check('review: + All opens every variation, − All closes them but the one with the move shown', [before, opened, closed],
+      [['+ All', false, '++++'], ['− All', 'Hide all variations', '−−−−−'], ['+ All', '−+++', '♘c3']]);
+    key('Home'); all.click();
+    $('review-tree').querySelector('.tree-toggle').click(); // one closed by its own −
+    const stays = all.textContent;
+    all.click(); // all closed again
+    check('review: − All stays until clicked, even with a variation closed by its own −', [stays, toggles()], ['− All', '++++']);
+    key('ArrowRight');
+  }
   // Critical positions on the Studies page: the tile at either side's move, the dot in the tree, the hover boards' row.
   {
     const kept = app.moveStats;
@@ -558,7 +592,7 @@ async function runLichessPage(app) {
   key('ArrowDown');
   check('review: ↑ and ↓, the previous and next chapter', [up, chapterShown()], ['1. Italian', '2. Sicilian']);
   // The arrows: the study's moves white, the main one outlined (+); the glyph of the move just played in
-  // its square's corner (2. Nf3!); with the toggles, the top 3 masters (teal) and Lichess (grey) moves
+  // its square's corner (2. Nf3!); with the toggles, the top 3 masters (teal) and Lichess (gray) moves
   // not in the study.
   const italianRoot = app.parseChapter(app.chapterByKey('AAAAAAAA/BBBBBBBB')).root;
   const arrowText = a => `${a.orig}${a.dest ?? ''} ${a.brush ?? ''}${a.modifiers?.hilite ? '+' : ''}${a.label ? ' ' + a.label.text : ''}`;
@@ -595,13 +629,13 @@ async function runLichessPage(app) {
     [['e2e4 teal+ 40%', 'd2d4 teal 30%', 'g1f3 teal 15%'], []]);
   check('review: hovering over a square: only the view\'s rank', [mastersTip, lichessTip], [['d4 · #2 masters move (30%)'], ['d4 · #2 Lichess move (30%)']]);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
-    [['e2e4 grey+ 50%', 'd2d4 grey 30%', 'c2c4 grey 10%', 'g1f3 grey 10%'], ['c7c5 grey 38%', 'e7e5 grey+ 38%', 'e7e6 grey 25%']]);
+    [['e2e4 gray+ 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 gray+ 38%', 'e7e6 gray 25%']]);
   check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
     [['d2d4 violet ×2', 'g2g3 violet', 'e2e4 white+ 25%'], [], ['d4 ×2 (masters)'], ['g3'], ['e4 · 25% move accuracy (last 4 tries) · last tested today']]);
-  // The study's own arrows and circles, in their Lichess colours, after the study's moves.
-  const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Centre. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
+  // The study's own arrows and circles, in their Lichess colors, after the study's moves.
+  const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Center. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
-  check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Centre.']);
+  check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Center.']);
   app.settings.review = { view: 'masters' };
   check('review: with Masters, not the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), []);
   app.settings.review = { view: 'study' };
@@ -696,10 +730,10 @@ async function runPractice(app) {
   // 1. The main line with Main lines only, with a masters move, an alternative, a marked alternative and a hint.
   app.startLine(main);
   await play('d2d4');
-  // The status's lines, each [text, its colour: 'white', 'teal', 'grey' or 'violet'].
+  // The status's lines, each [text, its color: 'white', 'teal', 'gray' or 'violet'].
   const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.className.replace('error-', '')]);
   check('practice: a masters move and a Lichess move (5%+), one fact per line, as on the hover boards', statusLines(),
-    [['Not your preferred move', 'violet'], ['#2 masters move (30%)', 'teal'], ['#2 Lichess move (30%)', 'grey']]);
+    [['Not your preferred move', 'violet'], ['#2 masters move (30%)', 'teal'], ['#2 Lichess move (30%)', 'gray']]);
   await new Promise(r => setTimeout(r, 3800));
   check('practice: after 3 seconds the message fades to "Your move", with where you are in the line', status(), 'Your move (1 of 6 in line)');
   await play('e2e4');
@@ -785,7 +819,7 @@ async function runPractice(app) {
   // the app's, every one the study gives; your positions are recorded too.
   app.setBothSides(['AAAAAAAA/BBBBBBBB']);
   const asBlack = app.chapterLines(italianCh, 'black');
-  check('both sides: the chapter\'s lines from each side, practised', [app.practiceItems('lines').length, asBlack[0].key],
+  check('both sides: the chapter\'s lines from each side, practiced', [app.practiceItems('lines').length, asBlack[0].key],
     [app.chapterLines(italianCh).length + asBlack.length, 'AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d4 exd4 cxd4 Bb4+ (black)']);
   app.startLine(asBlack[0]);
   await until(yourTurn, 'your first move as Black');
@@ -903,8 +937,8 @@ function runPositions(app) {
   check('chooser: the switch and the main-lines checkbox', [$('chooser-kind-positions').getAttribute('aria-pressed'), $('chooser-kind-lines').getAttribute('aria-pressed'), $('chooser-main-text').textContent, app.settings.practice.kind],
     ['true', 'false', 'Positions from main lines only', 'positions']);
   $('chooser-start').click();
-  check('chooser: practising, Studies to practice hidden', $('studies-to-practice').classList.contains('hidden'), true);
-  check('chooser: practising positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
+  check('chooser: practicing, Studies to practice hidden', $('studies-to-practice').classList.contains('hidden'), true);
+  check('chooser: practicing positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
     $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('srs-tile').classList.contains('hidden'),
     document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [true, true, true, true, true, false]);
   $('end-practice-btn').click();
@@ -912,13 +946,13 @@ function runPositions(app) {
   check('chooser: Studies to practice back, the board still shown', [$('studies-to-practice').classList.contains('hidden'), document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [false, false]);
   $('chooser-kind-lines').click();
   $('chooser-start').click();
-  check('chooser: practising lines, from move 1', app.practice.singleAt, null);
+  check('chooser: practicing lines, from move 1', app.practice.singleAt, null);
   app.endSession();
-  // Untried at 0% with nothing tried: nothing to practise.
+  // Untried at 0% with nothing tried: nothing to practice.
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   app.setSettings({ practice: { weights: { untried: 0 } } });
   app.renderChooser();
-  check('chooser: nothing to practise when every line is untried and Untried is 0%', [$('chooser-start').disabled, $('chooser-note').textContent], [true, 'Every line is untried, and Untried is at 0%.']);
+  check('chooser: nothing to practice when every line is untried and Untried is 0%', [$('chooser-start').disabled, $('chooser-note').textContent], [true, 'Every line is untried, and Untried is at 0%.']);
   app.setSelection([]);
   app.setSettings({});
   app.renderChooser();
@@ -932,7 +966,11 @@ function runPositions(app) {
 function runPresets(app) {
   app.setLibrary(structuredClone(LIBRARY));
   check('presets: invalid and duplicate names dropped; "All" is taken', app.checkedPresets([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null, { name: 'all', chapters: [] }]),
-    [{ name: 'A', chapters: ['x'], bothSides: [] }, { name: 'All 2', chapters: [], bothSides: [] }]);
+    [{ name: 'A', chapters: ['x'], colors: {} }, { name: 'All 2', chapters: [], colors: {} }]);
+  check('presets: colors checked; an old group\'s both sides moved over', app.checkedPresets([
+    { name: 'New', chapters: ['x', 'y', 'z'], colors: { x: ['black'], y: ['white', 'red'], z: [], w: ['black'] } },
+    { name: 'Old', chapters: ['x', 'y'], bothSides: ['y', 'w'] }]),
+    [{ name: 'New', chapters: ['x', 'y', 'z'], colors: { x: ['black'], y: ['white'] } }, { name: 'Old', chapters: ['x', 'y'], colors: { y: ['white', 'black'] } }]);
   const $ = id => document.getElementById(id);
   const realConfirm = window.confirm;
   window.confirm = () => true;
@@ -940,12 +978,12 @@ function runPresets(app) {
   const nameIt = name => { $('preset-name').value = name; $('preset-name-form').requestSubmit(); };
   const options = () => [...$('preset-select').options].map(o => o.textContent);
   const choose = name => { $('preset-select').value = name; $('preset-select').dispatchEvent(new Event('change')); };
-  // A chapter's first button (its main colour, or not played) clicked if it isn't as wanted; its second (also the other colour).
-  const circle = key => $('ch-' + key.replace(/[^A-Za-z0-9]/g, '_'));
-  const otherBtn = key => $('ch-' + key.replace(/[^A-Za-z0-9]/g, '_') + '-other');
+  // A chapter's white and black buttons; tick: its name clicked (in from its main color, or out) if it isn't as wanted.
+  const colorBtn = (key, color) => $('ch-' + key.replace(/[^A-Za-z0-9]/g, '_') + '-' + color);
+  const row = key => colorBtn(key, 'white')?.closest('.chapter-row');
   const tick = (key, on) => {
-    if (!circle(key)) document.querySelector('#edit-studies .study-row .opener').click(); // the study's chapters
-    if (circle(key).querySelector('.side-dot').classList.contains('off') === on) circle(key).click();
+    if (!row(key)) document.querySelector('#edit-studies .study-row .opener').click(); // the study's chapters
+    if (row(key).classList.contains('unplayed') === on) row(key).querySelector('.chapter-label').click();
   };
   // The Groups page, afresh (leaving it first if already there; any changes not saved dropped).
   const openGroups = () => { if (!$('groups-screen').classList.contains('hidden')) $('nav-practice').click(); $('nav-groups').click(); };
@@ -955,11 +993,11 @@ function runPresets(app) {
   // From All: Save as new, with the Sicilian unticked.
   openGroups();
   tick(C, false);
-  check('presets: while editing, the count follows the ticks; what\'s practised doesn\'t change yet', [$('edit-summary').textContent, $('sel-summary').textContent, app.selection.length], ['1 chapter selected', '2 chapters selected', 2]);
+  check('presets: while editing, the count follows the ticks; what\'s practiced doesn\'t change yet', [$('edit-summary').textContent, $('sel-summary').textContent, app.selection.length], ['1 chapter selected', '2 chapters selected', 2]);
   $('preset-new-btn').click();
   nameIt('Italian');
-  check('presets: Save as new: chosen, practised, still on the Groups page with it', [app.presets, $('preset-select').value, app.selection, $('edit-preset-select').value, $('edit-summary').textContent],
-    [[{ name: 'Italian', chapters: [B], bothSides: [] }], 'Italian', [B], 'Italian', '1 chapter selected']);
+  check('presets: Save as new: chosen, practiced, still on the Groups page with it', [app.presets, $('preset-select').value, app.selection, $('edit-preset-select').value, $('edit-summary').textContent],
+    [[{ name: 'Italian', chapters: [B], colors: {} }], 'Italian', [B], 'Italian', '1 chapter selected']);
   openGroups();
   check('presets: your own preset: Save, Save as new, Rename, Delete, Cancel', ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')).length, 5);
   $('preset-new-btn').click();
@@ -970,25 +1008,47 @@ function runPresets(app) {
   $('preset-name-cancel').click();
   // Save, Cancel; a chapter played from both sides.
   tick(C, true);
-  const buttons = () => [circle(B).title, circle(B).querySelector('.side-dot').className, otherBtn(B).title, otherBtn(B).querySelector('.side-dot').className, otherBtn(B).disabled, circle(B).closest('.chapter-row').classList.contains('unplayed')];
+  const buttons = () => [colorBtn(B, 'white').title, colorBtn(B, 'white').querySelector('.side-dot').className, colorBtn(B, 'black').title, colorBtn(B, 'black').querySelector('.side-dot').className, row(B).classList.contains('unplayed')];
   const sideStates = [buttons()];
-  otherBtn(B).click(); sideStates.push(buttons()); // also Black
-  circle(B).click(); sideStates.push(buttons()); // not played
-  circle(B).click(); sideStates.push(buttons()); // White again: the other colour reset
-  check('groups: two buttons: the main colour or not played; also the other colour, only while the first is on, reset when left out', sideStates, [
-    ['You play white. Click: not played', 'side-dot white', 'Click: also play black', 'side-dot black off', false, false],
-    ['You play white. Click: not played', 'side-dot white', 'Also playing black. Click: white only', 'side-dot black', false, false],
-    ['Not played. Click: play white', 'side-dot off', '', 'side-dot black off', true, true],
-    ['You play white. Click: not played', 'side-dot white', 'Click: also play black', 'side-dot black off', false, false]]);
-  otherBtn(B).click(); // both colours
+  colorBtn(B, 'black').click(); sideStates.push(buttons()); // also Black
+  colorBtn(B, 'white').click(); sideStates.push(buttons()); // Black only
+  colorBtn(B, 'black').click(); sideStates.push(buttons()); // neither: out of the group
+  row(B).querySelector('.chapter-label').click(); sideStates.push(buttons()); // its name: in, from its main color
+  const notWhite = ['Click: play white (main color)', 'side-dot white x'], white = ['Plays white (main color). Click: not white', 'side-dot white'];
+  const notBlack = ['Click: play black', 'side-dot black x'], black = ['Plays black. Click: not black', 'side-dot black'];
+  check('groups: a white and a black button, each on or off (an X), whatever the main color; with neither, out (grayed); the name adds the main color', sideStates, [
+    [...white, ...notBlack, false], [...white, ...black, false], [...notWhite, ...black, false], [...notWhite, ...notBlack, true], [...white, ...notBlack, false]]);
+  colorBtn(B, 'black').click(); // both colors
   $('preset-save-btn').click();
-  check('presets: Save, with the chapter from both colours; nothing left to save', [app.presets[0].chapters.sort(), app.presets[0].bothSides, app.selection.sort(), $('preset-save-btn').disabled,
-    app.practiceItems('lines').some(({ line }) => line.yourColor === 'black' && line.chapterKey === B)], [[B, C], [B], [B, C], true, true]);
+  const sidesPlayed = key => [...new Set(app.practiceItems('lines').filter(({ line }) => line.chapterKey === key).map(({ line }) => line.yourColor))].sort();
+  check('presets: Save, with the chapter from both colors; nothing left to save', [app.presets[0].chapters.sort(), app.presets[0].colors, app.selection.sort(), $('preset-save-btn').disabled, sidesPlayed(B)],
+    [[B, C], { [B]: ['white', 'black'] }, [B, C], true, ['black', 'white']]);
+  colorBtn(B, 'white').click(); // Black only, in a White chapter
+  $('preset-save-btn').click();
+  check('presets: a chapter played only from its other color', [app.presets[0].colors, sidesPlayed(B), sidesPlayed(C)], [{ [B]: ['black'] }, ['black'], ['black']]);
+  // A study's buttons: all its chapters (here the Italian, Black only, and the Sicilian, Black's).
+  const studyBtn = color => $('st-AAAAAAAA-' + color), dot = b => b.querySelector('.side-dot').className;
+  const before = [dot(studyBtn('white')), dot(studyBtn('black')), studyBtn('black').title];
+  colorBtn(B, 'white').click(); // the Italian from both again
+  const some = [dot(studyBtn('white')), studyBtn('white').title];
+  studyBtn('white').click(); // all White
+  const allWhite = [dot(studyBtn('white')), dot(colorBtn(C, 'white')), studyBtn('white').title];
+  studyBtn('white').click(); // none White
+  const noWhite = [dot(colorBtn(B, 'white')), dot(colorBtn(C, 'white')), dot(colorBtn(C, 'black'))];
+  studyBtn('black').click(); // none Black: both out
+  const out = [row(B).classList.contains('unplayed'), row(C).classList.contains('unplayed'), $('edit-summary').textContent, dot($('all-black'))];
+  $('all-white').click(); // All: every chapter White
+  const allRow = [dot($('all-white')), dot($('all-black')), $('edit-summary').textContent];
+  check('groups: a study\'s buttons and All\'s set the color for all their chapters; a fainter X when only some play it', [before, some, allWhite, noWhite, out, allRow], [
+    ['side-dot white x', 'side-dot black', 'All play black. Click: none'], ['side-dot white x some', 'Some play white. Click: all'],
+    ['side-dot white', 'side-dot white', 'All play white. Click: none'], ['side-dot white x', 'side-dot white x', 'side-dot black'],
+    [true, true, '0 chapters selected', 'side-dot black x'], ['side-dot white', 'side-dot black x', '2 chapters selected']]);
+  $('preset-cancel-btn').click();
   openGroups();
   tick(C, false);
   $('preset-cancel-btn').click();
   check('presets: Cancel leaves it as it was', [app.presets[0].chapters.length, app.selection.length], [2, 2]);
-  // Another group chosen while editing: its chapters ticked, and chosen to practise.
+  // Another group chosen while editing: its chapters ticked, and chosen to practice.
   openGroups();
   $('edit-preset-select').value = '';
   $('edit-preset-select').dispatchEvent(new Event('change'));
@@ -1004,19 +1064,19 @@ function runPresets(app) {
   check('presets: Rename (still editing)', [app.presets[0].name, $('preset-select').value, $('groups-screen').classList.contains('hidden')], ['Both', 'Both', false]);
   $('preset-delete-btn').click();
   check('presets: Delete: All chosen', [app.presets.length, $('preset-select').value, app.selection.length, options()], [0, '', 2, ['All']]);
-  // Hiding doesn't change what's practised: All has hidden studies' chapters, and they can be ticked.
+  // Hiding doesn't change what's practiced: All has hidden studies' chapters, and they can be ticked.
   const library = structuredClone(LIBRARY);
   library.studies.push({ id: 'EEEEEEEE', name: 'Other Study', chapters: [{ key: F, id: 'FFFFFFFF', name: 'Side line', pgn: SIDE_LINE }] });
   app.setLibrary(library);
   app.setHidden(['EEEEEEEE']);
   choose('');
   check('presets: All includes hidden studies', app.selection.sort(), [B, C, F]);
-  app.setPresets([{ name: 'Mixed', chapters: [B, F], bothSides: [] }]);
+  app.setPresets([{ name: 'Mixed', chapters: [B, F], colors: {} }]);
   app.renderPresets(); // into the drop-down
   choose('Mixed');
   openGroups();
   tick(C, true);
-  if (!$('ch-' + F.replace(/[^A-Za-z0-9]/g, '_'))) document.querySelectorAll('#edit-studies .study-row .opener')[1].click(); // the hidden study's chapters
+  if (!row(F)) document.querySelectorAll('#edit-studies .study-row .opener')[1].click(); // the hidden study's chapters
   tick(F, false);
   $('preset-save-btn').click();
   check('presets: a hidden study\'s chapter listed while editing, and unticked', [...app.presets[0].chapters].sort(), [B, C]);

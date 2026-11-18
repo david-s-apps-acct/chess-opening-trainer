@@ -97,7 +97,7 @@
   header h1 { font-size: 20px; font-weight: 400; margin: 0; margin-right: auto; color: var(--text); letter-spacing: .01em; }
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  /* The Lichess button's red dot (not connected): small, centred on the lowercase letters */
+  /* The Lichess button's red dot (not connected): small, centered on the lowercase letters */
   header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: middle; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
@@ -190,7 +190,7 @@
   .preset-name-form .form-error:empty { display: none; }
   .all-row { border-bottom: 1px solid var(--border); }
   .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
-  .hidden-study, .review-chapter.hidden-chapter { opacity: .5; } /* hidden studies and chapters, shown in grey while the top eye is open */
+  .hidden-study, .review-chapter.hidden-chapter { opacity: .5; } /* hidden studies and chapters, shown in gray while the top eye is open */
   .review-chapter .hide-btn { flex: none; margin-left: auto; }
   button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
   .toggle-space { width: 24px; flex: none; }
@@ -214,10 +214,16 @@
   .side-dot.white { background: #fff; }
   .side-dot.black { background: #222; border-color: #aaa; } /* a light edge, so it isn't taken for an empty ring */
   .side-dot.off { background: none; border-style: dashed; }
-  /* On the Groups page, each chapter's two buttons (in place of a tick box): its main colour or not played; also the other colour. */
+  /* On the Groups page, the white and black buttons (each chapter's, each study's and All's), in place of tick boxes. */
   .side-btn { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; box-shadow: none; }
   .side-btn .side-dot { width: 13px; height: 13px; margin: 0; }
   .side-btn + .side-btn { margin-left: 4px; }
+  .side-btns { display: inline-flex; flex: none; align-items: center; margin-right: 6px; }
+  /* Not played: an X through the color's dot (fainter when only some of a study's chapters play it) */
+  .side-dot.x { position: relative; }
+  .side-dot.x::before, .side-dot.x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 17px; height: 2px; border-radius: 1px; background: var(--bad); transform: translate(-50%, -50%) rotate(45deg); }
+  .side-dot.x::after { transform: translate(-50%, -50%) rotate(-45deg); }
+  .side-dot.x.some::before, .side-dot.x.some::after { opacity: .4; }
   .side-btn:hover:not(:disabled) { background: none; }
   .side-btn:hover:not(:disabled) .side-dot { border-color: var(--text); }
   .chapter-row.unplayed .name { opacity: .55; }
@@ -324,7 +330,7 @@
   .review-comment:empty { display: none; }
   /* A critical position (see criticalAt): its tile on the Studies page, with an orange edge, and the
      orange dot after a move leading to one in the move tree. Orange, as amber is the study authors',
-     violet the errors', and teal and grey the masters and Lichess moves'. */
+     violet the errors', and teal and gray the masters and Lichess moves'. */
   .panel.review-critical { padding: 12px 14px; border-left: 4px solid var(--critical); }
   .review-critical:empty { display: none; }
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
@@ -332,14 +338,14 @@
   .review-critical .critical-moves div { color: var(--muted); }
   .critical-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--critical); margin: 0 2px 2px 1px; vertical-align: middle; }
   .critical-row { color: var(--critical-text); }
-  /* Under the board: Study | Masters | Lichess | Errors, the arrows shown (one at a time), with their colours */
+  /* Under the board: Study | Masters | Lichess | Errors, the arrows shown (one at a time), with their colors */
   .review-view { margin-top: 10px; }
   .review-view button { padding: 6px 10px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; } /* quarters of the board's width */
   .arrow-swatch { width: 14px; height: 4px; border-radius: 2px; }
   .arrow-swatch + .arrow-swatch { margin-left: -4px; }
   .review-comment .glyph { margin: 0 6px 0 0; }
   .review-comment p { margin: 0 0 4px; }
-  /* The move statistics and your accuracy: the page's text size and colour; small grey headings */
+  /* The move statistics and your accuracy: the page's text size and color; small gray headings */
   #practice-title .review-btn { margin-left: 6px; vertical-align: -1px; }
   /* A name hidden during a line: stars, clicked to show it */
   .hidden-name { background: none; border: 0; box-shadow: none; padding: 0; margin: 0; font: inherit; color: var(--muted); letter-spacing: 2px; cursor: pointer; }
@@ -356,13 +362,14 @@
   .moves .none { grid-column: 1 / -1; padding: 6px 10px; color: var(--muted); }
   .move-nav { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
   .move-nav button { flex: 1; padding: 4px 0; font-size: 13px; }
+  .move-nav button.review-all { flex: 0 0 auto; padding: 4px 10px; } /* + All / − All: every variation in the tree */
   .panel { flex: 1; min-width: 260px; background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 16px; }
   .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
   #practice-position { font-size: 13px; }
   .status { margin: 16px 0; padding: 10px 12px; border-radius: 6px; background: var(--surface-2); min-height: 44px; }
   .status > * { transition: opacity .6s ease; }
   .status.fading > * { opacity: 0; } /* an error's message fading before "Your move" */
-  .error-teal { color: #2fc4c4; } .error-violet { color: #a98bff; } .error-grey { color: #9e9e9e; } /* the arrows' teal, violet and grey (see BRUSHES), lighter */
+  .error-teal { color: #2fc4c4; } .error-violet { color: #a98bff; } .error-gray { color: #9e9e9e; } /* the arrows' teal, violet and gray (see BRUSHES), lighter */
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
@@ -391,8 +398,6 @@
   .group-card h2 { margin-bottom: 0; }
   .group-card .preset-edit { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; }
   .group-card .preset-buttons { flex-basis: 100%; }
-  .group-key { font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; padding-left: 2px; }
-  .group-key .side-dot { margin: 0 2px 0 0; }
   .group-list { border: 1px solid var(--border); border-radius: 6px; }
   .table-overlay .welcome-card { width: 100%; max-width: 560px; padding: 0; overflow: hidden; }
   /* The welcome splash: a blue band with the title, then a small board (the Ruy Lopez) beside the text (above it on a phone) */
@@ -604,7 +609,7 @@
     </div>
   </section>
 
-  <!-- Groups: the named sets of chapters to practise (All is built in), edited here: the group, its
+  <!-- Groups: the named sets of chapters to practice (All is built in), edited here: the group, its
        buttons, a key to the buttons, and every study and chapter (see Groups in the script) -->
   <section id="groups-screen" class="hidden">
     <div class="card group-card">
@@ -625,10 +630,9 @@
           <div id="preset-name-error" class="form-error"></div>
         </form>
       </div>
-      <div class="group-key muted"><span><span class="side-dot off"></span> Not played</span><span><span class="side-dot white"></span> Main colour</span><span><span class="side-dot white"></span><span class="side-dot black"></span> Both colours</span></div>
       <div class="group-list">
         <div id="all-row" class="row study-row all-row"><span class="toggle-space"></span>
-          <input type="checkbox" id="all-box"><span class="name"><label for="all-box">All</label></span>
+          <span id="all-colors" class="side-btns"></span><span class="name">All</span>
         </div>
         <div id="edit-studies"></div>
       </div>
@@ -657,6 +661,7 @@
             <button id="review-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
             <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
             <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
+            <button id="review-all" class="review-all"></button>
           </div>
         </div>
         <div id="review-comment" class="panel review-comment"></div>
@@ -712,15 +717,15 @@
           <li><b>Make your repertoire on Lichess</b> (lichess.org/study). One study per opening, one chapter per line. Set each chapter's <b>Orientation</b> to the side you play: that decides which moves you're tested on. Mark moves with ?, ?! and so on as you like.</li>
           <li><b>Connect to Lichess</b> (Lichess page). Your studies are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li><b>Restore a backup, or download the statistics.</b> Used the app before? <b>Restore backup</b>. Otherwise check the <b>rating bands and time controls</b> (Move statistics, suggested from your Lichess rating) and press <b>Download statistics</b>.</li>
-          <li><b>Choose what to practise.</b> Start with <b>All</b>, or make a group on the Studies page (<b>Groups</b>, ✎).</li>
-          <li><b>Practise.</b> On the Practice page, choose <b>Lines</b> (whole lines) or <b>Positions</b> (single moves) and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck.</li>
+          <li><b>Choose what to practice.</b> Start with <b>All</b>, or make a group on the Studies page (<b>Groups</b>, ✎).</li>
+          <li><b>Practice.</b> On the Practice page, choose <b>Lines</b> (whole lines) or <b>Positions</b> (single moves) and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck.</li>
         </ol>
         <ul>
           <li>Look through a chapter first on the <b>Studies</b> page (offline too).</li>
           <li>Save a backup now and then (Lichess page): your stats live only in this browser.</li>
           <li>Install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. The installed app keeps its own data: connect to Lichess there, and restore a backup to bring your stats.</li>
         </ul>
-        <p>Statistics download in the background; you can practise meanwhile. New studies appear the next time the app opens. Once opened online, the app works offline, except for anything that needs Lichess.</p>
+        <p>Statistics download in the background; you can practice meanwhile. New studies appear the next time the app opens. Once opened online, the app works offline, except for anything that needs Lichess.</p>
         <details>
           <summary>Words used in the app</summary>
           <ul>
@@ -749,7 +754,7 @@
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
-          <li>A chapter set to both colours in its group (see Groups) gives lines for each side.</li>
+          <li>A chapter played from both colors in its group (see Groups) gives lines for each side.</li>
           <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
           <li><b>Skip</b> goes on to the next one; <b>End practice</b> stops. The moves you've answered still count.</li>
           <li>Comments from your study appear as blue bubbles in the move list; hover over one to read it. Click a move, or use ◀ ▶ or the arrow keys, to look back.</li>
@@ -764,30 +769,30 @@
             <li>How masters rate it: "#3 masters move (12%)" or "Not a masters move".</li>
             <li>How often it's played on Lichess: "#4 Lichess move (8%)" or "Not played in Lichess games".</li>
           </ul>
-          <p>What the move is shows in violet, as errors do on the boards; the masters line in teal for a masters move, the Lichess line in grey for a Lichess move. After 3 seconds the message gives way to "Your move (3 of 5 in line)". After an error, Hint also shows what your study says about the move you tried.</p>
+          <p>What the move is shows in violet, as errors do on the boards; the masters line in teal for a masters move, the Lichess line in gray for a Lichess move. After 3 seconds the message gives way to "Your move (3 of 5 in line)". After an error, Hint also shows what your study says about the move you tried.</p>
         </details>
         <details>
           <summary>The small board</summary>
           <p>Hover over (or tap) a move in the move list, the move tree or the Show lines table.</p>
           <ul>
-            <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colours). Then the position's move accuracy, when you last tested it, and your errors in the same colors.</li>
+            <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colors). Then the position's move accuracy, when you last tested it, and your errors in the same colors.</li>
             <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
             <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and how often the position is reached, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
           </ul>
         </details>
         <details>
-          <summary>Arrow colours</summary>
+          <summary>Arrow colors</summary>
           <p>The same on every board, as on Lichess:</p>
           <table class="help-table">
             <tr><td>White, blue outline</td><td>Your study's main move (also Hint and Show correct move)</td></tr>
             <tr><td>White</td><td>Another move in your study</td></tr>
             <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Studies page, small board)</td></tr>
             <tr><td class="error-teal">Teal</td><td>A masters move</td></tr>
-            <tr><td class="error-grey">Grey</td><td>A Lichess move (Lichess view)</td></tr>
-            <tr><td>45% on a teal or grey arrow</td><td>How often it's played (masters on teal, Lichess on grey)</td></tr>
+            <tr><td class="error-gray">Gray</td><td>A Lichess move (Lichess view)</td></tr>
+            <tr><td>45% on a teal or gray arrow</td><td>How often it's played (masters on teal, Lichess on gray)</td></tr>
             <tr><td>×2 on an arrow</td><td>An error you made twice in your last 10 tries</td></tr>
             <tr><td>75% on the outlined arrow</td><td>Errors: the position's move accuracy</td></tr>
-            <tr><td>White outline on teal or grey</td><td>Also in your study</td></tr>
+            <tr><td>White outline on teal or gray</td><td>Also in your study</td></tr>
             <tr><td class="error-violet">Violet</td><td>An error: any move you tried that isn't one of your study's moves</td></tr>
             <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
           </table>
@@ -838,8 +843,8 @@
       <div class="card" id="help-groups">
         <h2>Groups</h2>
         <ul>
-          <li>What you practise is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its main colour; it can't be renamed or deleted) or one of your own. Only groups decide what you practise.</li>
-          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group, then for each chapter, the first button (or its name) plays its main colour or leaves it out (a dashed ring); the second, next to it, also plays the other colour. Leaving a chapter out resets the second.</li>
+          <li>What you practice is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
+          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group, then for each chapter, each chapter has a white and a black button, played or not (an X through it), whatever its main color; with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out. A study's buttons, and All's, set that color for all their chapters (a fainter X: only some play it).</li>
           <li>Then <b>Save</b>, <b>Create new</b> (a new group from the chapters chosen; untick <b>All</b> first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Create new. Leaving the page asks before dropping changes not saved.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are in backups, but Merge backup leaves them alone, so each device can have its own.</li>
         </ul>
@@ -849,18 +854,18 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colours): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of Lichess games play a move that does 10 points or more worse than the position (e.g. it scores 38% where the position scores 50%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% (scores 38%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
         </ul>
         <details>
           <summary>Hiding studies and chapters</summary>
-          <p>The eye beside the <b>Studies</b> heading shows hidden studies and chapters (in grey), each with its own eye: click it to hide or unhide that study or chapter. Click the eye beside Studies again to put them out of sight. Hiding only tidies the list: it doesn't change what's practised.</p>
+          <p>The eye beside the <b>Studies</b> heading shows hidden studies and chapters (in gray), each with its own eye: click it to hide or unhide that study or chapter. Click the eye beside Studies again to put them out of sight. Hiding only tidies the list: it doesn't change what's practiced.</p>
         </details>
         <details>
           <summary>The move tree</summary>
           <ul>
-            <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them.</li>
+            <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
             <li>Your moves with move accuracy below 100% have a violet background (moves of the other side too, once you've played it). Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
@@ -884,7 +889,7 @@
             <li>Chrome and Edge ask where to save. Safari and Firefox use your download folder (in Safari, Settings → General → File download location → Ask for each download lets you choose).</li>
             <li>Restoring replaces your stats, settings and groups, and merges the Lichess statistics with those already here (the newer copy of each wins). Backups from earlier versions of the app can't be used.</li>
             <li>Merging adds the backup's practice history to yours: each position keeps its last 10 tries from both, in time order, and the same try is never counted twice, so merging a backup again changes nothing. The Lichess statistics merge as for Restore. Your settings, groups and hidden studies stay as they are.</li>
-            <li>To practise on two devices, e.g. an iPad and a computer: on the iPad, Save backup and send the file to the computer (AirDrop, iCloud Drive); there, Merge backup. To bring the iPad up to date too, Save backup on the computer and Merge it on the iPad.</li>
+            <li>To practice on two devices, e.g. an iPad and a computer: on the iPad, Save backup and send the file to the computer (AirDrop, iCloud Drive); there, Merge backup. To bring the iPad up to date too, Save backup on the computer and Merge it on the iPad.</li>
           </ul>
         </details>
         <details>
@@ -994,10 +999,12 @@ async function saveMoveStats(epds = Object.keys(moveStats)) {
 
 let token = store.get('token', null);
 let library = null; // the studies fetched from Lichess: { fetchedAt, username, ratings, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
-// Presets: named sets of chapters, [{ name, chapters: [chapter keys], bothSides: [the chapters among them
-// played from both sides; the others from the chapter's own side] }], and the name of the one chosen
+// Presets: named sets of chapters, [{ name, chapters: [chapter keys], colors: { key: ['white', 'black'] } }]
+// (colors: for the chapters not played only from their main color (the chapter's own side), the colors
+// they're played from, both or just the other; the rest play their main color; until 18 November 2026
+// a list, bothSides, of those played from both, moved over by checkedPresets), and the name of the one chosen
 // (null for the built-in All: every chapter, from its own side, worked out each time, not stored).
-// What's practised is always the chosen preset's chapters (selection, worked out from it: see
+// What's practiced is always the chosen preset's chapters (selection, worked out from it: see
 // useChosenPreset). A preset of your own can't be called "All": one that is (e.g. from a backup) becomes
 // "All 2".
 const ALL_PRESET = 'All';
@@ -1005,16 +1012,26 @@ const checkedPresets = v => {
   const names = new Set([ALL_PRESET.toLowerCase()]);
   return (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.name.trim() && Array.isArray(p.chapters))
     .map(p => ({ name: p.name.trim().toLowerCase() === ALL_PRESET.toLowerCase() ? `${ALL_PRESET} 2` : p.name.trim(), chapters: p.chapters.filter(k => typeof k === 'string'),
-      bothSides: (Array.isArray(p.bothSides) ? p.bothSides : []).filter(k => typeof k === 'string' && p.chapters.includes(k)) }))
+      colors: checkedColors(p) }))
     .filter(p => !names.has(p.name.toLowerCase()) && names.add(p.name.toLowerCase()));
 };
+const COLORS = ['white', 'black'];
+function checkedColors(p) {
+  const colors = {};
+  for (const k of p.chapters) {
+    const c = p.colors && typeof p.colors === 'object' ? p.colors[k] : undefined;
+    if (Array.isArray(c)) { const ok = COLORS.filter(x => c.includes(x)); if (ok.length) colors[k] = ok; }
+    else if (Array.isArray(p.bothSides) && p.bothSides.includes(k)) colors[k] = [...COLORS];
+  }
+  return colors;
+}
 let selection = new Set(); // the chosen group's (preset's) chapters (keys such as "studyId/chapterId")
-let bothSides = new Set(); // those of them played from both sides
+let chapterColors = new Map(); // those of them not played only from their main color: key -> the colors played
 let presets = checkedPresets(store.get('presets', []));
 let chosenPresetName = store.get('chosenPreset', null);
 // The studies (by id) and chapters (by key, "studyId/chapterId") hidden from the Studies page's list. Only
 // the list: hiding doesn't affect practice (only groups do). (Until 4 November 2026 only studies could be
-// hidden, under "hiddenStudies", and they weren't practised.)
+// hidden, under "hiddenStudies", and they weren't practiced.)
 let hidden = new Set(store.get('hidden', null) ?? store.get('hiddenStudies', []));
 const saveHidden = () => { store.set('hidden', [...hidden]); store.remove('hiddenStudies'); };
 
@@ -1105,7 +1122,7 @@ const saveSettings = () => store.set('settings', settings);
 
 // The studies list's open/closed state (not remembered).
 let openStudy = null;                // the study (id) whose chapters are listed: one at a time
-let showHidden = false;              // the top eye: hidden studies and chapters are listed (in grey)
+let showHidden = false;              // the top eye: hidden studies and chapters are listed (in gray)
 
 // ---------- Page helpers ----------
 
@@ -1503,7 +1520,7 @@ async function finishLogIn() {
   const saved = store.get('login', null);
   store.remove('login');
   const fail = text => { setUpdateStatus(text, true); return false; };
-  if (params.get('error') === 'access_denied') return fail('Connecting was cancelled on Lichess.');
+  if (params.get('error') === 'access_denied') return fail('Connecting was canceled on Lichess.');
   if (params.has('error')) return fail(`Lichess couldn't connect: ${params.get('error_description') || params.get('error')}.`);
   if (!saved || params.get('state') !== saved.state) return fail("Connecting didn't complete. Please try again.");
   try {
@@ -1584,15 +1601,18 @@ function moveTree(chapterKey, game, start) {
 const isMarkedAlternative = n => n.variationIndex > 0 && isMistake(n);
 const choicesAt = (node, mainOnly = false) => mainOnly ? node.children.slice(0, 1) : node.children.filter(c => !isMarkedAlternative(c));
 
-// Whether a move is practised when playing side: not after (or as) one of that side's marked
+// Whether a move is practiced when playing side: not after (or as) one of that side's marked
 // alternatives.
 function practisedAs(m, side) {
   for (let n = m; n.parent; n = n.parent) if (n.color === side && isMarkedAlternative(n)) return false;
   return true;
 }
 
-// The sides a chapter is practised from: its own side, or both if its group says so.
-const sidesOf = ch => { const own = parseChapter(ch).yourColor; return bothSides.has(ch.key) ? [own, opposite(own)] : [own]; };
+// The sides a chapter is practiced from: its main color, or what its group says (both, or the other only).
+const sidesOf = ch => sidesFor(parseChapter(ch).yourColor, chapterColors.get(ch.key));
+// The sides played, the main color first: own, the chapter's main color; played, the colors played
+// (an array or set; none given: the main color only).
+const sidesFor = (own, played) => played ? [own, opposite(own)].filter(s => (played.has ? played.has(s) : played.includes(s))) : [own];
 const opposite = color => color === 'white' ? 'black' : 'white';
 
 // A chapter's lines when you play side (the chapter's own side by default): at your turns each of your
@@ -1621,7 +1641,7 @@ function chapterLines(ch, side = parseChapter(ch).yourColor) {
   return lines;
 }
 
-// The lines a chapter is practised with, from each of its sides.
+// The lines a chapter is practiced with, from each of its sides.
 const practisedLines = ch => sidesOf(ch).flatMap(side => chapterLines(ch, side));
 
 // Every move node in a chapter's tree, in order (each move, then everything after it).
@@ -1681,7 +1701,7 @@ const GLYPHS = {
 // Comment text without Lichess's embedded arrows, circles and evals.
 const commentText = comments => (comments || []).map(c => pgn.parseComment(c).text.trim()).filter(Boolean);
 // The arrows and circles drawn in a study ([%cal …] and [%csl …] in the comments), as chessground
-// shapes in their Lichess colours (chessground's green, red, blue and yellow).
+// shapes in their Lichess colors (chessground's green, red, blue and yellow).
 const drawnShapes = comments => (comments || []).flatMap(c => pgn.parseComment(c).shapes).map(s =>
   s.from === s.to ? { orig: makeSquare(s.from), brush: s.color } : { orig: makeSquare(s.from), dest: makeSquare(s.to), brush: s.color });
 
@@ -1747,7 +1767,7 @@ const attemptsAt = node => history.positions[node.key] || [];
 const lastTriedAt = key => history.positions[key]?.at(-1)?.at ?? null;
 const lastPlayedAt = key => history.lines[key]?.at(-1) ?? null;
 
-// Whether Main lines only is ticked for what's practised (or, between sessions, the kind chosen).
+// Whether Main lines only is ticked for what's practiced (or, between sessions, the kind chosen).
 const mainOnlyNow = () => session ? session.mainOnly : settings.practice.mainLinesOnly[settings.practice.kind];
 
 // An attempt is right if its first move is one of your study's moves there (see choicesAt): with Main
@@ -1851,12 +1871,12 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // board), or, with the eye by the Studies heading, shown dimmed, each with its own eye.
 // The Groups page (between Practice and Studies) edits the groups (presets in the code: named sets of
 // chapters; All, every chapter, is built in): the chosen group is always being edited there; every study
-// and chapter is listed, each chapter with its two buttons (its main colour or not played; also the other
-// colour), with Save, Create new, Rename, Delete and Cancel (for All, only Create new and Cancel; Save and
+// and chapter is listed, each chapter with its two buttons (its main color or not played; also the other
+// color), with Save, Create new, Rename, Delete and Cancel (for All, only Create new and Cancel; Save and
 // Cancel only once something has changed). Leaving the page with changes not saved asks first, then drops them.
-// Only groups decide what's practised: the group chosen on the Practice page (the Studies to practice
+// Only groups decide what's practiced: the group chosen on the Practice page (the Studies to practice
 // tile); the tile is hidden during practice, since a session's lines are chosen when it starts.
-let editing = null; // on the Groups page, the group being edited: { preset, ticks (a Set of chapter keys), both (those played from both colours), open (the studies whose chapters are listed) }
+let editing = null; // on the Groups page, the group being edited: { preset, colors (a Map: chapter key -> the Set of colors played; only the chapters in the group), open (the studies whose chapters are listed) }
 
 
 // The Practice page's Studies to practice and Spaced repetition tiles: once there are studies, and not
@@ -1875,7 +1895,7 @@ function renderStudies() {
   updateSelectionPanel();
   renderStudiesList();
   renderGroupEditor();
-  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practised follows the group
+  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practiced follows the group
 }
 
 function renderStudiesList() {
@@ -1907,16 +1927,15 @@ function renderStudiesList() {
   }
 }
 
-// The Groups page while a group is edited: every study (several can be open at once, since there's
-// room), with its tick box, and its chapters' buttons.
+// The Groups page while a group is edited: All, then every study (several can be open at once, since
+// there's room), each with white and black buttons for all its chapters, and its chapters' buttons.
 function renderGroupEditor() {
   if (!editing) return;
   const list = $('edit-studies'), scroll = window.scrollY;
+  $('all-colors').replaceChildren(...groupColorButtons('all', allChapters().map(c => c.key), 'All'));
   list.replaceChildren(...library.studies.map(study => {
     const open = editing.open.has(study.id);
-    const keys = study.chapters.map(c => c.key), nTicked = keys.filter(k => editing.ticks.has(k)).length;
-    const box = element('input', { type: 'checkbox', id: 'st-' + study.id, checked: nTicked === keys.length && keys.length > 0,
-      indeterminate: nTicked > 0 && nTicked < keys.length, onchange: e => setTicked(keys, e.target.checked) });
+    const box = element('span', { class: 'side-btns' }, groupColorButtons('st-' + study.id, study.chapters.map(c => c.key), study.name));
     return element('div', { class: 'study' }, studyRow(study, open, () => { open ? editing.open.delete(study.id) : editing.open.add(study.id); renderGroupEditor(); }, null, box),
       open ? element('div', { class: 'chapters' }, study.chapters.map(chapterRow)) : null);
   }));
@@ -1924,7 +1943,7 @@ function renderGroupEditor() {
 }
 
 // A chapter to open: numbered as on Lichess; the one on
-// the board highlighted; one that can't be shown greyed out, with the reason on hover; a hidden one dimmed;
+// the board highlighted; one that can't be shown grayed out, with the reason on hover; a hidden one dimmed;
 // its eye while the top eye is open.
 function chapterLink(c, k) {
   const p = parseChapter(c), current = c === review?.ch, isHidden = hidden.has(c.key);
@@ -1936,7 +1955,7 @@ function chapterLink(c, k) {
 }
 
 // Whether a move is shown as one of yours (its accuracy, the "your move" hover board): a move of the
-// chapter's own side (own) that's practised, or any move whose position you've tried (e.g. played from
+// chapter's own side (own) that's practiced, or any move whose position you've tried (e.g. played from
 // the other side).
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
 
@@ -1966,35 +1985,49 @@ function studyRow(study, open, toggle, eye = null, box = null) {
     element('span', { class: 'name', title: study.name }, opener(study.name, toggle), eye));
 }
 
-// A chapter's row on the Groups page (indented under its study's name), with two buttons in place of a
-// tick box: the first plays its main colour (filled white or black) or leaves it out (an empty dashed
-// ring, the name dimmed), as clicking the chapter's name does; the second, in the other colour, also plays
-// that colour (filled) or not (a dashed ring), and works only while the first is on. Leaving a chapter
-// out resets the second (see setTicked). Then its name (the opening on hover) and "· 5 lines" (or why it
-// has none to practice: such a chapter's buttons can't be clicked).
+// A white or black button on the Groups page: a dot in its color, with an X through it when not played
+// (a fainter X when only some of a study's chapters play it). state: 'on', 'off' or 'some'.
+function colorButton(bid, color, state, title, onclick, label, disabled = false) {
+  return element('button', { id: bid, class: 'side-btn', title, disabled, 'aria-label': `${label}: ${title}`,
+    'aria-pressed': state === 'on' ? 'true' : state === 'some' ? 'mixed' : 'false', onclick },
+    element('span', { class: `side-dot ${color}` + (state === 'off' ? ' x' : state === 'some' ? ' x some' : '') }));
+}
+
+// The white and black buttons for many chapters (a study's, or All): on when every chapter plays the
+// color, a fainter X when some do, an X when none do. Clicking plays it in all of them, or (when all
+// do) in none. Chapters that can't be read are left out.
+function groupColorButtons(idBase, keys, label) {
+  const usable = keys.filter(k => !parseChapter(chapterByKey(k)).error);
+  return COLORS.map(color => {
+    const n = usable.filter(k => editing.colors.get(k)?.has(color)).length;
+    const state = n && n === usable.length ? 'on' : n ? 'some' : 'off';
+    const title = state === 'on' ? `All play ${color}. Click: none` : state === 'some' ? `Some play ${color}. Click: all` : `Click: all play ${color}`;
+    return colorButton(`${idBase}-${color}`, color, state, title, () => setColor(usable, color, state !== 'on'), label, !usable.length);
+  });
+}
+
+// A chapter's row on the Groups page (indented under its study's name): a white and a black button, each
+// played or not (an X through it), whatever the chapter's main color; with neither, it's out of the group
+// and its name grayed. Clicking the name puts it in the group from its main color, or leaves it out.
+// Then "· 5 lines" (or why it has none to practice: such a chapter's buttons can't be clicked).
 function chapterRow(ch) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
-  const on = editing.ticks.has(ch.key), both = on && editing.both.has(ch.key), own = parsed.yourColor, other = own && opposite(own);
-  const lines = parsed.error || !on ? [] : [own, ...both ? [other] : []].flatMap(side => chapterLines(ch, side));
-  const mainTitle = on ? `You play ${own}. Click: not played` : `Not played. Click: play ${own}`;
-  const otherTitle = !on ? null : both ? `Also playing ${other}. Click: ${own} only` : `Click: also play ${other}`;
-  const toggleMain = () => setTicked([ch.key], !on);
-  const button = (bid, cls, title, onclick, disabled) => element('button', { id: bid, class: 'side-btn', title, disabled,
-    'aria-label': `${ch.name}: ${parsed.error || title || `${other}: not played`}`, onclick }, element('span', { class: 'side-dot ' + cls }));
-  return element('div', { class: 'row chapter-row' + (on ? '' : ' unplayed') },
+  const played = editing.colors.get(ch.key), own = parsed.yourColor;
+  const lines = parsed.error || !played ? [] : sidesFor(own, played).flatMap(side => chapterLines(ch, side));
+  const button = color => {
+    if (parsed.error) return element('button', { id: `${id}-${color}`, class: 'side-btn', disabled: true, 'aria-label': `${ch.name}: ${parsed.error}` }, element('span', { class: 'side-dot off' }));
+    const on = !!played?.has(color), main = color === own ? ' (main color)' : '';
+    return colorButton(`${id}-${color}`, color, on ? 'on' : 'off', on ? `Plays ${color}${main}. Click: not ${color}` : `Click: play ${color}${main}`,
+      () => setColor([ch.key], color, !on), ch.name);
+  };
+  const toggle = () => setPlayed([ch.key], !played);
+  return element('div', { class: 'row chapter-row' + (played ? '' : ' unplayed') },
     element('span', { class: 'toggle-space' }), // indented under its study
-    button(id, parsed.error || !on ? 'off' : own, parsed.error ? null : mainTitle, toggleMain, !!parsed.error),
-    button(id + '-other', parsed.error ? 'off' : `${other}${both ? '' : ' off'}`, otherTitle, () => setBothSides(ch.key, !both), !!parsed.error || !on),
-    element('span', { class: 'name' }, quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : toggleMain }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
+    element('span', { class: 'side-btns' }, COLORS.map(button)),
+    element('span', { class: 'name' }, quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : toggle }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
       lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null);
-}
-
-// A chapter played from both colours, or only its main one, in the group being edited.
-function setBothSides(key, on) {
-  on ? editing.both.add(key) : editing.both.delete(key);
-  renderStudies();
 }
 
 // The chapter's opening from its Lichess PGN tags, e.g. "Italian Game: Classical Variation (C53)";
@@ -2009,7 +2042,7 @@ function openingName(parsed) {
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
 // Your moves below 100% move accuracy are violet (each side's moves with its own accuracy: see
-// isShownAsYours); moves after (or as) one of your marked alternatives (never practised) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
+// isShownAsYours); moves after (or as) one of your marked alternatives (never practiced) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
 // shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted).
 // Branches open and close in openSet, and the tree is drawn again by redraw.
 function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
@@ -2083,11 +2116,22 @@ function hideButton(id, isHidden, what) {
   return btn;
 }
 
-// Ticks or unticks chapters (by key) while editing, and redraws the list. Ticked, a chapter plays from
-// its own side unless it's already set to both; unticked, it's not played.
-function setTicked(keys, on) {
+// Puts chapters (by key) in the group being edited, from their main color, or leaves them out; redraws.
+function setPlayed(keys, on) {
   if (!editing) return;
-  for (const k of keys) on ? editing.ticks.add(k) : (editing.ticks.delete(k), editing.both.delete(k));
+  for (const k of keys) on ? editing.colors.set(k, new Set([mainColor(k)])) : editing.colors.delete(k);
+  renderStudies();
+}
+
+// Plays chapters (by key) from a color, or not, in the group being edited; a chapter with no color left
+// is out of the group. Redraws.
+function setColor(keys, color, on) {
+  if (!editing) return;
+  for (const k of keys) {
+    const set = editing.colors.get(k) ?? new Set();
+    on ? set.add(color) : set.delete(color);
+    set.size ? editing.colors.set(k, set) : editing.colors.delete(k);
+  }
   renderStudies();
 }
 
@@ -2105,13 +2149,10 @@ function updateSelectionPanel() {
   const all = allChapters(), count = keys => all.filter(c => keys.has(c.key)).length;
   $('sel-summary').textContent = `${plural(count(selection), 'chapter')} selected`;
   if (!editing) return;
-  const n = count(editing.ticks), all_ = $('all-box');
-  all_.checked = all.length > 0 && n === all.length;
-  all_.indeterminate = n > 0 && n < all.length;
+  const n = count(new Set(editing.colors.keys()));
   $('edit-summary').textContent = `${plural(n, 'chapter')} selected`;
 }
 
-$('all-box').addEventListener('change', e => setTicked(allChapters().map(c => c.key), e.target.checked));
 
 // The chapters a preset has now: those still on Lichess.
 function chaptersOf(preset) {
@@ -2121,17 +2162,17 @@ function chaptersOf(preset) {
 
 // The chosen preset: one of yours, or All (every chapter from its own side, worked out each time).
 const chosenPreset = () => presets.find(p => p.name === chosenPresetName)
-  || { name: ALL_PRESET, builtIn: true, chapters: allChapters().map(c => c.key), bothSides: [] };
+  || { name: ALL_PRESET, builtIn: true, chapters: allChapters().map(c => c.key), colors: {} };
 
-// What's practised: the chosen preset's chapters, and from which sides (after a change of preset or
+// What's practiced: the chosen preset's chapters, and from which sides (after a change of preset or
 // studies).
 function useChosenPreset() {
   const preset = chosenPreset();
   selection = new Set(chaptersOf(preset));
-  bothSides = new Set(preset.bothSides.filter(k => selection.has(k)));
+  chapterColors = new Map(Object.entries(preset.colors ?? {}).filter(([k]) => selection.has(k)));
 }
 
-// The groups' drop-downs: the Practice page's (what's practised) and the Groups page's (the group being
+// The groups' drop-downs: the Practice page's (what's practiced) and the Groups page's (the group being
 // edited); and the editing buttons.
 function renderPresets() {
   const preset = chosenPreset();
@@ -2141,8 +2182,8 @@ function renderPresets() {
     $(id).value = preset.builtIn ? '' : preset.name;
   }
   for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Create new
-  $('preset-new-btn').disabled = !editing?.ticks.size;
-  $('preset-save-btn').disabled = !editing?.ticks.size || !editsUnsaved();
+  $('preset-new-btn').disabled = !editing?.colors.size;
+  $('preset-save-btn').disabled = !editing?.colors.size || !editsUnsaved();
   $('preset-cancel-btn').disabled = !editsUnsaved();
 }
 
@@ -2164,7 +2205,7 @@ $('preset-select').addEventListener('change', e => {
 function startEditing() {
   const open = new Set(library.studies.filter(st => st.chapters.some(c => selection.has(c.key))).map(st => st.id)); // the group's studies
   const preset = chosenPreset(), chapters = chaptersOf(preset);
-  editing = { preset, ticks: new Set(chapters), both: new Set(preset.bothSides.filter(k => chapters.includes(k))), open: editing?.open ?? open };
+  editing = { preset, colors: new Map(chapters.map(k => [k, new Set(presetColorsOf(preset, k))])), open: editing?.open ?? open };
   hideNameForm();
   renderStudies();
 }
@@ -2184,9 +2225,22 @@ function stopEditing() {
 // Whether the group being edited has changes not saved.
 function editsUnsaved() {
   if (!editing) return false;
-  const same = (a, b) => a.size === b.size && [...a].every(k => b.has(k));
-  const chapters = new Set(chaptersOf(editing.preset));
-  return !same(editing.ticks, chapters) || !same(editing.both, new Set(editing.preset.bothSides.filter(k => chapters.has(k))));
+  const sig = entries => entries.map(([k, c]) => k + ':' + COLORS.filter(x => c.includes(x)).join()).sort().join('|');
+  return sig([...editing.colors].map(([k, set]) => [k, [...set]])) !== sig(chaptersOf(editing.preset).map(k => [k, presetColorsOf(editing.preset, k)]));
+}
+
+// A chapter's main color (its own side; white for one that can't be read).
+const mainColor = key => parseChapter(chapterByKey(key)).yourColor ?? 'white';
+// The colors a preset plays a chapter from.
+const presetColorsOf = (preset, key) => preset.colors?.[key] ?? [mainColor(key)];
+// The group being edited, to store: its chapters, and the colors of those not played only from their main color.
+function editedGroup() {
+  const colors = {};
+  for (const [k, set] of editing.colors) {
+    const c = COLORS.filter(x => set.has(x));
+    if (!(c.length === 1 && c[0] === mainColor(k))) colors[k] = c;
+  }
+  return { chapters: [...editing.colors.keys()], colors };
 }
 
 $('preset-cancel-btn').addEventListener('click', startEditing);
@@ -2210,8 +2264,7 @@ document.querySelector('header nav').addEventListener('click', e => {
 $('preset-save-btn').addEventListener('click', () => {
   const preset = presets.find(p => p === editing?.preset);
   if (!preset) return;
-  preset.chapters = [...editing.ticks];
-  preset.bothSides = [...editing.both].filter(k => editing.ticks.has(k));
+  Object.assign(preset, editedGroup());
   savePresets();
   useChosenPreset();
   startEditing();
@@ -2261,7 +2314,7 @@ $('preset-name-form').addEventListener('submit', e => {
     return;
   }
   if (renaming) { renaming.name = name; chosenPresetName = name; savePresets(); hideNameForm(); renderPresets(); return; } // still editing
-  presets.push({ name, chapters: [...editing.ticks], bothSides: [...editing.both].filter(k => editing.ticks.has(k)) });
+  presets.push({ name, ...editedGroup() });
   chosenPresetName = name;
   savePresets();
   useChosenPreset();
@@ -2277,7 +2330,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // annotation and comment. ← → Home End step through the moves, ↑ ↓ the study's
 // chapters; playing one of the study's moves on the board follows it. (In the code it's "review".)
 let reviewBoard = null;
-let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches) }
+let review = null; // { ch, parsed, node (the move shown, or the root), openSet (its open branches), allOpen (+ All clicked last, not − All) }
 
 // The small board icon after the study's name on the Practice page: it ends practice and opens the line's
 // chapter on the Studies page (see reviewFromPractice).
@@ -2368,14 +2421,14 @@ function errorArrows(node) {
 }
 
 // The top moves in a position, for the Masters view (the masters moves, see isMasterMove; teal) or the
-// Lichess view (the Lichess moves, played 5% of the time or more: isLichessMove; grey), each with its share of the games there (on its arrow,
+// Lichess view (the Lichess moves, played 5% of the time or more: isLichessMove; gray), each with its share of the games there (on its arrow,
 // e.g. "45%"), whether it's in the study (outlined in white), its SAN and its move. Nothing while
 // statistics are missing.
 function topMoves(node, view) {
   const stats = view === 'masters' ? masterGamesAt(node.epd) : lichessGamesAt(node.epd);
   const keep = view === 'masters' ? x => isMasterMove(node.epd, x) : x => isLichessMove(node.epd, x);
   const inStudy = new Set(node.children.map(c => withoutCheckMarks(c.san)));
-  return (stats?.moves ?? []).filter(m => keep(m.san)).map(m => ({ san: m.san, brush: view === 'masters' ? 'teal' : 'grey', share: shareText(stats, m.san),
+  return (stats?.moves ?? []).filter(m => keep(m.san)).map(m => ({ san: m.san, brush: view === 'masters' ? 'teal' : 'gray', share: shareText(stats, m.san),
     move: san.parseSan(node.position, m.san), inStudy: inStudy.has(withoutCheckMarks(m.san)) })).filter(t => t.move);
 }
 
@@ -2439,7 +2492,7 @@ function showReviewNode(node) {
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   $('review-reached').textContent = positionCountText(node.epd) ?? '';
   renderReviewTree();
-  // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colours, named
+  // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colors, named
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
   // until 4 November 2026; removed as a trial.)
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
@@ -2471,7 +2524,35 @@ function renderReviewTree() {
   const box = renderChapterTree(review.ch, { openSet: review.openSet, redraw: renderReviewTree, pick: showReviewNode, current: review.node });
   $('review-tree').replaceChildren(...box.childNodes);
   $('review-tree').querySelector('.current')?.scrollIntoView({ block: 'nearest' });
+  updateAllVariationsButton();
 }
+
+// The chapter's branch points (the moves with variations after them), as the tree's openSet keys them.
+function branchKeys(parsed) {
+  const keys = [];
+  const visit = node => { if (node.children.length > 1) keys.push(node.key); node.children.forEach(visit); };
+  if (!parsed.error) visit(parsed.root);
+  return keys;
+}
+// Under the tree, beside the move buttons: "+ All" opens every variation, then "− All" closes them,
+// except those leading to the move shown, so it stays in the tree. Like the old all-variations
+// triangle (the user's choice), it changes only when clicked, not when single variations are opened or
+// closed (review.allOpen; each chapter starts with "+ All"). Hidden when the chapter has no variations.
+function updateAllVariationsButton() {
+  const btn = $('review-all'), open = !!review.allOpen;
+  btn.classList.toggle('hidden', !branchKeys(review.parsed).length);
+  btn.textContent = open ? '− All' : '+ All';
+  btn.title = open ? 'Hide all variations' : 'Show all variations';
+}
+$('review-all').addEventListener('click', () => {
+  if (!review) return;
+  if (review.allOpen) {
+    review.openSet.clear();
+    for (const m of pathTo(review.node)) if (m.variationIndex > 0) review.openSet.add(m.parent.key);
+  } else for (const k of branchKeys(review.parsed)) review.openSet.add(k);
+  review.allOpen = !review.allOpen;
+  renderReviewTree();
+});
 
 // One of the study's moves played on the board: on along it.
 function onReviewMove(orig, dest) {
@@ -2497,7 +2578,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- Spaced repetition ----------
-// What's practised: all the lines (or positions) of the chosen preset's chapters (Studies to practice), from
+// What's practiced: all the lines (or positions) of the chosen preset's chapters (Studies to practice), from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of four parts, one per slider:
 //   frequency: 0.2 to 1, by how likely your opponents are to lead you there: the product of the shares
@@ -2553,7 +2634,7 @@ const tickedChapters = () => allChapters().filter(c => selection.has(c.key));
 const onMainLines = (line, i) => line.moves.slice(0, i + 1).every(m => m.variationIndex === 0);
 
 // What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked
-// chapters, from each side practised (i is null: played from its start); for 'positions', every
+// chapters, from each side practiced (i is null: played from its start); for 'positions', every
 // position of yours in them from move 3 (FIRST_POSITION_MOVE), once each (i: the move tested there as a
 // single position).
 const FIRST_POSITION_MOVE = 3;
@@ -2667,7 +2748,7 @@ const isTested = i => i >= practice.from && practice.line.moves[i]?.color === pr
 const testedColor = () => practice.line.yourColor;
 
 // The moves that count as correct instead of the line's move m (its own first): your study's moves
-// there (see choicesAt) that one of the lines being practised continues with.
+// there (see choicesAt) that one of the lines being practiced continues with.
 function correctMoves(m) {
   const i = practice.movesPlayed;
   return [m, ...choicesAt(m.parent, session.mainOnly).filter(c => c !== m && lineThrough(c, i))];
@@ -2755,7 +2836,7 @@ function choosePromotion(color) {
   });
 }
 
-// ---------- Practice: choosing what to practise ----------
+// ---------- Practice: choosing what to practice ----------
 // The Practice page when nothing is in progress: the Lines | Positions switch with its main-lines
 // checkbox, and Start practice; under it the Studies to practice and Spaced repetition tiles (the
 // sliders, with Show lines, Show positions and Reset). Everything here is kept in settings.practice.
@@ -2893,11 +2974,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('probab
 
 // ---------- Practice: playing lines ----------
 
-// What's being practised: { kind: 'lines' or 'positions', items (see practiceItems), previous (the
-// item practised last), mainOnly (Main lines only, as ticked when it started) }. Null when nothing is.
+// What's being practiced: { kind: 'lines' or 'positions', items (see practiceItems), previous (the
+// item practiced last), mainOnly (Main lines only, as ticked when it started) }. Null when nothing is.
 let session = null;
 
-// Practise lines or positions, one at a time, picked by priority (never the same one twice in a row
+// Practice lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
 function startSession(kind, items) {
   if (!items.length) return;
@@ -3022,7 +3103,7 @@ async function onYourMove(orig, dest) {
     if (answer !== expected) practice.line = lineThrough(answer, practice.movesPlayed); // on along your other choice
     practice.attempts.push(newAttempt(practice.movesPlayed));
     playMove(answer);
-    setStatus('Correct.'); // status messages are standard grey
+    setStatus('Correct.'); // status messages are standard gray
     if (await pause(250)) advance();
     return;
   }
@@ -3048,7 +3129,7 @@ async function rejectMove(status) {
 //     that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
 //   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; teal),
 //     otherwise "Not a masters move" (violet);
-//   how often Lichess games play it: "#2 Lichess move (27%)", grey for a Lichess move (isLichessMove: 5% or more), violet below that,
+//   how often Lichess games play it: "#2 Lichess move (27%)", gray for a Lichess move (isLichessMove: 5% or more), violet below that,
 //     or "Not played in Lichess games" (violet).
 // The percentages are the move's share of the games there, as on the hover boards. A line is left
 // out while its statistics haven't downloaded.
@@ -3062,7 +3143,7 @@ function errorStatus(expected, played) {
       : alt ? 'Alternative move, not your preferred move' : 'Not your preferred move', 'violet'),
     marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'violet'),
     masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', isMasters ? 'teal' : 'violet'),
-    lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', lichessRank && isLichessMove(epd, played) ? 'grey' : 'violet'),
+    lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', lichessRank && isLichessMove(epd, played) ? 'gray' : 'violet'),
   ].filter(Boolean);
 }
 
@@ -3118,7 +3199,7 @@ $('end-practice-btn').addEventListener('click', () => {
   showChooser();
 });
 
-// Stops practising: nothing is in progress, and anything waiting (an opponent's move, a message)
+// Stops practicing: nothing is in progress, and anything waiting (an opponent's move, a message)
 // finds the line gone and stops.
 function endPractice() {
   practice = null;
@@ -3167,7 +3248,7 @@ function endLine() {
   history.lines[line.key] = [...history.lines[line.key] || [], attempts.at(-1)?.at ?? Date.now()].slice(-HISTORY_LENGTH);
   saveHistory();
   finish('Next line');
-  setStatus(['Line complete.', ...lineSummary()]); // standard grey, not green
+  setStatus(['Line complete.', ...lineSummary()]); // standard gray, not green
   // The same, over the board where you're looking, fading away after a few seconds.
   showBoardNotice([element('div', { class: 'notice-title' }, 'Line complete'), ...lineSummary(),
     element('button', { class: 'primary', onclick: nextItem }, 'Next line')], 3500);
@@ -3376,7 +3457,7 @@ $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 // ---------- Hover board (the small board shown when hovering over a move) ----------
 // Your moves: the position before the move, an arrow for the correct move and one for each error
 // over its last 10 attempts (or this attempt, in the practice move list). The opponent's moves: the
-// position after the move, highlighted as on Lichess, with an arrow. Colours: see BRUSHES.
+// position after the move, highlighted as on Lichess, with an arrow. Colors: see BRUSHES.
 
 let hoverBoard = null;
 
@@ -3434,7 +3515,7 @@ const previousOpponentMove = m => m.parent.uci && squaresOf(m.parent);
 // Your move: the position before it, an arrow for the correct move (in the practice move list, the move
 // played; elsewhere your study's moves there) and one for each error, then, under the shared heading,
 // the move accuracy, when it was last tested, and the errors ("Errors: d4 (alternative ?!), a3 ×2,
-// hint"), coloured as their arrows. In the practice move list (thisTime) it's about this attempt;
+// hint"), colored as their arrows. In the practice move list (thisTime) it's about this attempt;
 // elsewhere, about the position's last 10 attempts.
 function yourMoveBoard(m, thisTime) {
   const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(m.parent);
@@ -3467,10 +3548,10 @@ function opponentMoveBoard(m, orientation) {
     !practisedAs(m, orientation) ? element('div', { class: 'muted' }, 'Not tested') : null] };
 }
 
-// One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labelled by
+// One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labeled by
 // what it is: "a3 (alternative)" (one of your study's alternatives, an error with Main lines only), an
 // alternative the study marks ?, ?? or ?! with the mark, "a3 (alternative ?!)", "b3 (masters)" (see
-// isMasterMove); anything else unlabelled; and "hint" or "show correct move".
+// isMasterMove); anything else unlabeled; and "hint" or "show correct move".
 function errorLabel(m, x) {
   if (x === 'hint') return 'hint';
   if (x === 'show') return 'show correct move';
@@ -3486,19 +3567,19 @@ function errorKind(m, x) {
   return isMasterMove(m.epdBefore, x) ? 'masters' : 'wrong';
 }
 
-// The arrow colours, the same on every board (as on Lichess, which keeps green, red, blue and amber
+// The arrow colors, the same on every board (as on Lichess, which keeps green, red, blue and amber
 // for the arrows and circles drawn in a study, and white for the study's moves): white for a move in
 // your study, outlined in blue for the main move (chessground's hilite; also Hint's circle is white,
 // and Show correct move's arrow the main move's); once a move with a glyph is played, the glyph in a
-// corner of its square (see glyphBadge); teal for a masters move; grey for a Lichess move (5% or more; the
+// corner of its square (see glyphBadge); teal for a masters move; gray for a Lichess move (5% or more; the
 // Studies page's Masters and Lichess views, which give each its share and outline in white those in your
 // study); violet for any error (any move you tried that isn't your study's main move, whatever kind; the
-// kind is in the text, e.g. "(masters)"); the study's own arrows and circles in their Lichess colours
+// kind is in the text, e.g. "(masters)"); the study's own arrows and circles in their Lichess colors
 // (Studies page only). Text about a move (the Practice page's error messages, the hover boards'
-// "Errors: …") takes its arrow's colour, lightened to read on the dark background.
+// "Errors: …") takes its arrow's color, lightened to read on the dark background.
 const BRUSHES = {
   teal: { key: 'teal', color: '#00a3a3', opacity: 1, lineWidth: 10 },
-  grey: { key: 'grey', color: '#9e9e9e', opacity: 1, lineWidth: 10 },
+  gray: { key: 'gray', color: '#9e9e9e', opacity: 1, lineWidth: 10 },
   violet: { key: 'violet', color: '#8a5cf6', opacity: 1, lineWidth: 10 },
 };
 const mainArrow = (orig, dest) => ({ orig, dest, brush: 'white', modifiers: { hilite: true } });
@@ -3508,10 +3589,10 @@ function studyMoveArrow(pos, node) {
   const [orig, dest] = arrowSquares(pos, parseUci(node.uci));
   return node.variationIndex === 0 ? mainArrow(orig, dest) : { orig, dest, brush: 'white' };
 }
-// The move-quality glyphs' Lichess colours (as .glyph.good and so on).
+// The move-quality glyphs' Lichess colors (as .glyph.good and so on).
 const QUALITY_FILLS = { 1: '#629924', 2: '#e69d00', 3: '#21c43a', 4: '#df5353', 5: '#f075e1', 6: '#53b2ea' };
 // Once a move with a move-quality glyph (!!, !, !?, ?!, ?, ??) has been played, as on Lichess: the
-// glyph in its colour at the top-right corner of the square it went to (none otherwise). On the
+// glyph in its color at the top-right corner of the square it went to (none otherwise). On the
 // Studies page and the hover boards showing the position after a move, not on the Practice board.
 function glyphBadge(node) {
   const n = node.uci && node.nags.find(x => QUALITY_FILLS[x]);
@@ -3659,6 +3740,17 @@ function setPositionData(epd, part, value) {
 
 const explorerDownloads = { lichess: null, masters: null };
 
+// The Opening Explorer's requests, Lichess and masters together, start at least 2 s apart. Lichess
+// answers "slow down" (429) after about 29 quick requests and the app then waits a minute; at one
+// request every 2 s it never does (tested 18 November 2026: 29 positions a minute against 25), and it
+// keeps to Lichess's guidance.
+const explorerPace = { ms: 2000, next: 0 };
+async function waitForExplorerTurn() {
+  const wait = explorerPace.next - Date.now();
+  if (wait > 0) await sleep(wait);
+  explorerPace.next = Date.now() + explorerPace.ms;
+}
+
 // The progress, on the Lichess page when it's open.
 const showProgress = () => { if (currentScreen === 'lichess') updateStatisticsInfo(); };
 
@@ -3709,6 +3801,8 @@ async function downloadExplorerPositions(kind, run) {
       continue;
     }
     let res;
+    await waitForExplorerTurn();
+    if (explorerDownloads[kind] !== run) return; // a newer download took over meanwhile
     try {
       res = await lichessFetch(explorer.url(position.fen, games), token);
     } catch {
@@ -3801,7 +3895,7 @@ function rankAndShareText(stats, moveSan, who, none) {
 // - Connection: Connect to Lichess when not connected (or when Lichess has ended the connection, after
 //   about a year), Disconnect when connected (the same for everyone);
 // - Move statistics: the rating bands and time controls they come from (see renderGamesCard);
-// - Backup: Save backup (greyed out while Getting started shows) and Restore backup;
+// - Backup: Save backup (grayed out while Getting started shows) and Restore backup;
 // - Getting started (after the first connection, once the studies have been fetched, until you go on):
 //   Restore backup (on the Backup card) or Download statistics (nothing downloads until one is pressed).
 // A new user sees only Status and Connection: Move statistics, Backup and Getting started appear once
@@ -3959,7 +4053,7 @@ $('connect-btn').addEventListener('click', () => {
 
 // Disconnect (online) or Clear token (from disk), after "Are you sure?": the app forgets the
 // connection; your studies and stats stay, but stop updating until you connect again. A connection made
-// by logging in (its token starts "lio_") is also cancelled on Lichess; a token you pasted ("lip_…")
+// by logging in (its token starts "lio_") is also canceled on Lichess; a token you pasted ("lip_…")
 // may be used elsewhere, so it's only forgotten here.
 if (!canLogIn) $('disconnect-btn').textContent = 'Clear token';
 $('disconnect-btn').title = canLogIn ? 'Disconnect from Lichess; your studies and stats stay' : 'Forget the token; your studies and stats stay';
@@ -4042,7 +4136,7 @@ $('backup-btn').addEventListener('click', async () => {
       backupSaved();
       showBanner(`Backup saved as ${handle.name}.`);
     } catch (e) {
-      if (e.name !== 'AbortError') showBanner("Couldn't save the backup: " + e.message, true); // AbortError: the user cancelled
+      if (e.name !== 'AbortError') showBanner("Couldn't save the backup: " + e.message, true); // AbortError: the user canceled
     }
     return;
   }
@@ -4173,7 +4267,7 @@ $('restore-file').addEventListener('change', async e => {
 
 // ---------- Navigation ----------
 
-// Practice: back to what's being practised, or the idle page saying where practice starts.
+// Practice: back to what's being practiced, or the idle page saying where practice starts.
 $('nav-practice').addEventListener('click', () => {
   if (currentScreen === 'practice') return; // already on the practice page
   if (!library) { // before your studies are here: the Lichess page, or (fetching) the Practice page with its message
@@ -4207,7 +4301,7 @@ async function init() {
     if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
     moveStats = await loadMoveStats();
     useChosenPreset();
-    store.remove('selection'); // no longer stored: the chosen preset says what's practised
+    store.remove('selection'); // no longer stored: the chosen preset says what's practiced
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting

@@ -10,7 +10,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
 General Public License for more details.
 
-## Additional term (section 7(b) of the licence)
+## Additional term (section 7(b) of the license)
 
 Every copy and every modified version of this program, and every version made available to users
 over a network, must keep the author attribution **"Chess Opening Trainer by David Sharman"**
@@ -19,9 +19,9 @@ prominent place). Modified versions must also say that they have been changed.
 
 ## Third-party parts
 
-Loaded by the app from the jsDelivr CDN; each keeps its own licence:
+Loaded by the app from the jsDelivr CDN; each keeps its own license:
 
-| Part | Author | Licence |
+| Part | Author | License |
 |---|---|---|
 | [chessground](https://github.com/lichess-org/chessground) (board, pieces, board style) | Lichess | GPL-3.0-or-later |
 | [chessops](https://github.com/niklasf/chessops) (chess rules, PGN) | Niklas Fiekas | GPL-3.0-or-later |
