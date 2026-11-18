@@ -333,6 +333,11 @@
   .review-errors:empty { display: none; }
   .review-errors h3 { margin: 0 0 4px; font-size: 15px; color: #a98bff; }
   .review-errors p { margin: 0 0 4px; }
+  /* A position of yours off the masters' path: your study's move and the masters', with a teal edge */
+  .panel.review-masters { padding: 12px 14px; border-left: 4px solid #00a3a3; }
+  .review-masters:empty { display: none; }
+  .review-masters h3 { margin: 0 0 4px; font-size: 15px; color: #2fc4c4; }
+  .review-masters p { margin: 0 0 4px; }
   .panel.review-critical { padding: 12px 14px; border-left: 4px solid var(--critical); }
   .review-critical:empty { display: none; }
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
@@ -342,6 +347,7 @@
   .tree-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 2px 2px 1px; vertical-align: middle; }
   .critical-dot { background: var(--critical); }
   .weak-dot { background: #8a5cf6; } /* the errors' violet (see BRUSHES) */
+  .masters-dot { background: #00a3a3; } /* the masters' teal */
   .critical-row { color: var(--critical-text); }
   /* Under the board: Study | Masters | Lichess | Errors, the arrows shown (one at a time), with their colors */
   .review-view-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
@@ -687,6 +693,7 @@
         </div>
         <div id="review-comment" class="panel review-comment"></div>
         <div id="review-errors" class="panel review-errors" aria-live="polite"></div>
+        <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
         <div id="review-critical" class="panel review-critical" aria-live="polite"></div>
       </div>
       <!-- The color key, opened by the ? at the end of the arrows switch (see renderColorKey) -->
@@ -883,7 +890,8 @@
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Your moves with move accuracy below 100% have a violet dot after them (moves of the other side too, once you've played it). Select one to see a tile with its move accuracy, when you last tested it and your errors there. Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
+            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% move accuracy, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position. Select the move to see a tile about that position.</li>
+            <li><b>Study</b> shows all the dots and tiles; <b>Errors</b> only the violet ones, <b>Masters</b> only the teal ones, <b>Lichess</b> only the orange ones.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
@@ -2020,8 +2028,25 @@ function chapterLink(c, k) {
 // chapter's own side (own) that's practiced, or any move whose position you've tried (e.g. played from
 // the other side).
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
-// A move of yours below 100% move accuracy (the move tree's violet dot).
-const isWeakMove = (m, own) => isShownAsYours(m, own) && scoreClass(shareAt(m.parent)) === 'needs-work';
+// A position of yours (your move there) below 100% move accuracy: the move tree's violet dot, after
+// the move leading to it (as the critical dot), and the errors tile when it's on the board.
+const isWeakPosition = (node, own) => node.children.some(c => isShownAsYours(c, own)) && scoreClass(shareAt(node)) === 'needs-work';
+
+// A position of yours where your study's main move isn't a masters move (see isMasterMove): the move
+// tree's teal dot and the masters tile. Not for a main move the study marks ?, ?? or ?! (it's known to be
+// dubious), nor where fewer than 20 master games reach the position (nothing to judge by).
+const MASTERS_MIN_GAMES = 20;
+function isOffMastersPath(node, own) {
+  const main = node.children[0], masters = masterGamesAt(node.epd);
+  return !!main && node.children.some(c => isShownAsYours(c, own)) && !isMistake(main)
+    && !!masters && totalGames(masters) >= MASTERS_MIN_GAMES && !isMasterMove(node.epd, main.san);
+}
+
+// The Studies page's marks by the arrows switch: Study shows them all (an overview); Errors only the
+// violet ones (your errors), Masters only the teal ones (off the masters' path), Lichess only the orange
+// ones (critical positions, from Lichess games). The same goes for the dots in the tree and the tiles.
+const MARK_VIEWS = { weak: 'errors', masters: 'masters', critical: 'lichess' };
+const showsMark = (mark, view = settings.review.view) => view === 'study' || MARK_VIEWS[mark] === view;
 
 // Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
 // its chapter's side, from the node's key), as counted now (Main lines only, see mainOnlyNow).
@@ -2105,11 +2130,12 @@ function openingName(parsed) {
 
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
-// Your moves below 100% move accuracy have a violet dot after them (each side's moves with its own
-// accuracy: see isShownAsYours; until 18 November 2026 a violet background); moves after (or as) one of your marked alternatives (never practiced) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
+// A violet dot after a move leading to a position of yours below 100% move accuracy, where your errors
+// were (see isWeakPosition; at the start, before the first move; until 18 November 2026 a violet
+// background on your move itself); moves after (or as) one of your marked alternatives (never practiced) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
 // shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted).
 // Branches open and close in openSet, and the tree is drawn again by redraw.
-function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
+function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null, view = settings.review.view } = {}) {
   const parsed = parseChapter(ch);
   const box = element('div', { class: 'tree' });
   // One move: its number (when needed), SAN, glyphs, bubble. Returns the elements and the moves
@@ -2117,18 +2143,19 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   const moveEls = (node, path, showNo) => {
     const moves = [...path, node];
     const cls = isShownAsYours(node, parsed.yourColor) ? scoreClass(shareAt(node.parent)) : !practisedAs(node, parsed.yourColor) ? 'untested-move' : 'opp';
-    const weak = cls === 'needs-work'; // a violet dot after it (not the background, as elsewhere; see isWeakMove)
-    const el = element('span', { class: 'tree-move ' + (weak ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
+    const el = element('span', { class: 'tree-move ' + (cls === 'needs-work' ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
     if (pick) { // hovering shows the move on the small hover board; clicking shows it on the big one
       el.addEventListener('click', () => pick(node));
       if (node !== current) el.addEventListener('mouseenter', () => showHoverBoard(el, node, parsed.yourColor)); // not for the move on the big board
       el.addEventListener('mouseleave', hideHoverBoard);
     }
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
-    const weakDot = weak ? element('span', { class: 'tree-dot weak-dot', title: 'Below 100% move accuracy' }) : null;
-    const dot = criticalAt(node.epd) ? element('span', { class: 'tree-dot critical-dot', title: 'Critical position' }) : null; // leads to a critical position
+    // The dots for the position this move leads to (see showsMark): errors, off the masters' path, critical.
+    const weakDot = showsMark('weak', view) && isWeakPosition(node, parsed.yourColor) ? weakPositionDot() : null;
+    const mastersDot = showsMark('masters', view) && isOffMastersPath(node, parsed.yourColor) ? mastersPositionDot() : null;
+    const dot = showsMark('critical', view) && criticalAt(node.epd) ? element('span', { class: 'tree-dot critical-dot', title: 'Critical position' }) : null;
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
-      el, glyphMarks(node), weakDot, dot,
+      el, glyphMarks(node), weakDot, mastersDot, dot,
       hasComment(node) ? commentBubble(moveLabel(node), node.notes) : null, ' '], moves };
   };
   // The moves from start (the root, or { children: [an alternative] }), following main moves;
@@ -2162,8 +2189,14 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
     if (!flow.childNodes.length) flow.remove();
   };
   if (!parsed.error) walk(parsed.root, [], box);
+  // Your first move's position (the start): its dots before the first move.
+  const startDots = parsed.error ? [] : [showsMark('weak', view) && isWeakPosition(parsed.root, parsed.yourColor) && weakPositionDot(),
+    showsMark('masters', view) && isOffMastersPath(parsed.root, parsed.yourColor) && mastersPositionDot()].filter(Boolean);
+  if (startDots.length) box.querySelector('.tree-line')?.prepend(...startDots, ' ');
   return box;
 }
+const weakPositionDot = () => element('span', { class: 'tree-dot weak-dot', title: 'Your errors here: below 100% move accuracy' });
+const mastersPositionDot = () => element('span', { class: 'tree-dot masters-dot', title: "Your study's move here isn't a masters move" });
 
 // The eye icon (the top eye, and each study's and chapter's): a line through it when its button is "off".
 const eyeIcon = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">`
@@ -2502,7 +2535,7 @@ for (const view of ARROW_VIEWS) $(`arrows-${view}`).addEventListener('click', ()
   settings.review.view = view;
   saveSettings();
   updateArrowsSwitch();
-  if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
+  if (review) { reviewBoard.setAutoShapes(reviewArrows(review.node)); renderReviewTree(); renderPositionTiles(review.node); } // the dots and tiles follow the view
   if (!$('color-key').classList.contains('hidden')) renderColorKey(); // its highlighted rows follow the view
 });
 
@@ -2529,10 +2562,11 @@ const KEY_ARROWS = [
 ];
 const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
-  { sample: '♘f3<span class="tree-dot weak-dot"></span>', meaning: 'Your move, below 100% move accuracy (select it for its errors)' },
+  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position where you made errors: below 100% move accuracy (select it to see them)', views: ['study', 'errors'] },
+  { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)", views: ['study', 'masters'] },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
-  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position' },
+  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position', views: ['study', 'lichess'] },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
@@ -2620,33 +2654,53 @@ function showReviewNode(node) {
   // until 4 November 2026; removed as a trial.)
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
   $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
-  renderErrorsTile(node);
-  renderCriticalTile(node);
+  renderPositionTiles(node);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
 }
 
-// Under the comment, when the move selected is one of yours below 100% (the violet dot; see
-// isWeakMove): "Your move 3. ♗c4", its move accuracy and when it was last tested, and the errors of
-// its last 10 tries, labeled as on the hover boards ("Errors: d4 ×2 (masters), ♘c3 (alternative),
-// hint"). It describes the position you answered (before the move), as the dot does. (A fuller
-// "Your accuracy" tile was removed on 4 November 2026 as a trial; this one is only for weak moves.)
+// Under the comment, when the position on the board is one of yours below 100% move accuracy (after a
+// move with the violet dot; see isWeakPosition): "Your move here", its move accuracy and when it was last
+// tested, and the errors of its last 10 tries, labeled as on the hover boards ("Errors: d4 ×2 (masters),
+// ♘c3 (alternative), hint"). (A fuller "Your accuracy" tile was removed on 4 November 2026 as a trial;
+// this one is only for positions with errors.)
 function renderErrorsTile(node) {
-  const weak = node.uci && isWeakMove(node, review.parsed.yourColor);
-  if (!weak) return $('review-errors').replaceChildren();
-  const accuracy = accuracyAt(node.parent), last = lastTriedAt(node.parent.key), days = last && daysAgo(last);
-  const errors = errorCounts(attemptsAt(node.parent), choicesAt(node.parent, mainOnlyNow()).map(c => c.san));
+  if (!showsMark('weak') || !isWeakPosition(node, review.parsed.yourColor)) return $('review-errors').replaceChildren();
+  const accuracy = accuracyAt(node), last = lastTriedAt(node.key), days = last && daysAgo(last);
+  const correct = choicesAt(node, mainOnlyNow()), errors = errorCounts(attemptsAt(node), correct.map(c => c.san));
   $('review-errors').replaceChildren(
-    element('h3', {}, `Your move ${moveLabel(node)}`),
+    element('h3', {}, 'Your move here'),
     element('p', {}, [accuracyText(accuracy), last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')),
-    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(node, x) + (n > 1 ? ` ×${n}` : ''))))) : null);
+    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(correct[0], x) + (n > 1 ? ` ×${n}` : ''))))) : null);
+}
+
+// The tiles under the comment for the position on the board, each when the view shows its mark (see
+// showsMark): your errors (violet), off the masters' path (teal), critical (orange).
+function renderPositionTiles(node) {
+  renderErrorsTile(node);
+  renderMastersTile(node);
+  renderCriticalTile(node);
+}
+
+// When your study's main move in the position on the board isn't a masters move (see isOffMastersPath):
+// "Not a masters move", your study's move with its share of master games, e.g. "Your study: h3 (2%)", and
+// the masters moves with theirs, e.g. "Masters play: ♘c3 45% · d4 30% · ♗e2 12%".
+function renderMastersTile(node) {
+  if (!showsMark('masters') || !isOffMastersPath(node, review.parsed.yourColor)) return $('review-masters').replaceChildren();
+  const masters = masterGamesAt(node.epd), main = node.children[0];
+  const played = masters.moves.filter(m => isMasterMove(node.epd, m.san));
+  $('review-masters').replaceChildren(
+    element('h3', {}, 'Not a masters move'),
+    element('p', {}, `Your study: ${withFigurines(main.san)} (${shareText(masters, main.san)})`),
+    element('p', {}, played.length ? `Masters play: ${played.map(m => `${withFigurines(m.san)} ${shareText(masters, m.san)}`).join(' · ')}`
+      : 'No move is played by masters 10% of the time or more'));
 }
 
 // Under the comment, when the position on the board is critical (see criticalAt), at either side's
 // move: "Critical position" (at the opponent's move "Critical position · opponent's move"), the share
 // of Lichess games going wrong, and those moves (see criticalMoveTexts).
 function renderCriticalTile(node) {
-  const critical = criticalAt(node.epd);
+  const critical = showsMark('critical') && criticalAt(node.epd);
   $('review-critical').replaceChildren(...critical ? [
     element('h3', {}, node.position.turn === review.parsed.yourColor ? 'Critical position' : "Critical position · opponent's move"),
     element('p', {}, `${percent(critical.share)}% of Lichess games go wrong here`),

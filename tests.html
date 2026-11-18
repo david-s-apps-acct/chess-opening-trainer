@@ -652,28 +652,59 @@ async function runLichessPage(app) {
     check('critical: the tile at your move; at the opponent\'s, its heading says so; none elsewhere', [atStart, afterE4, notCritical],
       [['Critical position', '28% of Lichess games go wrong here', '♘h3 19% · win rate −29a4 9% · win rate −15'], ["Critical position · opponent's move", '30% of Lichess games go wrong here', '♗a3 30% · win rate −23'], []]);
     check('critical: a dot after the move leading to one; the hover board\'s row', [dots, hover.includes('Critical: 28% go wrong here')], [['e4'], true]);
-    // A move of yours below 100% move accuracy: a violet dot after it in the tree, not a background.
+    // A position of yours below 100%: a violet dot after the move leading to it (before the first move
+    // for the start), no background.
     {
       const keptHistory = app.history;
-      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['d4', 'e4'], at: 1, main: false }] }, lines: {} });
+      const wrong = [{ tried: ['d4', 'Nf3'], at: 1, main: false }];
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': wrong }, lines: {} });
       const tree = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'));
-      check('tree: a violet dot after a move below 100%, no background', [tree.querySelectorAll('.needs-work').length,
-        [...tree.querySelectorAll('.weak-dot')].map(d => [d.previousElementSibling.textContent, d.title])], [0, [['e4', 'Below 100% move accuracy']]]);
+      const after = [tree.querySelectorAll('.needs-work').length, [...tree.querySelectorAll('.weak-dot')].map(d => [d.previousElementSibling.textContent, d.title])];
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': wrong }, lines: {} });
+      const start = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB')).querySelector('.tree-line').firstElementChild.className;
+      check('tree: a violet dot after the move leading to a position with errors, before the first move for the start; no background', [after, start],
+        [[0, [['e5', 'Your errors here: below 100% move accuracy']]], 'tree-dot weak-dot']);
       app.setHistory(keptHistory);
     }
-    // Selecting a move with the violet dot: a tile with its errors; none for the opponent's move.
+    // The position with errors on the board (its move with the violet dot selected): a tile with the errors.
     {
       const keptHistory = app.history, keptStats = app.moveStats;
       app.setMoveStats({});
-      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['d4', 'hint', 'e4'], at: null, main: false }] }, lines: {} });
-      key('Home'); key('ArrowRight'); // 1. e4
-      const atE4 = [...$('review-errors').children].map(e => e.textContent);
-      key('ArrowRight'); // 1… e5
-      const atE5 = $('review-errors').children.length;
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'hint', 'Nf3'], at: null, main: false }] }, lines: {} });
+      key('Home'); key('ArrowRight'); key('ArrowRight'); // after 1… e5: your move
+      const atE5 = [...$('review-errors').children].map(e => e.textContent);
+      key('ArrowRight'); // 2. ♘f3
+      const atNf3 = $('review-errors').children.length;
       app.setHistory(keptHistory); app.setMoveStats(keptStats);
       key('Home');
-      check('errors tile: a move with the violet dot selected, its errors; none for the opponent\'s', [atE4, atE5],
-        [['Your move 1. e4', '0% move accuracy (last 1 try)', 'Errors: d4, hint'], 0]);
+      check('errors tile: at the position with errors (after the move with the dot), its errors; not after your move', [atE5, atNf3],
+        [['Your move here', '0% move accuracy (last 1 try)', 'Errors: d4, hint'], 0]);
+    }
+    // Off the masters' path (teal): your study's main move isn't a masters move, with 20 master games or more.
+    // Each view shows its own dots and tiles; Study all of them.
+    {
+      const keptHistory = app.history, keptStats = app.moveStats;
+      const wasView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
+      app.setMoveStats({ [AFTER_E4_E5]: { masters: explorer([['Nc3', 30], ['d4', 20], ['Bc4', 10]]) } });
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'Nf3'], at: null, main: false }] }, lines: {} });
+      const dotsAfter = () => [...$('review-tree').querySelectorAll('.tree-dot')].map(d => d.className.replace('tree-dot ', ''));
+      const tiles = () => ['review-errors', 'review-masters', 'review-critical'].filter(id => $(id).children.length).map(id => id.slice(7));
+      const seen = {};
+      for (const view of ['study', 'masters', 'errors', 'lichess']) {
+        $('arrows-' + view).click();
+        key('Home'); key('ArrowRight'); key('ArrowRight'); // after 1… e5
+        seen[view] = [dotsAfter(), tiles()];
+      }
+      $('arrows-masters').click();
+      const masterTile = [...$('review-masters').children].map(e => e.textContent);
+      app.setMoveStats({ [AFTER_E4_E5]: { masters: explorer([['Nc3', 10], ['d4', 5]]) } }); // 15 master games: too few to judge
+      key('Home'); key('ArrowRight'); key('ArrowRight');
+      const fewGames = [dotsAfter(), tiles()];
+      app.setHistory(keptHistory); app.setMoveStats(keptStats);
+      wasView.click(); key('Home');
+      check('masters dot and tile; each view shows its own dots and tiles, Study all', [seen, masterTile, fewGames], [
+        { study: [['weak-dot', 'masters-dot'], ['errors', 'masters']], masters: [['masters-dot'], ['masters']], errors: [['weak-dot'], ['errors']], lichess: [[], []] },
+        ['Not a masters move', 'Your study: ♘f3 (0%)', 'Masters play: ♘c3 50% · d4 33% · ♗c4 17%'], [[], []]]);
     }
     // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
     // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
@@ -690,7 +721,7 @@ async function runLichessPage(app) {
     $('color-key-btn').click();
     document.body.click();
     check('color key: the view shown\'s rows plain, following the switch; closed by Esc or a click elsewhere; Help\'s table from the same list', [masters, errors, afterEsc, keyOpen(), $('help-arrow-colors').rows.length], [
-      [true, 'true', ["The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 6],
+      [true, 'true', ["The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 7],
       [true, 6], false, false, 11]);
     wasView.click();
     app.setMoveStats(kept);
