@@ -333,7 +333,10 @@
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
   .review-critical p { margin: 0 0 4px; }
   .review-critical .critical-moves div { color: var(--muted); }
-  .critical-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--critical); margin: 0 2px 2px 1px; vertical-align: middle; }
+  /* The move tree's dots after a move: violet, your move below 100% move accuracy; orange, it leads to a critical position */
+  .tree-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 2px 2px 1px; vertical-align: middle; }
+  .critical-dot { background: var(--critical); }
+  .weak-dot { background: #8a5cf6; } /* the errors' violet (see BRUSHES) */
   .critical-row { color: var(--critical-text); }
   /* Under the board: Study | Masters | Lichess | Errors, the arrows shown (one at a time), with their colors */
   .review-view-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
@@ -806,7 +809,7 @@
         </details>
         <details>
           <summary>Move accuracy</summary>
-          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, a move the study marks ?, ?? or ?!, or the hint. Move accuracy is the share right first time over your last 10 tries. Below 100%, a move gets a violet background.</p>
+          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, a move the study marks ?, ?? or ?!, or the hint. Move accuracy is the share right first time over your last 10 tries. Below 100%, a move gets a violet background (in the Studies page's move tree, a violet dot after it).</p>
           <p>Each position has two: with <b>Main lines only</b>, only the main move is right (tries without it where you played one of your alternatives are left out); without it, any of your study's moves. You see the one for the current setting.</p>
           <details>
             <summary>What counts as a try</summary>
@@ -874,7 +877,7 @@
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Your moves with move accuracy below 100% have a violet background (moves of the other side too, once you've played it). Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
+            <li>Your moves with move accuracy below 100% have a violet dot after them (moves of the other side too, once you've played it). Your alternatives marked ?, ?? or ?!, and the moves after them, are in italics (they aren't tested).</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
           </ul>
@@ -2094,8 +2097,8 @@ function openingName(parsed) {
 
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
-// Your moves below 100% move accuracy are violet (each side's moves with its own accuracy: see
-// isShownAsYours); moves after (or as) one of your marked alternatives (never practiced) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
+// Your moves below 100% move accuracy have a violet dot after them (each side's moves with its own
+// accuracy: see isShownAsYours; until 18 November 2026 a violet background); moves after (or as) one of your marked alternatives (never practiced) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
 // shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted).
 // Branches open and close in openSet, and the tree is drawn again by redraw.
 function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = null, current = null } = {}) {
@@ -2106,17 +2109,18 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   const moveEls = (node, path, showNo) => {
     const moves = [...path, node];
     const cls = isShownAsYours(node, parsed.yourColor) ? scoreClass(shareAt(node.parent)) : !practisedAs(node, parsed.yourColor) ? 'untested-move' : 'opp';
-    const highlight = cls === 'needs-work'; // the violet goes behind the move and its glyphs together
-    const el = element('span', { class: 'tree-move ' + (highlight ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
+    const weak = cls === 'needs-work'; // a violet dot after it (not the background, as elsewhere)
+    const el = element('span', { class: 'tree-move ' + (weak ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
     if (pick) { // hovering shows the move on the small hover board; clicking shows it on the big one
       el.addEventListener('click', () => pick(node));
       if (node !== current) el.addEventListener('mouseenter', () => showHoverBoard(el, node, parsed.yourColor)); // not for the move on the big board
       el.addEventListener('mouseleave', hideHoverBoard);
     }
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
-    const dot = criticalAt(node.epd) ? element('span', { class: 'critical-dot', title: 'Critical position' }) : null; // leads to a critical position
+    const weakDot = weak ? element('span', { class: 'tree-dot weak-dot', title: 'Below 100% move accuracy' }) : null;
+    const dot = criticalAt(node.epd) ? element('span', { class: 'tree-dot critical-dot', title: 'Critical position' }) : null; // leads to a critical position
     return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
-      highlight ? element('span', { class: 'needs-work' }, el, glyphMarks(node)) : [el, glyphMarks(node)], dot,
+      el, glyphMarks(node), weakDot, dot,
       hasComment(node) ? commentBubble(moveLabel(node), node.notes) : null, ' '], moves };
   };
   // The moves from start (the root, or { children: [an alternative] }), following main moves;
@@ -2517,10 +2521,10 @@ const KEY_ARROWS = [
 ];
 const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
-  { sample: '<span class="needs-work">♘f3</span>', meaning: 'Your move, below 100% move accuracy' },
+  { sample: '♘f3<span class="tree-dot weak-dot"></span>', meaning: 'Your move, below 100% move accuracy' },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
-  { sample: '<span class="critical-dot"></span>', meaning: 'Leads to a critical position' },
+  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position' },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };

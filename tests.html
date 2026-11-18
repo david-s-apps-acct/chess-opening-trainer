@@ -641,7 +641,7 @@ async function runLichessPage(app) {
     const tileAt = () => [...$('review-critical').children].map(e => e.textContent);
     const atStart = tileAt();
     const e4 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e4');
-    const dots = [...$('review-tree').querySelectorAll('.critical-dot')].map(d => d.previousElementSibling?.textContent ?? d.previousSibling?.textContent);
+    const dots = [...$('review-tree').querySelectorAll('.critical-dot')].map(d => { let el = d.previousElementSibling; while (el && !el.classList.contains('tree-move')) el = el.previousElementSibling; return el?.textContent; }); // the move before it (after any violet dot)
     e4.dispatchEvent(new MouseEvent('mouseenter')); // your move: the position before it
     const hover = $('move-preview').innerText;
     e4.dispatchEvent(new MouseEvent('mouseleave'));
@@ -652,6 +652,15 @@ async function runLichessPage(app) {
     check('critical: the tile at your move; at the opponent\'s, its heading says so; none elsewhere', [atStart, afterE4, notCritical],
       [['Critical position', '28% of Lichess games go wrong here', '♘h3 19% · win rate −29a4 9% · win rate −15'], ["Critical position · opponent's move", '30% of Lichess games go wrong here', '♗a3 30% · win rate −23'], []]);
     check('critical: a dot after the move leading to one; the hover board\'s row', [dots, hover.includes('Critical: 28% go wrong here')], [['e4'], true]);
+    // A move of yours below 100% move accuracy: a violet dot after it in the tree, not a background.
+    {
+      const keptHistory = app.history;
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['d4', 'e4'], at: 1, main: false }] }, lines: {} });
+      const tree = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'));
+      check('tree: a violet dot after a move below 100%, no background', [tree.querySelectorAll('.needs-work').length,
+        [...tree.querySelectorAll('.weak-dot')].map(d => [d.previousElementSibling.textContent, d.title])], [0, [['e4', 'Below 100% move accuracy']]]);
+      app.setHistory(keptHistory);
+    }
     // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
     // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
     const keyOpen = () => !$('color-key').classList.contains('hidden');
