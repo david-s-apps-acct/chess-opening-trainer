@@ -336,7 +336,22 @@
   .critical-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--critical); margin: 0 2px 2px 1px; vertical-align: middle; }
   .critical-row { color: var(--critical-text); }
   /* Under the board: Study | Masters | Lichess | Errors, the arrows shown (one at a time), with their colors */
-  .review-view { margin-top: 10px; }
+  .review-view-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .review-view-row .review-view { flex: 1; min-width: 0; }
+  .key-btn { flex: none; padding: 4px; }
+  .key-btn[aria-expanded=true] { color: var(--text-strong); }
+  /* The color key: over the page beside its ?, the view shown's rows plain and the others dimmed */
+  .color-key { position: fixed; z-index: 45; width: 360px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow-y: auto;
+    padding: 10px 12px; background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 13px; }
+  .color-key h3 { margin: 0 0 2px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .key-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .key-table td { padding: 3px 0; vertical-align: middle; }
+  .key-table tr.key-other { opacity: .35; }
+  .key-sample { width: 58px; white-space: nowrap; }
+  .key-sample svg { vertical-align: middle; }
+  .help-table .key-sample-inner { display: inline-block; min-width: 34px; margin-right: 6px; }
+  .key-badge { display: inline-block; padding: 0 4px; border-radius: 7px; font-size: 11px; font-weight: 700; line-height: 15px; color: #fff; background: #666; }
+  .key-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
   .review-view button { padding: 6px 10px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; } /* quarters of the board's width */
   .arrow-swatch { width: 14px; height: 4px; border-radius: 2px; }
   .arrow-swatch + .arrow-swatch { margin-left: -4px; }
@@ -642,8 +657,11 @@
     <div class="review-layout">
       <div class="board-col">
         <div class="board-wrap"><div id="review-board"></div></div>
+        <div class="review-view-row">
         <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
           <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your errors here (last 10 tries); ×2: made twice"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
+        </div>
+        <button id="color-key-btn" class="icon-btn key-btn" title="Color key" aria-label="Color key" aria-expanded="false" aria-controls="color-key"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.9-2.6 2.3-2.6 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg></button>
         </div>
       </div>
       <div class="review-tiles">
@@ -661,6 +679,12 @@
         </div>
         <div id="review-comment" class="panel review-comment"></div>
         <div id="review-critical" class="panel review-critical" aria-live="polite"></div>
+      </div>
+      <!-- The color key, opened by the ? at the end of the arrows switch (see renderColorKey) -->
+      <div id="color-key" class="color-key hidden" role="dialog" aria-label="Color key">
+        <h3>Arrows</h3><table id="key-arrows" class="key-table"></table>
+        <h3>Move tree</h3><table id="key-tree" class="key-table"></table>
+        <a href="#" id="key-help">More in Help</a>
       </div>
       <!-- Your studies and their chapters: to the left of the board where there's room -->
       <div class="studies-col">
@@ -729,7 +753,7 @@
             <li><b>Move accuracy</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
             <li><b>Error</b>: any move you play that isn't one of your study's moves, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Critical position</b>: one where more than 20% of the Lichess games go wrong (see Studies).</li>
+            <li><b>Critical position</b>: one where more than 20% of the Lichess games (at your chosen ratings and time controls) go wrong (see Studies).</li>
             <li><b>Masters move</b>: one of the top 3 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more.</li>
             <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
@@ -778,19 +802,7 @@
         <details>
           <summary>Arrow colors</summary>
           <p>The same on every board, as on Lichess:</p>
-          <table class="help-table">
-            <tr><td>White, blue outline</td><td>Your study's main move (also Hint and Show correct move)</td></tr>
-            <tr><td>White</td><td>Another move in your study</td></tr>
-            <tr><td><span class="glyph good">!</span> <span class="glyph mistake">?</span> … in a square's corner</td><td>The glyph of the move just played (Studies page, small board)</td></tr>
-            <tr><td class="error-teal">Teal</td><td>A masters move</td></tr>
-            <tr><td class="error-gray">Gray</td><td>A Lichess move (Lichess view)</td></tr>
-            <tr><td>45% on a teal or gray arrow</td><td>How often it's played (masters on teal, Lichess on gray)</td></tr>
-            <tr><td>×2 on an arrow</td><td>An error you made twice in your last 10 tries</td></tr>
-            <tr><td>75% on the outlined arrow</td><td>Errors: the position's move accuracy</td></tr>
-            <tr><td>White outline on teal or gray</td><td>Also in your study</td></tr>
-            <tr><td class="error-violet">Violet</td><td>An error: any move you tried that isn't one of your study's moves</td></tr>
-            <tr><td>Green, red, blue, amber</td><td>Your study's own arrows and circles (Studies page)</td></tr>
-          </table>
+          <table id="help-arrow-colors" class="help-table"></table>
         </details>
         <details>
           <summary>Move accuracy</summary>
@@ -851,7 +863,8 @@
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
           <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves (with how often the position is reached) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Critical positions</b>: where more than 20% of Lichess games play a move that does 10 points or more worse than the position (e.g. it scores 38% where the position scores 50%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% (scores 38%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
+          <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
+          <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
         </ul>
         <details>
           <summary>Hiding studies and chapters</summary>
@@ -1183,7 +1196,7 @@ let currentScreen = null;
 function showScreen(name) {
   currentScreen = name;
   hideBanner(); // a message belongs to the page it was shown on
-  hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
+  hideHoverBoard(); hideCommentPopup(); hideQuickTip(); showColorKey(false); // no pop-up carries over to another page
   document.body.dataset.page = name; // e.g. the Studies page is wider
   // Each page, and its header button (always shown; the current page's is highlighted).
   if (name !== 'groups' && editing) stopEditing(); // changes not saved are dropped (the header asked first)
@@ -1856,7 +1869,8 @@ function isLichessMove(epd, s) {
 // the same test as SPEC.md's suspect moves. From the game results already downloaded, not an engine.
 // Claude's details: the position needs 50 games or more, and a move counts only with 20 games or more of
 // its own; moves outside the saved list count as fine. Returns null, or { share (of the games going
-// wrong), moves: [{ san, share, score (the move's result for the side playing it) }] }, most played first.
+// wrong), moves: [{ san, share, score (the move's result for the side playing it), drop (how far below the
+// position's, 0–1) }] }, most played first.
 const CRITICAL_SHARE = 0.2, CRITICAL_DROP = 0.1, CRITICAL_MIN_GAMES = 50, CRITICAL_MIN_MOVE_GAMES = 20;
 const criticalCache = new Map(); // the statistics object -> its answer (statistics are replaced, not changed, when downloaded again)
 function criticalAt(epd) {
@@ -1869,7 +1883,7 @@ function criticalAt(epd) {
   if (n >= CRITICAL_MIN_GAMES) {
     const here = score(st);
     const bad = st.moves.filter(m => totalGames(m) >= CRITICAL_MIN_MOVE_GAMES && here - score(m) >= CRITICAL_DROP - 1e-9)
-      .map(m => ({ san: m.san, share: totalGames(m) / n, score: score(m) })).sort((a, b) => b.share - a.share);
+      .map(m => ({ san: m.san, share: totalGames(m) / n, score: score(m), drop: here - score(m) })).sort((a, b) => b.share - a.share);
     const share = bad.reduce((sum, m) => sum + m.share, 0);
     if (share > CRITICAL_SHARE) answer = { share, moves: bad };
   }
@@ -2477,6 +2491,63 @@ for (const view of ARROW_VIEWS) $(`arrows-${view}`).addEventListener('click', ()
   saveSettings();
   updateArrowsSwitch();
   if (review) reviewBoard.setAutoShapes(reviewArrows(review.node));
+  if (!$('color-key').classList.contains('hidden')) renderColorKey(); // its highlighted rows follow the view
+});
+
+// The color key: what each arrow on the board and each mark in the move tree means, each with a
+// sample. Opened by the ? at the end of the arrows switch (closed by it again, a click elsewhere, Esc or
+// scrolling); the rows for the view shown (views; none: every view) are plain, the others dimmed.
+// Help's Arrow colors table is drawn from the same list, so the two say the same.
+const arrowSample = (color, outline = null) => '<svg viewBox="0 0 30 12" width="30" height="12" aria-hidden="true">'
+  + (outline ? `<line x1="3" y1="6" x2="19" y2="6" stroke="${outline}" stroke-width="7" stroke-linecap="round"/><path d="M16 0.5 L29.5 6 L16 11.5 Z" fill="${outline}"/>` : '')
+  + `<line x1="3" y1="6" x2="19" y2="6" stroke="${color}" stroke-width="3.5" stroke-linecap="round"/><path d="M18 2.5 L27 6 L18 9.5 Z" fill="${color}"/></svg>`;
+const badgeSample = (text, color = '#666') => `<span class="key-badge" style="background: ${color}">${text}</span>`;
+const KEY_ARROWS = [
+  { sample: arrowSample('#fff', '#3291ff'), name: 'White, blue outline', meaning: "Your study's main move (also Hint and Show correct move)", views: ['study', 'errors'] },
+  { sample: arrowSample('#fff'), name: 'White', meaning: 'Another move in your study', views: ['study', 'errors'] },
+  { sample: '<span class="glyph good">!</span> <span class="glyph mistake">?</span>', name: "In a square's corner", meaning: 'The glyph of the move just played (Studies page, small board)' },
+  { sample: arrowSample('#00a3a3'), name: 'Teal', meaning: 'A masters move', views: ['masters'] },
+  { sample: arrowSample('#9e9e9e'), name: 'Gray', meaning: 'A Lichess move (Lichess view)', views: ['lichess'] },
+  { sample: badgeSample('45%'), name: 'On a teal or gray arrow', meaning: "How often it's played (masters on teal, Lichess on gray)", views: ['masters', 'lichess'] },
+  { sample: arrowSample('#00a3a3', '#fff'), name: 'White outline on teal or gray', meaning: 'Also in your study', views: ['masters', 'lichess'] },
+  { sample: arrowSample('#8a5cf6'), name: 'Violet', meaning: "An error: any move you tried that isn't one of your study's moves", views: ['errors'] },
+  { sample: badgeSample('×2'), name: 'On an arrow', meaning: 'An error you made twice in your last 10 tries', views: ['errors'] },
+  { sample: badgeSample('75%', '#3291ff'), name: 'On the outlined arrow', meaning: "Errors: the position's move accuracy", views: ['errors'] },
+  { sample: ['#15781b', '#882020', '#003088', '#e68f00'].map(c => `<span class="key-dot" style="background: ${c}"></span>`).join(''), name: 'Green, red, blue, amber', meaning: "Your study's own arrows and circles (Studies page)", views: ['study'] },
+];
+const KEY_TREE = [
+  { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
+  { sample: '<span class="needs-work">♘f3</span>', meaning: 'Your move, below 100% move accuracy' },
+  { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
+  { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
+  { sample: '<span class="critical-dot"></span>', meaning: 'Leads to a critical position' },
+  { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
+];
+const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
+$('help-arrow-colors').replaceChildren(...KEY_ARROWS.map(r => element('tr', {}, element('td', {}, keySample(r.sample), r.name), element('td', {}, r.meaning))));
+
+function renderColorKey() {
+  const view = settings.review.view;
+  const row = r => element('tr', { class: r.views && !r.views.includes(view) ? 'key-other' : null }, element('td', { class: 'key-sample' }, keySample(r.sample)), element('td', {}, r.meaning));
+  $('key-arrows').replaceChildren(...KEY_ARROWS.map(row));
+  $('key-tree').replaceChildren(...KEY_TREE.map(row));
+}
+function showColorKey(open) {
+  $('color-key').classList.toggle('hidden', !open);
+  $('color-key-btn').setAttribute('aria-expanded', String(open));
+  if (open) { renderColorKey(); placePopup($('color-key'), $('color-key-btn')); }
+}
+const colorKeyOpen = () => !$('color-key').classList.contains('hidden');
+$('color-key-btn').addEventListener('click', () => showColorKey(!colorKeyOpen()));
+document.addEventListener('click', e => { if (colorKeyOpen() && !e.target.closest('#color-key, .review-view-row')) showColorKey(false); }); // the switch keeps it open
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && colorKeyOpen()) showColorKey(false); });
+window.addEventListener('scroll', () => { if (colorKeyOpen()) showColorKey(false); }, { passive: true });
+$('key-help').addEventListener('click', e => { // Help's Arrow colors, opened
+  e.preventDefault();
+  showScreen('help');
+  const table = $('help-arrow-colors'), details = table.closest('details');
+  details.open = true;
+  details.scrollIntoView({ block: 'start' });
 });
 function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view}`).setAttribute('aria-pressed', String(settings.review.view === view)); }
 
@@ -2544,13 +2615,23 @@ function showReviewNode(node) {
 
 // Under the comment, when the position on the board is critical (see criticalAt), at either side's
 // move: "Critical position" (at the opponent's move "Critical position · opponent's move"), the share
-// of games going wrong, and those moves, e.g. "♘c3 22% (scores 38%)".
+// of Lichess games going wrong, and those moves (see criticalMoveTexts).
 function renderCriticalTile(node) {
   const critical = criticalAt(node.epd);
   $('review-critical').replaceChildren(...critical ? [
     element('h3', {}, node.position.turn === review.parsed.yourColor ? 'Critical position' : "Critical position · opponent's move"),
-    element('p', {}, `${percent(critical.share)}% of games go wrong here`),
-    element('div', { class: 'critical-moves' }, critical.moves.map(m => element('div', {}, `${withFigurines(m.san)} ${percent(m.share)}% (scores ${percent(m.score)}%)`)))] : []);
+    element('p', {}, `${percent(critical.share)}% of Lichess games go wrong here`),
+    element('div', { class: 'critical-moves' }, criticalMoveTexts(critical).map(t => element('div', {}, t)))] : []);
+}
+
+// The moves going wrong, those played in 5% of the games or more (as a Lichess move) each with how
+// many points it lowers the win rate of the side playing it (draws count half), e.g. "♗f4 14% · win
+// rate −10"; the rarer ones in one line, e.g. "+ 6 rarer moves (2%)". (The share going wrong counts them all.)
+function criticalMoveTexts(critical) {
+  const shown = critical.moves.filter(m => m.share >= LICHESS_SHARE), rarer = critical.moves.filter(m => m.share < LICHESS_SHARE);
+  const rareShare = rarer.reduce((sum, m) => sum + m.share, 0);
+  return [...shown.map(m => `${withFigurines(m.san)} ${percent(m.share)}% · win rate −${Math.round(m.drop * 100)}`),
+    ...rarer.length ? [`+ ${plural(rarer.length, 'rarer move')} (${rareShare > 0 && rareShare < 0.01 ? '<1' : percent(rareShare)}%)`] : []];
 }
 
 // "Critical: 34% go wrong here", for a hover board showing a critical position.

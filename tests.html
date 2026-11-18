@@ -41,7 +41,7 @@ export const app = {
   checkedSettings, chapterByKey, chapterLines, allStudyPositions,
   renderChapterTree,
   positionName, firstTryRight, accuracyAt, checkedHistory, mergedHistory, isMasterMove, isLichessMove, criticalAt, moveRank, errorCounts,
-  saveHistory, mainColor,
+  saveHistory, mainColor, criticalMoveTexts,
   setSaveMoveStats(f) { saveMoveStats = f; },
   storageFull(on) { store.set = on ? () => false : () => {}; },
   playBothColors(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
@@ -219,6 +219,11 @@ function run(app) {
     app.setHistory(kept);
     document.getElementById('banner').classList.add('hidden');
   }
+  // The tile's moves: 5% or more each with its drop in win rate, the rarer ones in one line.
+  check('critical: moves of 5% or more listed with their drop; the rarer ones in one line', [
+    app.criticalMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 0.104 }, { san: 'h3', share: 0.03, drop: 0.2 }, { san: 'a3', share: 0.012, drop: 0.3 }] }),
+    app.criticalMoveTexts({ moves: [{ san: 'Nc3', share: 0.3, drop: 0.12 }, { san: 'g4', share: 0.004, drop: 0.5 }] })],
+    [['♗f4 14% · win rate −10', '+ 2 rarer moves (4%)'], ['♘c3 30% · win rate −12', '+ 1 rarer move (<1%)']]);
   // Critical positions: more than 20% of the games play a move 10 points or more worse for the side playing it
   {
     const kept = app.moveStats;
@@ -645,8 +650,26 @@ async function runLichessPage(app) {
     key('ArrowRight');
     const notCritical = tileAt();
     check('critical: the tile at your move; at the opponent\'s, its heading says so; none elsewhere', [atStart, afterE4, notCritical],
-      [['Critical position', '28% of games go wrong here', '♘h3 19% (scores 31%)a4 9% (scores 45%)'], ["Critical position · opponent's move", '30% of games go wrong here', '♗a3 30% (scores 10%)'], []]);
+      [['Critical position', '28% of Lichess games go wrong here', '♘h3 19% · win rate −29a4 9% · win rate −15'], ["Critical position · opponent's move", '30% of Lichess games go wrong here', '♗a3 30% · win rate −23'], []]);
     check('critical: a dot after the move leading to one; the hover board\'s row', [dots, hover.includes('Critical: 28% go wrong here')], [['e4'], true]);
+    // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
+    // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
+    const keyOpen = () => !$('color-key').classList.contains('hidden');
+    const plainRows = () => [...$('key-arrows').rows].filter(r => !r.classList.contains('key-other')).map(r => r.cells[1].textContent);
+    const wasView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
+    $('arrows-masters').click();
+    $('color-key-btn').click();
+    const masters = [keyOpen(), $('color-key-btn').getAttribute('aria-expanded'), plainRows(), $('key-tree').rows.length];
+    $('arrows-errors').click(); // the switch keeps it open
+    const errors = [keyOpen(), plainRows().length];
+    key('Escape');
+    const afterEsc = keyOpen();
+    $('color-key-btn').click();
+    document.body.click();
+    check('color key: the view shown\'s rows plain, following the switch; closed by Esc or a click elsewhere; Help\'s table from the same list', [masters, errors, afterEsc, keyOpen(), $('help-arrow-colors').rows.length], [
+      [true, 'true', ["The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 6],
+      [true, 6], false, false, 11]);
+    wasView.click();
     app.setMoveStats(kept);
     key('Home'); key('ArrowRight');
   }
