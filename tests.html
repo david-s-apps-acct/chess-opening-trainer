@@ -748,7 +748,7 @@ async function runLichessPage(app) {
     $('color-key-btn').click();
     document.body.click();
     check('color key: the view shown\'s rows plain, following the switch; closed by Esc or a click elsewhere; Help\'s table from the same list', [masters, errors, afterEsc, keyOpen(), $('help-arrow-colors').rows.length], [
-      [true, 'true', ["The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 7],
+      [true, 'true', ["Your study's main move (also Hint and Show correct move)", 'Another move in your study', "The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 7],
       [true, 6], false, false, 11]);
     wasView.click();
     app.setMoveStats(kept);
@@ -786,6 +786,9 @@ async function runLichessPage(app) {
   app.settings.review = { view: 'masters' };
   const masters = [arrowsAt([]), arrowsAt(['e4'])];
   const mastersTip = app.squareTipLines(italianRoot, 'd4');
+  app.setMoveStats({ [START]: { masters: explorer([['d4', 60], ['Nf3', 40]]) } }); // 1. e4 isn't a masters move here
+  const mastersOffPath = arrowsAt([]);
+  app.setMoveStats(structuredClone(POSITIONS));
   app.settings.review = { view: 'lichess' };
   const lichess = [arrowsAt([]), arrowsAt(['e4'])];
   const lichessTip = app.squareTipLines(italianRoot, 'd4');
@@ -798,8 +801,9 @@ async function runLichessPage(app) {
   app.setHistory(historyBefore);
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
-  check('review: Masters, with their shares, the study\'s outlined in white, instead of the study\'s arrows', masters,
-    [['e2e4 teal+ 40%', 'd2d4 teal 30%', 'g1f3 teal 15%'], []]);
+  check('review: Masters, with their shares, the study\'s outlined in white; the study\'s other moves white (no masters statistics after 1. e4)', masters,
+    [['e2e4 teal+ 40%', 'd2d4 teal 30%', 'g1f3 teal 15%'], ['e7e5 white+']]);
+  check('review: Masters, your study\'s move that isn\'t a masters move as a white arrow, no share', mastersOffPath, ['d2d4 teal 60%', 'g1f3 teal 40%', 'e2e4 white+']);
   check('review: hovering over a square: only the view\'s rank', [mastersTip, lichessTip], [['d4 · #2 masters move (30%)'], ['d4 · #2 Lichess move (30%)']]);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
     [['e2e4 gray+ 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 gray+ 38%', 'e7e6 gray 25%']]);
@@ -810,7 +814,7 @@ async function runLichessPage(app) {
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
   check('review: their comment text without them', drawnRoot.children[0].notes.text, ['Center.']);
   app.settings.review = { view: 'masters' };
-  check('review: with Masters, not the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), []);
+  check('review: with Masters, not the study\'s own arrows and circles (its moves, white)', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+']);
   app.settings.review = { view: 'study' };
   // Another study in the list: opened, then one of its chapters.
   const twoStudies = structuredClone(LIBRARY);

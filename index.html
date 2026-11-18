@@ -885,7 +885,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -2507,15 +2507,19 @@ const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.pa
 
 // The arrows in a position (see BRUSHES), by the switch under the board: Study, the study's moves (white,
 // the main one outlined in blue), then its own arrows and circles, as drawn; Masters or Lichess (see
-// topMoves); or Errors (see errorArrows). And the glyph of the move just played (see glyphBadge).
+// topMoves; with Masters, the study's other moves in white too); or Errors (see errorArrows). And the glyph of the move just played (see glyphBadge).
 function reviewArrows(node) {
   const pos = node.position, view = settings.review.view;
   if (view === 'errors') return [...errorArrows(node), ...glyphBadge(node)];
   if (view === 'study') return [...node.children.map(c => studyMoveArrow(pos, c)), ...glyphBadge(node), ...node.drawn];
-  return [...topMoves(node, view).map(({ move, brush, share, inStudy }) => {
+  const top = topMoves(node, view), shown = new Set(top.map(t => withoutCheckMarks(t.san)));
+  // Masters: your study's moves that aren't masters moves too, as in Study (white, the main one outlined;
+  // no share), so you can see where the study leaves the masters' moves. (Not with Lichess.)
+  const studyOnly = view === 'masters' ? node.children.filter(c => !shown.has(withoutCheckMarks(c.san))).map(c => studyMoveArrow(pos, c)) : [];
+  return [...top.map(({ move, brush, share, inStudy }) => {
     const [orig, dest] = arrowSquares(pos, move);
     return { orig, dest, brush, label: { text: share }, ...inStudy ? { modifiers: { hilite: true } } : {} };
-  }), ...glyphBadge(node)];
+  }), ...studyOnly, ...glyphBadge(node)];
 }
 
 // Errors: in a position of yours, the errors of your last 10 tries there (violet), each made more than
@@ -2557,8 +2561,8 @@ const arrowSample = (color, outline = null) => '<svg viewBox="0 0 30 12" width="
   + `<line x1="3" y1="6" x2="19" y2="6" stroke="${color}" stroke-width="3.5" stroke-linecap="round"/><path d="M18 2.5 L27 6 L18 9.5 Z" fill="${color}"/></svg>`;
 const badgeSample = (text, color = '#666') => `<span class="key-badge" style="background: ${color}">${text}</span>`;
 const KEY_ARROWS = [
-  { sample: arrowSample('#fff', '#3291ff'), name: 'White, blue outline', meaning: "Your study's main move (also Hint and Show correct move)", views: ['study', 'errors'] },
-  { sample: arrowSample('#fff'), name: 'White', meaning: 'Another move in your study', views: ['study', 'errors'] },
+  { sample: arrowSample('#fff', '#3291ff'), name: 'White, blue outline', meaning: "Your study's main move (also Hint and Show correct move)", views: ['study', 'errors', 'masters'] },
+  { sample: arrowSample('#fff'), name: 'White', meaning: 'Another move in your study', views: ['study', 'errors', 'masters'] },
   { sample: '<span class="glyph good">!</span> <span class="glyph mistake">?</span>', name: "In a square's corner", meaning: 'The glyph of the move just played (Studies page, small board)' },
   { sample: arrowSample('#00a3a3'), name: 'Teal', meaning: 'A masters move', views: ['masters'] },
   { sample: arrowSample('#9e9e9e'), name: 'Gray', meaning: 'A Lichess move (Lichess view)', views: ['lichess'] },
