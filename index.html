@@ -329,6 +329,13 @@
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
   /* Under the moves: how often the position is reached, and the Lichess games' results as a bar */
+  /* Under the moves: Stockfish's evaluation and its best moves (see renderEngineTile) */
+  .panel.review-engine { padding: 10px 14px; font-size: 14px; }
+  .review-engine:empty { display: none; }
+  .engine-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .engine-score { font-size: 20px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .engine-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .engine-line-score { display: inline-block; min-width: 3.2em; margin-right: 6px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
   .panel.review-stats { padding: 10px 14px; font-size: 14px; }
   .review-stats:empty { display: none; }
   .win-bar { display: flex; height: 18px; margin-top: 6px; border-radius: 3px; overflow: hidden; font-size: 12px; font-weight: 600; line-height: 18px; }
@@ -539,6 +546,8 @@
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="lichess-masters" class="muted"></p>
         <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
+        <p id="engine-evals" class="muted"></p>
+        <div id="engine-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div id="backup-card" class="card hidden">
@@ -699,6 +708,7 @@
             <button id="review-all" class="review-all"></button>
           </div>
         </div>
+        <div id="review-engine" class="panel review-engine"></div>
         <div id="review-stats" class="panel review-stats"></div>
         <div id="review-comment" class="panel review-comment"></div>
         <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
@@ -886,6 +896,7 @@
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
           <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position, each with the share of your last 10 tries it was made in, e.g. "40%", and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li><b>Engine</b>: under the moves, Stockfish's evaluation of the position, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), and its best 3 moves, each with its evaluation and the line it expects. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
@@ -937,7 +948,7 @@
         <h2>About</h2>
         <p><b>Chess Opening Trainer by David Sharman</b> · © 2026</p>
         <p class="muted"><a href="https://github.com/david-s-apps-acct/chess-opening-trainer" target="_blank" rel="noopener">Source code</a> under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0-or-later</a>, with an attribution term (see NOTICE.md). Not affiliated with Lichess.org.</p>
-        <p class="muted">Credits: the board and chess rules use Lichess's chessground and chessops libraries (GPL-3.0-or-later); move sounds are Lichess's "SFX" sounds by Enigmahack (AGPL-3.0-or-later); fonts are Noto Sans (OFL-1.1); move statistics come from the Lichess Opening Explorer.</p>
+        <p class="muted">Credits: the board and chess rules use Lichess's chessground and chessops libraries (GPL-3.0-or-later); move sounds are Lichess's "SFX" sounds by Enigmahack (AGPL-3.0-or-later); evaluations are by Stockfish 19 lite, in Nathan Rugg's stockfish.js build (GPL-3.0); fonts are Noto Sans (OFL-1.1); move statistics come from the Lichess Opening Explorer.</p>
       </div>
     </div>
   </section>
@@ -955,8 +966,8 @@ const MAX_LINES_PER_CHAPTER = 5000;
 
 // localStorage (names start "cot."): the Lichess token, settings, presets, the chosen
 // preset, the hidden studies and chapters, and your history. IndexedDB (database "chess-opening-trainer"): the studies
-// fetched from Lichess (store "library") and the move statistics for each board position (store
-// "moveStats", keyed by EPD). Both can be large.
+// fetched from Lichess (store "library"), the move statistics for each board position (store
+// "moveStats", keyed by EPD) and Stockfish's evaluation of each (store "evals", keyed by EPD). They can be large.
 const store = {
   get(key, fallback) {
     try {
@@ -976,10 +987,10 @@ let database = null;
 
 function openDatabase() {
   return database ||= new Promise((resolve, reject) => {
-    const req = indexedDB.open('chess-opening-trainer', 4);
+    const req = indexedDB.open('chess-opening-trainer', 5);
     req.onupgradeneeded = () => {
       const db = req.result;
-      for (const name of ['library', 'moveStats']) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
+      for (const name of ['library', 'moveStats', 'evals']) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -1018,10 +1029,12 @@ function keepData() {
   navigator.storage.persisted().then(kept => kept || navigator.storage.persist()).catch(() => {});
 }
 
-async function loadMoveStats() {
-  const [keys, values] = await inDatabase('moveStats', 'readonly', s => [s.getAllKeys(), s.getAll()]);
+// Everything in a store keyed by EPD (the move statistics, the evaluations), as { epd: value }.
+async function loadByEpd(storeName) {
+  const [keys, values] = await inDatabase(storeName, 'readonly', s => [s.getAllKeys(), s.getAll()]);
   return Object.fromEntries(keys.result.map((epd, k) => [epd, values.result[k]]));
 }
+const loadMoveStats = () => loadByEpd('moveStats');
 
 // Saves the move statistics of these positions (all of them if none are given). False when that fails
 // (e.g. storage full: the downloads stop and say so).
@@ -2754,7 +2767,8 @@ function renderStatsTile(node) {
 // showsMark): off the masters' path (teal), critical (orange). (Your errors had a tile too until 19
 // November 2026; the board and its square tips show them.)
 function renderPositionTiles(node) {
-  renderStatsTile(node); // and, under the moves, the statistics tile
+  renderEngineTile(node); // and, under the moves, the Engine tile and the statistics tile
+  renderStatsTile(node);
   renderMastersTile(node);
   renderCriticalTile(node);
 }
@@ -3940,6 +3954,7 @@ window.addEventListener('scroll', hideHoverBoard, { passive: true });
 let downloadsRunning = false, downloadsAgain = false;
 
 async function startDownloads() {
+  startEvaluations(); // the engine's evaluations too, alongside (they don't need Lichess)
   if (downloadsRunning) { downloadsAgain = true; return; }
   downloadsRunning = true;
   try {
@@ -3970,10 +3985,10 @@ const SPEED_NAMES = { ultraBullet: 'UltraBullet', bullet: 'Bullet', blitz: 'Blit
 // moves leading to it, whether it's on a chapter's main line, whether the opponent has several
 // replies there (a branch point), and every move the studies have there.
 function allStudyPositions() {
-  const found = new Map(); // epd -> { fen, depth, parents: [{ epd, san }], onMainLine, isBranchPoint, studyMoves: Set }
+  const found = new Map(); // epd -> { fen, position, depth, parents: [{ epd, san }], onMainLine, isBranchPoint, studyMoves: Set }
   const visit = (node, depth, parent, onMainLine, yourColor) => {
     let position = found.get(node.epd);
-    if (!position) found.set(node.epd, position = { fen: node.fen, depth, parents: [], onMainLine: false, isBranchPoint: false, studyMoves: new Set() });
+    if (!position) found.set(node.epd, position = { fen: node.fen, position: node.position, depth, parents: [], onMainLine: false, isBranchPoint: false, studyMoves: new Set() });
     position.depth = Math.min(position.depth, depth);
     if (parent) position.parents.push(parent);
     if (onMainLine) position.onMainLine = true;
@@ -3990,6 +4005,13 @@ function allStudyPositions() {
   }
   return found;
 }
+
+// allStudyPositions' entries in the order they're downloaded (and evaluated), the same whatever is
+// ticked: branch points (the opponent has several replies), then the rest of the chapters' main lines,
+// then everything else; by move number within each group, so a position's parents are usually known
+// before it's reached.
+const downloadTier = position => position.isBranchPoint ? 0 : position.onMainLine ? 1 : 2;
+const inDownloadOrder = entries => entries.sort(([, a], [, b]) => downloadTier(a) - downloadTier(b) || a.depth - b.depth);
 
 // After a download completes: suggest saving a backup (the downloads took a while), in the Lichess page's Backup card.
 function suggestBackup(what) {
@@ -4084,12 +4106,7 @@ async function downloadExplorerPositions(kind, run) {
   // A position's statistics, if they're from the games chosen.
   const saved = epd => { const stats = moveStats[epd]?.[kind]; return stats && explorer.isCurrent(stats) ? stats : undefined; };
   const status = text => setExplorerStatus(kind, text);
-  // The same order whatever is ticked: branch points (the opponent has several replies), then the
-  // rest of the chapters' main lines, then everything else; by move number within each group, so a
-  // position's parents are usually known before it's reached.
-  const tier = position => position.isBranchPoint ? 0 : position.onMainLine ? 1 : 2;
-  const todo = [...allStudyPositions()].filter(([epd]) => !saved(epd))
-    .sort(([, a], [, b]) => tier(a) - tier(b) || a.depth - b.depth);
+  const todo = inDownloadOrder([...allStudyPositions()].filter(([epd]) => !saved(epd)));
   if (!todo.length) return; // nothing missing: nothing to say
   // The progress shows in the Lichess page's Move statistics card, under the tick boxes: "Move
   // statistics: 3 of 10 positions (downloading…)" ("… 10 of 10 positions downloaded" when done), then
@@ -4156,6 +4173,7 @@ function updateStatisticsInfo() {
     const done = studied.filter(epd => moveStats[epd]?.[kind] && explorer.isCurrent(moveStats[epd][kind])).length;
     el.textContent = `${explorer.Label}: ${done} of ${plural(studied.length, 'position')}` + (done === studied.length ? ' downloaded' : explorerDownloads[kind] ? ' (downloading…)' : '');
   }
+  updateEvaluationInfo();
   updateLichessStatus();
 }
 
@@ -4201,6 +4219,187 @@ function rankAndShareText(stats, moveSan, who, none) {
   if (s == null) return null;
   const r = s && moveRank(stats, moveSan);
   return r ? `#${r} ${who} move (${s})` : none;
+}
+
+// ---------- Engine (Stockfish evaluations) ----------
+// Stockfish 19 lite, single-threaded (the npm package stockfish 19.0.1 by Nathan Rugg), hosted with the
+// app in engine/ and saved by the service worker for offline use. It needs the online version: browsers
+// don't start a worker from a file on disk. Every position in the studies is evaluated once, in the
+// background (positions shown on the Studies page first), by a few engines side by side, and saved
+// (IndexedDB store "evals", keyed by EPD; included in backups). Studies changing evaluate only their new
+// positions. (Measured 19 November 2026 on a 12-core Mac: depth 20 with the best 3 moves takes about 1–2 s
+// a position for each engine.)
+const ENGINE = { url: 'engine/stockfish-19-lite-single.js', name: 'Stockfish 19 lite', depth: 20, multiPv: 3, v: 1 };
+let engineAvailable = () => location.protocol !== 'file:' && typeof Worker === 'function'; // the tests switch it
+const engineCount = () => Math.max(1, Math.min(4, Math.floor((navigator.hardwareConcurrency || 2) / 2)));
+let newEngineWorker = () => new Worker(ENGINE.url); // the tests use a stand-in
+
+// evals[epd]: { depth, lines: [{ cp } or { mate }, with pv: 'g1f3 b8c6 …'], engine, v, at }: the engine's
+// best moves (up to ENGINE.multiPv, best first), each scored from White's side (cp in hundredths of a
+// pawn; mate in moves, negative when Black mates), with the line it expects (up to 12 plies). v is
+// ENGINE.v; an older one is evaluated again.
+let evals = {};
+const evalAt = epd => evals[epd]?.v === ENGINE.v ? evals[epd] : undefined;
+const loadEvals = () => loadByEpd('evals');
+let saveEvals = async epds => {
+  try { await inDatabase('evals', 'readwrite', s => { for (const epd of epds) if (evals[epd]) s.put(evals[epd], epd); }); return true; }
+  catch (e) { console.warn('IndexedDB write failed', e); return false; }
+};
+
+// One of Stockfish's "info" lines, e.g. "info depth 20 seldepth 28 multipv 1 score cp -32 nodes … pv e7e5
+// g1f3", as { depth, multipv, cp or mate, pv } from the side to move's view; null for other lines and
+// for bounds (lowerbound, upperbound: not final).
+function parseEngineInfo(line) {
+  const m = /^info depth (\d+) .*?multipv (\d+) score (cp|mate) (-?\d+)( lowerbound| upperbound)? .*?pv (.+)$/.exec(line);
+  return m && !m[5] ? { depth: +m[1], multipv: +m[2], [m[3]]: +m[4], pv: m[6].trim() } : null;
+}
+
+// A Stockfish engine in its own worker: evaluate(fen) gives the position's evaluation (see evals), one at a
+// time; stop() ends it.
+function startEngine() {
+  const worker = newEngineWorker();
+  let onLine = () => {}, fail = () => {};
+  const next = (isLast, each = () => {}) => new Promise((resolve, reject) => {
+    onLine = line => { each(line); if (isLast(line)) resolve(line); };
+    fail = reject;
+  });
+  worker.onmessage = e => onLine(String(e.data));
+  worker.onerror = e => { e.preventDefault?.(); fail(new Error(e.message || 'The engine failed')); };
+  const send = command => worker.postMessage(command);
+  const ready = (async () => {
+    const uciok = next(line => line === 'uciok');
+    send('uci');
+    await uciok;
+    const readyok = next(line => line === 'readyok');
+    send(`setoption name MultiPV value ${ENGINE.multiPv}`);
+    send('setoption name Hash value 32');
+    send('isready');
+    await readyok;
+  })();
+  return {
+    async evaluate(fenText) {
+      await ready;
+      const latest = new Map(); // multipv -> its deepest info line so far
+      const done = next(line => line.startsWith('bestmove'), line => { const info = parseEngineInfo(line); if (info) latest.set(info.multipv, info); });
+      send('ucinewgame');
+      send(`position fen ${fenText}`);
+      send(`go depth ${ENGINE.depth}`);
+      await done;
+      const sign = fenText.split(' ')[1] === 'b' ? -1 : 1; // to White's side
+      const lines = [...latest.values()].sort((a, b) => a.multipv - b.multipv)
+        .map(i => ({ ...'cp' in i ? { cp: sign * i.cp } : { mate: sign * i.mate }, pv: i.pv.split(' ').slice(0, 12).join(' ') }));
+      return { depth: Math.min(...[...latest.values()].map(i => i.depth)), lines, engine: ENGINE.name, v: ENGINE.v, at: Date.now() };
+    },
+    stop() { fail(new Error('stopped')); worker.terminate(); },
+  };
+}
+
+// The evaluations running: the positions waiting (in download order), and the one wanted first (the
+// position on the Studies page). Asked while they run (e.g. after studies change), the waiting list is
+// brought up to date and the running engines carry on with it.
+const evaluation = { running: false, waiting: [], evaluating: new Set(), wanted: null, problem: '' };
+
+function startEvaluations() {
+  if (!engineAvailable() || !library) return;
+  evaluation.waiting = inDownloadOrder([...allStudyPositions()].filter(([epd, p]) => !evalAt(epd) && !evaluation.evaluating.has(epd) && !p.position.isCheckmate() && !p.position.isStalemate()))
+    .map(([epd, p]) => ({ epd, fen: p.fen }));
+  if (evaluation.running || !evaluation.waiting.length) return showProgress();
+  evaluation.running = true;
+  evaluation.problem = '';
+  showProgress();
+  const engines = Array.from({ length: Math.min(engineCount(), evaluation.waiting.length) }, runEngine);
+  Promise.all(engines).finally(() => {
+    evaluation.running = false;
+    if (evaluation.waiting.length) startEvaluations(); // added as the engines were finishing
+    else showProgress();
+  });
+}
+
+// The next position to evaluate: the wanted one if it's waiting, else the first waiting.
+function nextToEvaluate() {
+  const k = Math.max(0, evaluation.waiting.findIndex(item => item.epd === evaluation.wanted));
+  return evaluation.waiting.splice(k, 1)[0];
+}
+
+async function runEngine() {
+  let engine;
+  try {
+    engine = startEngine();
+    for (let item; (item = nextToEvaluate()); ) {
+      if (evalAt(item.epd)) continue; // e.g. from a restored backup
+      evaluation.evaluating.add(item.epd);
+      try { evals[item.epd] = await engine.evaluate(item.fen); } finally { evaluation.evaluating.delete(item.epd); }
+      if (await saveEvals([item.epd]) === false) { evaluation.waiting = []; evaluation.problem = STORAGE_FULL; break; }
+      evaluated(item.epd);
+    }
+  } catch (e) {
+    if (e.message !== 'stopped') { console.warn('Engine failed', e); evaluation.problem = "The engine stopped. It continues next time."; }
+  } finally { engine?.stop(); }
+}
+
+// A position has its evaluation: shown at once if it's on the Studies page's board; the progress updated.
+function evaluated(epd) {
+  if (currentScreen === 'studies' && review?.node.epd === epd) renderEngineTile(review.node);
+  showProgress();
+}
+
+// A position shown on the Studies page is evaluated next if it hasn't been.
+function evaluateSoon(epd) {
+  if (evalAt(epd)) return;
+  evaluation.wanted = epd;
+  if (!evaluation.running) startEvaluations();
+}
+
+// An evaluation in pawns from White's side, as on Lichess: "+0.3", "−1.2", "0.0", "#4" (White mates in 4),
+// "#−3" (Black mates in 3).
+function evalText(line) {
+  if ('mate' in line) return `#${line.mate < 0 ? '−' : ''}${Math.abs(line.mate)}`;
+  const pawns = (line.cp / 100).toFixed(1);
+  return pawns === '0.0' || pawns === '-0.0' ? '0.0' : line.cp > 0 ? `+${pawns}` : `−${pawns.slice(1)}`;
+}
+
+// The start of an engine line in moves, with numbers and piece symbols: "3… ♘f6 4. d3 ♗c5 5. O-O".
+function engineLineText(position, pv, plies = 8) {
+  const pos = position.clone(), out = [];
+  for (const uci of pv.split(' ').slice(0, plies)) {
+    const move = parseUci(uci);
+    if (!move || !pos.isLegal(move)) break;
+    const label = pos.turn === 'white' ? `${pos.fullmoves}. ` : out.length ? '' : `${pos.fullmoves}… `;
+    out.push(label + withFigurines(san.makeSanAndPlay(pos, move)));
+  }
+  return out.join(' ');
+}
+
+// The Engine tile on the Studies page (in every view), for the position on the board: Stockfish's
+// evaluation and its best moves, each with its evaluation and the line it expects: "+0.3 Depth 20", then
+// "+0.3 3… ♘f6 4. d3 ♗c5 …". "Evaluating…" until it's done (that position first); "Checkmate" and
+// "Stalemate" need no engine. Hidden from the version opened from disk.
+function renderEngineTile(node) {
+  const tile = $('review-engine');
+  if (!engineAvailable()) return tile.replaceChildren();
+  const pos = node.position, ev = evalAt(node.epd);
+  if (pos.isCheckmate() || pos.isStalemate()) return tile.replaceChildren(element('div', { class: 'muted' }, pos.isCheckmate() ? 'Checkmate' : 'Stalemate'));
+  if (!ev) {
+    evaluateSoon(node.epd);
+    return tile.replaceChildren(element('div', { class: 'muted' }, 'Evaluating…'));
+  }
+  tile.replaceChildren(
+    element('div', { class: 'engine-head', title: `${ev.engine}, depth ${ev.depth}` },
+      element('span', { class: 'engine-score' }, ev.lines.length ? evalText(ev.lines[0]) : '–'), element('span', { class: 'muted' }, `Depth ${ev.depth}`)),
+    ...ev.lines.map(l => element('div', { class: 'engine-line' }, element('span', { class: 'engine-line-score' }, evalText(l)), engineLineText(pos, l.pv))));
+}
+
+// The Lichess page's line for the evaluations, under the statistics: "Engine evaluations: 120 of 850
+// positions (evaluating…)"; then a problem, if any.
+function updateEvaluationInfo() {
+  const el = $('engine-evals');
+  if (!engineAvailable()) { el.textContent = 'Engine evaluations: only in the online version'; return; }
+  const studied = library ? [...allStudyPositions()].filter(([, p]) => !p.position.isCheckmate() && !p.position.isStalemate()) : [];
+  const done = studied.filter(([epd]) => evalAt(epd)).length;
+  el.textContent = `Engine evaluations: ${done} of ${plural(studied.length, 'position')}` + (done === studied.length ? ' evaluated' : evaluation.running ? ' (evaluating…)' : '');
+  const status = $('engine-status');
+  status.textContent = evaluation.problem;
+  status.classList.toggle('hidden', !evaluation.problem);
 }
 
 // ---------- Lichess page ----------
@@ -4425,7 +4624,7 @@ $('welcome-start-btn').addEventListener('click', leaveWelcome);
 // ---------- Backup ----------
 
 const BACKUP_APP = 'chess-opening-trainer';
-const BACKUP_VERSION = 6; // version 5's history is moved to positions (see checkedHistory); earlier ones can't be restored
+const BACKUP_VERSION = 7; // 7 added the engine's evaluations; version 5's history is moved to positions (see checkedHistory); earlier ones can't be restored
 
 // The Lichess account whose studies these are: recorded in backups, to warn when one is restored
 // under another.
@@ -4439,6 +4638,7 @@ $('backup-btn').addEventListener('click', async () => {
     settings, presets, chosenPreset: chosenPresetName, hidden: [...hidden],
     history: storedHistory(),
     moveStats, // they take a long time to download, so they're included
+    evals, // the engine's evaluations, likewise
   };
   const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' }); // not indented: a third smaller
   const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -4498,7 +4698,7 @@ async function chosenBackup(e) {
     showBanner("That file isn't an Opening Trainer backup.", true);
     return null;
   }
-  if (![5, BACKUP_VERSION].includes(b.version) || !checkedHistory(b.history)) {
+  if (![5, 6, BACKUP_VERSION].includes(b.version) || !checkedHistory(b.history)) {
     showBanner('This backup is from an earlier version and can\'t be used.', true);
     return null;
   }
@@ -4514,6 +4714,15 @@ function mergeMoveStats(b) {
     for (const part of ['lichess', 'masters']) {
       if (saved[part] && (!current[part] || (saved[part].at || 0) > (current[part].at || 0))) current[part] = saved[part];
     }
+  }
+}
+
+// The engine's evaluations are merged the same way: for each position the newer evaluation from the
+// current engine (ENGINE.v) is kept.
+function mergeEvals(b) {
+  for (const [epd, saved] of Object.entries(b.evals && typeof b.evals === 'object' ? b.evals : {})) {
+    if (saved?.v !== ENGINE.v || !Array.isArray(saved.lines)) continue;
+    if (!evalAt(epd) || (saved.at || 0) > (evals[epd].at || 0)) evals[epd] = saved;
   }
 }
 
@@ -4550,7 +4759,9 @@ $('merge-file').addEventListener('change', async e => {
   const before = Object.keys(history.positions).length;
   history = mergedHistory(history, checkedHistory(b.history));
   mergeMoveStats(b);
+  mergeEvals(b);
   await saveMoveStats();
+  await saveEvals(Object.keys(evals));
   saveHistory();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Restore does
   refreshPage();
@@ -4571,7 +4782,9 @@ $('restore-file').addEventListener('change', async e => {
   hidden = new Set(strings(b.hidden ?? b.hiddenStudies));
   useChosenPreset();
   mergeMoveStats(b);
+  mergeEvals(b);
   await saveMoveStats();
+  await saveEvals(Object.keys(evals));
   saveHistory({ replace: true }); saveSettings(); saveHidden(); savePresets();
   updateSoundButton();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
@@ -4614,6 +4827,7 @@ async function init() {
     library = await loadLibrary();
     if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
     moveStats = await loadMoveStats();
+    evals = await loadEvals();
     useChosenPreset();
     store.remove('selection'); // no longer stored: the chosen preset says what's practiced
   }

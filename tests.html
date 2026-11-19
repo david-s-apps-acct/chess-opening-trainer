@@ -51,7 +51,8 @@ export const app = {
     const realGet = store.get;
     store.get = (key, fallback) => key === 'history' ? (window.testStoredHistory ?? fallback) : realGet(key, fallback); // never your real history
     store.set = () => {}; store.remove = () => {};
-    saveMoveStats = async () => {}; saveLibrary = async () => {};
+    saveMoveStats = async () => {}; saveLibrary = async () => {}; saveEvals = async () => true;
+    engineAvailable = () => false; // no engine unless a test asks for one
     explorerPace.ms = 0; // no 2 s pace in the tests (except the test of it)
     window.fetch = async () => new Response('', { status: 404 });
   },
@@ -72,6 +73,10 @@ export const app = {
   get downloading() { return downloadsRunning; },
   get moveStats() { return moveStats; },
   get library() { return library; },
+  // The engine: off in the tests (isolate), or a stand-in worker.
+  setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
+  get evals() { return evals; }, setEvals(e) { evals = e; },
+  evaluation, evalText, engineLineText, parseEngineInfo, startEngine, mergeEvals, ENGINE,
 };`;
 
 async function loadApp() {
@@ -859,11 +864,12 @@ async function runLichessPage(app) {
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
   check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached in its own tile under the moves; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
-    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null, document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, true, true]);
+    $('review-engine').previousElementSibling.querySelector('#review-tree') !== null && $('review-stats').previousElementSibling.id === 'review-engine', document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, true, true]);
   $('arrows-errors').click();
   check('review: one view at a time, remembered', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'false', 'true'], 'errors']);
   $('arrows-study').click();
   check('review: the comment tile under the moves and their statistics', [$('review-comment').previousElementSibling.id, $('review-comment').classList.contains('panel')], ['review-stats', true]);
+  await runEngineTests(app, key);
   check('review: no Close button; no accuracy in the chapters list', [!!$('review-close'), chapterRows().some(row => row.querySelector('.rate'))], [false, false]);
   key('Escape');
   check('review: Esc doesn\'t leave the page', !$('studies-screen').classList.contains('hidden'), true);
@@ -909,6 +915,79 @@ async function runLichessPage(app) {
   $('nav-studies').click();
   check('Studies button: the chapter and position last looked at', [!$('studies-screen').classList.contains('hidden'), chapterShown(), current()], [true, '2. Sicilian', 'e4']);
   app.setLibrary(before2.library); app.setMoveStats(before2.moveStats);
+}
+
+// ---------- The engine (a stand-in for Stockfish) ----------
+
+// A stand-in for the Stockfish worker: answers the UCI commands the app sends. At the start, its best 3
+// moves are e4 (+0.32, after a depth 19 line and a lower bound), d4 and Nf3 (mate in 7 for Black, to test
+// the sign); in any other position, one line, −0.5 for the side to move.
+class FakeStockfish {
+  constructor() { this.commands = []; }
+  postMessage(command) {
+    this.commands.push(command);
+    const say = (...lines) => setTimeout(() => lines.forEach(line => this.onmessage?.({ data: line })), 1);
+    if (command === 'uci') say('id name Fake', 'uciok');
+    else if (command === 'isready') say('readyok');
+    else if (command.startsWith('position fen ')) this.fen = command.slice(13);
+    else if (command.startsWith('go ')) {
+      const atStart = this.fen.startsWith('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w');
+      say(...atStart ? ['info depth 19 seldepth 22 multipv 1 score cp 20 nodes 9 pv d2d4', 'info depth 20 seldepth 25 multipv 1 score cp 50 lowerbound nodes 9 pv e2e4',
+        'info depth 20 seldepth 25 multipv 1 score cp 32 nodes 9 nps 9 time 1 pv e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6 e1g1 f8e7 f1e1 b7b5 a4b3 d7d6',
+        'info depth 20 seldepth 25 multipv 2 score cp 25 nodes 9 pv d2d4 d7d5', 'info depth 20 seldepth 25 multipv 3 score mate -7 nodes 9 pv g1f3']
+        : ['info depth 20 seldepth 25 multipv 1 score cp -50 nodes 9 pv a7a6'], 'bestmove x');
+    }
+  }
+  terminate() { this.ended = true; }
+}
+
+async function runEngineTests(app, key) {
+  const $ = id => document.getElementById(id);
+  check("engine: evaluations in pawns from White's side", [{ cp: 32 }, { cp: -120 }, { cp: 4 }, { cp: -4 }, { cp: 0 }, { mate: 4 }, { mate: -3 }].map(app.evalText),
+    ['+0.3', '−1.2', '0.0', '0.0', '0.0', '#4', '#−3']);
+  check('engine: its info lines read; bounds and other lines ignored', [
+    app.parseEngineInfo('info depth 20 seldepth 28 multipv 2 score cp -32 nodes 369610 nps 832454 hashfull 70 time 444 pv e7e5 g1f3'),
+    app.parseEngineInfo('info depth 12 seldepth 14 multipv 1 score mate 3 nodes 1 pv h5f7'),
+    app.parseEngineInfo('info depth 20 seldepth 28 multipv 1 score cp 40 upperbound nodes 1 pv e7e5'),
+    app.parseEngineInfo('info string NNUE evaluation enabled')],
+    [{ depth: 20, multipv: 2, cp: -32, pv: 'e7e5 g1f3' }, { depth: 12, multipv: 1, mate: 3, pv: 'h5f7' }, null, null]);
+  // One engine; a position at Black's move is scored from White's side.
+  let fake;
+  app.setEngine(false, () => fake = new FakeStockfish());
+  const engine = app.startEngine();
+  const black = await engine.evaluate('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1');
+  const start = await engine.evaluate('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  engine.stop();
+  check("engine: the best 3 moves at depth 20, from White's side, lines up to 12 plies; set up once", [black.lines, start.lines.map(l => [l.cp ?? '#' + l.mate, l.pv.split(' ').length]), start.depth, start.v,
+    fake.commands.filter(c => c.startsWith('setoption')), fake.ended], [[{ cp: 50, pv: 'a7a6' }], [[32, 12], [25, 2], ['#-7', 1]], 20, 1,
+    ['setoption name MultiPV value 3', 'setoption name Hash value 32'], true]);
+  // The Engine tile on the Studies page, at the start: "Evaluating…" (that position first), then the evaluation.
+  app.setEvals({});
+  app.setEngine(true);
+  key('Home');
+  const evaluating = $('review-engine').textContent;
+  await until(() => !app.evaluation.running, 'the evaluations to finish');
+  const tile = () => [$('review-engine').querySelector('.engine-head')?.textContent, [...$('review-engine').querySelectorAll('.engine-line')].map(l => [l.firstChild.textContent, l.lastChild.textContent])];
+  const positions = app.allStudyPositions().size;
+  check('engine tile: "Evaluating…", then the evaluation and the best 3 moves with their lines; every study position evaluated', [evaluating, tile(), Object.keys(app.evals).length],
+    ['Evaluating…', ['+0.3Depth 20', [['+0.3', '1. e4 e5 2. ♘f3 ♘c6 3. ♗b5 a6 4. ♗a4 ♘f6'], ['+0.3', '1. d4 d5'], ['#−7', '1. ♘f3']]], positions]);
+  key('ArrowRight');
+  check("engine tile: after 1. e4, from White's side", tile(), ['+0.5Depth 20', [['+0.5', '1… a6']]]);
+  $('nav-lichess').click();
+  const progress = $('engine-evals').textContent;
+  $('nav-studies').click();
+  // Backups: an evaluation by the current engine kept when newer; another engine's ignored.
+  const epd = Object.keys(app.evals)[0], mine = app.evals[epd];
+  app.mergeEvals({ evals: { [epd]: { ...mine, at: mine.at - 1, depth: 1 }, X: { v: 0, lines: [], at: 9e15 }, Y: { ...mine, at: 1 } } });
+  const older = [app.evals[epd].depth, !!app.evals.X, !!app.evals.Y];
+  app.mergeEvals({ evals: { [epd]: { ...mine, at: mine.at + 1, depth: 30 } } });
+  check("engine: the Lichess page's progress; merged backups keep the newer evaluation", [progress, older, app.evals[epd].depth],
+    [`Engine evaluations: ${positions} of ${positions} positions evaluated`, [20, false, true], 30]);
+  // Without the engine (the version opened from disk): no tile.
+  app.setEngine(false);
+  key('Home');
+  check('engine tile: hidden from the version opened from disk', $('review-engine').children.length, 0);
+  app.setEvals({});
 }
 
 // ---------- Practice: whole lines played through the app ----------

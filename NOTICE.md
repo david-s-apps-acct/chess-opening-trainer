@@ -28,6 +28,16 @@ Loaded by the app from the jsDelivr CDN; each keeps its own license:
 | "SFX" move sounds, from [lila](https://github.com/lichess-org/lila) | Enigmahack | AGPL-3.0-or-later |
 | [Noto Sans](https://fonts.google.com/noto/specimen/Noto+Sans) and Noto Sans Symbols 2 (via Fontsource) | Google | OFL-1.1 |
 
+Hosted with the app, in the `engine` folder:
+
+| Part | Author | License |
+|---|---|---|
+| [Stockfish](https://github.com/official-stockfish/Stockfish) 19 lite, single-threaded (evaluations), in the [stockfish.js](https://github.com/nmrugg/stockfish.js) build 19.0.1 | The Stockfish developers; WebAssembly build by Nathan Rugg | GPL-3.0 (`engine/Copying.txt`) |
+
+Its source code: [Stockfish](https://github.com/official-stockfish/Stockfish/tree/sf_19) and the
+[stockfish.js build](https://github.com/nmrugg/stockfish.js/tree/v19.0.1) (the files are
+`stockfish-19-lite-single.js` and `.wasm` from its npm package, `stockfish` 19.0.1, unchanged).
+
 The app's icon is the knight (♞) from Noto Sans Symbols 2, in white on the app's blue.
 
 Move statistics come from the [Lichess Opening Explorer](https://lichess.org/api#tag/Opening-Explorer).

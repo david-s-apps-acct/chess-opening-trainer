@@ -6,11 +6,13 @@
 //   arrives straight away; the saved copy when offline.
 // - The libraries, fonts and sounds from jsDelivr: the saved copy first. Their addresses name a fixed
 //   version and never change, so a saved copy never goes out of date.
+// - The engine (engine/: Stockfish, about 1.9 MB): the saved copy first, like the libraries; its file
+//   names name its version.
 // - Lichess (studies, statistics, login) is never stored here.
 // Saved on the first visit; anything else from jsDelivr is saved the first time it's used.
 // Change VERSION when the list below changes (e.g. a library's version), so old copies are dropped.
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const APP = `cot-app-${VERSION}`, LIBRARIES = `cot-libraries-${VERSION}`;
 const CDN = 'https://cdn.jsdelivr.net';
 
@@ -33,6 +35,8 @@ const LIBRARY_FILES = [
   '/gh/lichess-org/lila@b3f190be9d532d5f9cdf746938e9d480b1464e25/public/sound/sfx/Move.mp3',
   '/gh/lichess-org/lila@b3f190be9d532d5f9cdf746938e9d480b1464e25/public/sound/sfx/Capture.mp3',
 ].map(path => CDN + path);
+const ENGINE_FILES = ['./engine/stockfish-19-lite-single.js', './engine/stockfish-19-lite-single.wasm'];
+const isEngineFile = url => url.origin === self.location.origin && url.pathname.includes('/engine/');
 
 // Each file on its own, so one that can't be fetched doesn't stop the rest.
 const saveAll = async (cacheName, urls) => {
@@ -41,7 +45,7 @@ const saveAll = async (cacheName, urls) => {
 };
 
 self.addEventListener('install', event => {
-  event.waitUntil(Promise.all([saveAll(APP, APP_FILES), saveAll(LIBRARIES, LIBRARY_FILES)]).then(() => self.skipWaiting()));
+  event.waitUntil(Promise.all([saveAll(APP, APP_FILES), saveAll(LIBRARIES, [...LIBRARY_FILES, ...ENGINE_FILES])]).then(() => self.skipWaiting()));
 });
 
 // Drops the copies saved by earlier versions, and looks after the open page straight away.
@@ -55,7 +59,7 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.origin === CDN) event.respondWith(savedFirst(request));
+  if (url.origin === CDN || isEngineFile(url)) event.respondWith(savedFirst(request));
   else if (url.origin === self.location.origin) event.respondWith(networkFirst(request));
   // Anything else (Lichess) goes straight to the network.
 });
