@@ -244,7 +244,7 @@ function run(app) {
   }
   // The tile's moves: those losing 0.1 pawns or more, with their share and drop.
   check('critical: the moves losing 0.1 pawns or more, with share and drop', app.criticalMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 1.24 }, { san: 'e4', share: 0.5, drop: 0 }, { san: 'h3', share: 0.08, drop: 0.1 }] }),
-    ['♗f4 14% · −1.2', 'h3 8% · −0.1']);
+    ['♗f4 14% · Δ−1.2', 'h3 8% · Δ−0.1']);
   check('critical: evaluations in pawns, mate as 10', [{ cp: 45 }, { cp: -120 }, { mate: 3 }, { mate: -2 }].map(app.pawnsOf), [0.45, -1.2, 10, -10]);
   // Critical positions: the Lichess moves' expected loss, by the engine, at the critical level (0.5) or more.
   {
@@ -290,9 +290,9 @@ function run(app) {
   check('right first time: + and # ignored', app.firstTryRight({ tried: ['e4+'] }, e4.parent, false), true);
   check('error kinds', [app.errorKind(nf3, 'Nc3'), app.errorKind(bc4, 'Bb5'), app.errorKind(e4, 'd4'), app.errorKind(e4, 'g3')], ['alternative', 'marked', 'masters', 'wrong']);
 
-  // Move accuracy: the share right first time, not weighted; per position
+  // Repertoire accuracy: the share right first time, not weighted; per position
   app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['g3', 'Nf3'], main: true }, { tried: ['Nc3'], main: false }, { tried: ['Nf3'], main: true }, { tried: ['Nf3'], main: true }] }, lines: {} });
-  check('move accuracy: none; right first time over the tries; with Main lines only, a free alternative left out', [app.accuracyAt(e4.parent, false), app.accuracyAt(nf3.parent, false), app.accuracyAt(nf3.parent, true)],
+  check('repertoire accuracy: none; right first time over the tries; with Main lines only, a free alternative left out', [app.accuracyAt(e4.parent, false), app.accuracyAt(nf3.parent, false), app.accuracyAt(nf3.parent, true)],
     [null, { share: 0.75, tries: 4 }, { share: 2 / 3, tries: 3 }]);
   app.setHistory({ positions: {}, lines: {} });
   check('history: the old moves moved to their positions, as made with Main lines only', app.checkedHistory({ moves: { 'X/Y|e4 e5 Nf3': [{ tried: ['Nf3'], at: 1, points: 10 }], 'X/Y|e4': [] }, lines: {} }),
@@ -687,7 +687,7 @@ async function runLichessPage(app) {
     key('ArrowRight');
     const notCritical = tileAt();
     check('critical: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notCritical],
-      [['Critical position', 'Expected loss 0.5 pawns', 'd4 25% · −0.1♘h3 15% · −3.3'], ['Critical position', 'Expected loss 0.4 pawns', 'g5 30% · −1.2'], [[], 0.5], []]);
+      [['Critical position', 'Expected loss 0.5 pawns', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Critical position', 'Expected loss 0.4 pawns', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
     check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
@@ -702,7 +702,7 @@ async function runLichessPage(app) {
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': wrong }, lines: {} });
       const start = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelector('.tree-line').firstElementChild.className;
       check('tree: a violet dot after the move leading to a position with errors, before the first move for the start; no background', [after, start],
-        [[0, [['e5', 'Your errors here: below 100% move accuracy']]], 'tree-dot weak-dot']);
+        [[0, [['e5', 'Your errors here: below 100% repertoire accuracy']]], 'tree-dot weak-dot']);
       app.setHistory(keptHistory);
     }
     check('no errors tile (the board and its square tips show the errors)', !!$('review-errors'), false);
@@ -828,26 +828,33 @@ async function runLichessPage(app) {
   app.setEvals(evalsBefore);
   app.settings.review = { view: 'study' };
   // Errors: your errors at the start in the last 10 tries (d4 twice, a masters move; g3; all violet; the hint,
-  // no arrow), counted, with the correct move and the move accuracy, 1 of 4 tries; none at the opponent's turn; hovering over squares.
+  // no arrow), counted, with the correct move and the repertoire accuracy, 1 of 4 tries; none at the opponent's turn; hovering over squares.
   const historyBefore = app.history;
   app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['d4', 'e4'], at: 1, main: true }, { tried: ['d4', 'g3', 'e4'], at: 2, main: true }, { tried: ['hint', 'e4'], at: 3, main: true }, { tried: ['e4'], at: Date.now(), main: true }] }, lines: {} });
   app.settings.review = { view: 'errors' };
   const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3'), app.squareTipLines(italianRoot, 'e4')];
+  app.setEvals(structuredClone(CRITICAL_EVALS));
+  const accuracyTips = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'e4')];
+  app.settings.review = { view: 'study' };
+  const studyTips = [app.squareTipLines(italianRoot, 'e4'), app.squareTipLines(italianRoot, 'f5')];
+  app.setEvals(evalsBefore);
+  check('review: square tips with the change in evaluation: with Accuracy the error\'s kind, the hint and last tested; with Study your study\'s moves', [accuracyTips, studyTips],
+    [[['d4 · Δ−0.1 (masters move)'], ['e4 · Δ0.0 · hint 25% · last tested today']], [['e4 · Δ0.0'], []]]);
   app.setHistory(historyBefore);
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
   check('review: Masters, with their shares, the study\'s outlined in white; the study\'s other moves white (no masters statistics after 1. e4)', masters,
     [['e2e4 halo', 'e2e4 teal 40%', 'd2d4 teal 30%', 'g1f3 teal 15%', 'c2c4 teal 10%'], ['e7e5 white+']]);
   check('review: Masters, your study\'s move that isn\'t a masters move as a white arrow, no share', mastersOffPath, ['d2d4 teal 60%', 'g1f3 teal 40%', 'e2e4 white+']);
-  check('review: hovering over a square: the move and the evaluation after it (just the move until known); your study\'s other moves too with Masters', [mastersTip, studyMoveTip, lichessTip],
-    [[['d4 · +0.2'], ['c4']], ['e4 · +0.3'], ['d4 · +0.2']]);
+  check('review: hovering over a square: the move and its change in evaluation against the best (just the move until known); your study\'s other moves too with Masters', [mastersTip, studyMoveTip, lichessTip],
+    [[['d4 · Δ−0.1'], ['c4']], ['e4 · Δ0.0'], ['d4 · Δ−0.1']]);
   // A comment placed before a move (here at the start of a variation): kept with that move.
   const beforeRoot = app.parseChapter({ key: 'XXXXXXXX/ZZZZZZZZ', pgn: '1. e4 e5 2. Nf3 ( { Not in this repertoire. } 2. Nc3 ) 2... Nc6 *' }).root;
   check('review: a comment before a move', beforeRoot.children[0].children[0].children.map(c => c.before ?? null), [null, 'Not in this repertoire.']);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
     [['e2e4 halo', 'e2e4 gray 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 halo', 'e7e5 gray 38%', 'e7e6 gray 25%']]);
   check('review: Errors, the first move of each try only (g3 came second: not shown), with the correct move: 100% in all; hovering over a square (the hint on your move\'s)', errorsShown,
-    [['d2d4 violet 50%', 'e2e4 white+ 25%'], [], ['d4 · 50% of tries (masters move)'], [], ['e4 · 25% move accuracy (last 4 tries) · hint 25% · last tested today']]);
+    [['d2d4 violet 50%', 'e2e4 white+ 25%'], [], ['d4 (masters move)'], [], ['e4 · hint 25% · last tested today']]);
   // The study's own arrows and circles, in their Lichess colors, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Center. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
@@ -886,7 +893,7 @@ async function runLichessPage(app) {
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
   check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached in its own tile under the moves; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
-    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null && !$('review-engine'), document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, true, true]);
+    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null && !$('review-engine'), document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Accuracy'], false, true, true]);
   $('arrows-errors').click();
   check('review: one view at a time, remembered', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'false', 'true'], 'errors']);
   $('arrows-study').click();
