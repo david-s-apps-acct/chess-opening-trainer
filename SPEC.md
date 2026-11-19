@@ -155,6 +155,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board (now the Studies page; see above)
 
+- **To do (the user's decision, 19 November 2026): the hide eyes to the left of the names.** In the studies list, while the eye by the Studies heading shows hidden studies and chapters, each study's and chapter's own eye moves to the left of its name, so a long name ending in "…" no longer hides it. *Claude's details, for the user to accept or reject:* a study's eye goes between its triangle and its name; a chapter's goes before its number ("👁 1. Italian"), so the names still line up; the eyes appear only while the top eye is open, as now.
+
 - **Built 19 November 2026 (the user's decision): no comment tile for an annotation alone.** The tile under the moves (the move's annotation and comment) is hidden when the move has an annotation (e.g. !) but no comment: the annotation is clear from the move tree. With a comment, the annotation still shows before it. *Claude's details, accepted by the user:* the same for a position glyph alone (e.g. ±), which the tree's speech bubble shows; the tile still shows for a comment placed before a move played here (e.g. "3. ♘c3: …").
 - **Built 19 November 2026 (the user's decision): "Never reached" in the statistics tile.** Where the results bar goes, a position no game reaches showed "Never reached (Masters)" followed by "null" (a bug: the missing bar was written out as "null"). It says just "Never reached", with no "null". *Claude's detail, accepted by the user:* the same in the Lichess view ("Never reached", without "(Lichess)"), since the view already says which games they are; "Reached 46 times (Masters)" keeps its label.
 
