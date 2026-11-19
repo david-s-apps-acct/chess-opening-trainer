@@ -897,7 +897,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the move accuracy; together they make 100%). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the move accuracy; together they make 100%). Hover over the square an arrow points to for more (with Masters or Lichess, the engine's evaluation after the move, e.g. "♘c3 · +0.3"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
@@ -1944,14 +1944,22 @@ const positionOf = epd => variant.setupPosition('chess', fen.parseFen(epd + ' 0 
 function lichessMovesAt(epd) {
   const st = lichessGamesAt(epd), n = st && totalGames(st);
   if (!n || n < CRITICAL_MIN_GAMES) return [];
+  return judgedMoves(epd, st.moves.filter(m => totalGames(m) / n >= LICHESS_SHARE), m => totalGames(m) / n);
+}
+// The masters moves in a position (see isMasterMove), the same way, for the Masters view's evaluations.
+function mastersMovesAt(epd) {
+  const st = masterGamesAt(epd), n = st && totalGames(st);
+  return n ? judgedMoves(epd, st.moves.filter(m => isMasterMove(epd, m.san)), m => totalGames(m) / n) : [];
+}
+function judgedMoves(epd, list, shareOf) {
   const pos = positionOf(epd);
-  return st.moves.filter(m => totalGames(m) / n >= LICHESS_SHARE).map(m => {
+  return list.map(m => {
     const move = san.parseSan(pos, m.san);
     if (!move) return null;
     const after = pos.clone();
     after.play(move);
     const ended = after.isCheckmate() ? (after.turn === 'white' ? -MATE_PAWNS : MATE_PAWNS) : after.isStalemate() ? 0 : undefined;
-    return { san: m.san, share: totalGames(m) / n, move, epdAfter: epdOf(fenOf(after)), fenAfter: fenOf(after), ended };
+    return { san: m.san, share: shareOf(m), move, epdAfter: epdOf(fenOf(after)), fenAfter: fenOf(after), ended };
   }).filter(Boolean).sort((a, b) => b.share - a.share);
 }
 
@@ -1991,15 +1999,30 @@ function pawnsAfter(ev, pos, m) {
   return after && pawnsOf(after);
 }
 
+// The engine's evaluation after a move in a position (as an evaluation line, { cp } or { mate }, from
+// White's side): from the position's own best moves when it's one of them, else the position after it
+// (checkmate as mate, stalemate 0.0); undefined until it's known.
+function evalAfterMove(epd, pos, move) {
+  const ev = evalAt(epd), m = { move: variant.normalizeMove(pos, move) };
+  const line = ev && lineFor(ev, pos, m);
+  if (line) return line;
+  const after = pos.clone();
+  after.play(m.move);
+  if (after.isCheckmate()) return { mate: after.turn === 'white' ? -1 : 1 }; // as the engine scores the mating move: #1
+  if (after.isStalemate()) return { cp: 0 };
+  return evalAt(epdOf(fenOf(after)))?.lines[0];
+}
+
 // The positions after the Lichess moves of the study positions (given) that the engine also needs, for
-// their expected loss: those not among the engine's best moves there (known once the study position is
-// evaluated), not evaluated yet, not themselves study positions and not the end of the game. [[epd, fen]]
+// their expected loss, and after their masters moves, for the Masters view's square tips: those not among
+// the engine's best moves there (known once the study position is evaluated), not evaluated yet, not
+// themselves study positions and not the end of the game. [[epd, fen]]
 function extraPositions(studied, { evaluated = false } = {}) { // evaluated: those already evaluated too
   const out = new Map();
   for (const epd of studied.keys()) {
     const ev = evalAt(epd);
     if (!ev?.lines.length) continue;
-    const moves = lichessMovesAt(epd), pos = moves.length && positionOf(epd);
+    const moves = [...lichessMovesAt(epd), ...mastersMovesAt(epd)], pos = moves.length && positionOf(epd);
     for (const m of moves) if (m.ended === undefined && !lineFor(ev, pos, m) && (evaluated || !evalAt(m.epdAfter)) && !studied.has(m.epdAfter)) out.set(m.epdAfter, m.fenAfter);
   }
   return [...out];
@@ -2736,16 +2759,22 @@ $('key-help').addEventListener('click', e => { // Help's Arrow colors, opened
 function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view}`).setAttribute('aria-pressed', String(settings.review.view === view)); }
 
 // What hovering over a square says about the arrows pointing to it, one line per move: with Masters or
-// Lichess, its rank and share there and how the side playing it scores, e.g. "♘f3 · #3 masters move
-// (12%) · White scores 56%", "♘f3 · #4 Lichess move (8%) · White scores 51%"; with Errors,
+// Lichess, the engine's evaluation after it, e.g. "♘f3 · +0.3"; with Errors,
 // each error with the share of your tries it was made in and its kind, e.g. "♘c3 · 40% of tries
 // (alternative move)", and for your study's moves the position's move accuracy, how often the hint was used
 // and when it was last tested.
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
   if (view === 'masters' || view === 'lichess') {
-    const stats = STATS_VIEWS[view].at(node.epd), who = view === 'masters' ? 'masters' : 'Lichess';
-    return topMoves(node, view).filter(t => to(t.move)).map(t => [withFigurines(t.san), rankAndShareText(stats, t.san, who, ''), moveScoreText(stats, t.san, pos.turn)].filter(Boolean).join(' · '));
+    // Each arrow's move with the engine's evaluation after it, from White's side: "♘c3 · +0.3" (just the
+    // move until it's known). Its share is on the arrow. (Until 19 November 2026 its rank, share and score:
+    // "♘c3 · #1 masters move (45%) · White scores 56%".) With Masters, your study's other moves too.
+    const moves = [...topMoves(node, view), ...view === 'masters' ? node.children.map(c => ({ san: c.san, move: parseUci(c.uci) })) : []];
+    const seen = new Set();
+    return moves.filter(t => to(t.move) && !seen.has(withoutCheckMarks(t.san)) && seen.add(withoutCheckMarks(t.san))).map(t => {
+      const after = evalAfterMove(node.epd, pos, t.move);
+      return [withFigurines(t.san), after && evalText(after)].filter(Boolean).join(' · ');
+    });
   }
   const correct = settings.review.view === 'errors' ? yourMovesAt(node) : [];
   if (!correct.length) return [];
@@ -4220,14 +4249,6 @@ function shareText(stats, moveSan) {
   const share = gamesWith(stats, moveSan) / totalGames(stats) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
 }
-// How the side playing a move scores in a position's games (draws count half), e.g. "White scores 56%";
-// null without statistics, or when no game played it.
-function moveScoreText(stats, moveSan, color) {
-  const mv = stats?.moves.find(x => withoutCheckMarks(x.san) === withoutCheckMarks(moveSan)), n = mv && totalGames(mv);
-  if (!n) return null;
-  const score = ((color === 'white' ? mv.white : mv.black) + mv.draws / 2) / n;
-  return `${color === 'white' ? 'White' : 'Black'} scores ${Math.round(score * 100)}%`;
-}
 // A move's popularity rank in a position: 1 for the most played; moves played equally often share a
 // rank. null when no game played it. (Lichess games keep the 10 most played moves plus the studies'
 // own, so the ranks are exact.)
@@ -4236,14 +4257,6 @@ function moveRank(stats, moveSan) {
   if (!n) return null;
   const counts = stats.moves.map(totalGames);
   return 1 + counts.filter(c => c > n).length;
-}
-// The hover boards' share lines, e.g. "#2 Lichess move (27%)" and "#1 masters move (90%)"; "Not
-// played in Lichess games" / "Not played by masters" for a move no game played there.
-function rankAndShareText(stats, moveSan, who, none) {
-  const s = shareText(stats, moveSan);
-  if (s == null) return null;
-  const r = s && moveRank(stats, moveSan);
-  return r ? `#${r} ${who} move (${s})` : none;
 }
 
 // ---------- Engine (Stockfish evaluations) ----------

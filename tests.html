@@ -65,7 +65,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies, explorerPace,
   setToken(t) { token = t; },
-  moveScoreText, openingNameAt,
+  openingNameAt,
   get session() { return session; },
   restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, squareTipLines, parseChapter, refreshPage,
   get token() { return token; },
@@ -815,13 +815,17 @@ async function runLichessPage(app) {
   app.setMoveStats(structuredClone(POSITIONS));
   app.settings.review = { view: 'masters' };
   const masters = [arrowsAt([]), arrowsAt(['e4'])];
-  const mastersTip = app.squareTipLines(italianRoot, 'd4');
+  const evalsBefore = app.evals;
+  app.setEvals(structuredClone(CRITICAL_EVALS)); // at the start: e4 +0.3, d4 +0.2, ♘f3 +0.15 (c4 unknown)
+  const mastersTip = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'c4')];
   app.setMoveStats({ [START]: { masters: explorer([['d4', 60], ['Nf3', 40]]) } }); // 1. e4 isn't a masters move here
   const mastersOffPath = arrowsAt([]);
+  const studyMoveTip = app.squareTipLines(italianRoot, 'e4');
   app.setMoveStats(structuredClone(POSITIONS));
   app.settings.review = { view: 'lichess' };
   const lichess = [arrowsAt([]), arrowsAt(['e4'])];
   const lichessTip = app.squareTipLines(italianRoot, 'd4');
+  app.setEvals(evalsBefore);
   app.settings.review = { view: 'study' };
   // Errors: your errors at the start in the last 10 tries (d4 twice, a masters move; g3; all violet; the hint,
   // no arrow), counted, with the correct move and the move accuracy, 1 of 4 tries; none at the opponent's turn; hovering over squares.
@@ -835,9 +839,8 @@ async function runLichessPage(app) {
   check('review: Masters, with their shares, the study\'s outlined in white; the study\'s other moves white (no masters statistics after 1. e4)', masters,
     [['e2e4 halo', 'e2e4 teal 40%', 'd2d4 teal 30%', 'g1f3 teal 15%', 'c2c4 teal 10%'], ['e7e5 white+']]);
   check('review: Masters, your study\'s move that isn\'t a masters move as a white arrow, no share', mastersOffPath, ['d2d4 teal 60%', 'g1f3 teal 40%', 'e2e4 white+']);
-  check('review: hovering over a square: only the view\'s rank, and how the side playing it scores', [mastersTip, lichessTip], [['d4 · #2 masters move (30%) · White scores 100%'], ['d4 · #2 Lichess move (30%) · White scores 100%']]);
-  check('move score: draws count half; none without games', [app.moveScoreText(explorer([['e4', 0]]), 'e4', 'white'), app.moveScoreText({ moves: [{ san: 'e5', white: 2, draws: 2, black: 6 }] }, 'e5', 'black')],
-    [null, 'Black scores 70%']);
+  check('review: hovering over a square: the move and the evaluation after it (just the move until known); your study\'s other moves too with Masters', [mastersTip, studyMoveTip, lichessTip],
+    [[['d4 · +0.2'], ['c4']], ['e4 · +0.3'], ['d4 · +0.2']]);
   // A comment placed before a move (here at the start of a variation): kept with that move.
   const beforeRoot = app.parseChapter({ key: 'XXXXXXXX/ZZZZZZZZ', pgn: '1. e4 e5 2. Nf3 ( { Not in this repertoire. } 2. Nc3 ) 2... Nc6 *' }).root;
   check('review: a comment before a move', beforeRoot.children[0].children[0].children.map(c => c.before ?? null), [null, 'Not in this repertoire.']);
