@@ -498,6 +498,7 @@ The last selection is remembered between visits (stored in the browser, like the
   - *Claude's details, accepted by the user, 19 November 2026:* the engine's moves come from the same cloud evaluation that confirms the punish move (the position after it), asked for Lichess's top 5 moves (`multiPv=5`), so no extra downloads; a move not among them counts as incorrect; after an incorrect refutation the app shows the engine's best, e.g. "Engine: ♘xe5 (+1.8)".
   - *"Completely separate" (Claude's reading, confirmed by the user):* refutations don't count toward move accuracy, line accuracy or spaced repetition, and an incorrect one isn't called an "error" (which means a move that isn't your study's); they'd have their own record.
 - Note: the cloud evaluations of line ends were downloaded once before and removed (see Position evaluation).
+- Note (19 November 2026): the user has since decided to assume **Stockfish only** for evaluations (see Possible future improvements, An evaluation engine). If both ideas go ahead, Stockfish would replace "Lichess's cloud evaluation" above (in step 2 and for judging refutations), and "a move with no cloud evaluation is treated as fine" would no longer apply, since every position can be evaluated. To confirm when Punish moves is picked up.
 
 ### Critical positions (18 November 2026; built the same day)
 
@@ -1003,6 +1004,19 @@ The app is published on GitHub Pages (repository `david-s-apps-acct/chess-openin
 ## Possible future improvements
 
 Ideas agreed or mentioned along the way that haven't been built yet:
+
+- **An evaluation engine: Stockfish in the app** (the user's decisions, 19 November 2026; a future idea, not to build now; what it's used for is still to decide, e.g. Punish moves):
+  - **Stockfish only** for evaluations, not Lichess's cloud evaluations (the cloud could be added later if depth ever matters). Reasons discussed: about as fast as downloading from Lichess (whose requests are 2 s apart) without slowing the existing downloads; one source, so every evaluation has the same engine, version and depth; any position and any move, with no gaps (the cloud has only positions someone analyzed, and only its top few moves); works offline.
+  - **Stockfish 19 lite, single-threaded** (the npm package `stockfish` 19.0.1 by Nathan Rugg: `stockfish-19-lite-single.js`, 28 KB, and its `.wasm`, 1.8 MB). The multi-threaded builds need server headers GitHub Pages can't send; the full build is about 99 MB.
+  - **Hosted in the app's own GitHub repository** (served by GitHub Pages), not a CDN: jsDelivr refuses the `stockfish` package (205 MB, over its 150 MB limit), and the user chose GitHub over unpkg. Same site as the app, so it starts its worker directly, and the service worker saves it for offline use. The user only uses the GitHub Pages version now, so the engine isn't available from `file://` (browsers won't start a worker from a file on disk).
+  - **Evaluations in pawns on screen**, as most players are used to (Lichess, Chess.com): from White's side, e.g. +0.3, −1.2, mate as #4. **Rules use winning chances** (Lichess's formula, 0–100), since a pawn matters far more near equality than at +6.
+  - *Claude's details, for the user to accept or reject:*
+    - Each position is evaluated once, in the background, and saved in IndexedDB (and in backups, like the move statistics); only new positions are evaluated when a study changes. Several engines can run side by side on a machine with several cores.
+    - Rough speed on a recent laptop (estimates, to be measured): depth 20, best move only, about 15–30 positions a minute per engine; the top 5 moves (one run gives each move's evaluation), about 5–10.
+    - Stockfish is GPLv3, which can be combined with the AGPL; hosting it means distributing it, so NOTICE.md and the Help credits would name it with a link to its matching source.
+    - The Help page would say the engine needs the online version.
+    - Unknown positions show no evaluation, not a guess.
+  - Note: the earlier cloud evaluations of line ends, and a Stockfish fallback for them, were removed (see Position evaluation). The Punish moves idea still says "by Lichess's cloud evaluation"; with this idea, Stockfish would replace it there (see Punish moves).
 
 - **Repertoire gaps** (the user's name, 19 November 2026; a possible later enhancement, not to build now): on the Studies page, at the opponent's move, how much of the opponent's play your study covers in Lichess games at your level, e.g. "Your study covers 85% of games here" (the share of games whose reply is one of the study's moves). Related to the earlier "Gap finder" idea (Ideas from research, item 4).
 
