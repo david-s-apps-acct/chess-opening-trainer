@@ -193,9 +193,9 @@
   .hidden-study, .review-chapter.hidden-chapter { opacity: .5; } /* hidden studies and chapters, shown in gray while the top eye is open */
   .review-chapter .hide-btn { flex: none; }
   /* A study's ▶ (practice it): shown on hover, always on touch screens */
-  .study-row .study-practice { flex: none; margin-left: auto; visibility: hidden; font-size: 12px; }
-  .study-row:hover .study-practice, .study-row .study-practice:focus { visibility: visible; }
-  @media (hover: none) { .study-row .study-practice { visibility: visible; } }
+  .study-practice { flex: none; margin-left: auto; visibility: hidden; font-size: 12px; }
+  .study-row:hover .study-practice, .review-chapter:hover .study-practice, .study-practice:focus { visibility: visible; }
+  @media (hover: none) { .study-practice { visibility: visible; } }
   button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
   .toggle-space { width: 24px; flex: none; }
   .study + .study { border-top: 1px solid var(--border); }
@@ -282,7 +282,7 @@
   .comment-pop .muted { color: rgba(255, 255, 255, .85); }
   .hint-note { margin-top: 6px; color: var(--text); }
   .note-move { font-weight: 600; }
-  #review-opening:empty, #review-position:empty { display: none; } /* no opening tags; the same name as the chapter's */
+
   #practice-title .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   #board, #review-board { width: 100%; height: 100%; }
@@ -402,7 +402,6 @@
   .move-nav { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
   .move-nav button { flex: 1; padding: 4px 0; font-size: 13px; }
   .move-nav button.review-all { flex: 0 0 auto; padding: 4px 10px; } /* + All / − All: every variation in the tree */
-  .move-nav button.review-practice { flex: 0 0 auto; padding: 4px 12px; } /* the lines through the position on the board */
   .panel { flex: 1; min-width: 260px; background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 16px; }
   .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
   #practice-position { font-size: 13px; }
@@ -694,7 +693,6 @@
       </div>
       <div class="review-tiles">
         <div class="panel">
-          <div id="review-opening" class="muted" title="The chapter's opening (from Lichess)"></div>
           <div id="review-position" class="muted"></div>
           <div id="review-tree" class="tree review-tree"></div>
           <div class="move-nav">
@@ -703,7 +701,6 @@
             <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
             <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
             <button id="review-all" class="review-all"></button>
-            <button id="review-practice" class="primary review-practice" title="Practice the lines through this position">Practice</button>
           </div>
         </div>
         <div id="review-stats" class="panel review-stats"></div>
@@ -802,7 +799,7 @@
         <ul>
           <li>Choose <b>Lines</b> (whole lines) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen group (Studies to practice). <b>Main lines only</b> keeps to the main moves, for both sides: only your main move is correct.</li>
           <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
-          <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter, variation or study from the Studies page.)</li>
+          <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
           <li>A chapter played from both colors in its group (see Groups) gives lines for each side.</li>
@@ -892,9 +889,9 @@
       <div class="card" id="help-studies">
         <h2>Studies</h2>
         <ul>
-          <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the chapter's opening (from its Lichess tags), the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
-          <li><b>Practice</b>, by the move controls, practices the lines through the position on the board: at a chapter's start, all of them; deeper in, just that variation. The ▶ on a study's row (shown on hover) practices the whole study. Your Lines settings apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
+          <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -2053,7 +2050,9 @@ function chapterLink(c, k) {
     'aria-disabled': p.error ? 'true' : null, onclick: p.error ? null : () => openReview(c) },
     showHidden ? hideButton(c.key, isHidden, 'chapter') : null, // on the left, so a long name can't hide it
     element('span', { class: 'review-chapter-num' }, `${k + 1}.`),
-    element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : [c.name, openingName(p)].filter(Boolean).join(': ') }, c.name));
+    element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, c.name),
+    p.error ? null : element('button', { class: 'icon-btn study-practice', title: 'Practice this chapter', 'aria-label': `Practice ${c.name}`,
+      onclick: e => { e.stopPropagation(); practiceFromStudies([c]); } }, '▶'));
 }
 
 // Whether a move is shown as one of yours (its accuracy, the "your move" hover board): a move of the
@@ -2527,20 +2526,17 @@ function reviewFromPractice() {
   else showChooser(); // the chapter is no longer on Lichess
 }
 
-// Practice from the Studies page: the lines through the position on the board (the Practice button; at a
-// chapter's start, all its lines), or a whole study's (the ▶ on its row in the list). A one-off session
-// with the current Lines settings, each chapter played from the colors the chosen group gives it (else its
-// main color); the chosen group doesn't change, and End practice comes back here (returnTo).
-function practiceFromStudies(chapters, node = null) {
-  const depth = node ? pathTo(node).length : 0, mainOnly = settings.practice.mainLinesOnly.lines;
-  const through = chapters.filter(ch => !parseChapter(ch).error).flatMap(practisedLines).filter(line => !depth || line.moves[depth - 1]?.key === node.key); // by key: the studies may have been parsed again since
-  const all = through.filter(line => !mainOnly || line.isMainLine).map(line => ({ line, i: null }));
-  const chances = priorities(all, mainOnly), items = all.filter((item, k) => chances[k] > 0);
-  if (!items.length) return showBanner(all.length ? 'Every line here is untried, and Untried is at 0%.'
-    : through.length ? 'No main lines here (Main lines only is ticked).' : 'No lines to practice here.', true);
-  startSession('lines', items, review && { key: review.ch.key, at: pathTo(review.node).map(m => m.san) });
+// Practice from the Studies page: a chapter's or study's lines (the ▶ on its row in the list). A one-off
+// session of all its lines (Main lines only doesn't apply), with the spaced repetition sliders, each chapter
+// played from the colors the chosen group gives it (else its main color); the chosen group doesn't change,
+// and End practice comes back here (returnTo). (Until 19 November 2026 a Practice button under the move
+// tree practiced the lines through the position on the board.)
+function practiceFromStudies(chapters) {
+  const all = chapters.filter(ch => !parseChapter(ch).error).flatMap(practisedLines).map(line => ({ line, i: null }));
+  const chances = priorities(all, false), items = all.filter((item, k) => chances[k] > 0);
+  if (!items.length) return showBanner(all.length ? 'Every line here is untried, and Untried is at 0%.' : 'No lines to practice here.', true);
+  startSession('lines', items, review && { key: review.ch.key, at: pathTo(review.node).map(m => m.san) }, { mainOnly: false });
 }
-$('review-practice').addEventListener('click', () => review && practiceFromStudies([review.ch], review.node));
 
 // The moves from the root to a node, in order.
 const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
@@ -2735,11 +2731,9 @@ function showReviewNode(node) {
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
   reviewBoard.setAutoShapes(reviewArrows(node));
   updateArrowsSwitch();
-  // Above the moves: the chapter's own opening, from its Lichess tags (the same for the whole chapter), then
-  // the position's name, which follows the board.
-  $('review-opening').textContent = openingName(parsed) ?? '';
-  const name = openingNameAt({ root: parsed.root, moves }, moves.length);
-  $('review-position').textContent = name === openingName(parsed) ? '' : name; // not twice
+  // Above the moves, the position's name, as Lichess shows it. (A line with the chapter's own opening, from its
+  // tags, was above it briefly on 19 November 2026.)
+  $('review-position').textContent = openingNameAt({ root: parsed.root, moves }, moves.length);
   renderReviewTree();
   // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colors, named
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
@@ -3301,9 +3295,9 @@ let session = null;
 
 // Practice lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
-function startSession(kind, items, returnTo = null) {
+function startSession(kind, items, returnTo = null, { mainOnly = settings.practice.mainLinesOnly[kind] } = {}) {
   if (!items.length) return;
-  session = { kind, items, previous: null, mainOnly: settings.practice.mainLinesOnly[kind], returnTo };
+  session = { kind, items, previous: null, mainOnly, returnTo };
   showScreen('practice');
   ensureBoard();
   board.redrawAll();

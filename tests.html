@@ -761,7 +761,7 @@ async function runLichessPage(app) {
     key('Home'); key('ArrowRight');
   }
   check('review: no Your accuracy tile (a trial); the comment in its tile', [!!$('review-yours'), $('review-comment').textContent], [false, 'Best by test.']);
-  check('review: the chapter\'s opening (its Lichess tags) above the position\'s name', [$('review-opening').textContent, $('review-opening').nextElementSibling.id], ['Italian Game (C50)', 'review-position']);
+  check('review: just the position\'s name above the moves; a chapter\'s hover, its name only', [!!$('review-opening'), $('review-position').nextElementSibling.id, chapterRows()[0].querySelector('.review-chapter-name').title], [false, 'review-tree', 'Italian']);
   key('ArrowRight'); key('ArrowRight'); // 2. ♘f3!, an annotation with no comment
   const annotationOnly = $('review-comment').textContent;
   key('ArrowLeft'); key('ArrowLeft');
@@ -908,21 +908,20 @@ async function runLichessPage(app) {
       [null, true, true]);
     app.setLibrary(lib);
   }
-  // Practice from the Studies page: the lines through the position on the board (here, after 1. e4 in the
-  // Sicilian: all of them); End practice comes back to the same chapter and position. A study's ▶: all its chapters.
-  $('review-practice').click();
-  const fromStudies = [app.practice?.line.chapterKey, app.session.items.length, app.session.items.every(({ line }) => line.moves[0].san === 'e4'), !$('practice-screen').classList.contains('hidden')];
+  // Practice from the Studies page: a chapter's ▶ (all its lines, even with Main lines only ticked); End
+  // practice comes back to the same chapter and position. A study's ▶: all its chapters. No Practice button.
+  app.settings.practice.mainLinesOnly.lines = true;
+  $('nav-lichess').click(); $('nav-studies').click(); // the list drawn again for the restored studies
+  document.querySelector('#studies .review-chapter.current .study-practice').click(); // the Sicilian, on the board
+  const fromStudies = [app.practice?.line.chapterKey, app.session.items.length, app.session.mainOnly, !$('practice-screen').classList.contains('hidden')];
   $('end-practice-btn').click();
-  check('Studies page Practice: the lines through the position; End practice comes back', [...fromStudies, app.practice, !$('studies-screen').classList.contains('hidden'), chapterShown(), current()],
-    ['AAAAAAAA/CCCCCCCC', app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC')).length, true, true, null, true, '2. Sicilian', 'e4']);
-  key('ArrowRight'); key('ArrowRight'); key('ArrowRight'); // 2… d6, the main line: only its lines
-  $('review-practice').click();
-  const throughD6 = app.session.items.map(({ line }) => line.key);
-  $('end-practice-btn').click();
+  app.settings.practice.mainLinesOnly.lines = false;
+  check('Studies page: a chapter\'s ▶ practices all its lines; End practice comes back', [...fromStudies, app.practice, !$('studies-screen').classList.contains('hidden'), chapterShown(), current(), !!$('review-practice')],
+    ['AAAAAAAA/CCCCCCCC', app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC')).length, false, true, null, true, '2. Sicilian', 'e4', false]);
   document.querySelector('#studies .study-row .study-practice').click();
   const wholeStudy = new Set(app.session.items.map(({ line }) => line.chapterKey)).size;
   $('end-practice-btn').click();
-  check('Studies page Practice: deeper in, only the lines through that position; a study\'s ▶, all its chapters', [throughD6, wholeStudy], [['AAAAAAAA/CCCCCCCC|e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6'], 2]);
+  check('Studies page: a study\'s ▶, all its chapters', wholeStudy, 2);
   key('Home'); key('ArrowRight');
   // The header's Studies button: back where you left it.
   $('nav-lichess').click();
