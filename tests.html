@@ -76,7 +76,7 @@ export const app = {
   // The engine: off in the tests (isolate), or a stand-in worker.
   setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
   get evals() { return evals; }, setEvals(e) { evals = e; forgetCritical(); },
-  pawnsOf, expectedLossAt,
+  pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions,
   evaluation, evalText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
 };`;
 
@@ -834,10 +834,14 @@ async function runLichessPage(app) {
   app.settings.review = { view: 'errors' };
   const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3'), app.squareTipLines(italianRoot, 'e4')];
   app.setEvals(structuredClone(CRITICAL_EVALS));
+  const yourLoss = app.yourExpectedLoss(italianRoot), tried = [...app.triedPositions().keys()];
   const accuracyTips = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'e4')];
   app.settings.review = { view: 'study' };
   const studyTips = [app.squareTipLines(italianRoot, 'e4'), app.squareTipLines(italianRoot, 'f5')];
   app.setEvals(evalsBefore);
+  check('your expected loss: first moves only, against the engine\'s best (d4 50% · Δ−0.1, hint 25% · 1 pawn, e4 25% · Δ0.0); the positions after your errors to evaluate', [Math.round(yourLoss.loss * 100), yourLoss.tries, yourLoss.moves.map(m => [m.label, m.share, Math.round(m.delta * 10) / 10]),
+    ['rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -', 'rnbqkbnr/pppppppp/8/8/8/6P1/PPPPPP1P/RNBQKBNR b KQkq -'].every(epd => tried.includes(epd))],
+    [30, 4, [['d4', 0.5, -0.1], ['hint', 0.25, -1], ['e4', 0.25, 0]], true]);
   check('review: square tips with the change in evaluation: with Accuracy the error\'s kind, the hint and last tested; with Study your study\'s moves', [accuracyTips, studyTips],
     [[['d4 · Δ−0.1 (masters move)'], ['e4 · Δ0.0 · hint 25% · last tested today']], [['e4 · Δ0.0'], []]]);
   app.setHistory(historyBefore);
@@ -1020,6 +1024,18 @@ async function runEngineTests(app, key) {
   const [, done, of] = /^Engine evaluations: (\d+) of (\d+) positions evaluated$/.exec(progress) ?? [];
   check("engine: the Lichess page's progress; merged backups keep the newer evaluation", [!!done && done === of && +of >= app.allStudyPositions().size, older, app.evals[epd].depth],
     [true, [20, false, true], 30]);
+  // With Accuracy, the Expected loss tile at a position of yours with tries (the Sicilian after 1. e4, where
+  // the board is): the hint first in one try of two (1 pawn), your study's 1… c5 in the other (Δ0.0).
+  const historyKept = app.history, viewKept = app.settings.review.view;
+  app.setHistory({ positions: { 'AAAAAAAA/CCCCCCCC|e4': [{ tried: ['hint', 'c5'], at: 1, main: false }, { tried: ['c5'], at: 2, main: false }] }, lines: {} });
+  $('arrows-errors').click();
+  key('Home'); key('ArrowRight');
+  const lossTile = [...$('review-loss').children].map(e => e.textContent);
+  $('arrows-study').click();
+  const lossInStudy = $('review-loss').children.length;
+  app.setHistory(historyKept); app.settings.review.view = viewKept;
+  check('expected loss tile: with Accuracy, at a position of yours with tries; none with Study', [lossTile, lossInStudy],
+    [['Your expected loss', 'Δ−0.5 pawns (last 2 tries)', 'hint 50% · Δ−1.0c5 50% · Δ0.0'], 0]);
   // Without the engine (the version opened from disk): no bar.
   app.setEngine(false);
   key('Home');

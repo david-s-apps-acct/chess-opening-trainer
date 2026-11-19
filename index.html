@@ -360,6 +360,12 @@
   .review-masters:empty { display: none; }
   .review-masters h3 { margin: 0 0 4px; font-size: 15px; color: #2fc4c4; }
   .review-masters p { margin: 0 0 4px; }
+  /* With Accuracy, your expected loss at the position on the board (see renderLossTile), with the errors' violet edge */
+  .panel.review-loss { padding: 12px 14px; border-left: 4px solid #8a5cf6; }
+  .review-loss:empty { display: none; }
+  .review-loss h3 { margin: 0 0 4px; font-size: 15px; color: #b39dfa; }
+  .review-loss p { margin: 0 0 4px; }
+  .review-loss .loss-moves div { color: var(--muted); }
   .panel.review-critical { padding: 12px 14px; border-left: 4px solid var(--critical); }
   .review-critical:empty { display: none; }
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
@@ -714,6 +720,7 @@
         </div>
         <div id="review-stats" class="panel review-stats"></div>
         <div id="review-comment" class="panel review-comment"></div>
+        <div id="review-loss" class="panel review-loss" aria-live="polite"></div>
         <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
         <div id="review-critical" class="panel review-critical" aria-live="polite"></div>
       </div>
@@ -897,7 +904,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Accuracy</b> (your repertoire accuracy here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire accuracy; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Accuracy also the error's kind, e.g. "(masters move)", and for your study's move how often you used the hint and when you last tested it. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Accuracy</b> (your repertoire accuracy here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire accuracy; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Accuracy also the error's kind, e.g. "(masters move)", and for your study's move how often you used the hint and when you last tested it. With Accuracy, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move (the hint costs 1 pawn), e.g. "Δ−0.4 pawns (last 4 tries)", with each move's share and Δ. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
@@ -2036,7 +2043,38 @@ function extraPositions(studied, { evaluated = false } = {}) { // evaluated: tho
     const moves = [...lichessMovesAt(epd), ...mastersMovesAt(epd)], pos = moves.length && positionOf(epd);
     for (const m of moves) if (m.ended === undefined && !lineFor(ev, pos, m) && (evaluated || !evalAt(m.epdAfter)) && !studied.has(m.epdAfter)) out.set(m.epdAfter, m.fenAfter);
   }
+  // And after every move you've tried (your errors), for the Accuracy view's Δ and your expected loss.
+  for (const [epdAfter, fenAfter] of triedPositions()) if ((evaluated || !evalAt(epdAfter)) && !studied.has(epdAfter)) out.set(epdAfter, fenAfter);
   return [...out];
+}
+
+// The positions after the moves you've tried in your positions (in your history; not the hint or Show
+// correct move, and not where the game is over): a Map, epd -> fen.
+function triedPositions() {
+  const out = new Map();
+  const visit = node => {
+    for (const a of history.positions[node.key] ?? []) for (const x of a.tried) {
+      if (x === 'hint' || x === 'show') continue;
+      const after = positionAfterSan(node.position, x);
+      if (after && !after.isCheckmate() && !after.isStalemate()) out.set(epdOf(fenOf(after)), fenOf(after));
+    }
+    node.children.forEach(visit);
+  };
+  for (const ch of allChapters()) { const parsed = parseChapter(ch); if (!parsed.error) visit(parsed.root); }
+  return out;
+}
+const positionAfterSan = (pos, x) => { const move = san.parseSan(pos, x); if (!move) return null; const after = pos.clone(); after.play(move); return after; };
+
+// A move just played out of book (an error in practice): the position after it evaluated next, ahead of
+// everything else (the user: "Once I play a move out of book we should evaluate it.").
+function evaluateAfterError(pos, move) {
+  const after = pos.clone();
+  after.play(move);
+  const epd = epdOf(fenOf(after));
+  if (!engineAvailable() || evalAt(epd) || after.isCheckmate() || after.isStalemate() || evaluation.urgent.some(u => u.epd === epd)) return;
+  evaluation.urgent.push({ epd, fen: fenOf(after) });
+  if (evaluation.running) evaluation.waiting.unshift(evaluation.urgent.at(-1));
+  else startEvaluations();
 }
 
 // The position's expected loss if it's critical (at the critical level or more), else null.
@@ -2884,6 +2922,39 @@ function renderPositionTiles(node) {
   renderStatsTile(node);
   renderMastersTile(node);
   renderCriticalTile(node);
+  renderLossTile(node);
+}
+
+// Your expected loss at one of your positions, from your last 10 tries there, each counted by its first
+// move (as the Accuracy view's arrows): the sum of each first move's share × how much it changes the
+// evaluation against the engine's best move (moveDelta; the hint or Show correct move costs 1 pawn). null
+// with no tries; { pending: true } until every move's evaluation is known; else { loss (pawns, ≥ 0),
+// tries, moves: [{ label, share, delta }] } most often first.
+const HINT_COST = 1;
+function yourExpectedLoss(node) {
+  const attempts = attemptsAt(node);
+  if (!attempts.length) return null;
+  const firsts = attempts.map(a => a.tried[0] === 'show' ? 'hint' : a.tried[0]).filter(Boolean);
+  const moves = [];
+  for (const x of new Set(firsts)) {
+    const move = x !== 'hint' && san.parseSan(node.position, x);
+    const delta = x === 'hint' ? -HINT_COST : move ? moveDelta(node.epd, node.position, move) : undefined;
+    if (delta === undefined) return { pending: true };
+    moves.push({ label: x === 'hint' ? 'hint' : withFigurines(x), share: firsts.filter(y => y === x).length / attempts.length, delta });
+  }
+  moves.sort((a, b) => b.share - a.share);
+  return { loss: moves.reduce((sum, m) => sum - m.share * m.delta, 0), tries: attempts.length, moves };
+}
+
+// With Accuracy, under the comment, at one of your positions with tries: "Your expected loss", e.g.
+// "Δ−0.4 pawns (last 4 tries)", and each first move with its share and Δ, e.g. "d4 50% · Δ−0.1", "hint
+// 25% · Δ−1.0"; "Evaluating…" until it's known.
+function renderLossTile(node) {
+  const e = engineAvailable() && settings.review.view === 'errors' && yourMovesAt(node).length ? yourExpectedLoss(node) : null;
+  $('review-loss').replaceChildren(...!e ? [] : [element('h3', {}, 'Your expected loss'),
+    ...e.pending ? [element('p', { class: 'muted' }, 'Evaluating…')] : [
+      element('p', {}, `${deltaText(-e.loss)} pawns (last ${plural(e.tries, 'try', 'tries')})`),
+      element('div', { class: 'loss-moves' }, e.moves.map(m => element('div', {}, `${m.label} ${percent(m.share)}% · ${deltaText(m.delta)}`)))]]);
 }
 
 // When your study's main move in the position on the board isn't a masters move (see isOffMastersPath):
@@ -3506,6 +3577,7 @@ async function onYourMove(orig, dest) {
     return;
   }
   // An error. There's no limit: the correct move is only shown when you ask for it.
+  evaluateAfterError(practice.position, move);
   return rejectMove(errorStatus(expected, played));
 }
 
@@ -4352,7 +4424,7 @@ function startEngine() {
 // The evaluations running: the positions waiting (in download order), and the one wanted first (the
 // position on the Studies page). Asked while they run (e.g. after studies change), the waiting list is
 // brought up to date and the running engines carry on with it.
-const evaluation = { running: false, waiting: [], evaluating: new Set(), wanted: null, problem: '', done: 0 };
+const evaluation = { running: false, waiting: [], evaluating: new Set(), wanted: null, urgent: [], problem: '', done: 0 };
 
 // The study positions the engine evaluates (not checkmates or stalemates): a Map, epd -> its entry in
 // allStudyPositions.
@@ -4365,7 +4437,8 @@ const studyPositionsToEvaluate = () => new Map([...allStudyPositions()].filter((
 function startEvaluations() {
   if (!engineAvailable() || !library) return;
   const studied = studyPositionsToEvaluate(), busy = epd => evalAt(epd) || evaluation.evaluating.has(epd);
-  evaluation.waiting = [...inDownloadOrder([...studied].filter(([epd]) => !busy(epd))).map(([epd, p]) => ({ epd, fen: p.fen })),
+  evaluation.urgent = evaluation.urgent.filter(u => !evalAt(u.epd));
+  evaluation.waiting = [...evaluation.urgent.filter(u => !busy(u.epd)), ...inDownloadOrder([...studied].filter(([epd]) => !busy(epd))).map(([epd, p]) => ({ epd, fen: p.fen })),
     ...extraPositions(studied).filter(([epd]) => !busy(epd)).map(([epd, fen]) => ({ epd, fen }))];
   if (evaluation.running || !evaluation.waiting.length) return showProgress();
   evaluation.running = true;
@@ -4410,6 +4483,7 @@ function evaluated(epd) {
   if (currentScreen === 'studies' && review) {
     if (review.node.epd === epd) renderEvalBar(review.node);
     renderCriticalTile(review.node);
+    renderLossTile(review.node);
   }
   showProgress();
 }
