@@ -130,9 +130,9 @@ const CRITICAL = {
   [AFTER_E4]: { lichess: withResults([['e5', 30, 20, 20], ['Ba3', 27, 0, 3]]) },
 };
 
-// Master games at the start: e4 40%, d4 30%, Nf3 15%, c4 exactly 10%, g3 5%.
+// Master games at the start: e4 40%, d4 30%, Nf3 15%, c4 10%, g3 4% (not a masters move).
 const POSITIONS = {
-  [START]: { masters: explorer([['e4', 400], ['d4', 300], ['Nf3', 150], ['c4', 100], ['g3', 50]]),
+  [START]: { masters: explorer([['e4', 400], ['d4', 300], ['Nf3', 150], ['c4', 100], ['g3', 40]]),
              lichess: explorer([['e4', 500], ['d4', 300], ['c4', 100], ['Nf3', 100]]) },
   [AFTER_E4]: { lichess: explorer([['c5', 300], ['e5', 300], ['e6', 200]], { opening: { eco: 'B00', name: "King's Pawn Game" } }) },
   [AFTER_E4_E5]: { lichess: explorer([['Nf3', 700], ['Nc3', 100]], { opening: { eco: 'C20', name: "King's Pawn Game" } }) },
@@ -188,7 +188,10 @@ function run(app) {
     [undefined, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50, critical: 50 } }]);
 
   // Masters moves: the top 3, played 10% of the time or more
-  check('masters move: top 3, 10% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3']);
+  check('masters move: 5% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3', 'c4']);
+  app.setMoveStats({ [START]: { masters: explorer([['e4', 12], ['d4', 7]]) } });
+  check('masters move: none where the position has fewer than 20 master games', ['e4', 'd4'].filter(s => app.isMasterMove(START, s)), []);
+  app.setMoveStats(structuredClone(POSITIONS));
   check('masters move: no data', app.isMasterMove(AFTER_E4, 'c5'), false);
   // Merge backup: two devices' histories combined, without duplicates, in time order, the last 10 kept
   {
@@ -806,7 +809,7 @@ async function runLichessPage(app) {
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
   check('review: Masters, with their shares, the study\'s outlined in white; the study\'s other moves white (no masters statistics after 1. e4)', masters,
-    [['e2e4 teal+ 40%', 'd2d4 teal 30%', 'g1f3 teal 15%'], ['e7e5 white+']]);
+    [['e2e4 halo', 'e2e4 teal 40%', 'd2d4 teal 30%', 'g1f3 teal 15%', 'c2c4 teal 10%'], ['e7e5 white+']]);
   check('review: Masters, your study\'s move that isn\'t a masters move as a white arrow, no share', mastersOffPath, ['d2d4 teal 60%', 'g1f3 teal 40%', 'e2e4 white+']);
   check('review: hovering over a square: only the view\'s rank, and how the side playing it scores', [mastersTip, lichessTip], [['d4 · #2 masters move (30%) · White scores 100%'], ['d4 · #2 Lichess move (30%) · White scores 100%']]);
   check('move score: draws count half; none without games', [app.moveScoreText(explorer([['e4', 0]]), 'e4', 'white'), app.moveScoreText({ moves: [{ san: 'e5', white: 2, draws: 2, black: 6 }] }, 'e5', 'black')],
@@ -815,7 +818,7 @@ async function runLichessPage(app) {
   const beforeRoot = app.parseChapter({ key: 'XXXXXXXX/ZZZZZZZZ', pgn: '1. e4 e5 2. Nf3 ( { Not in this repertoire. } 2. Nc3 ) 2... Nc6 *' }).root;
   check('review: a comment before a move', beforeRoot.children[0].children[0].children.map(c => c.before ?? null), [null, 'Not in this repertoire.']);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
-    [['e2e4 gray+ 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 gray+ 38%', 'e7e6 gray 25%']]);
+    [['e2e4 halo', 'e2e4 gray 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 halo', 'e7e5 gray 38%', 'e7e6 gray 25%']]);
   check('review: Errors, each with the share of tries it was made in, with the correct move; hovering over a square (the hint on your move\'s)', errorsShown,
     [['d2d4 violet 50%', 'g2g3 violet 25%', 'e2e4 white+ 25%'], [], ['d4 · 50% of tries (masters)'], ['g3 · 25% of tries'], ['e4 · 25% move accuracy (last 4 tries) · hint 25% · last tested today']]);
   // The study's own arrows and circles, in their Lichess colors, after the study's moves.

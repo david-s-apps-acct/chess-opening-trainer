@@ -778,7 +778,7 @@
             <li><b>Error</b>: any move you play that isn't one of your study's moves, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
             <li><b>Critical position</b>: one where more than 20% of the Lichess games (at your chosen ratings and time controls) go wrong (see Studies).</li>
-            <li><b>Masters move</b>: one of the top 3 moves in master games (over the board, players rated 2200+ FIDE) in that position, played 10% of the time or more.</li>
+            <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
             <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
           </ul>
@@ -1885,15 +1885,15 @@ const accuracyText = a => `${percent(a.share)}% move accuracy (last ${plural(a.t
 // Whether an attempt in practice was right first time: one try (the attempt ends with a correct move).
 const rightThisTime = a => a.tried.length === 1 && a.tried[0] !== 'hint' && a.tried[0] !== 'show';
 
-const MASTERS_TOP = 3, MASTERS_SHARE = 0.1;
+const MASTERS_SHARE = 0.05, MASTERS_MIN_GAMES = 20;
 const LICHESS_SHARE = 0.05; // a Lichess move: played in 5% or more of the Lichess games there
 
-// A masters move: within the top 3 master moves in the position (moves played equally often share a
-// rank) and played in 10% or more of master games there.
+// A masters move: played in 5% or more of the master games in the position, like a Lichess move, where
+// the position has 20 master games or more (so one or two games can't make one). (Until 19 November
+// 2026: within the top 3 and played 10% or more, with no minimum.)
 function isMasterMove(epd, s) {
   const st = masterGamesAt(epd), n = st && totalGames(st);
-  if (!n || gamesWith(st, s) / n < MASTERS_SHARE) return false;
-  return moveRank(st, s) <= MASTERS_TOP;
+  return n >= MASTERS_MIN_GAMES && gamesWith(st, s) / n >= MASTERS_SHARE;
 }
 
 // A Lichess move: played in 5% or more of the Lichess games in the position (at the chosen ratings and
@@ -2060,8 +2060,7 @@ const isWeakPosition = (node, own) => node.children.some(c => isShownAsYours(c, 
 
 // A position of yours where your study's main move isn't a masters move (see isMasterMove): the move
 // tree's teal dot and the masters tile. Not for a main move the study marks ?, ?? or ?! (it's known to be
-// dubious), nor where fewer than 20 master games reach the position (nothing to judge by).
-const MASTERS_MIN_GAMES = 20;
+// dubious), nor where fewer than 20 master games reach the position (nothing to judge by: MASTERS_MIN_GAMES).
 function isOffMastersPath(node, own) {
   const main = node.children[0], masters = masterGamesAt(node.epd);
   return !!main && node.children.some(c => isShownAsYours(c, own)) && !isMistake(main)
@@ -2547,9 +2546,10 @@ function reviewArrows(node) {
   // Masters: your study's moves that aren't masters moves too, as in Study (white, the main one outlined;
   // no share), so you can see where the study leaves the masters' moves. (Not with Lichess.)
   const studyOnly = view === 'masters' ? node.children.filter(c => !shown.has(withoutCheckMarks(c.san))).map(c => studyMoveArrow(pos, c)) : [];
-  return [...top.map(({ move, brush, share, inStudy }) => {
+  // A move in your study gets a wide white halo: a white arrow under its own (see BRUSHES.halo).
+  return [...top.flatMap(({ move, brush, share, inStudy }) => {
     const [orig, dest] = arrowSquares(pos, move);
-    return { orig, dest, brush, label: { text: share }, ...inStudy ? { modifiers: { hilite: true } } : {} };
+    return [...inStudy ? [{ orig, dest, brush: 'halo' }] : [], { orig, dest, brush, label: { text: share } }];
   }), ...studyOnly, ...glyphBadge(node)];
 }
 
@@ -2770,7 +2770,7 @@ function renderMastersTile(node) {
     element('h3', {}, 'Not a masters move'),
     element('p', {}, `Your study: ${withFigurines(main.san)} (${shareText(masters, main.san)})`),
     element('p', {}, played.length ? `Masters play: ${played.map(m => `${withFigurines(m.san)} ${shareText(masters, m.san)}`).join(' · ')}`
-      : 'No move is played by masters 10% of the time or more'));
+      : 'No move is played by masters 5% of the time or more'));
 }
 
 // Under the comment, when the position on the board is critical (see criticalAt), at either side's
@@ -3871,6 +3871,9 @@ const BRUSHES = {
   teal: { key: 'teal', color: '#00a3a3', opacity: 1, lineWidth: 10 },
   gray: { key: 'gray', color: '#9e9e9e', opacity: 1, lineWidth: 10 },
   violet: { key: 'violet', color: '#8a5cf6', opacity: 1, lineWidth: 10 },
+  // Under a teal or gray arrow for a move in your study (Masters and Lichess views): a white border
+  // about 3 px wide each side, round the arrowhead too (chessground's own highlight edge was too thin).
+  halo: { key: 'halo', color: '#fff', opacity: 1, lineWidth: 16 },
 };
 const mainArrow = (orig, dest) => ({ orig, dest, brush: 'white', modifiers: { hilite: true } });
 // A move in the study (a move node), from position pos: white, outlined for the main move. (Unlike
