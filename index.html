@@ -122,6 +122,8 @@
      first; time controls, fastest first) */
   .lock-heading { display: flex; align-items: center; gap: 6px; }
   .tick-columns { display: flex; gap: 48px; font-size: 14px; }
+  .critical-level { margin: 14px 0 0; font-size: 14px; } /* the critical level, under the rating bands */
+  .critical-level select { margin: 0 4px; }
   .tick-title { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .tick-column { display: flex; flex-direction: column; gap: 4px; }
   .tick-column label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -178,7 +180,6 @@
   .preset-row { display: flex; align-items: center; gap: 8px; }
   #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
   #edit-preset-select { flex: 1 1 240px; max-width: 360px; text-overflow: ellipsis; }
-  #sel-summary { margin-top: 8px; }
   .preset-edit { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 4px; }
   /* The Lichess page's lines: account, connected, fetched, statistics */
   .lichess-lines p { margin: 2px 0; }
@@ -188,7 +189,6 @@
   .preset-name-form input { flex: 1 1 240px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; }
   .preset-name-form .form-error { flex-basis: 100%; margin-top: 0; min-height: 0; font-size: 13px; }
   .preset-name-form .form-error:empty { display: none; }
-  .all-row { border-bottom: 1px solid var(--border); }
   .study-row .hide-btn { flex: none; } /* the eyes go left of the names, so a long name can't hide them */
   .hidden-study, .review-chapter.hidden-chapter { opacity: .5; } /* hidden studies and chapters, shown in gray while the top eye is open */
   .review-chapter .hide-btn { flex: none; }
@@ -218,7 +218,8 @@
   .side-dot.white { background: #fff; }
   .side-dot.black { background: #222; border-color: #aaa; } /* a light edge, so it isn't taken for an empty ring */
   .side-dot.off { background: none; border-style: dashed; }
-  /* On the Groups page, the white and black buttons (each chapter's, each study's and All's), in place of tick boxes. */
+  .side-dot.mixed { background: linear-gradient(90deg, #fff 50%, #222 50%); border-color: #aaa; } /* a study mixing White and Black chapters */
+  /* On the Groups page, the main color and other color buttons (each chapter's and each study's), in place of tick boxes. */
   .side-btn { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; box-shadow: none; }
   .side-btn .side-dot { width: 13px; height: 13px; margin: 0; }
   .side-btn + .side-btn { margin-left: 4px; }
@@ -364,7 +365,6 @@
   .critical-dot { background: var(--critical); }
   .weak-dot { background: #8a5cf6; } /* the errors' violet (see BRUSHES) */
   .masters-dot { background: #00a3a3; } /* the masters' teal */
-  .critical-row { color: var(--critical-text); }
   /* Under the board: Study | Masters | Lichess | Errors, the arrows shown (one at a time), with their colors */
   .review-view-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
   .review-view-row .review-view { flex: 1; min-width: 0; }
@@ -542,6 +542,8 @@
           <button id="games-apply" class="primary">Apply</button>
           <button id="games-cancel" class="primary">Cancel</button>
         </div>
+        <p class="critical-level"><label for="critical-level"><span data-tip="How much the Lichess moves played in a position lose on average, by the engine. Lower: more positions count as critical.">Critical positions: expected loss ≥</span>
+          <select id="critical-level"></select> pawns</label></p>
         <p id="lichess-moves" class="muted after-actions"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="lichess-masters" class="muted"></p>
@@ -624,14 +626,13 @@
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
         </div>
       </div>
-      <!-- Studies to practice: the chosen group (All, or one of yours) and how many chapters it has (groups are
-           edited on the Groups page). Hidden during practice. -->
+      <!-- Studies to practice: the chosen group (All, or one of yours; groups are edited on the Groups page,
+           which also says how many chapters each has). Hidden during practice. -->
       <div id="studies-to-practice" class="panel studies-to-practice hidden">
         <h2>Studies to practice</h2>
         <div class="preset-row">
           <select id="preset-select" aria-label="Group" title="Edit study groups on the Groups page"></select>
         </div>
-        <div id="sel-summary" class="muted"></div>
       </div>
       <!-- Before your studies are here: any message about fetching them -->
       <div id="practice-message" class="panel hidden"></div>
@@ -652,7 +653,7 @@
   </section>
 
   <!-- Groups: the named sets of chapters to practice (All is built in), edited here: the group, its
-       buttons, and every study and chapter with white and black buttons (see Studies list in the script) -->
+       buttons, and every study and chapter with main color and other color buttons (see Studies list in the script) -->
   <section id="groups-screen" class="hidden">
     <div class="card group-card">
       <h2>Groups</h2>
@@ -673,9 +674,6 @@
         </form>
       </div>
       <div class="group-list">
-        <div id="all-row" class="row study-row all-row"><span class="toggle-space"></span>
-          <span id="all-colors" class="side-btns"></span><span class="name">All</span>
-        </div>
         <div id="edit-studies"></div>
       </div>
     </div>
@@ -787,7 +785,7 @@
             <li><b>Move accuracy</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
             <li><b>Error</b>: any move you play that isn't one of your study's moves, or the hint. Errors cost move accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Critical position</b>: one where more than 20% of the Lichess games (at your chosen ratings and time controls) go wrong (see Studies).</li>
+            <li><b>Critical position</b>: one where the Lichess moves played there lose 0.5 pawns or more on average, by the engine (the level is yours to set; see Studies).</li>
             <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
             <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
@@ -826,11 +824,10 @@
         </details>
         <details>
           <summary>The small board</summary>
-          <p>Hover over (or tap) a move in the practice move list or the Show lines table. (On the Studies page, see Studies.)</p>
+          <p>Hover over (or tap) a move in the practice move list or the Show lines and Show positions tables: the move, and the board. (On the Studies page, see Studies.)</p>
           <ul>
-            <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colors). Then the position's move accuracy, when you last tested it, and your errors in the same colors.</li>
+            <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colors).</li>
             <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
-            <li>Above both: the move's rank and share among Lichess and master games, e.g. "#2 Lichess move (27%)", and how often the position is reached, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
           </ul>
         </details>
         <details>
@@ -866,7 +863,7 @@
               <li><b>Frequency</b>: 0.2 to 1, by the shares of the opponent's moves on the way, multiplied (a line: all of them; your own moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale; 0.6 until the statistics download.</li>
               <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
               <li><b>Weakness</b>: 1 + 2 × (1 − accuracy): 1 at 100%, 3 at 0%.</li>
-              <li><b>Critical</b>: ×2 for a critical position of yours (a line: any of yours in it).</li>
+              <li><b>Critical</b>: ×2 for a critical position of yours (a line: any of yours in it; see Studies).</li>
               <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × accuracy</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
               <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its weakest position's move accuracy (untried positions count as 0%); a position, its own.</li>
             </ul>
@@ -885,7 +882,7 @@
         <h2>Groups</h2>
         <ul>
           <li>What you practice is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
-          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a white and a black button, played or not (an X through it), whatever its main color; with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out. A study's buttons, and All's, set that color for all their chapters (a fainter X: only some play it).</li>
+          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a button for its main color (the color its study is written for) and one for the other color, played or not (an X through it); with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out. A study's two buttons set every chapter's main color, or other color (a fainter X: only some play it; a half-white, half-black dot: the study has White and Black chapters).</li>
           <li>Then <b>Save</b>, <b>Create new</b> (a new group from the chapters chosen; turn off All's white and black first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Create new. Leaving the page asks before dropping changes not saved.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are in backups, but Merge backup leaves them alone, so each device can have its own.</li>
         </ul>
@@ -899,7 +896,7 @@
           <li><b>Engine</b>: under the moves, Stockfish's evaluation of the position, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), and its best 3 moves, each with its evaluation and the line it expects. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
+          <li><b>Critical positions</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the expected loss and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · −1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves.</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
         </ul>
         <details>
@@ -1158,7 +1155,10 @@ const DEFAULT_SETTINGS = {
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
   review: { view: 'study' },
+  // A position is critical when its expected loss is this many pawns or more (see criticalAt): 0.2–1.5, in tenths.
+  criticalLevel: 0.5,
 };
+const CRITICAL_LEVELS = Array.from({ length: 14 }, (_, k) => (k + 2) / 10);
 
 // Saved settings, with anything missing or invalid replaced by its default.
 function checkedSettings(saved) {
@@ -1176,6 +1176,7 @@ function checkedSettings(saved) {
       weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
+    criticalLevel: CRITICAL_LEVELS.includes(v.criticalLevel) ? v.criticalLevel : d.criticalLevel,
   };
 }
 
@@ -1916,32 +1917,93 @@ function isLichessMove(epd, s) {
   return !!n && gamesWith(st, s) / n >= LICHESS_SHARE;
 }
 
-// A critical position (the user's definition): more than 20% of the Lichess games in it (at the chosen
-// ratings and time controls) play a move that does badly: one whose result for the side playing it is 10
-// points or more below the position's (e.g. White scores 50% from the position but 38% after the move),
-// the same test as SPEC.md's suspect moves. From the game results already downloaded, not an engine.
-// Claude's details: the position needs 50 games or more, and a move counts only with 20 games or more of
-// its own; moves outside the saved list count as fine. Returns null, or { share (of the games going
-// wrong), moves: [{ san, share, score (the move's result for the side playing it), drop (how far below the
-// position's, 0–1) }] }, most played first.
-const CRITICAL_SHARE = 0.2, CRITICAL_DROP = 0.1, CRITICAL_MIN_GAMES = 50, CRITICAL_MIN_MOVE_GAMES = 20;
-const criticalCache = new Map(); // the statistics object -> its answer (statistics are replaced, not changed, when downloaded again)
-function criticalAt(epd) {
-  const st = lichessGamesAt(epd);
-  if (!st) return null;
-  if (criticalCache.has(st)) return criticalCache.get(st);
-  const n = totalGames(st), mover = epd.split(' ')[1] === 'w' ? 'white' : 'black';
-  const score = x => (x[mover] + x.draws / 2) / totalGames(x);
-  let answer = null;
-  if (n >= CRITICAL_MIN_GAMES) {
-    const here = score(st);
-    const bad = st.moves.filter(m => totalGames(m) >= CRITICAL_MIN_MOVE_GAMES && here - score(m) >= CRITICAL_DROP - 1e-9)
-      .map(m => ({ san: m.san, share: totalGames(m) / n, score: score(m), drop: here - score(m) })).sort((a, b) => b.share - a.share);
-    const share = bad.reduce((sum, m) => sum + m.share, 0);
-    if (share > CRITICAL_SHARE) answer = { share, moves: bad };
-  }
-  criticalCache.set(st, answer);
+// A critical position (the user's definition, 19 November 2026): one where the Lichess moves played there
+// lose, on average, the critical level or more (settings.criticalLevel, 0.5 pawns by default): its
+// expected loss, the sum over its Lichess moves (5% or more of the games, at the chosen ratings and time
+// controls) of each move's share of the games × how many pawns it drops the engine's evaluation, compared
+// with the engine's best move there, for the side playing it (mate counts as 10 pawns; a drop is never
+// below 0). At either side's move. (Until 19 November 2026: more than 20% of the games playing a move
+// scoring 10 points worse, from the game results.)
+// Claude's details: the position needs 50 games or more. A Lichess move among the engine's best 3 moves
+// takes its evaluation from that line; any other needs the position after it evaluated (see
+// extraPositions). Until every one is known, the expected loss isn't (null).
+const CRITICAL_MIN_GAMES = 50, MATE_PAWNS = 10;
+// An evaluation line in pawns from White's side (mate as 10 pawns).
+const pawnsOf = line => 'mate' in line ? Math.sign(line.mate || -1) * MATE_PAWNS : line.cp / 100;
+// The position on the board from a position's EPD, for working out its moves.
+const positionOf = epd => variant.setupPosition('chess', fen.parseFen(epd + ' 0 1').unwrap()).unwrap();
+
+// The Lichess moves in a position, with what's needed to judge them: [{ san, share, move, epdAfter,
+// fenAfter, ended (the position after it in pawns from White's side when the game is over: checkmate
+// ±10, stalemate 0; else undefined) }], most played first; [] without statistics or with fewer than 50 games.
+function lichessMovesAt(epd) {
+  const st = lichessGamesAt(epd), n = st && totalGames(st);
+  if (!n || n < CRITICAL_MIN_GAMES) return [];
+  const pos = positionOf(epd);
+  return st.moves.filter(m => totalGames(m) / n >= LICHESS_SHARE).map(m => {
+    const move = san.parseSan(pos, m.san);
+    if (!move) return null;
+    const after = pos.clone();
+    after.play(move);
+    const ended = after.isCheckmate() ? (after.turn === 'white' ? -MATE_PAWNS : MATE_PAWNS) : after.isStalemate() ? 0 : undefined;
+    return { san: m.san, share: totalGames(m) / n, move, epdAfter: epdOf(fenOf(after)), fenAfter: fenOf(after), ended };
+  }).filter(Boolean).sort((a, b) => b.share - a.share);
+}
+
+// A position's expected loss: { loss (pawns), moves: [{ san, share, drop (pawns) }] } (most played
+// first), or null while it can't be known (no statistics, under 50 games, or evaluations still to come).
+// Cached until the statistics, the evaluations or the level change (forgetCritical).
+const criticalCache = new Map();
+const forgetCritical = () => criticalCache.clear();
+function expectedLossAt(epd) {
+  if (criticalCache.has(epd)) return criticalCache.get(epd);
+  const answer = workOutExpectedLoss(epd);
+  criticalCache.set(epd, answer);
   return answer;
+}
+function workOutExpectedLoss(epd) {
+  const ev = evalAt(epd), moves = lichessMovesAt(epd);
+  if (!ev?.lines.length || !moves.length) return null;
+  const sign = epd.split(' ')[1] === 'w' ? 1 : -1; // to the side to move's view
+  const pos = positionOf(epd), best = sign * pawnsOf(ev.lines[0]);
+  const judged = [];
+  for (const m of moves) {
+    const after = pawnsAfter(ev, pos, m);
+    if (after == null) return null; // its evaluation is still to come
+    judged.push({ san: m.san, share: m.share, drop: Math.max(0, best - sign * after) });
+  }
+  return { loss: judged.reduce((sum, m) => sum + m.share * m.drop, 0), moves: judged };
+}
+// The evaluation after one of a position's Lichess moves m, in pawns from White's side: from the
+// position's own evaluation (ev) when it's one of the engine's best moves there, else the position after
+// it (or how the game ended); undefined until that's evaluated.
+const lineFor = (ev, pos, m) => ev.lines.find(l => { const first = parseUci(l.pv.split(' ')[0]); return first && makeUci(variant.normalizeMove(pos, first)) === makeUci(m.move); });
+function pawnsAfter(ev, pos, m) {
+  const line = lineFor(ev, pos, m);
+  if (line) return pawnsOf(line);
+  if (m.ended !== undefined) return m.ended;
+  const after = evalAt(m.epdAfter)?.lines[0];
+  return after && pawnsOf(after);
+}
+
+// The positions after the Lichess moves of the study positions (given) that the engine also needs, for
+// their expected loss: those not among the engine's best moves there (known once the study position is
+// evaluated), not evaluated yet, not themselves study positions and not the end of the game. [[epd, fen]]
+function extraPositions(studied, { evaluated = false } = {}) { // evaluated: those already evaluated too
+  const out = new Map();
+  for (const epd of studied.keys()) {
+    const ev = evalAt(epd);
+    if (!ev?.lines.length) continue;
+    const moves = lichessMovesAt(epd), pos = moves.length && positionOf(epd);
+    for (const m of moves) if (m.ended === undefined && !lineFor(ev, pos, m) && (evaluated || !evalAt(m.epdAfter)) && !studied.has(m.epdAfter)) out.set(m.epdAfter, m.fenAfter);
+  }
+  return [...out];
+}
+
+// The position's expected loss if it's critical (at the critical level or more), else null.
+function criticalAt(epd) {
+  const e = expectedLossAt(epd);
+  return e && e.loss >= settings.criticalLevel - 1e-9 ? e : null;
 }
 
 // Saves this line's attempts into your history, each under its position.
@@ -1978,7 +2040,7 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // board), or, with the eye by the Studies heading, shown dimmed, each with its own eye.
 // The Groups page (between Practice and Studies) edits the groups (presets in the code: named sets of
 // chapters; All, every chapter, is built in): the chosen group is always being edited there; every study
-// and chapter is listed, each with a white and a black button (see chapterRow and groupColorButtons),
+// and chapter is listed, each with a main color and an other color button (see chapterRow and groupColorButtons),
 // with Save, Create new, Rename, Delete and Cancel (for All, only Create new and Cancel; Save and
 // Cancel only once something has changed). Leaving the page with changes not saved asks first, then drops them.
 // Only groups decide what's practiced: the group chosen on the Practice page (the Studies to practice
@@ -2034,12 +2096,12 @@ function renderStudiesList() {
   }
 }
 
-// The Groups page while a group is edited: All, then every study (several can be open at once, since
-// there's room), each with white and black buttons for all its chapters, and its chapters' buttons.
+// The Groups page while a group is edited: every study (several can be open at once, since there's
+// room), each with main color and other color buttons for all its chapters, and its chapters' buttons.
+// (An All row, with white and black buttons for every chapter, was above them until 19 November 2026.)
 function renderGroupEditor() {
   if (!editing) return;
   const list = $('edit-studies'), scroll = window.scrollY;
-  $('all-colors').replaceChildren(...groupColorButtons('all', allChapters().map(c => c.key), 'All'));
   list.replaceChildren(...library.studies.map(study => {
     const open = editing.open.has(study.id);
     const box = element('span', { class: 'side-btns' }, groupColorButtons('st-' + study.id, study.chapters.map(c => c.key), study.name));
@@ -2105,7 +2167,7 @@ function opener(name, onOpen) {
 }
 
 // A study's row: its triangle and name (clicking either shows or hides its chapters: toggle), and, after
-// the triangle, its white and black buttons (box, on the Groups page) or, after the name, its eye (while
+// the triangle, its main color and other color buttons (box, on the Groups page) or, after the name, its eye (while
 // the top eye is open).
 function studyRow(study, open, toggle, eye = null, box = null, play = null) {
   return element('div', { class: 'row study-row' },
@@ -2113,7 +2175,7 @@ function studyRow(study, open, toggle, eye = null, box = null, play = null) {
     element('span', { class: 'name', title: study.name }, opener(study.name, toggle)), play);
 }
 
-// A white or black button on the Groups page: a dot in its color, with an X through it when not played
+// A color button on the Groups page: a dot in its color (half and half for a mixed study), with an X through it when not played
 // (a fainter X when only some of a study's chapters play it). state: 'on', 'off' or 'some'.
 function colorButton(bid, color, state, title, onclick, label, disabled = false) {
   return element('button', { id: bid, class: 'side-btn', title, disabled, 'aria-label': `${label}: ${title}`,
@@ -2121,40 +2183,42 @@ function colorButton(bid, color, state, title, onclick, label, disabled = false)
     element('span', { class: `side-dot ${color}` + (state === 'off' ? ' x' : state === 'some' ? ' x some' : '') }));
 }
 
-// The white and black buttons for many chapters (a study's, or All): on when every chapter plays the
-// color, a fainter X when some do, an X when none do. Clicking plays it in all of them, or (when all
-// do) in none. Chapters that can't be read are left out.
+// A study's two buttons, in the chapters' columns: main color, then other color. On when every chapter
+// plays it, a fainter X when some do, an X when none do; clicking plays it in all of them, or (when all
+// do) in none. The dots are the color itself when every chapter has the same main color, half white and
+// half black when the study mixes them. Chapters that can't be read are left out.
+const CHAPTER_COLORS = { main: key => mainColor(key), other: key => opposite(mainColor(key)) };
 function groupColorButtons(idBase, keys, label) {
   const usable = keys.filter(k => !parseChapter(chapterByKey(k)).error);
-  return COLORS.map(color => {
-    const n = usable.filter(k => editing.colors.get(k)?.has(color)).length;
+  return Object.entries(CHAPTER_COLORS).map(([which, colorOf]) => {
+    const n = usable.filter(k => editing.colors.get(k)?.has(colorOf(k))).length;
     const state = n && n === usable.length ? 'on' : n ? 'some' : 'off';
-    const title = state === 'on' ? `All play ${color}. Click: none` : state === 'some' ? `Some play ${color}. Click: all` : `Click: all play ${color}`;
-    return colorButton(`${idBase}-${color}`, color, state, title, () => setColor(usable, color, state !== 'on'), label, !usable.length);
+    const colors = new Set(usable.map(colorOf)), dot = colors.size === 1 ? [...colors][0] : 'mixed';
+    const title = state === 'on' ? `All play their ${which} color. Click: none` : state === 'some' ? `Some play their ${which} color. Click: all` : `Click: all play their ${which} color`;
+    return colorButton(`${idBase}-${which}`, dot, state, title, () => setColors(usable, colorOf, state !== 'on'), label, !usable.length);
   });
 }
 
-// A chapter's row on the Groups page (indented under its study's name): a white and a black button, each
-// played or not (an X through it), whatever the chapter's main color; with neither, it's out of the group
-// and its name grayed. Clicking the name puts it in the group from its main color, or leaves it out.
-// Then "· 5 lines" (or why it has none to practice: such a chapter's buttons can't be clicked).
+// A chapter's row on the Groups page (indented under its study's name): its main color's button (the
+// study's orientation), then the other color's, each played or not (an X through it); with neither, it's
+// out of the group and its name grayed. Clicking the name puts it in the group from its main color, or
+// leaves it out. A chapter that can't be practiced says why (its buttons can't be clicked). (Its number
+// of lines, "· 5 lines", followed the name until 19 November 2026.)
 function chapterRow(ch) {
   const parsed = parseChapter(ch);
   const id = 'ch-' + ch.key.replace(/[^A-Za-z0-9]/g, '_');
-  const played = editing.colors.get(ch.key), own = parsed.yourColor;
-  const lines = parsed.error || !played ? [] : sidesFor(own, played).flatMap(side => chapterLines(ch, side));
+  const played = editing.colors.get(ch.key), own = parsed.yourColor ?? 'white';
   const button = color => {
     if (parsed.error) return element('button', { id: `${id}-${color}`, class: 'side-btn', disabled: true, 'aria-label': `${ch.name}: ${parsed.error}` }, element('span', { class: 'side-dot off' }));
-    const on = !!played?.has(color), main = color === own ? ' (main color)' : '';
-    return colorButton(`${id}-${color}`, color, on ? 'on' : 'off', on ? `Plays ${color}${main}. Click: not ${color}` : `Click: play ${color}${main}`,
+    const on = !!played?.has(color), which = color === own ? ' (main color)' : ' (other color)';
+    return colorButton(`${id}-${color}`, color, on ? 'on' : 'off', on ? `Plays ${color}${which}. Click: not ${color}` : `Click: play ${color}${which}`,
       () => setColor([ch.key], color, !on), ch.name);
   };
   const toggle = () => setPlayed([ch.key], !played);
   return element('div', { class: 'row chapter-row' + (played ? '' : ' unplayed') },
     element('span', { class: 'toggle-space' }), // indented under its study
-    element('span', { class: 'side-btns' }, COLORS.map(button)),
-    element('span', { class: 'name' }, quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : toggle }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700),
-      lines.length ? element('span', { class: 'muted' }, ' · ', plural(lines.length, 'line')) : null),
+    element('span', { class: 'side-btns' }, [own, opposite(own)].map(button)),
+    element('span', { class: 'name' }, quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : toggle }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700)),
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null);
 }
 
@@ -2262,12 +2326,14 @@ function setPlayed(keys, on) {
 }
 
 // Plays chapters (by key) from a color, or not, in the group being edited; a chapter with no color left
-// is out of the group. Redraws.
-function setColor(keys, color, on) {
+// is out of the group. Redraws. setColors takes each chapter's color from colorOf(key) (its main or
+// other color, for a study's buttons).
+const setColor = (keys, color, on) => setColors(keys, () => color, on);
+function setColors(keys, colorOf, on) {
   if (!editing) return;
   for (const k of keys) {
     const set = editing.colors.get(k) ?? new Set();
-    on ? set.add(color) : set.delete(color);
+    on ? set.add(colorOf(k)) : set.delete(colorOf(k));
     set.size ? editing.colors.set(k, set) : editing.colors.delete(k);
   }
   renderStudies();
@@ -2282,12 +2348,11 @@ function toggleHidden(id) {
 
 $('show-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; renderStudies(); });
 
-// How many chapters the chosen group has (Practice page) and, while editing, are chosen (Groups page).
+// How many chapters are chosen while editing a group (Groups page). (The Practice page said how many the
+// chosen group has, under its drop-down, until 19 November 2026.)
 function updateSelectionPanel() {
-  const all = allChapters(), count = keys => all.filter(c => keys.has(c.key)).length;
-  $('sel-summary').textContent = `${plural(count(selection), 'chapter')} selected`;
   if (!editing) return;
-  const n = count(new Set(editing.colors.keys()));
+  const keys = new Set(editing.colors.keys()), n = allChapters().filter(c => keys.has(c.key)).length;
   $('edit-summary').textContent = `${plural(n, 'chapter')} selected`;
 }
 
@@ -2693,7 +2758,7 @@ function squareTipLines(node, square) {
 // once the position is clicked. (On 19 November 2026 its text followed the view for a few hours.)
 function showReviewHoverBoard(el, m, orientation) {
   showBoardPopup(el, { position: m.position, lastMove: squaresOf(m), shapes: reviewArrows(m),
-    rows: [element('div', {}, element('b', {}, moveLabel(m)))] }, orientation);
+    rows: [hoverBoardHeading(m)] }, orientation);
 }
 
 // Hovering over the square an arrow points to (Masters, Lichess and Errors) shows squareTipLines (mouse only; the
@@ -2787,32 +2852,21 @@ function renderMastersTile(node) {
       : 'No move is played by masters 5% of the time or more'));
 }
 
-// Under the comment, when the position on the board is critical (see criticalAt), at either side's
-// move: "Critical position" (at the opponent's move "Critical position · opponent's move"), the share
-// of Lichess games going wrong, and those moves (see criticalMoveTexts).
+// Under the comment, when the position on the board is critical (see criticalAt), at either side's move:
+// "Critical position" (no "your" or "opponent's": the chapter may be practiced from either color; until
+// 19 November 2026 "· opponent's move" at the other side's move), its expected loss, and the Lichess moves
+// that drop 0.1 pawns or more (see criticalMoveTexts).
 function renderCriticalTile(node) {
   const critical = showsMark('critical') && criticalAt(node.epd);
   $('review-critical').replaceChildren(...critical ? [
-    element('h3', {}, node.position.turn === review.parsed.yourColor ? 'Critical position' : "Critical position · opponent's move"),
-    element('p', {}, `${percent(critical.share)}% of Lichess games go wrong here`),
+    element('h3', {}, 'Critical position'),
+    element('p', {}, `Expected loss ${critical.loss.toFixed(1)} pawns`),
     element('div', { class: 'critical-moves' }, criticalMoveTexts(critical).map(t => element('div', {}, t)))] : []);
 }
 
-// The moves going wrong, those played in 5% of the games or more (as a Lichess move) each with how
-// many points it lowers the win rate of the side playing it (draws count half), e.g. "♗f4 14% · win
-// rate −10"; the rarer ones in one line, e.g. "+ 6 rarer moves (2%)". (The share going wrong counts them all.)
-function criticalMoveTexts(critical) {
-  const shown = critical.moves.filter(m => m.share >= LICHESS_SHARE), rarer = critical.moves.filter(m => m.share < LICHESS_SHARE);
-  const rareShare = rarer.reduce((sum, m) => sum + m.share, 0);
-  return [...shown.map(m => `${withFigurines(m.san)} ${percent(m.share)}% · win rate −${Math.round(m.drop * 100)}`),
-    ...rarer.length ? [`+ ${plural(rarer.length, 'rarer move')} (${rareShare > 0 && rareShare < 0.01 ? '<1' : percent(rareShare)}%)`] : []];
-}
-
-// "Critical: 34% go wrong here", for a hover board showing a critical position.
-function criticalRow(epd) {
-  const critical = criticalAt(epd);
-  return critical ? element('div', { class: 'critical-row' }, `Critical: ${percent(critical.share)}% go wrong here`) : null;
-}
+// The Lichess moves that lose 0.1 pawns or more, most played first, each with its share and the pawns
+// it drops, e.g. "♗f4 14% · −1.2".
+const criticalMoveTexts = critical => critical.moves.filter(m => m.drop >= 0.05).map(m => `${withFigurines(m.san)} ${percent(m.share)}% · −${m.drop.toFixed(1)}`);
 
 function renderReviewTree() {
   hideHoverBoard(); // its move may be about to be redrawn
@@ -2910,7 +2964,7 @@ const WEIGHTS = [
   { key: 'accuracy', name: 'Accuracy', definition: 'Move accuracy (for a line, its weakest position). Higher: weak ones come up more.' },
   { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
   { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none are left.' },
-  { key: 'critical', name: 'Critical', definition: 'Your critical positions: over 20% of Lichess games go wrong there (for a line, any of yours in it). Higher: they come up more.' },
+  { key: 'critical', name: 'Critical', definition: 'Your critical positions: the Lichess moves played there lose the critical level or more on average (for a line, any of yours in it). Higher: they come up more.' },
 ];
 
 function weightedPick(items, weight) {
@@ -3624,9 +3678,9 @@ function renderMoveList() {
     const content = [withFigurines(m.san), glyphMarks(m), hasComment(m) ? commentBubble(moveLabel(m), m.notes, i === newest && pop) : null];
     const cell = element('span', { class: 'mv' + moveQualityClass(m) + (i === shown - 1 ? ' active' : ''), onclick: () => viewAfterMoves(i + 1) },
       missedNow ? element('span', { class: 'missed-now' }, content) : content);
-    // Every move already played has the small hover board, during the line too, with its Lichess
-    // share and, for your moves, how you did on it this time. (Only played moves are listed, so it
-    // never shows a move still to come.)
+    // Every move already played has the small hover board, during the line too: the move and the board
+    // (for your moves, this time's errors as violet arrows). (Only played moves are listed, so it never
+    // shows a move still to come.)
     addHoverBoard(cell, m, testedColor(), { attempt });
     cells.push(cell);
   });
@@ -3775,7 +3829,7 @@ function addHoverBoard(el, m, orientation, thisTime = null, anchor = el) {
 
 function showHoverBoard(el, m, orientation, thisTime = null) {
   const yours = thisTime ? m.color === orientation : isShownAsYours(m, orientation);
-  showBoardPopup(el, yours ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m, orientation), orientation);
+  showBoardPopup(el, yours ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m), orientation);
 }
 
 // The small board, next to el: position (lastMove highlighted, shapes drawn), turned to orientation, with
@@ -3801,56 +3855,28 @@ function showBoardPopup(el, { position, lastMove, shapes, rows }, orientation) {
   hoverBoard.redrawAll();
 }
 
-// The rows shared by every hover board (the practice move list, the Studies page and the
-// Test probabilities table alike): the move, then its rank and share among all Lichess games and
-// among master games (each left out until downloaded), e.g. "#2 Lichess move (27%)", then how often the
-// position after the move is reached: "Reached 23k times (Lichess) 46 times (Masters)".
-function hoverBoardHeading(m) {
-  const countText = positionCountText(m.epd), count = countText && element('div', { class: 'muted' }, countText);
-  const masters = masterGamesAt(m.epdBefore);
-  const shares = [rankAndShareText(lichessGamesAt(m.epdBefore), m.san, 'Lichess', 'Not played in Lichess games'),
-    masters && !totalGames(masters) ? 'Not in master games' : rankAndShareText(masters, m.san, 'masters', 'Not played by masters')]
-    .map(t => t && element('div', { class: 'muted' }, t));
-  return [element('div', {}, element('b', {}, moveLabel(m))), ...shares, count];
-}
+// Every hover board's only text: the move, e.g. "3. ♗c4", above the board. (Until 19 November 2026 the
+// Practice page's hover boards also showed the move's rank and share, how often the position is reached,
+// the critical row, the move accuracy and the errors.)
+const hoverBoardHeading = m => element('div', {}, element('b', {}, moveLabel(m)));
 
 // Before one of your moves the opponent's previous move is highlighted (no arrow).
 const previousOpponentMove = m => m.parent.uci && squaresOf(m.parent);
 
 // Your move: the position before it, an arrow for the correct move (in the practice move list, the move
-// played; elsewhere your study's moves there) and one for each error, then, under the shared heading,
-// the move accuracy, when it was last tested, and the errors ("Errors: d4 (alternative ?!), a3 ×2,
-// hint"), colored as their arrows. In the practice move list (thisTime) it's about this attempt;
-// elsewhere, about the position's last 10 attempts.
+// played; elsewhere your study's moves there) and a violet one for each error. In the practice move list
+// (thisTime) the errors are this attempt's; elsewhere the position's last 10 attempts'.
 function yourMoveBoard(m, thisTime) {
   const attempts = thisTime ? [thisTime.attempt].filter(Boolean) : attemptsAt(m.parent);
   const correct = thisTime ? [m] : choicesAt(m.parent, mainOnlyNow());
-  const errors = errorCounts(attempts, correct.map(c => c.san)), overall = accuracyAt(m.parent);
-  const accuracy = thisTime ? (!attempts.length ? 'Not tested this time' : `${rightThisTime(attempts[0]) ? 100 : 0}% move accuracy`)
-    : overall ? accuracyText(overall) : 'Untried';
-  return { position: m.parent.position, lastMove: previousOpponentMove(m), shapes: answerArrows(m.parent.position, correct, errors), rows: [
-    ...hoverBoardHeading(m),
-    criticalRow(m.epdBefore), // the position shown
-    element('div', {}, accuracy),
-    thisTime ? null : lastTestedText(lastTriedAt(m.parent.key)),
-    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) =>
-      element('span', { class: 'error-violet' }, errorLabel(m, x) + (n > 1 ? ` ×${n}` : ''))))) : null] };
-}
-
-// "Last tested today", "Last tested 3 days ago"; nothing when the time isn't known.
-function lastTestedText(time) {
-  if (!time) return null;
-  const days = daysAgo(time);
-  return element('div', {}, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`);
+  const errors = errorCounts(attempts, correct.map(c => c.san));
+  return { position: m.parent.position, lastMove: previousOpponentMove(m), shapes: answerArrows(m.parent.position, correct, errors), rows: [hoverBoardHeading(m)] };
 }
 
 // The opponent's move (or one of the study's untested moves): the position after it, highlighted as
 // on Lichess, with the move's arrow (see studyMoveArrow).
-function opponentMoveBoard(m, orientation) {
-  return { position: m.position, lastMove: squaresOf(m), shapes: [studyMoveArrow(m.parent.position, m), ...glyphBadge(m)], rows: [
-    ...hoverBoardHeading(m),
-    criticalRow(m.epd), // the position shown
-    !practisedAs(m, orientation) ? element('div', { class: 'muted' }, 'Not tested') : null] };
+function opponentMoveBoard(m) {
+  return { position: m.position, lastMove: squaresOf(m), shapes: [studyMoveArrow(m.parent.position, m), ...glyphBadge(m)], rows: [hoverBoardHeading(m)] };
 }
 
 // One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labeled by
@@ -3965,6 +3991,7 @@ async function startDownloads() {
       await downloadExplorer('masters');
     } while (downloadsAgain);
   } finally { downloadsRunning = false; }
+  startEvaluations(); // the new statistics may need positions evaluated for critical positions
 }
 
 // The games the move statistics come from: as chosen (settings.games), or all rated games until
@@ -4064,6 +4091,7 @@ const masterGamesAt = epd => moveStats[epd]?.masters;
 // Saves one part of what Lichess says about a position ('lichess' or 'masters'); false if it can't be saved.
 function setPositionData(epd, part, value) {
   (moveStats[epd] ||= {})[part] = value;
+  forgetCritical();
   return saveMoveStats([epd]);
 }
 const STORAGE_FULL = "This browser's storage is full, so the statistics can't be saved. Free some space, then reopen the app.";
@@ -4177,16 +4205,6 @@ function updateStatisticsInfo() {
   updateLichessStatus();
 }
 
-// How often a position is reached in rated Lichess games, with the master games' count once downloaded:
-// "Reached 23k times (Lichess) 46 times (Masters)", "Never reached (Lichess) 0 times (Masters)"; null
-// while its Lichess statistics haven't downloaded.
-function positionCountText(epd) {
-  const lichess = lichessGamesAt(epd), masters = masterGamesAt(epd);
-  if (!lichess) return null;
-  const n = totalGames(lichess);
-  return (n ? `Reached ${shortCount(n)} times (Lichess)` : 'Never reached (Lichess)') + (masters ? ` ${shortCount(totalGames(masters))} times (Masters)` : '');
-}
-
 // A move's share of a position's games as a percentage ("45%", "<1%", "0%"); null when the
 // statistics haven't been downloaded yet, '' when no game reaches the position.
 function shareText(stats, moveSan) {
@@ -4231,7 +4249,12 @@ function rankAndShareText(stats, moveSan, who, none) {
 // a position for each engine.)
 const ENGINE = { url: 'engine/stockfish-19-lite-single.js', name: 'Stockfish 19 lite', depth: 20, multiPv: 3, v: 1 };
 let engineAvailable = () => location.protocol !== 'file:' && typeof Worker === 'function'; // the tests switch it
-const engineCount = () => Math.max(1, Math.min(4, Math.floor((navigator.hardwareConcurrency || 2) / 2)));
+// How many engines run side by side: on a computer all its cores but 2 (leaving the app and everything
+// else responsive), at least 1, at most 8; on a phone or tablet (no hover, as the CSS tells them apart)
+// half its cores, at most 2, since they slow down when warm and battery matters more. The core count is
+// the browser's (it can't tell fast cores from efficiency ones, and Safari may not report the true one).
+const engineCount = (cores = navigator.hardwareConcurrency || 2, handheld = matchMedia('(hover: none)').matches) =>
+  handheld ? Math.max(1, Math.min(2, Math.floor(cores / 2))) : Math.max(1, Math.min(8, cores - 2));
 let newEngineWorker = () => new Worker(ENGINE.url); // the tests use a stand-in
 
 // evals[epd]: { depth, lines: [{ cp } or { mate }, with pv: 'g1f3 b8c6 …'], engine, v, at }: the engine's
@@ -4297,20 +4320,30 @@ function startEngine() {
 // The evaluations running: the positions waiting (in download order), and the one wanted first (the
 // position on the Studies page). Asked while they run (e.g. after studies change), the waiting list is
 // brought up to date and the running engines carry on with it.
-const evaluation = { running: false, waiting: [], evaluating: new Set(), wanted: null, problem: '' };
+const evaluation = { running: false, waiting: [], evaluating: new Set(), wanted: null, problem: '', done: 0 };
 
+// The study positions the engine evaluates (not checkmates or stalemates): a Map, epd -> its entry in
+// allStudyPositions.
+const studyPositionsToEvaluate = () => new Map([...allStudyPositions()].filter(([, p]) => !p.position.isCheckmate() && !p.position.isStalemate()));
+
+// Evaluates what's missing: the study positions (in download order, the one on the Studies page first),
+// then the positions after their Lichess moves that critical positions need (see extraPositions; those
+// are known only once their study position is evaluated and its statistics downloaded, so each run that
+// evaluated something looks again when it ends; the downloads also start it again when they finish).
 function startEvaluations() {
   if (!engineAvailable() || !library) return;
-  evaluation.waiting = inDownloadOrder([...allStudyPositions()].filter(([epd, p]) => !evalAt(epd) && !evaluation.evaluating.has(epd) && !p.position.isCheckmate() && !p.position.isStalemate()))
-    .map(([epd, p]) => ({ epd, fen: p.fen }));
+  const studied = studyPositionsToEvaluate(), busy = epd => evalAt(epd) || evaluation.evaluating.has(epd);
+  evaluation.waiting = [...inDownloadOrder([...studied].filter(([epd]) => !busy(epd))).map(([epd, p]) => ({ epd, fen: p.fen })),
+    ...extraPositions(studied).filter(([epd]) => !busy(epd)).map(([epd, fen]) => ({ epd, fen }))];
   if (evaluation.running || !evaluation.waiting.length) return showProgress();
   evaluation.running = true;
   evaluation.problem = '';
   showProgress();
+  const doneBefore = evaluation.done;
   const engines = Array.from({ length: Math.min(engineCount(), evaluation.waiting.length) }, runEngine);
   Promise.all(engines).finally(() => {
     evaluation.running = false;
-    if (evaluation.waiting.length) startEvaluations(); // added as the engines were finishing
+    if (evaluation.done > doneBefore && !evaluation.problem) startEvaluations(); // anything added meanwhile, and the positions now known to be needed
     else showProgress();
   });
 }
@@ -4330,6 +4363,7 @@ async function runEngine() {
       evaluation.evaluating.add(item.epd);
       try { evals[item.epd] = await engine.evaluate(item.fen); } finally { evaluation.evaluating.delete(item.epd); }
       if (await saveEvals([item.epd]) === false) { evaluation.waiting = []; evaluation.problem = STORAGE_FULL; break; }
+      evaluation.done++;
       evaluated(item.epd);
     }
   } catch (e) {
@@ -4337,9 +4371,14 @@ async function runEngine() {
   } finally { engine?.stop(); }
 }
 
-// A position has its evaluation: shown at once if it's on the Studies page's board; the progress updated.
+// A position has its evaluation: shown at once if it's on the Studies page's board, with the Critical
+// tile (which may now be known); the progress updated.
 function evaluated(epd) {
-  if (currentScreen === 'studies' && review?.node.epd === epd) renderEngineTile(review.node);
+  forgetCritical();
+  if (currentScreen === 'studies' && review) {
+    if (review.node.epd === epd) renderEngineTile(review.node);
+    renderCriticalTile(review.node);
+  }
   showProgress();
 }
 
@@ -4394,9 +4433,12 @@ function renderEngineTile(node) {
 function updateEvaluationInfo() {
   const el = $('engine-evals');
   if (!engineAvailable()) { el.textContent = 'Engine evaluations: only in the online version'; return; }
-  const studied = library ? [...allStudyPositions()].filter(([, p]) => !p.position.isCheckmate() && !p.position.isStalemate()) : [];
-  const done = studied.filter(([epd]) => evalAt(epd)).length;
-  el.textContent = `Engine evaluations: ${done} of ${plural(studied.length, 'position')}` + (done === studied.length ? ' evaluated' : evaluation.running ? ' (evaluating…)' : '');
+  // The study positions, and the positions after their Lichess moves that are known to be needed (see
+  // extraPositions), done or not.
+  const studied = library ? studyPositionsToEvaluate() : new Map();
+  const all = [...studied.keys(), ...extraPositions(studied, { evaluated: true }).map(([epd]) => epd)];
+  const done = all.filter(epd => evalAt(epd)).length;
+  el.textContent = `Engine evaluations: ${done} of ${plural(all.length, 'position')}` + (done === all.length ? ' evaluated' : evaluation.running ? ' (evaluating…)' : '');
   const status = $('engine-status');
   status.textContent = evaluation.problem;
   status.classList.toggle('hidden', !evaluation.problem);
@@ -4440,6 +4482,7 @@ function renderLichessPage() {
   $('getting-started').classList.toggle('hidden', !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
   renderGamesCard();
+  $('critical-level').value = String(settings.criticalLevel);
   // Backup: once there are studies; nothing to save while Getting started shows.
   $('backup-card').classList.toggle('hidden', !library);
   $('backup-btn').disabled = welcomeReady;
@@ -4448,6 +4491,14 @@ function renderLichessPage() {
   $('backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
+
+// The critical level (see criticalAt), in the Move statistics card beside the rating bands (it depends on
+// your level too): 0.2 to 1.5 pawns. Changing it changes which positions are critical at once.
+$('critical-level').replaceChildren(...CRITICAL_LEVELS.map(x => element('option', { value: String(x) }, x.toFixed(1))));
+$('critical-level').addEventListener('change', e => {
+  settings.criticalLevel = Number(e.target.value);
+  saveSettings();
+});
 
 // "Lichess rating: blitz 1720, rapid 1500?" (the time controls chosen for the move statistics; "?" for
 // a provisional rating, as on Lichess), or "… no rated games"; nothing until your account has been read.
@@ -4708,6 +4759,7 @@ async function chosenBackup(e) {
 // The move statistics are merged, not replaced: each part keeps whichever copy is newer, so
 // downloads made since the backup aren't lost.
 function mergeMoveStats(b) {
+  forgetCritical();
   for (const [epd, saved] of Object.entries(b.moveStats && typeof b.moveStats === 'object' ? b.moveStats : {})) {
     if (!saved || typeof saved !== 'object') continue;
     const current = moveStats[epd] ||= {};
@@ -4720,6 +4772,7 @@ function mergeMoveStats(b) {
 // The engine's evaluations are merged the same way: for each position the newer evaluation from the
 // current engine (ENGINE.v) is kept.
 function mergeEvals(b) {
+  forgetCritical();
   for (const [epd, saved] of Object.entries(b.evals && typeof b.evals === 'object' ? b.evals : {})) {
     if (saved?.v !== ENGINE.v || !Array.isArray(saved.lines)) continue;
     if (!evalAt(epd) || (saved.at || 0) > (evals[epd].at || 0)) evals[epd] = saved;

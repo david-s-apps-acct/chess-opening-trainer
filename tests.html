@@ -30,7 +30,7 @@ in this folder); the page loads <code>index.html</code> without starting the app
 const TEST_HOOK = `
 export const app = {
   setLibrary(l) { library = l; forgetParsedChapters(); },
-  setMoveStats(m) { moveStats = m; },
+  setMoveStats(m) { moveStats = m; forgetCritical(); },
   setSettings(s) { settings = checkedSettings(s); },
   setHistory(h) { history = h; },
   checkedPresets, renderPresets, storedHistory, lastTriedAt, lastPlayedAt,
@@ -45,7 +45,7 @@ export const app = {
   setSaveMoveStats(f) { saveMoveStats = f; },
   storageFull(on) { store.set = on ? () => false : () => {}; },
   playBothColors(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
-  parseStudyExport, errorKind, yourMoveIndexes, shortCount, positionCountText,
+  parseStudyExport, errorKind, yourMoveIndexes, shortCount,
   // Saving and network requests switched off, so stored data is never touched.
   isolate() {
     const realGet = store.get;
@@ -75,8 +75,9 @@ export const app = {
   get library() { return library; },
   // The engine: off in the tests (isolate), or a stand-in worker.
   setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
-  get evals() { return evals; }, setEvals(e) { evals = e; },
-  evaluation, evalText, engineLineText, parseEngineInfo, startEngine, mergeEvals, ENGINE,
+  get evals() { return evals; }, setEvals(e) { evals = e; forgetCritical(); },
+  pawnsOf, expectedLossAt,
+  evaluation, evalText, engineLineText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
 };`;
 
 async function loadApp() {
@@ -128,11 +129,23 @@ const withResults = moves => {
   const sum = k => list.reduce((s, m) => s + m[k], 0);
   return { white: sum('white'), draws: sum('draws'), black: sum('black'), moves: list };
 };
-// A critical start: 210 games, White scoring 60%; ♘h3 (40 games, 31%) and a4 (20 games, 45%) do 10 points
-// or more worse, 29% of the games. After 1. e4 (Black to move): …♗a3?? (30 of 100 games) scores 10% for Black.
+// Critical positions, by the engine's expected loss. At the start (200 games): e4 56% (the engine's best,
+// +0.3), d4 25% (+0.2: −0.1), ♘h3 15% (not among the engine's best 3: the position after it, −3.0: −3.3)
+// and a4 4% (not a Lichess move): 0.25 × 0.1 + 0.15 × 3.3 = 0.52, critical at 0.5. After 1. e4 (Black to
+// move, 100 games): e5 70% (best, +0.3 for White), g5 30% (after it +1.5: −1.2 for Black): 0.36, critical
+// only at 0.4 or lower.
+const AFTER_NH3 = 'rnbqkbnr/pppppppp/8/8/8/7N/PPPPPPPP/RNBQKB1R b KQkq -';
+const AFTER_E4_G5 = 'rnbqkbnr/pppppp1p/8/6p1/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -';
 const CRITICAL = {
-  [START]: { lichess: withResults([['e4', 60, 20, 20], ['d4', 30, 10, 10], ['Nh3', 10, 5, 25], ['a4', 8, 2, 10]]) },
-  [AFTER_E4]: { lichess: withResults([['e5', 30, 20, 20], ['Ba3', 27, 0, 3]]) },
+  [START]: { lichess: withResults([['e4', 60, 32, 20], ['d4', 25, 15, 10], ['Nh3', 10, 5, 15], ['a4', 4, 2, 2]]) },
+  [AFTER_E4]: { lichess: withResults([['e5', 30, 20, 20], ['g5', 15, 5, 10]]) },
+};
+const evalOf = (...lines) => ({ depth: 20, lines: lines.map(([cp, pv]) => ({ cp, pv })), engine: 'test', v: 1, at: 1 });
+const CRITICAL_EVALS = {
+  [START]: evalOf([30, 'e2e4 e7e5'], [20, 'd2d4 d7d5'], [15, 'g1f3']),
+  [AFTER_NH3]: evalOf([-300, 'e7e5']),
+  [AFTER_E4]: evalOf([30, 'e7e5 g1f3'], [35, 'c7c5'], [40, 'e7e6']),
+  [AFTER_E4_G5]: evalOf([150, 'd2d4']),
 };
 
 // Master games at the start: e4 40%, d4 30%, Nf3 15%, c4 10%, g3 4% (not a masters move).
@@ -187,7 +200,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' } });
+    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' }, criticalLevel: 0.5 });
   check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
     [undefined, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50, critical: 50 } }]);
@@ -229,24 +242,28 @@ function run(app) {
     app.setHistory(kept);
     document.getElementById('banner').classList.add('hidden');
   }
-  // The tile's moves: 5% or more each with its drop in win rate, the rarer ones in one line.
-  check('critical: moves of 5% or more listed with their drop; the rarer ones in one line', [
-    app.criticalMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 0.104 }, { san: 'h3', share: 0.03, drop: 0.2 }, { san: 'a3', share: 0.012, drop: 0.3 }] }),
-    app.criticalMoveTexts({ moves: [{ san: 'Nc3', share: 0.3, drop: 0.12 }, { san: 'g4', share: 0.004, drop: 0.5 }] })],
-    [['♗f4 14% · win rate −10', '+ 2 rarer moves (4%)'], ['♘c3 30% · win rate −12', '+ 1 rarer move (<1%)']]);
-  // Critical positions: more than 20% of the games play a move 10 points or more worse for the side playing it
+  // The tile's moves: those losing 0.1 pawns or more, with their share and drop.
+  check('critical: the moves losing 0.1 pawns or more, with share and drop', app.criticalMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 1.24 }, { san: 'e4', share: 0.5, drop: 0 }, { san: 'h3', share: 0.08, drop: 0.1 }] }),
+    ['♗f4 14% · −1.2', 'h3 8% · −0.1']);
+  check('critical: evaluations in pawns, mate as 10', [{ cp: 45 }, { cp: -120 }, { mate: 3 }, { mate: -2 }].map(app.pawnsOf), [0.45, -1.2, 10, -10]);
+  // Critical positions: the Lichess moves' expected loss, by the engine, at the critical level (0.5) or more.
   {
-    const kept = app.moveStats;
+    const kept = app.moveStats, keptEvals = app.evals;
     app.setMoveStats(structuredClone(CRITICAL));
-    const start = app.criticalAt(START), afterE4 = app.criticalAt(AFTER_E4);
-    check('critical: the share going wrong, and those moves, most played first', [Math.round(start.share * 1000), start.moves.map(m => [m.san, Math.round(m.share * 100), Math.round(m.score * 100)])],
-      [286, [['Nh3', 19, 31], ['a4', 10, 45]]]);
-    check('critical: scored for the side to move (Black after 1. e4)', afterE4.moves.map(m => [m.san, Math.round(m.score * 100)]), [['Ba3', 10]]);
-    app.setMoveStats({ [START]: { lichess: withResults([['e4', 60, 20, 20], ['d4', 30, 10, 10], ['Nh3', 10, 5, 25], ['a4', 8, 2, 9]]) } }); // a4: 19 games, too few to count
-    check('critical: a move needs 20 games; more than 20% needed', app.criticalAt(START), null);
-    app.setMoveStats({ [START]: { lichess: withResults([['e4', 20, 5, 5], ['Nh3', 2, 2, 15]]) } }); // 49 games
-    check('critical: the position needs 50 games', app.criticalAt(START), null);
-    app.setMoveStats(kept);
+    app.setEvals(structuredClone(CRITICAL_EVALS));
+    const start = app.criticalAt(START), afterE4 = app.expectedLossAt(AFTER_E4);
+    check('critical: the expected loss, and each Lichess move\'s drop (from the engine\'s best 3, or the position after it), most played first', [Math.round(start.loss * 1000), start.moves.map(m => [m.san, Math.round(m.share * 100), Math.round(m.drop * 10) / 10])],
+      [520, [['e4', 56, 0], ['d4', 25, 0.1], ['Nh3', 15, 3.3]]]);
+    check('critical: for the side to move (Black after 1. e4); below the level, not critical', [Math.round(afterE4.loss * 100), afterE4.moves.map(m => [m.san, Math.round(m.drop * 10) / 10]), app.criticalAt(AFTER_E4)], [36, [['e5', 0], ['g5', 1.2]], null]);
+    app.settings.criticalLevel = 0.3;
+    check('critical: at a lower level it is', !!app.criticalAt(AFTER_E4), true);
+    app.settings.criticalLevel = 0.5;
+    app.setEvals({ ...structuredClone(CRITICAL_EVALS), [AFTER_NH3]: undefined });
+    check('critical: unknown until the position after a Lichess move outside the engine\'s best 3 is evaluated', app.expectedLossAt(START), null);
+    app.setEvals(structuredClone(CRITICAL_EVALS));
+    app.setMoveStats({ [START]: { lichess: withResults([['e4', 20, 10, 5], ['Nh3', 2, 2, 10]]) } }); // 49 games
+    check('critical: the position needs 50 games', app.expectedLossAt(START), null);
+    app.setMoveStats(kept); app.setEvals(keptEvals);
     // The fifth slider: critical items twice as likely by default, as likely at 0%.
     const facts = [{ frequency: 1, weakness: 1, due: 1, critical: true }, { frequency: 1, weakness: 1, due: 1, critical: false }];
     const w = critical => ({ frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical });
@@ -287,12 +304,6 @@ function run(app) {
   // Short counts
   check('short counts', [950, 23400, 999600, 1234567, 999960000, 1846500000].map(app.shortCount), ['950', '23k', '1.0M', '1.2M', '1.0bn', '1.8bn']);
 
-  // Position reached: the Lichess count, with the masters count once downloaded.
-  const statsBeforeCounts = app.moveStats;
-  app.setMoveStats({ a: { lichess: explorer([]) }, b: { lichess: explorer([['e4', 950]]), masters: explorer([]) }, c: { lichess: explorer([['e4', 1846500000]]), masters: explorer([['e4', 1200]]) }, d: { masters: explorer([['e4', 5]]) } });
-  check('position counts use the same short counts, with the masters count', ['none', 'a', 'b', 'c', 'd'].map(app.positionCountText),
-    [null, 'Never reached (Lichess)', 'Reached 950 times (Lichess) 0 times (Masters)', 'Reached 1.8bn times (Lichess) 1k times (Masters)', null]);
-  app.setMoveStats(statsBeforeCounts);
 
   // Wrong moves counted over attempts
   check('error counts, the hint included', app.errorCounts([{ tried: ['d4', 'hint', 'e4'] }, { tried: ['d4', 'c4', 'Nf3'] }], ['e4', 'Nf3']), [['d4', 2], ['hint', 1], ['c4', 1]]);
@@ -583,17 +594,17 @@ async function runLichessPage(app) {
   const key = k => document.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-practice').click(); // nothing practiced: the board, the chooser, and Studies to practice under it
-  check('Studies to practice: under the chooser, the board shown; the group (its hint: edited on the Groups page), no chapters here', [!$('studies-to-practice').classList.contains('hidden'),
+  check('Studies to practice: under the chooser, the board shown; the group (its hint: edited on the Groups page), no chapters or chapter count here', [!$('studies-to-practice').classList.contains('hidden'),
     !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!document.querySelector('#practice-screen #studies, #practice-screen #edit-studies'),
-    $('preset-select').title, $('sel-summary').textContent],
-    [true, true, true, false, 'Edit study groups on the Groups page', `${app.selection.length} chapter${app.selection.length === 1 ? '' : 's'} selected`]);
+    $('preset-select').title, !!$('sel-summary')],
+    [true, true, true, false, 'Edit study groups on the Groups page', false]);
   $('nav-studies').click();
   check('Studies page: no Groups tile; no chapter count by a study; no side circles in the studies list', [!!document.querySelector('#studies-screen .groups-tile, #studies-screen #edit-studies'),
     /chapter/.test(document.querySelector('#studies .study-row').textContent), !!document.querySelector('#studies .side-dot')], [false, false, false]);
   check('header: Groups between Practice and Studies', [...document.querySelectorAll('header nav button')].map(b => b.textContent), ['Practice', 'Groups', 'Studies', 'Lichess', 'Help']);
   $('nav-groups').click();
-  check('Groups page: its own page, with All; Create new and Cancel for All, Cancel only once something changes', [!$('groups-screen').classList.contains('hidden'), $('studies-screen').classList.contains('hidden'), $('nav-groups').classList.contains('current'),
-    !!$('all-row').closest('#groups-screen'), ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')), $('preset-cancel-btn').disabled],
+  check('Groups page: its own page, with no All row; Create new and Cancel for All, Cancel only once something changes', [!$('groups-screen').classList.contains('hidden'), $('studies-screen').classList.contains('hidden'), $('nav-groups').classList.contains('current'),
+    !$('all-row'), ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')), $('preset-cancel-btn').disabled],
     [true, true, true, true, ['preset-new-btn', 'preset-cancel-btn'], true]);
   if (!document.querySelector('#edit-studies .chapter-row')) document.querySelector('#edit-studies .study-row .opener').click(); // the study's chapters
   const firstDot = () => document.querySelector('#edit-studies .chapter-row .side-dot').className, wasDot = firstDot();
@@ -647,10 +658,14 @@ async function runLichessPage(app) {
     check('review: − All stays until clicked, even with a variation closed by its own −', [stays, toggles()], ['− All', '++++']);
     key('ArrowRight');
   }
-  // Critical positions on the Studies page: the tile at either side's move, the dot in the tree, the hover boards' row.
+  // Critical positions on the Studies page: the tile at either side's move, the dot in the tree; the level set
+  // on the Lichess page.
   {
-    const kept = app.moveStats;
+    const kept = app.moveStats, keptEvals = app.evals;
     app.setMoveStats(structuredClone(CRITICAL));
+    app.setEvals(structuredClone(CRITICAL_EVALS));
+    const setLevel = x => { $('critical-level').value = String(x); $('critical-level').dispatchEvent(new Event('change')); };
+    setLevel(0.3);
     const critView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
     $('arrows-study').click();
     key('Home');
@@ -662,15 +677,19 @@ async function runLichessPage(app) {
     const e4 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e4');
     const dots = [...$('review-tree').querySelectorAll('.critical-dot')].map(d => { let el = d.previousElementSibling; while (el && !el.classList.contains('tree-move')) el = el.previousElementSibling; return el?.textContent; }); // the move before it (after any violet dot)
     e4.dispatchEvent(new MouseEvent('mouseenter')); // a preview of clicking it: the position after it
-    const hover = $('move-preview').innerText;
+    const hover = $('move-preview').querySelector('.preview-text').innerText;
     e4.dispatchEvent(new MouseEvent('mouseleave'));
     key('ArrowRight');
     const afterE4 = tileAt();
+    setLevel(0.5);
+    key('ArrowLeft'); key('ArrowRight');
+    const atHalf = [tileAt(), app.settings.criticalLevel];
     key('ArrowRight');
     const notCritical = tileAt();
-    check('critical: the tile at your move; at the opponent\'s, its heading says so; none elsewhere', [atStart, afterE4, notCritical],
-      [['Critical position', '28% of Lichess games go wrong here', '♘h3 19% · win rate −29a4 9% · win rate −15'], ["Critical position · opponent's move", '30% of Lichess games go wrong here', '♗a3 30% · win rate −23'], []]);
-    check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots, hover.includes('Critical'), inStudy], [['e4'], false, [0, 0]]);
+    check('critical: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notCritical],
+      [['Critical position', 'Expected loss 0.5 pawns', 'd4 25% · −0.1♘h3 15% · −3.3'], ['Critical position', 'Expected loss 0.4 pawns', 'g5 30% · −1.2'], [[], 0.5], []]);
+    check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
+    app.setEvals(keptEvals);
     critView.click();
     // A position of yours below 100%: a violet dot after the move leading to it (before the first move
     // for the start), no background.
@@ -945,6 +964,8 @@ async function runEngineTests(app, key) {
   const $ = id => document.getElementById(id);
   check("engine: evaluations in pawns from White's side", [{ cp: 32 }, { cp: -120 }, { cp: 4 }, { cp: -4 }, { cp: 0 }, { mate: 4 }, { mate: -3 }].map(app.evalText),
     ['+0.3', '−1.2', '0.0', '0.0', '0.0', '#4', '#−3']);
+  check('engine: how many side by side: all cores but 2 on a computer (1 to 8), half on a phone or tablet (at most 2)', [[1, 2, 4, 8, 12, 16, 32].map(n => app.engineCount(n, false)), [2, 6, 8].map(n => app.engineCount(n, true))],
+    [[1, 1, 2, 6, 8, 8, 8], [1, 2, 2]]);
   check('engine: its info lines read; bounds and other lines ignored', [
     app.parseEngineInfo('info depth 20 seldepth 28 multipv 2 score cp -32 nodes 369610 nps 832454 hashfull 70 time 444 pv e7e5 g1f3'),
     app.parseEngineInfo('info depth 12 seldepth 14 multipv 1 score mate 3 nodes 1 pv h5f7'),
@@ -968,9 +989,8 @@ async function runEngineTests(app, key) {
   const evaluating = $('review-engine').textContent;
   await until(() => !app.evaluation.running, 'the evaluations to finish');
   const tile = () => [$('review-engine').querySelector('.engine-head')?.textContent, [...$('review-engine').querySelectorAll('.engine-line')].map(l => [l.firstChild.textContent, l.lastChild.textContent])];
-  const positions = app.allStudyPositions().size;
-  check('engine tile: "Evaluating…", then the evaluation and the best 3 moves with their lines; every study position evaluated', [evaluating, tile(), Object.keys(app.evals).length],
-    ['Evaluating…', ['+0.3Depth 20', [['+0.3', '1. e4 e5 2. ♘f3 ♘c6 3. ♗b5 a6 4. ♗a4 ♘f6'], ['+0.3', '1. d4 d5'], ['#−7', '1. ♘f3']]], positions]);
+  check('engine tile: "Evaluating…", then the evaluation and the best 3 moves with their lines; every study position evaluated', [evaluating, tile(), [...app.allStudyPositions().keys()].every(epd => app.evals[epd])],
+    ['Evaluating…', ['+0.3Depth 20', [['+0.3', '1. e4 e5 2. ♘f3 ♘c6 3. ♗b5 a6 4. ♗a4 ♘f6'], ['+0.3', '1. d4 d5'], ['#−7', '1. ♘f3']]], true]);
   key('ArrowRight');
   check("engine tile: after 1. e4, from White's side", tile(), ['+0.5Depth 20', [['+0.5', '1… a6']]]);
   $('nav-lichess').click();
@@ -981,8 +1001,9 @@ async function runEngineTests(app, key) {
   app.mergeEvals({ evals: { [epd]: { ...mine, at: mine.at - 1, depth: 1 }, X: { v: 0, lines: [], at: 9e15 }, Y: { ...mine, at: 1 } } });
   const older = [app.evals[epd].depth, !!app.evals.X, !!app.evals.Y];
   app.mergeEvals({ evals: { [epd]: { ...mine, at: mine.at + 1, depth: 30 } } });
-  check("engine: the Lichess page's progress; merged backups keep the newer evaluation", [progress, older, app.evals[epd].depth],
-    [`Engine evaluations: ${positions} of ${positions} positions evaluated`, [20, false, true], 30]);
+  const [, done, of] = /^Engine evaluations: (\d+) of (\d+) positions evaluated$/.exec(progress) ?? [];
+  check("engine: the Lichess page's progress; merged backups keep the newer evaluation", [!!done && done === of && +of >= app.allStudyPositions().size, older, app.evals[epd].depth],
+    [true, [20, false, true], 30]);
   // Without the engine (the version opened from disk): no tile.
   app.setEngine(false);
   key('Home');
@@ -1051,6 +1072,12 @@ async function runPractice(app) {
   check('practice: each position\'s tries, with Main lines only', [tries(''), tries('e4 e5'), tries('e4 e5 Nf3 Nc6'), tries('e4 e5 Nf3 Nc6 Bc4 Bc5'), app.history.positions['AAAAAAAA/BBBBBBBB|'][0].main],
     [[['d4', 'e4']], [['Nc3', 'Nf3']], [['Bb5', 'hint', 'Bc4']], [['c3']], true]);
   check('practice: the play-through is recorded', app.history.lines[main.key]?.length, 1);
+  // The move list's hover boards: just the move and the board (your errors as violet arrows).
+  const firstMove = document.querySelector('#practice-moves .mv:not(.empty)');
+  firstMove?.dispatchEvent(new MouseEvent('mouseenter'));
+  const preview = document.getElementById('move-preview');
+  check('practice: a move\'s hover board shows just the move above the board', [!!firstMove, preview?.querySelector('.preview-text').innerText, preview?.querySelectorAll('.preview-text > *').length], [true, '1. e4', 1]);
+  firstMove?.dispatchEvent(new MouseEvent('mouseleave'));
   app.endSession();
 
   // 2. Without Main lines only: a clean line; then your alternative 2. Nc3 is correct and the line follows it.
@@ -1285,11 +1312,11 @@ function runPresets(app) {
   const openGroups = () => { if (!$('groups-screen').classList.contains('hidden')) $('nav-practice').click(); $('nav-groups').click(); };
   app.setPresets([]);
   choose('');
-  check('presets: All, first and chosen by default, is every chapter', [options(), $('preset-select').value, app.selection.sort(), $('sel-summary').textContent], [['All'], '', [B, C], '2 chapters selected']);
+  check('presets: All, first and chosen by default, is every chapter', [options(), $('preset-select').value, app.selection.sort()], [['All'], '', [B, C]]);
   // From All: Save as new, with the Sicilian unticked.
   openGroups();
   tick(C, false);
-  check('presets: while editing, the count follows the ticks; what\'s practiced doesn\'t change yet', [$('edit-summary').textContent, $('sel-summary').textContent, app.selection.length], ['1 chapter selected', '2 chapters selected', 2]);
+  check('presets: while editing, the count follows the ticks; what\'s practiced doesn\'t change yet', [$('edit-summary').textContent, app.selection.length], ['1 chapter selected', 2]);
   $('preset-new-btn').click();
   nameIt('Italian');
   check('presets: Save as new: chosen, practiced, still on the Groups page with it', [app.presets, $('preset-select').value, app.selection, $('edit-preset-select').value, $('edit-summary').textContent],
@@ -1311,8 +1338,10 @@ function runPresets(app) {
   colorBtn(B, 'black').click(); sideStates.push(buttons()); // neither: out of the group
   row(B).querySelector('.chapter-label').click(); sideStates.push(buttons()); // its name: in, from its main color
   const notWhite = ['Click: play white (main color)', 'side-dot white x'], white = ['Plays white (main color). Click: not white', 'side-dot white'];
-  const notBlack = ['Click: play black', 'side-dot black x'], black = ['Plays black. Click: not black', 'side-dot black'];
-  check('groups: a white and a black button, each on or off (an X), whatever the main color; with neither, out (grayed); the name adds the main color', sideStates, [
+  const notBlack = ['Click: play black (other color)', 'side-dot black x'], black = ['Plays black (other color). Click: not black', 'side-dot black'];
+  const order = key => [...row(key).querySelectorAll('.side-dot')].map(d => d.classList[1]);
+  check('groups: main color first (White for the Italian, Black for the Sicilian); no line count', [order(B), order(C), /line/.test(row(B).textContent)], [['white', 'black'], ['black', 'white'], false]);
+  check('groups: a main color and an other color button, each on or off (an X); with neither, out (grayed); the name adds the main color', sideStates, [
     [...white, ...notBlack, false], [...white, ...black, false], [...notWhite, ...black, false], [...notWhite, ...notBlack, true], [...white, ...notBlack, false]]);
   colorBtn(B, 'black').click(); // both colors
   $('preset-save-btn').click();
@@ -1322,23 +1351,23 @@ function runPresets(app) {
   colorBtn(B, 'white').click(); // Black only, in a White chapter
   $('preset-save-btn').click();
   check('presets: a chapter played only from its other color', [app.presets[0].colors, sidesPlayed(B), sidesPlayed(C)], [{ [B]: ['black'] }, ['black'], ['black']]);
-  // A study's buttons: all its chapters (here the Italian, Black only, and the Sicilian, Black's).
-  const studyBtn = color => $('st-AAAAAAAA-' + color), dot = b => b.querySelector('.side-dot').className;
-  const before = [dot(studyBtn('white')), dot(studyBtn('black')), studyBtn('black').title];
-  colorBtn(B, 'white').click(); // the Italian from both again
-  const some = [dot(studyBtn('white')), studyBtn('white').title];
-  studyBtn('white').click(); // all White
-  const allWhite = [dot(studyBtn('white')), dot(colorBtn(C, 'white')), studyBtn('white').title];
-  studyBtn('white').click(); // none White
-  const noWhite = [dot(colorBtn(B, 'white')), dot(colorBtn(C, 'white')), dot(colorBtn(C, 'black'))];
-  studyBtn('black').click(); // none Black: both out
-  const out = [row(B).classList.contains('unplayed'), row(C).classList.contains('unplayed'), $('edit-summary').textContent, dot($('all-black'))];
-  $('all-white').click(); // All: every chapter White
-  const allRow = [dot($('all-white')), dot($('all-black')), $('edit-summary').textContent];
-  check('groups: a study\'s buttons and All\'s set the color for all their chapters; a fainter X when only some play it', [before, some, allWhite, noWhite, out, allRow], [
-    ['side-dot white x', 'side-dot black', 'All play black. Click: none'], ['side-dot white x some', 'Some play white. Click: all'],
-    ['side-dot white', 'side-dot white', 'All play white. Click: none'], ['side-dot white x', 'side-dot white x', 'side-dot black'],
-    [true, true, '0 chapters selected', 'side-dot black x'], ['side-dot white', 'side-dot black x', '2 chapters selected']]);
+  // A study's buttons: every chapter's main color, or other color (here the Italian, White's, played as
+  // Black only, and the Sicilian, Black's: a mixed study, half-and-half dots).
+  const studyBtn = which => $('st-AAAAAAAA-' + which), dot = b => b.querySelector('.side-dot').className;
+  const before = [dot(studyBtn('main')), studyBtn('main').title, dot(studyBtn('other')), studyBtn('other').title];
+  studyBtn('main').click(); // every chapter from its main color
+  const allMain = [dot(studyBtn('main')), studyBtn('main').title, dot(colorBtn(B, 'white')), dot(colorBtn(C, 'black'))];
+  studyBtn('main').click(); // none from its main color: the Sicilian out
+  const noMain = [dot(colorBtn(B, 'white')), dot(colorBtn(C, 'black')), row(C).classList.contains('unplayed')];
+  studyBtn('other').click(); // every chapter from its other color
+  const allOther = [dot(colorBtn(B, 'black')), dot(colorBtn(C, 'white')), studyBtn('other').title];
+  studyBtn('other').click(); // none: both out
+  const out = [row(B).classList.contains('unplayed'), row(C).classList.contains('unplayed'), $('edit-summary').textContent];
+  check("groups: a study's buttons set every chapter's main color, or other color; half-and-half dots for a mixed study; a fainter X when only some play it", [before, allMain, noMain, allOther, out], [
+    ['side-dot mixed x some', 'Some play their main color. Click: all', 'side-dot mixed x some', 'Some play their other color. Click: all'],
+    ['side-dot mixed', 'All play their main color. Click: none', 'side-dot white', 'side-dot black'],
+    ['side-dot white x', 'side-dot black x', true], ['side-dot black', 'side-dot white', 'All play their other color. Click: none'],
+    [true, true, '0 chapters selected']]);
   $('preset-cancel-btn').click();
   openGroups();
   tick(C, false);
