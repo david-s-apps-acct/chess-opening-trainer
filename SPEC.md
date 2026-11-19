@@ -155,6 +155,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Reviewing a study on a board (now the Studies page; see above)
 
+- **To do (the user's decision, 19 November 2026): comments placed before a move.** A Lichess study can hold a comment before a move, e.g. at the start of a variation, before its first move; the app ignored them. When the board shows the position where that move is played (where the variation begins), the comment tile shows the comment, labeled with the move, e.g. "3. ♗b5: Not in this repertoire.", one line for each move that has one, after the comment on the move just played. *Claude's suggestions, accepted by the user:* in the move tree such a comment gets its own speech bubble just before the move, where Lichess puts it; and the same applies to a comment before a main-line move (rare, but Lichess allows it).
+
 - **Built 3 November 2026 (the user's decision): a wider chapters column.** On a wide screen the chapters column is 260 pixels (was 220) and the right-hand tiles a little narrower to make room (at least 240 pixels, was 260).
 - **Built 3 November 2026 (the user's decision): the comment under the board stands out.** The annotation and comment under the board get a slightly lighter background than the page's tiles, so they stand out when shown, and larger text than before (14 pixels). *Claude's details, accepted by the user:* a box the width of the board, with the tiles' rounded corners and padding, in the slightly lighter gray the app uses inside tiles (as for the move list); 16 pixels; still only shown when the move has an annotation or comment (or at a chapter's start, its introduction).
 
