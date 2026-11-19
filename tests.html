@@ -757,6 +757,18 @@ async function runLichessPage(app) {
   }
   check('review: no Your accuracy tile (a trial); the comment in its tile', [!!$('review-yours'), $('review-comment').textContent], [false, 'Best by test.']);
   check('review: the chapter\'s opening (its Lichess tags) above the position\'s name', [$('review-opening').textContent, $('review-opening').nextElementSibling.id], ['Italian Game (C50)', 'review-position']);
+  key('ArrowRight'); key('ArrowRight'); // 2. ♘f3!, an annotation with no comment
+  const annotationOnly = $('review-comment').textContent;
+  key('ArrowLeft'); key('ArrowLeft');
+  const statsBeforeNever = app.moveStats;
+  app.setMoveStats({ [START]: { masters: explorer([]) } });
+  app.settings.review = { view: 'masters' };
+  key('Home');
+  const never = $('review-stats').textContent;
+  app.settings.review = { view: 'study' };
+  app.setMoveStats(statsBeforeNever);
+  key('ArrowRight');
+  check('review: no comment tile for an annotation alone; "Never reached" (no "null") where no game reaches the position', [annotationOnly, never], ['', 'Never reached']);
   check('review: the chapters, numbered', chapterRows().map(rowText), ['1. Italian', '2. Sicilian']);
   chapterRows()[1].click();
   const atStart = current();

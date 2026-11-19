@@ -2709,9 +2709,9 @@ function showReviewNode(node) {
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
   // until 4 November 2026; removed as a trial.)
   // Then the comments placed before the moves played here (e.g. at the start of a variation), each after
-  // its move: "3. ♗b5: Not in this repertoire."
+  // its move: "3. ♗b5: Not in this repertoire." An annotation with no comment shows only in the tree.
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
-  $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : [],
+  $('review-comment').replaceChildren(...text.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : [],
     ...node.children.filter(c => c.before).map(c => element('p', {}, element('span', { class: 'note-move' }, `${moveLabel(c)}: `), c.before)));
   renderPositionTiles(node);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
@@ -2734,8 +2734,8 @@ function renderErrorsTile(node) {
 }
 
 // Under the moves, with Masters or Lichess (not with Study or Errors): how often that database's games
-// reach the position ("Reached 46 times (Masters)", "Reached 23k times (Lichess)", "Never reached
-// (Lichess)") and their results as a bar, as on Lichess: White wins, draws, Black wins (Lichess games at
+// reach the position ("Reached 46 times (Masters)", "Reached 23k times (Lichess)", "Never reached")
+// and their results as a bar, as on Lichess: White wins, draws, Black wins (Lichess games at
 // your chosen ratings and time controls), each with its share when there's room. Hidden until that
 // database's statistics for the position have downloaded.
 const STATS_VIEWS = { masters: { label: 'Masters', games: 'Master games', at: epd => masterGamesAt(epd) }, lichess: { label: 'Lichess', games: 'Lichess games', at: epd => lichessGamesAt(epd) } };
@@ -2748,10 +2748,10 @@ function renderStatsTile(node) {
     return element('span', { class: cls, style: `width: ${share}%` }, share >= 12 ? `${Math.round(share)}%` : '');
   };
   const summary = n && `White wins ${pct(stats.white)}%, draws ${pct(stats.draws)}%, Black wins ${pct(stats.black)}%`;
-  $('review-stats').replaceChildren(
-    element('div', { class: 'muted' }, n ? `Reached ${shortCount(n)} times (${db.label})` : `Never reached (${db.label})`),
+  $('review-stats').replaceChildren(...[
+    element('div', { class: 'muted' }, n ? `Reached ${shortCount(n)} times (${db.label})` : 'Never reached'), // the view says which games
     n ? element('div', { class: 'win-bar', title: `${db.games}: ${summary}`, role: 'img', 'aria-label': summary },
-      part('white-wins', stats.white), part('draws', stats.draws), part('black-wins', stats.black)) : null);
+      part('white-wins', stats.white), part('draws', stats.draws), part('black-wins', stats.black)) : null].filter(Boolean));
 }
 
 // The tiles under the comment for the position on the board, each when the view shows its mark (see
