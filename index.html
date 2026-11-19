@@ -342,10 +342,6 @@
      orange dot after a move leading to one in the move tree. Orange, as amber is the study authors',
      violet the errors', and teal and gray the masters and Lichess moves'. */
   /* A move of yours below 100% (the violet dot), selected: its errors, with a violet edge */
-  .panel.review-errors { padding: 12px 14px; border-left: 4px solid #8a5cf6; }
-  .review-errors:empty { display: none; }
-  .review-errors h3 { margin: 0 0 4px; font-size: 15px; color: #a98bff; }
-  .review-errors p { margin: 0 0 4px; }
   /* A position of yours off the masters' path: your study's move and the masters', with a teal edge */
   .panel.review-masters { padding: 12px 14px; border-left: 4px solid #00a3a3; }
   .review-masters:empty { display: none; }
@@ -686,7 +682,7 @@
         <div class="board-wrap"><div id="review-board"></div></div>
         <div class="review-view-row">
         <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
-          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your errors here (last 10 tries); ×2: made twice"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
+          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your errors here: how often you made each (last 10 tries)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
         </div>
         <button id="color-key-btn" class="icon-btn key-btn" title="Color key" aria-label="Color key" aria-expanded="false" aria-controls="color-key"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.9-2.6 2.3-2.6 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg></button>
         </div>
@@ -705,7 +701,6 @@
         </div>
         <div id="review-stats" class="panel review-stats"></div>
         <div id="review-comment" class="panel review-comment"></div>
-        <div id="review-errors" class="panel review-errors" aria-live="polite"></div>
         <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
         <div id="review-critical" class="panel review-critical" aria-live="polite"></div>
       </div>
@@ -890,7 +885,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position, each with the share of your last 10 tries it was made in, e.g. "40%", and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
@@ -907,7 +902,7 @@
             <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% move accuracy, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position. Select the move to see a tile about that position.</li>
             <li>Each view shows its own dots and tiles: <b>Errors</b> the violet ones, <b>Masters</b> the teal ones, <b>Lichess</b> the orange ones. <b>Study</b> keeps to what's in your study, with none.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Its text follows the view too: <b>Study</b>, the move's annotation and comment; <b>Masters</b> and <b>Lichess</b>, its rank, share and score there, and how often its position is reached; <b>Errors</b>, the move accuracy and errors of a position of yours. Click a move to show it on the big board.</li>
+            <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Click a move to show it on the big board, with the details.</li>
             <li>A comment the study puts before a move (e.g. at the start of a variation) has its own bubble before the move.</li>
           </ul>
         </details>
@@ -2558,14 +2553,23 @@ function reviewArrows(node) {
   }), ...studyOnly, ...glyphBadge(node)];
 }
 
-// Errors: in a position of yours, the errors of your last 10 tries there (violet), each made more than
-// once with a badge for how often ("×2"), and your study's moves (the main one first, with its move
-// accuracy in a badge, "75%", once tested); nothing in the opponent's positions.
+// Errors: in a position of yours, the errors of your last 10 tries there (violet), each with the share of
+// those tries it was made in ("40%", see errorShares), and your study's moves (the main one first, with
+// its move accuracy in a badge, "75%", once tested); nothing in the opponent's positions.
 function errorArrows(node) {
   const correct = yourMovesAt(node);
   if (!correct.length) return [];
-  const accuracy = accuracyAt(node);
-  return answerArrows(node.position, correct, errorCounts(attemptsAt(node), correct.map(c => c.san)), { counted: true, correctLabel: accuracy && `${percent(accuracy.share)}%` });
+  const accuracy = accuracyAt(node), shares = errorShares(attemptsAt(node), correct.map(c => c.san));
+  return answerArrows(node.position, correct, shares.map(([x, share]) => [x, `${percent(share)}%`]), { labeled: true, correctLabel: accuracy && `${percent(accuracy.share)}%` });
+}
+
+// Each error in a list of attempts (as errorCounts) with the share of the attempts it was made in (made
+// twice in one attempt, it counts once), most often first: [['Bc4', 0.4], ['hint', 0.2]]. "show" counts
+// as the hint.
+function errorShares(attempts, correct) {
+  const per = attempts.map(a => new Set(errorCounts([{ tried: a.tried.map(x => x === 'show' ? 'hint' : x) }], correct).map(([x]) => x)));
+  const all = [...new Set(per.flatMap(set => [...set]))];
+  return all.map(x => [x, per.filter(set => set.has(x)).length / attempts.length]).sort((a, b) => b[1] - a[1]);
 }
 
 // The top moves in a position, for the Masters view (the masters moves, see isMasterMove; teal) or the
@@ -2605,7 +2609,7 @@ const KEY_ARROWS = [
   { sample: badgeSample('45%'), name: 'On a teal or gray arrow', meaning: "How often it's played (masters on teal, Lichess on gray)", views: ['masters', 'lichess'] },
   { sample: arrowSample('#00a3a3', '#fff'), name: 'White outline on teal or gray', meaning: 'Also in your study', views: ['masters', 'lichess'] },
   { sample: arrowSample('#8a5cf6'), name: 'Violet', meaning: "An error: any move you tried that isn't one of your study's moves", views: ['errors'] },
-  { sample: badgeSample('×2'), name: 'On an arrow', meaning: 'An error you made twice in your last 10 tries', views: ['errors'] },
+  { sample: badgeSample('40%'), name: 'On a violet arrow', meaning: 'How often you made that error (last 10 tries)', views: ['errors'] },
   { sample: badgeSample('75%', '#3291ff'), name: 'On the outlined arrow', meaning: "Errors: the position's move accuracy", views: ['errors'] },
   { sample: ['#15781b', '#882020', '#003088', '#e68f00'].map(c => `<span class="key-dot" style="background: ${c}"></span>`).join(''), name: 'Green, red, blue, amber', meaning: "Your study's own arrows and circles (Studies page)", views: ['study'] },
 ];
@@ -2649,8 +2653,9 @@ function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view
 // What hovering over a square says about the arrows pointing to it, one line per move: with Masters or
 // Lichess, its rank and share there and how the side playing it scores, e.g. "♘f3 · #3 masters move
 // (12%) · White scores 56%", "♘f3 · #4 Lichess move (8%) · White scores 51%"; with Errors,
-// as in the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)", and for your study's moves the
-// position's move accuracy and when it was last tested.
+// each error with the share of your tries it was made in and its kind, e.g. "♘c3 · 40% of tries
+// (alternative)", and for your study's moves the position's move accuracy, how often the hint was used
+// and when it was last tested.
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
   if (view === 'masters' || view === 'lichess') {
@@ -2659,47 +2664,23 @@ function squareTipLines(node, square) {
   }
   const correct = settings.review.view === 'errors' ? yourMovesAt(node) : [];
   if (!correct.length) return [];
-  const errors = errorCounts(attemptsAt(node), correct.map(c => c.san)).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
-    .map(([x, n]) => errorLabel(correct[0], x).replace(/ \(|$/, n > 1 ? ` ×${n}$&` : '$&'));
-  // Your study's moves: "♘f3 · 75% move accuracy (last 4 tries) · last tested 3 days ago".
+  const shares = errorShares(attemptsAt(node), correct.map(c => c.san)), hint = shares.find(([x]) => x === 'hint');
+  const errors = shares.filter(([x]) => { const mv = x !== 'hint' && san.parseSan(pos, x); return mv && to(mv); })
+    .map(([x, share]) => errorLabel(correct[0], x).replace(/ \(|$/, ` · ${percent(share)}% of tries$&`));
+  // Your study's moves: "♘f3 · 75% move accuracy (last 4 tries) · hint 20% · last tested 3 days ago".
   const accuracy = accuracyAt(node), last = lastTriedAt(node.key), days = last && daysAgo(last);
-  const yours = accuracy ? correct.filter(c => to(parseUci(c.uci))).map(c => [withFigurines(c.san), accuracyText(accuracy),
+  const yours = accuracy ? correct.filter(c => to(parseUci(c.uci))).map(c => [withFigurines(c.san), accuracyText(accuracy), hint && `hint ${percent(hint[1])}%`,
     last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')) : [];
   return [...yours, ...errors];
 }
 
-// A move's hover board on the Studies page is a preview of clicking it: the position after the move, the
-// move highlighted (its glyph in its square's corner), and the arrows the big board shows there in the
-// current view (see reviewArrows); under the move, what the page shows for that view (reviewHoverRows).
+// A move's hover board on the Studies page is a preview of clicking it: the move as a heading, then the
+// position after it, the move highlighted (its glyph in its square's corner), with the arrows the big
+// board shows there in the current view (see reviewArrows); no other text, as the page shows the details
+// once the position is clicked. (On 19 November 2026 its text followed the view for a few hours.)
 function showReviewHoverBoard(el, m, orientation) {
   showBoardPopup(el, { position: m.position, lastMove: squaresOf(m), shapes: reviewArrows(m),
-    rows: [element('div', {}, element('b', {}, moveLabel(m))), ...reviewHoverRows(m)] }, orientation);
-}
-
-// The hover board's text by view: Study, the move's glyphs (named) and comments, only what's in the study;
-// Masters or Lichess, the move's rank, share and score there ("#2 masters move (30%) · White scores 56%"),
-// how often its position is reached ("Reached 46 times (Masters)"), and its tree dot's meaning (not a
-// masters move here; critical); Errors, for a position of yours, its move accuracy, when last tested and
-// its errors (as the errors tile).
-function reviewHoverRows(m, view = settings.review.view) {
-  const row = text => text ? element('div', { class: 'muted' }, text) : null;
-  if (view === 'study') return [
-    m.before ? element('div', {}, m.before) : null,
-    m.notes?.nags.length ? element('div', {}, m.notes.nags.map((n, k) => [k ? ', ' : '', glyphSpan(n), ' ', GLYPHS[n][1]])) : null,
-    ...(m.notes?.text ?? []).map(t => element('div', {}, t))];
-  if (view === 'masters' || view === 'lichess') {
-    const db = STATS_VIEWS[view], before = db.at(m.epdBefore), after = db.at(m.epd);
-    const share = view === 'masters' && before && !totalGames(before) ? 'Not in master games'
-      : rankAndShareText(before, m.san, view === 'masters' ? 'masters' : 'Lichess', view === 'masters' ? 'Not played by masters' : 'Not played in Lichess games');
-    return [row(share && [share, moveScoreText(before, m.san, m.color)].filter(Boolean).join(' · ')),
-      row(after && (totalGames(after) ? `Reached ${shortCount(totalGames(after))} times (${db.label})` : `Never reached (${db.label})`)),
-      view === 'masters' ? (isOffMastersPath(m, review.parsed.yourColor) ? row("Your study's move here: not a masters move") : null) : criticalRow(m.epd)];
-  }
-  const correct = yourMovesAt(m); // Errors
-  if (!correct.length) return [];
-  const accuracy = accuracyAt(m), errors = errorCounts(attemptsAt(m), correct.map(c => c.san));
-  return [element('div', {}, accuracy ? accuracyText(accuracy) : 'Untried'), lastTestedText(lastTriedAt(m.key)),
-    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(correct[0], x) + (n > 1 ? ` ×${n}` : ''))))) : null];
+    rows: [element('div', {}, element('b', {}, moveLabel(m)))] }, orientation);
 }
 
 // Hovering over the square an arrow points to (Masters, Lichess and Errors) shows squareTipLines (mouse only; the
@@ -2748,21 +2729,6 @@ function showReviewNode(node) {
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
 }
 
-// Under the comment, when the position on the board is one of yours below 100% move accuracy (after a
-// move with the violet dot; see isWeakPosition): "Your move here", its move accuracy and when it was last
-// tested, and the errors of its last 10 tries, labeled as on the hover boards ("Errors: d4 ×2 (masters),
-// ♘c3 (alternative), hint"). (A fuller "Your accuracy" tile was removed on 4 November 2026 as a trial;
-// this one is only for positions with errors.)
-function renderErrorsTile(node) {
-  if (!showsMark('weak') || !isWeakPosition(node, review.parsed.yourColor)) return $('review-errors').replaceChildren();
-  const accuracy = accuracyAt(node), last = lastTriedAt(node.key), days = last && daysAgo(last);
-  const correct = choicesAt(node, mainOnlyNow()), errors = errorCounts(attemptsAt(node), correct.map(c => c.san));
-  $('review-errors').replaceChildren(
-    element('h3', {}, 'Your move here'),
-    element('p', {}, [accuracyText(accuracy), last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')),
-    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(correct[0], x) + (n > 1 ? ` ×${n}` : ''))))) : null);
-}
-
 // Under the moves, with Masters or Lichess (not with Study or Errors): how often that database's games
 // reach the position ("Reached 46 times (Masters)", "Reached 23k times (Lichess)", "Never reached")
 // and their results as a bar, as on Lichess: White wins, draws, Black wins (Lichess games at
@@ -2785,10 +2751,10 @@ function renderStatsTile(node) {
 }
 
 // The tiles under the comment for the position on the board, each when the view shows its mark (see
-// showsMark): your errors (violet), off the masters' path (teal), critical (orange).
+// showsMark): off the masters' path (teal), critical (orange). (Your errors had a tile too until 19
+// November 2026; the board and its square tips show them.)
 function renderPositionTiles(node) {
   renderStatsTile(node); // and, under the moves, the statistics tile
-  renderErrorsTile(node);
   renderMastersTile(node);
   renderCriticalTile(node);
 }
@@ -3927,15 +3893,15 @@ function glyphBadge(node) {
 // A list of elements separated by commas.
 const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
-// A violet arrow for each error that's a move, whatever kind (errors: [[x, count], …]; the hint has
-// none), if counted with a badge for a count above 1 ("×2"), and the correct moves' (move nodes; the
+// A violet arrow for each error that's a move, whatever kind (errors: [[x, label], …]; the hint has
+// none), if labeled with its label in a badge (e.g. "40%"), and the correct moves' (move nodes; the
 // first with correctLabel in a badge, in the outline's blue, if given).
-function answerArrows(pos, correct, errors, { counted = false, correctLabel = null } = {}) {
-  const shapes = errors.map(([x, n]) => {
+function answerArrows(pos, correct, errors, { labeled = false, correctLabel = null } = {}) {
+  const shapes = errors.map(([x, label]) => {
     const mv = san.parseSan(pos, x);
     if (!mv) return null;
     const [orig, dest] = arrowSquares(pos, mv);
-    return { orig, dest, brush: 'violet', ...counted && n > 1 ? { label: { text: `×${n}` } } : {} };
+    return { orig, dest, brush: 'violet', ...labeled ? { label: { text: label } } : {} };
   }).filter(Boolean);
   return [...shapes, ...correct.map((m, k) => {
     const [orig, dest] = arrowSquares(pos, parseUci(m.uci));

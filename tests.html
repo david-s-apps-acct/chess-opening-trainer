@@ -64,7 +64,7 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies, explorerPace,
   setToken(t) { token = t; },
-  reviewHoverRows, moveScoreText, openingNameAt,
+  moveScoreText, openingNameAt,
   get session() { return session; },
   restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, squareTipLines, parseChapter, refreshPage,
   get token() { return token; },
@@ -618,7 +618,7 @@ async function runLichessPage(app) {
   key('Home'); key('ArrowRight');
   const e5 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e5');
   e5.dispatchEvent(new MouseEvent('mouseenter'));
-  const hoverShown = !$('move-preview').classList.contains('hidden') && $('move-preview').innerText.startsWith('1… e5'), stillAt = current();
+  const hoverShown = !$('move-preview').classList.contains('hidden') && $('move-preview').querySelector('.preview-text').innerText === '1… e5', stillAt = current(); // just the move
   e5.dispatchEvent(new MouseEvent('mouseleave'));
   check('review: hovering over a move shows the hover board, not the big board', [hoverShown, stillAt, $('move-preview').classList.contains('hidden')], [true, 'e4', true]);
   // + All / − All: every variation in the tree; − All keeps the ones leading to the move shown.
@@ -662,7 +662,7 @@ async function runLichessPage(app) {
     const notCritical = tileAt();
     check('critical: the tile at your move; at the opponent\'s, its heading says so; none elsewhere', [atStart, afterE4, notCritical],
       [['Critical position', '28% of Lichess games go wrong here', '♘h3 19% · win rate −29a4 9% · win rate −15'], ["Critical position · opponent's move", '30% of Lichess games go wrong here', '♗a3 30% · win rate −23'], []]);
-    check('critical: a dot after the move leading to one; the hover board\'s row; none in Study', [dots, hover.includes('Critical: 30% go wrong here'), inStudy], [['e4'], true, [0, 0]]);
+    check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots, hover.includes('Critical'), inStudy], [['e4'], false, [0, 0]]);
     critView.click();
     // A position of yours below 100%: a violet dot after the move leading to it (before the first move
     // for the start), no background.
@@ -678,23 +678,7 @@ async function runLichessPage(app) {
         [[0, [['e5', 'Your errors here: below 100% move accuracy']]], 'tree-dot weak-dot']);
       app.setHistory(keptHistory);
     }
-    // The position with errors on the board (its move with the violet dot selected): a tile with the errors.
-    {
-      const keptHistory = app.history, keptStats = app.moveStats;
-      app.setMoveStats({});
-      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'hint', 'Nf3'], at: null, main: false }] }, lines: {} });
-      const viewWas = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
-      $('arrows-errors').click(); // the errors tile shows in Errors
-      key('Home'); key('ArrowRight'); key('ArrowRight'); // after 1… e5: your move
-      const atE5 = [...$('review-errors').children].map(e => e.textContent);
-      key('ArrowRight'); // 2. ♘f3
-      const atNf3 = $('review-errors').children.length;
-      app.setHistory(keptHistory); app.setMoveStats(keptStats);
-      viewWas.click();
-      key('Home');
-      check('errors tile: at the position with errors (after the move with the dot), its errors; not after your move', [atE5, atNf3],
-        [['Your move here', '0% move accuracy (last 1 try)', 'Errors: d4, hint'], 0]);
-    }
+    check('no errors tile (the board and its square tips show the errors)', !!$('review-errors'), false);
     // Off the masters' path (teal): your study's main move isn't a masters move, with 20 master games or more.
     // Each view shows its own dots and tiles; Study all of them.
     {
@@ -703,7 +687,7 @@ async function runLichessPage(app) {
       app.setMoveStats({ [AFTER_E4_E5]: { masters: explorer([['Nc3', 30], ['d4', 20], ['Bc4', 10]]) } });
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'Nf3'], at: null, main: false }] }, lines: {} });
       const dotsAfter = () => [...$('review-tree').querySelectorAll('.tree-dot')].map(d => d.className.replace('tree-dot ', ''));
-      const tiles = () => ['review-errors', 'review-masters', 'review-critical'].filter(id => $(id).children.length).map(id => id.slice(7));
+      const tiles = () => ['review-masters', 'review-critical'].filter(id => $(id).children.length).map(id => id.slice(7));
       const seen = {};
       for (const view of ['study', 'masters', 'errors', 'lichess']) {
         $('arrows-' + view).click();
@@ -718,7 +702,7 @@ async function runLichessPage(app) {
       app.setHistory(keptHistory); app.setMoveStats(keptStats);
       wasView.click(); key('Home');
       check('masters dot and tile; each view shows its own dots and tiles, Study neither', [seen, masterTile, fewGames], [
-        { study: [[], []], masters: [['masters-dot'], ['masters']], errors: [['weak-dot'], ['errors']], lichess: [[], []] },
+        { study: [[], []], masters: [['masters-dot'], ['masters']], errors: [['weak-dot'], []], lichess: [[], []] },
         ['Not a masters move', 'Your study: ♘f3 (0%)', 'Masters play: ♘c3 50% · d4 33% · ♗c4 17%'], [[], []]]);
     }
     // Under the moves, with Masters or Lichess only: that database's count and results bar (hidden until downloaded).
@@ -805,17 +789,13 @@ async function runLichessPage(app) {
   app.settings.review = { view: 'masters' };
   const masters = [arrowsAt([]), arrowsAt(['e4'])];
   const mastersTip = app.squareTipLines(italianRoot, 'd4');
-  const rowsText = m => app.reviewHoverRows(m).filter(Boolean).map(r => r.textContent);
-  const mastersRows = rowsText(italianRoot.children[0]);
   app.setMoveStats({ [START]: { masters: explorer([['d4', 60], ['Nf3', 40]]) } }); // 1. e4 isn't a masters move here
   const mastersOffPath = arrowsAt([]);
   app.setMoveStats(structuredClone(POSITIONS));
   app.settings.review = { view: 'lichess' };
   const lichess = [arrowsAt([]), arrowsAt(['e4'])];
   const lichessTip = app.squareTipLines(italianRoot, 'd4');
-  const lichessRows = rowsText(italianRoot.children[0]);
   app.settings.review = { view: 'study' };
-  const studyRows = [rowsText(italianRoot.children[0]), rowsText(italianRoot.children[0].children[0].children[0])];
   // Errors: your errors at the start in the last 10 tries (d4 twice, a masters move; g3; all violet; the hint,
   // no arrow), counted, with the correct move and the move accuracy, 1 of 4 tries; none at the opponent's turn; hovering over squares.
   const historyBefore = app.history;
@@ -829,8 +809,6 @@ async function runLichessPage(app) {
     [['e2e4 teal+ 40%', 'd2d4 teal 30%', 'g1f3 teal 15%'], ['e7e5 white+']]);
   check('review: Masters, your study\'s move that isn\'t a masters move as a white arrow, no share', mastersOffPath, ['d2d4 teal 60%', 'g1f3 teal 40%', 'e2e4 white+']);
   check('review: hovering over a square: only the view\'s rank, and how the side playing it scores', [mastersTip, lichessTip], [['d4 · #2 masters move (30%) · White scores 100%'], ['d4 · #2 Lichess move (30%) · White scores 100%']]);
-  check('review: the hover board\'s text follows the view: Masters, Lichess (rank, share, score, reached); Study (the study only)', [mastersRows, lichessRows, studyRows],
-    [['#1 masters move (40%) · White scores 100%'], ['#1 Lichess move (50%) · White scores 100%', 'Reached 800 times (Lichess)'], [['Best by test.'], ['! Good move']]]);
   check('move score: draws count half; none without games', [app.moveScoreText(explorer([['e4', 0]]), 'e4', 'white'), app.moveScoreText({ moves: [{ san: 'e5', white: 2, draws: 2, black: 6 }] }, 'e5', 'black')],
     [null, 'Black scores 70%']);
   // A comment placed before a move (here at the start of a variation): kept with that move.
@@ -838,8 +816,8 @@ async function runLichessPage(app) {
   check('review: a comment before a move', beforeRoot.children[0].children[0].children.map(c => c.before ?? null), [null, 'Not in this repertoire.']);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
     [['e2e4 gray+ 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 gray+ 38%', 'e7e6 gray 25%']]);
-  check('review: Errors, counted, with the correct move; hovering over a square', errorsShown,
-    [['d2d4 violet ×2', 'g2g3 violet', 'e2e4 white+ 25%'], [], ['d4 ×2 (masters)'], ['g3'], ['e4 · 25% move accuracy (last 4 tries) · last tested today']]);
+  check('review: Errors, each with the share of tries it was made in, with the correct move; hovering over a square (the hint on your move\'s)', errorsShown,
+    [['d2d4 violet 50%', 'g2g3 violet 25%', 'e2e4 white+ 25%'], [], ['d4 · 50% of tries (masters)'], ['g3 · 25% of tries'], ['e4 · 25% move accuracy (last 4 tries) · hint 25% · last tested today']]);
   // The study's own arrows and circles, in their Lichess colors, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Center. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
