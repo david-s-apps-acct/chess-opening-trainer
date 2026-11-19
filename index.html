@@ -330,13 +330,18 @@
   .tree-move.current, .tree-move.current:hover { background: var(--accent); color: var(--accent-text) !important; }
   /* Under the board: the move's annotation and comment (at the start, the chapter's introduction) */
   /* Under the moves: how often the position is reached, and the Lichess games' results as a bar */
-  /* Under the moves: Stockfish's evaluation and its best moves (see renderEngineTile) */
-  .panel.review-engine { padding: 10px 14px; font-size: 14px; }
-  .review-engine:empty { display: none; }
-  .engine-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
-  .engine-score { font-size: 20px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-  .engine-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
-  .engine-line-score { display: inline-block; min-width: 3.2em; margin-right: 6px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+  /* The evaluation bar, right of the Studies page's board (see renderEvalBar): White's share from White's
+     side of the board, as on Chess.com, the evaluation at the better side's end. */
+  .board-with-bar { display: flex; gap: 6px; }
+  .board-with-bar .board-wrap { flex: 1; min-width: 0; }
+  .eval-bar { position: relative; flex: none; width: 20px; background: #403d39; border-radius: 2px; overflow: hidden; }
+  .eval-fill { position: absolute; left: 0; right: 0; bottom: 0; background: #f0f0f0; transition: height .3s ease; }
+  .eval-bar.flipped .eval-fill { bottom: auto; top: 0; }
+  .eval-bar.pending .eval-fill { background: #8b8985; }
+  .eval-text { position: absolute; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 700; line-height: 1; letter-spacing: -.4px; white-space: nowrap; }
+  .eval-text.at-bottom { bottom: 4px; } .eval-text.at-top { top: 4px; }
+  .eval-text.on-white { color: #222; } .eval-text.on-black { color: #ddd; }
+  .board-col.has-eval-bar .review-view-row { margin-right: 26px; } /* the switch as wide as the board */
   .panel.review-stats { padding: 10px 14px; font-size: 14px; }
   .review-stats:empty { display: none; }
   .win-bar { display: flex; height: 18px; margin-top: 6px; border-radius: 3px; overflow: hidden; font-size: 12px; font-weight: 600; line-height: 18px; }
@@ -686,7 +691,8 @@
          there's room, else under the tiles (see .review-layout) -->
     <div class="review-layout">
       <div class="board-col">
-        <div class="board-wrap"><div id="review-board"></div></div>
+        <div class="board-with-bar"><div class="board-wrap"><div id="review-board"></div></div>
+          <div id="eval-bar" class="eval-bar hidden" role="img"><div class="eval-fill"></div><span class="eval-text"></span></div></div>
         <div class="review-view-row">
         <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
           <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your errors here: how often you made each (last 10 tries)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Errors</button>
@@ -706,7 +712,6 @@
             <button id="review-all" class="review-all"></button>
           </div>
         </div>
-        <div id="review-engine" class="panel review-engine"></div>
         <div id="review-stats" class="panel review-stats"></div>
         <div id="review-comment" class="panel review-comment"></div>
         <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
@@ -892,8 +897,8 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position, each with the share of your last 10 tries it was made in, e.g. "40%", and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
-          <li><b>Engine</b>: under the moves, Stockfish's evaluation of the position, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), and its best 3 moves, each with its evaluation and the line it expects. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the move accuracy; together they make 100%). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the expected loss and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · −1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves.</li>
@@ -2568,8 +2573,10 @@ function openReview(ch, { at = [] } = {}) {
 
 // ↑ and ↓: the previous and next chapter that can be shown.
 function stepChapter(d) {
-  const shown = studyOfChapter(review.ch).chapters.filter(c => !parseChapter(c).error);
-  const next = shown[shown.indexOf(review.ch) + d];
+  const ch = chapterByKey(review.ch.key); // by its key: the studies may have been updated since it opened
+  if (!ch) return;
+  const shown = studyOfChapter(ch).chapters.filter(c => !parseChapter(c).error);
+  const next = shown[shown.indexOf(ch) + d];
   if (next) openReview(next);
 }
 
@@ -2641,13 +2648,13 @@ function errorArrows(node) {
   return answerArrows(node.position, correct, shares.map(([x, share]) => [x, `${percent(share)}%`]), { labeled: true, correctLabel: accuracy && `${percent(accuracy.share)}%` });
 }
 
-// Each error in a list of attempts (as errorCounts) with the share of the attempts it was made in (made
-// twice in one attempt, it counts once), most often first: [['Bc4', 0.4], ['hint', 0.2]]. "show" counts
-// as the hint.
+// Each error made as the first move of a try (as errorCounts names them), with the share of the tries
+// it began, most often first: [['Bc4', 0.4], ['hint', 0.2]]. "show" counts as the hint. Each try counts
+// once, by its first move, so with the move accuracy (the tries right first time) they add up to 100%.
+// (Until 19 November 2026 every error in a try counted, so they could add up to more.)
 function errorShares(attempts, correct) {
-  const per = attempts.map(a => new Set(errorCounts([{ tried: a.tried.map(x => x === 'show' ? 'hint' : x) }], correct).map(([x]) => x)));
-  const all = [...new Set(per.flatMap(set => [...set]))];
-  return all.map(x => [x, per.filter(set => set.has(x)).length / attempts.length]).sort((a, b) => b[1] - a[1]);
+  const firsts = attempts.map(a => errorCounts([{ tried: a.tried.slice(0, 1).map(x => x === 'show' ? 'hint' : x) }], correct)[0]?.[0]).filter(Boolean);
+  return [...new Set(firsts)].map(x => [x, firsts.filter(y => y === x).length / attempts.length]).sort((a, b) => b[1] - a[1]);
 }
 
 // The top moves in a position, for the Masters view (the masters moves, see isMasterMove; teal) or the
@@ -2687,7 +2694,7 @@ const KEY_ARROWS = [
   { sample: badgeSample('45%'), name: 'On a teal or gray arrow', meaning: "How often it's played (masters on teal, Lichess on gray)", views: ['masters', 'lichess'] },
   { sample: arrowSample('#00a3a3', '#fff'), name: 'White outline on teal or gray', meaning: 'Also in your study', views: ['masters', 'lichess'] },
   { sample: arrowSample('#8a5cf6'), name: 'Violet', meaning: "An error: any move you tried that isn't one of your study's moves", views: ['errors'] },
-  { sample: badgeSample('40%'), name: 'On a violet arrow', meaning: 'How often you made that error (last 10 tries)', views: ['errors'] },
+  { sample: badgeSample('40%'), name: 'On a violet arrow', meaning: 'How often you played it first (last 10 tries)', views: ['errors'] },
   { sample: badgeSample('75%', '#3291ff'), name: 'On the outlined arrow', meaning: "Errors: the position's move accuracy", views: ['errors'] },
   { sample: ['#15781b', '#882020', '#003088', '#e68f00'].map(c => `<span class="key-dot" style="background: ${c}"></span>`).join(''), name: 'Green, red, blue, amber', meaning: "Your study's own arrows and circles (Studies page)", views: ['study'] },
 ];
@@ -2732,7 +2739,7 @@ function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view
 // Lichess, its rank and share there and how the side playing it scores, e.g. "♘f3 · #3 masters move
 // (12%) · White scores 56%", "♘f3 · #4 Lichess move (8%) · White scores 51%"; with Errors,
 // each error with the share of your tries it was made in and its kind, e.g. "♘c3 · 40% of tries
-// (alternative)", and for your study's moves the position's move accuracy, how often the hint was used
+// (alternative move)", and for your study's moves the position's move accuracy, how often the hint was used
 // and when it was last tested.
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
@@ -2832,7 +2839,7 @@ function renderStatsTile(node) {
 // showsMark): off the masters' path (teal), critical (orange). (Your errors had a tile too until 19
 // November 2026; the board and its square tips show them.)
 function renderPositionTiles(node) {
-  renderEngineTile(node); // and, under the moves, the Engine tile and the statistics tile
+  renderEvalBar(node); // and the evaluation bar beside the board, and under the moves the statistics tile
   renderStatsTile(node);
   renderMastersTile(node);
   renderCriticalTile(node);
@@ -3880,14 +3887,14 @@ function opponentMoveBoard(m) {
 }
 
 // One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labeled by
-// what it is: "a3 (alternative)" (one of your study's alternatives, an error with Main lines only), an
-// alternative the study marks ?, ?? or ?! with the mark, "a3 (alternative ?!)", "b3 (masters)" (see
+// what it is: "a3 (alternative move)" (one of your study's alternatives, an error with Main lines only), an
+// alternative the study marks ?, ?? or ?! with the mark, "a3 (alternative move ?!)", "b3 (masters move)" (see
 // isMasterMove); anything else unlabeled; and "hint" or "show correct move".
 function errorLabel(m, x) {
   if (x === 'hint') return 'hint';
   if (x === 'show') return 'show correct move';
   const mark = alternativesAt(m)[x]?.nags.find(n => MISTAKE_NAGS.includes(n));
-  const label = { alternative: 'alternative', masters: 'masters', marked: `alternative ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
+  const label = { alternative: 'alternative move', masters: 'masters move', marked: `alternative move ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
   return withFigurines(x) + (label ? ` (${label})` : '');
 }
 // What a move tried instead of m is: 'alternative', 'marked' (an alternative the study marks ?, ?? or
@@ -3905,7 +3912,7 @@ function errorKind(m, x) {
 // corner of its square (see glyphBadge); teal for a masters move; gray for a Lichess move (5% or more; the
 // Studies page's Masters and Lichess views, which give each its share and outline in white those in your
 // study); violet for any error (any move you tried that isn't your study's main move, whatever kind; the
-// kind is in the text, e.g. "(masters)"); the study's own arrows and circles in their Lichess colors
+// kind is in the text, e.g. "(masters move)"); the study's own arrows and circles in their Lichess colors
 // (Studies page only). Text about a move (the Practice page's error messages, the hover boards'
 // "Errors: …") takes its arrow's color, lightened to read on the dark background.
 const BRUSHES = {
@@ -4376,7 +4383,7 @@ async function runEngine() {
 function evaluated(epd) {
   forgetCritical();
   if (currentScreen === 'studies' && review) {
-    if (review.node.epd === epd) renderEngineTile(review.node);
+    if (review.node.epd === epd) renderEvalBar(review.node);
     renderCriticalTile(review.node);
   }
   showProgress();
@@ -4397,35 +4404,38 @@ function evalText(line) {
   return pawns === '0.0' || pawns === '-0.0' ? '0.0' : line.cp > 0 ? `+${pawns}` : `−${pawns.slice(1)}`;
 }
 
-// The start of an engine line in moves, with numbers and piece symbols: "3… ♘f6 4. d3 ♗c5 5. O-O".
-function engineLineText(position, pv, plies = 8) {
-  const pos = position.clone(), out = [];
-  for (const uci of pv.split(' ').slice(0, plies)) {
-    const move = parseUci(uci);
-    if (!move || !pos.isLegal(move)) break;
-    const label = pos.turn === 'white' ? `${pos.fullmoves}. ` : out.length ? '' : `${pos.fullmoves}… `;
-    out.push(label + withFigurines(san.makeSanAndPlay(pos, move)));
-  }
-  return out.join(' ');
+// How full of White the evaluation bar is (0–1), on Lichess's winning-chances curve (steep near 0.0,
+// flattening out, so +1 and +6 aren't far apart; display only: the rules use pawns), mate filling it.
+function whiteShare(line) {
+  if ('mate' in line) return line.mate > 0 ? 1 : 0;
+  const cp = Math.max(-1000, Math.min(1000, line.cp));
+  return 1 / (1 + Math.exp(-0.00368208 * cp));
 }
 
-// The Engine tile on the Studies page (in every view), for the position on the board: Stockfish's
-// evaluation and its best moves, each with its evaluation and the line it expects: "+0.3 Depth 20", then
-// "+0.3 3… ♘f6 4. d3 ♗c5 …". "Evaluating…" until it's done (that position first); "Checkmate" and
-// "Stalemate" need no engine. Hidden from the version opened from disk.
-function renderEngineTile(node) {
-  const tile = $('review-engine');
-  if (!engineAvailable()) return tile.replaceChildren();
-  const pos = node.position, ev = evalAt(node.epd);
-  if (pos.isCheckmate() || pos.isStalemate()) return tile.replaceChildren(element('div', { class: 'muted' }, pos.isCheckmate() ? 'Checkmate' : 'Stalemate'));
-  if (!ev) {
-    evaluateSoon(node.epd);
-    return tile.replaceChildren(element('div', { class: 'muted' }, 'Evaluating…'));
-  }
-  tile.replaceChildren(
-    element('div', { class: 'engine-head', title: `${ev.engine}, depth ${ev.depth}` },
-      element('span', { class: 'engine-score' }, ev.lines.length ? evalText(ev.lines[0]) : '–'), element('span', { class: 'muted' }, `Depth ${ev.depth}`)),
-    ...ev.lines.map(l => element('div', { class: 'engine-line' }, element('span', { class: 'engine-line-score' }, evalText(l)), engineLineText(pos, l.pv))));
+// The evaluation bar beside the Studies page's board (replacing an Engine tile with the engine's best 3
+// lines, 19 November 2026): White's share filling from White's side of the board, the evaluation
+// ("+0.3", "−1.2", "#4"; "0.0" at White's end) at the better side's end; half gray with no number until
+// it's evaluated (that position first); checkmate full for the winner, stalemate half. Hover: "+0.3 ·
+// Stockfish 19 lite, depth 20". Hidden in the version opened from disk.
+function renderEvalBar(node) {
+  const bar = $('eval-bar'), shown = engineAvailable();
+  bar.classList.toggle('hidden', !shown);
+  bar.closest('.board-col').classList.toggle('has-eval-bar', shown);
+  if (!shown) return;
+  const pos = node.position, ev = evalAt(node.epd), flipped = reviewBoard?.state.orientation === 'black';
+  let share, text = '', title;
+  if (pos.isCheckmate()) { share = pos.turn === 'white' ? 0 : 1; text = '#'; title = 'Checkmate'; }
+  else if (pos.isStalemate()) { share = 0.5; text = '½'; title = 'Stalemate'; }
+  else if (ev?.lines.length) { share = whiteShare(ev.lines[0]); text = evalText(ev.lines[0]); title = `${text} · ${ev.engine}, depth ${ev.depth}`; }
+  else { share = 0.5; title = 'Evaluating…'; evaluateSoon(node.epd); }
+  bar.classList.toggle('flipped', flipped);
+  bar.classList.toggle('pending', !title.includes('·') && !pos.isCheckmate() && !pos.isStalemate());
+  bar.title = title;
+  bar.setAttribute('aria-label', title);
+  bar.querySelector('.eval-fill').style.height = `${share * 100}%`;
+  const whiteBetter = share >= 0.5, label = bar.querySelector('.eval-text');
+  label.textContent = text;
+  label.className = 'eval-text ' + ((whiteBetter !== flipped) ? 'at-bottom' : 'at-top') + (whiteBetter ? ' on-white' : ' on-black');
 }
 
 // The Lichess page's line for the evaluations, under the statistics: "Engine evaluations: 120 of 850

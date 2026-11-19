@@ -77,7 +77,7 @@ export const app = {
   setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
   get evals() { return evals; }, setEvals(e) { evals = e; forgetCritical(); },
   pawnsOf, expectedLossAt,
-  evaluation, evalText, engineLineText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
+  evaluation, evalText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
 };`;
 
 async function loadApp() {
@@ -843,8 +843,8 @@ async function runLichessPage(app) {
   check('review: a comment before a move', beforeRoot.children[0].children[0].children.map(c => c.before ?? null), [null, 'Not in this repertoire.']);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
     [['e2e4 halo', 'e2e4 gray 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 halo', 'e7e5 gray 38%', 'e7e6 gray 25%']]);
-  check('review: Errors, each with the share of tries it was made in, with the correct move; hovering over a square (the hint on your move\'s)', errorsShown,
-    [['d2d4 violet 50%', 'g2g3 violet 25%', 'e2e4 white+ 25%'], [], ['d4 · 50% of tries (masters)'], ['g3 · 25% of tries'], ['e4 · 25% move accuracy (last 4 tries) · hint 25% · last tested today']]);
+  check('review: Errors, the first move of each try only (g3 came second: not shown), with the correct move: 100% in all; hovering over a square (the hint on your move\'s)', errorsShown,
+    [['d2d4 violet 50%', 'e2e4 white+ 25%'], [], ['d4 · 50% of tries (masters move)'], [], ['e4 · 25% move accuracy (last 4 tries) · hint 25% · last tested today']]);
   // The study's own arrows and circles, in their Lichess colors, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Center. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
@@ -883,7 +883,7 @@ async function runLichessPage(app) {
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
   check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached in its own tile under the moves; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
-    $('review-engine').previousElementSibling.querySelector('#review-tree') !== null && $('review-stats').previousElementSibling.id === 'review-engine', document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, true, true]);
+    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null && !$('review-engine'), document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Errors'], false, true, true]);
   $('arrows-errors').click();
   check('review: one view at a time, remembered', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'false', 'true'], 'errors']);
   $('arrows-study').click();
@@ -982,17 +982,23 @@ async function runEngineTests(app, key) {
   check("engine: the best 3 moves at depth 20, from White's side, lines up to 12 plies; set up once", [black.lines, start.lines.map(l => [l.cp ?? '#' + l.mate, l.pv.split(' ').length]), start.depth, start.v,
     fake.commands.filter(c => c.startsWith('setoption')), fake.ended], [[{ cp: 50, pv: 'a7a6' }], [[32, 12], [25, 2], ['#-7', 1]], 20, 1,
     ['setoption name MultiPV value 3', 'setoption name Hash value 32'], true]);
-  // The Engine tile on the Studies page, at the start: "Evaluating…" (that position first), then the evaluation.
+  // The evaluation bar beside the Studies page's board, at the start: half gray (that position first), then the evaluation.
   app.setEvals({});
   app.setEngine(true);
-  key('Home');
-  const evaluating = $('review-engine').textContent;
+  key('ArrowUp'); key('Home'); // the Italian, from White's side (the first chapter)
+  const bar = () => { const b = $('eval-bar'); return [b.classList.contains('hidden'), b.classList.contains('pending'), b.classList.contains('flipped'), b.title,
+    Math.round(parseFloat(b.querySelector('.eval-fill').style.height)), b.querySelector('.eval-text').textContent, b.querySelector('.eval-text').className]; };
+  const evaluating = bar();
   await until(() => !app.evaluation.running, 'the evaluations to finish');
-  const tile = () => [$('review-engine').querySelector('.engine-head')?.textContent, [...$('review-engine').querySelectorAll('.engine-line')].map(l => [l.firstChild.textContent, l.lastChild.textContent])];
-  check('engine tile: "Evaluating…", then the evaluation and the best 3 moves with their lines; every study position evaluated', [evaluating, tile(), [...app.allStudyPositions().keys()].every(epd => app.evals[epd])],
-    ['Evaluating…', ['+0.3Depth 20', [['+0.3', '1. e4 e5 2. ♘f3 ♘c6 3. ♗b5 a6 4. ♗a4 ♘f6'], ['+0.3', '1. d4 d5'], ['#−7', '1. ♘f3']]], true]);
+  check('evaluation bar: half gray while evaluating, then White\'s share on Lichess\'s curve, the evaluation at the better side\'s end; every study position evaluated', [evaluating, bar(), [...app.allStudyPositions().keys()].every(epd => app.evals[epd])],
+    [[false, true, false, 'Evaluating…', 50, '', 'eval-text at-bottom on-white'], [false, false, false, '+0.3 · Stockfish 19 lite, depth 20', 53, '+0.3', 'eval-text at-bottom on-white'], true]);
   key('ArrowRight');
-  check("engine tile: after 1. e4, from White's side", tile(), ['+0.5Depth 20', [['+0.5', '1… a6']]]);
+  const afterE4 = bar();
+  key('ArrowDown'); key('Home'); // the Sicilian, from Black's side: White's share from the top (left there, as before)
+  const fromBlack = bar();
+  check("evaluation bar: after 1. e4, from White's side; the board from Black's side, White's share from the top", [afterE4.slice(3), fromBlack.slice(2)],
+    [['+0.5 · Stockfish 19 lite, depth 20', 55, '+0.5', 'eval-text at-bottom on-white'], [true, '+0.3 · Stockfish 19 lite, depth 20', 53, '+0.3', 'eval-text at-top on-white']]);
+  check('evaluation bar: no Engine tile', !!$('review-engine'), false);
   $('nav-lichess').click();
   const progress = $('engine-evals').textContent;
   $('nav-studies').click();
@@ -1004,10 +1010,10 @@ async function runEngineTests(app, key) {
   const [, done, of] = /^Engine evaluations: (\d+) of (\d+) positions evaluated$/.exec(progress) ?? [];
   check("engine: the Lichess page's progress; merged backups keep the newer evaluation", [!!done && done === of && +of >= app.allStudyPositions().size, older, app.evals[epd].depth],
     [true, [20, false, true], 30]);
-  // Without the engine (the version opened from disk): no tile.
+  // Without the engine (the version opened from disk): no bar.
   app.setEngine(false);
   key('Home');
-  check('engine tile: hidden from the version opened from disk', $('review-engine').children.length, 0);
+  check('evaluation bar: hidden from the version opened from disk', $('eval-bar').classList.contains('hidden'), true);
   app.setEvals({});
 }
 
