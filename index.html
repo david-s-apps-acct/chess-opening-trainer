@@ -3001,6 +3001,7 @@ function ownShapeNames(el, name) {
   const suffix = '-' + name;
   const rename = () => {
     for (const d of el.querySelectorAll('[id^="arrowhead-"], [id="cg-filter-blur"]')) if (!d.id.endsWith(suffix)) d.id += suffix;
+    for (const m of el.querySelectorAll('marker[id^="arrowhead-halo"]')) if (m.getAttribute('refX') !== '2') evenHaloHead(m);
     for (const attr of ['marker-end', 'filter']) for (const x of el.querySelectorAll(`[${attr}]`)) {
       const v = x.getAttribute(attr);
       if (!v.endsWith(suffix + ')')) x.setAttribute(attr, v.replace(/\)$/, suffix + ')'));
@@ -3875,6 +3876,19 @@ const BRUSHES = {
   // about 3 px wide each side, round the arrowhead too (chessground's own highlight edge was too thin).
   halo: { key: 'halo', color: '#fff', opacity: 1, lineWidth: 16 },
 };
+// The halo's arrowhead: chessground draws each head as the same triangle (M0,0 V4 L3,2, its tip at 2.05,2 from
+// the line's end) in units of its line's width, so the halo's, a scaled-up copy, stuck out much further at
+// the back of the head than along its sides. It's replaced by the teal or gray head enlarged evenly about
+// its incenter by the shaft's border ((halo − arrow) / 2 line widths), in the halo's own units.
+function evenHaloHead(marker) {
+  const R = BRUSHES.halo.lineWidth / BRUSHES.teal.lineWidth, border = (R - 1) / 2;
+  const r = 6 / (2 + Math.hypot(3, 2)); // the triangle's inradius (its incenter is at r, 2)
+  const k = (r + border) / r;
+  const at = ([x, y]) => `${((r + k * (x - r) - 2.05) / R + 2).toFixed(3)},${((k * (y - 2)) / R + 2).toFixed(3)}`;
+  marker.setAttribute('refX', '2');
+  marker.setAttribute('refY', '2');
+  marker.querySelector('path')?.setAttribute('d', `M${at([0, 0])} L${at([0, 4])} L${at([3, 2])} Z`);
+}
 const mainArrow = (orig, dest) => ({ orig, dest, brush: 'white', modifiers: { hilite: true } });
 // A move in the study (a move node), from position pos: white, outlined for the main move. (Unlike
 // Lichess, which leaves out the arrow where the study gives only one move.)
