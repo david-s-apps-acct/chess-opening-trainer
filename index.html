@@ -278,6 +278,7 @@
   .comment-pop .muted { color: rgba(255, 255, 255, .85); }
   .hint-note { margin-top: 6px; color: var(--text); }
   .note-move { font-weight: 600; }
+  #review-opening:empty { display: none; } /* the chapter has no opening tags */
   #practice-title .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   #board, #review-board { width: 100%; height: 100%; }
@@ -688,6 +689,7 @@
       </div>
       <div class="review-tiles">
         <div class="panel">
+          <div id="review-opening" class="muted" title="The chapter's opening (from Lichess)"></div>
           <div id="review-position" class="muted"></div>
           <div id="review-tree" class="tree review-tree"></div>
           <div class="move-nav">
@@ -816,7 +818,7 @@
         </details>
         <details>
           <summary>The small board</summary>
-          <p>Hover over (or tap) a move in the move list, the move tree or the Show lines table.</p>
+          <p>Hover over (or tap) a move in the practice move list or the Show lines table. (On the Studies page, see Studies.)</p>
           <ul>
             <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colors). Then the position's move accuracy, when you last tested it, and your errors in the same colors.</li>
             <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
@@ -885,7 +887,7 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more. Beside the board: the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment. Your move accuracy shows on the small board when you hover over one of your moves. ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the chapter's opening (from its Lichess tags), the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -901,7 +903,8 @@
             <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% move accuracy, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position. Select the move to see a tile about that position.</li>
             <li>Each view shows its own dots and tiles: <b>Errors</b> the violet ones, <b>Masters</b> the teal ones, <b>Lichess</b> the orange ones. <b>Study</b> keeps to what's in your study, with none.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>Hover over a move to see it on a small board; click it to show it on the big board.</li>
+            <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Its text follows the view too: <b>Study</b>, the move's annotation and comment; <b>Masters</b> and <b>Lichess</b>, its rank, share and score there, and how often its position is reached; <b>Errors</b>, the move accuracy and errors of a position of yours. Click a move to show it on the big board.</li>
+            <li>A comment the study puts before a move (e.g. at the start of a variation) has its own bubble before the move.</li>
           </ul>
         </details>
       </div>
@@ -1622,7 +1625,8 @@ function forgetParsedChapters() { parsedChapters.clear(); linesByChapter.clear()
 
 // A chapter is parsed once into a tree of moves. The root holds the starting position; every move
 // node holds:
-//   san, uci, moveNumber, color (the side that plays it), notes (comment and glyphs), drawn (the
+//   san, uci, moveNumber, color (the side that plays it), notes (comment and glyphs), before (the text
+//   of a comment placed before the move, e.g. at the start of a variation; none: undefined), drawn (the
 //   study's own arrows and circles after it, as chessground shapes; the root's too), nags,
 //   epdBefore, position (after the move: a chessops position), fen and epd (of that position),
 //   parent, children (the study's continuations, main one first), path (the SANs up to and
@@ -1661,7 +1665,7 @@ function moveTree(chapterKey, game, start) {
       const fen = fenOf(position);
       const node = {
         san: moveSan, uci: makeUci(move), moveNumber: before.fullmoves, color: before.turn,
-        notes: moveNotes(child.data), drawn: drawnShapes(child.data.comments), nags: child.data.nags || [], epdBefore: parent.epd,
+        notes: moveNotes(child.data), before: commentText(child.data.startingComments).join(' ') || undefined, drawn: drawnShapes(child.data.comments), nags: child.data.nags || [], epdBefore: parent.epd,
         position, fen, epd: epdOf(fen), parent, children: [], path: [...parent.path, moveSan], key: `${chapterKey}|${[...parent.path, moveSan].join(' ')}`,
         variationIndex,
       };
@@ -2155,7 +2159,7 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
     const el = element('span', { class: 'tree-move ' + (cls === 'needs-work' ? '' : cls) + moveQualityClass(node) + (node === current ? ' current' : ''), tabindex: '0' }, withFigurines(node.san));
     if (pick) { // hovering shows the move on the small hover board; clicking shows it on the big one
       el.addEventListener('click', () => pick(node));
-      if (node !== current) el.addEventListener('mouseenter', () => showHoverBoard(el, node, parsed.yourColor)); // not for the move on the big board
+      if (node !== current) el.addEventListener('mouseenter', () => showReviewHoverBoard(el, node, parsed.yourColor)); // not for the move on the big board
       el.addEventListener('mouseleave', hideHoverBoard);
     }
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
@@ -2163,7 +2167,8 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
     const weakDot = showsMark('weak', view) && isWeakPosition(node, parsed.yourColor) ? weakPositionDot() : null;
     const mastersDot = showsMark('masters', view) && isOffMastersPath(node, parsed.yourColor) ? mastersPositionDot() : null;
     const dot = showsMark('critical', view) && criticalAt(node.epd) ? element('span', { class: 'tree-dot critical-dot', title: 'Critical position' }) : null;
-    return { els: [num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
+    return { els: [node.before ? [commentBubble(moveLabel(node), { text: [node.before], nags: [] }), ' '] : null, // a comment before the move, where Lichess puts it
+      num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       el, glyphMarks(node), weakDot, mastersDot, dot,
       hasComment(node) ? commentBubble(moveLabel(node), node.notes) : null, ' '], moves };
   };
@@ -2611,13 +2616,16 @@ $('key-help').addEventListener('click', e => { // Help's Arrow colors, opened
 function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view}`).setAttribute('aria-pressed', String(settings.review.view === view)); }
 
 // What hovering over a square says about the arrows pointing to it, one line per move: with Masters or
-// Lichess, its rank and share there, e.g. "♘f3 · #3 masters move (12%)", "♘f3 · #4 Lichess move (8%)"; with Errors,
+// Lichess, its rank and share there and how the side playing it scores, e.g. "♘f3 · #3 masters move
+// (12%) · White scores 56%", "♘f3 · #4 Lichess move (8%) · White scores 51%"; with Errors,
 // as in the hover boards' "Errors: …" list, e.g. "♘c3 ×2 (alternative)", and for your study's moves the
 // position's move accuracy and when it was last tested.
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
-  if (view === 'masters') return topMoves(node, view).filter(t => to(t.move)).map(t => `${withFigurines(t.san)} · ${rankAndShareText(masterGamesAt(node.epd), t.san, 'masters', '')}`);
-  if (view === 'lichess') return topMoves(node, view).filter(t => to(t.move)).map(t => `${withFigurines(t.san)} · ${rankAndShareText(lichessGamesAt(node.epd), t.san, 'Lichess', '')}`);
+  if (view === 'masters' || view === 'lichess') {
+    const stats = STATS_VIEWS[view].at(node.epd), who = view === 'masters' ? 'masters' : 'Lichess';
+    return topMoves(node, view).filter(t => to(t.move)).map(t => [withFigurines(t.san), rankAndShareText(stats, t.san, who, ''), moveScoreText(stats, t.san, pos.turn)].filter(Boolean).join(' · '));
+  }
   const correct = settings.review.view === 'errors' ? yourMovesAt(node) : [];
   if (!correct.length) return [];
   const errors = errorCounts(attemptsAt(node), correct.map(c => c.san)).filter(([x]) => { const mv = san.parseSan(pos, x); return mv && to(mv); })
@@ -2627,6 +2635,40 @@ function squareTipLines(node, square) {
   const yours = accuracy ? correct.filter(c => to(parseUci(c.uci))).map(c => [withFigurines(c.san), accuracyText(accuracy),
     last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')) : [];
   return [...yours, ...errors];
+}
+
+// A move's hover board on the Studies page is a preview of clicking it: the position after the move, the
+// move highlighted (its glyph in its square's corner), and the arrows the big board shows there in the
+// current view (see reviewArrows); under the move, what the page shows for that view (reviewHoverRows).
+function showReviewHoverBoard(el, m, orientation) {
+  showBoardPopup(el, { position: m.position, lastMove: squaresOf(m), shapes: reviewArrows(m),
+    rows: [element('div', {}, element('b', {}, moveLabel(m))), ...reviewHoverRows(m)] }, orientation);
+}
+
+// The hover board's text by view: Study, the move's glyphs (named) and comments, only what's in the study;
+// Masters or Lichess, the move's rank, share and score there ("#2 masters move (30%) · White scores 56%"),
+// how often its position is reached ("Reached 46 times (Masters)"), and its tree dot's meaning (not a
+// masters move here; critical); Errors, for a position of yours, its move accuracy, when last tested and
+// its errors (as the errors tile).
+function reviewHoverRows(m, view = settings.review.view) {
+  const row = text => text ? element('div', { class: 'muted' }, text) : null;
+  if (view === 'study') return [
+    m.before ? element('div', {}, m.before) : null,
+    m.notes?.nags.length ? element('div', {}, m.notes.nags.map((n, k) => [k ? ', ' : '', glyphSpan(n), ' ', GLYPHS[n][1]])) : null,
+    ...(m.notes?.text ?? []).map(t => element('div', {}, t))];
+  if (view === 'masters' || view === 'lichess') {
+    const db = STATS_VIEWS[view], before = db.at(m.epdBefore), after = db.at(m.epd);
+    const share = view === 'masters' && before && !totalGames(before) ? 'Not in master games'
+      : rankAndShareText(before, m.san, view === 'masters' ? 'masters' : 'Lichess', view === 'masters' ? 'Not played by masters' : 'Not played in Lichess games');
+    return [row(share && [share, moveScoreText(before, m.san, m.color)].filter(Boolean).join(' · ')),
+      row(after && (totalGames(after) ? `Reached ${shortCount(totalGames(after))} times (${db.label})` : `Never reached (${db.label})`)),
+      view === 'masters' ? (isOffMastersPath(m, review.parsed.yourColor) ? row("Your study's move here: not a masters move") : null) : criticalRow(m.epd)];
+  }
+  const correct = yourMovesAt(m); // Errors
+  if (!correct.length) return [];
+  const accuracy = accuracyAt(m), errors = errorCounts(attemptsAt(m), correct.map(c => c.san));
+  return [element('div', {}, accuracy ? accuracyText(accuracy) : 'Untried'), lastTestedText(lastTriedAt(m.key)),
+    errors.length ? element('div', {}, 'Errors: ', joined(errors.map(([x, n]) => element('span', { class: 'error-violet' }, errorLabel(correct[0], x) + (n > 1 ? ` ×${n}` : ''))))) : null];
 }
 
 // Hovering over the square an arrow points to (Masters, Lichess and Errors) shows squareTipLines (mouse only; the
@@ -2658,13 +2700,19 @@ function showReviewNode(node) {
   reviewBoard.set({ ...boardPosition(node.position, node.uci ? squaresOf(node) : undefined), movable: { color: node.position.turn, dests } });
   reviewBoard.setAutoShapes(reviewArrows(node));
   updateArrowsSwitch();
+  // Above the moves: the chapter's own opening, from its Lichess tags (the same for the whole chapter), then
+  // the position's name, which follows the board.
+  $('review-opening').textContent = openingName(parsed) ?? '';
   $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
   renderReviewTree();
   // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colors, named
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
   // until 4 November 2026; removed as a trial.)
+  // Then the comments placed before the moves played here (e.g. at the start of a variation), each after
+  // its move: "3. ♗b5: Not in this repertoire."
   const text = node.uci ? node.notes?.text ?? [] : parsed.intro, nags = node.uci ? node.notes?.nags ?? [] : [];
-  $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : []);
+  $('review-comment').replaceChildren(...text.length || nags.length ? [element('p', {}, nags.map(glyphSpan), text[0] ?? ''), ...text.slice(1).map(t => element('p', {}, t))] : [],
+    ...node.children.filter(c => c.before).map(c => element('p', {}, element('span', { class: 'note-move' }, `${moveLabel(c)}: `), c.before)));
   renderPositionTiles(node);
   $('review-first').disabled = $('review-prev').disabled = !node.uci;
   $('review-next').disabled = $('review-last').disabled = !node.children.length;
@@ -3692,9 +3740,11 @@ const updateSoundButton = () => setToggle('sound-toggle', settings.sounds, setti
 $('sound-toggle').addEventListener('click', () => setSounds(!settings.sounds));
 
 // ---------- Hover board (the small board shown when hovering over a move) ----------
-// Your moves: the position before the move, an arrow for the correct move and one for each error
-// over its last 10 attempts (or this attempt, in the practice move list). The opponent's moves: the
-// position after the move, highlighted as on Lichess, with an arrow. Colors: see BRUSHES.
+// In the practice move list and the Show lines table. Your moves: the position before the move, an
+// arrow for the correct move and one for each error over its last 10 attempts (or this attempt, in the
+// practice move list). The opponent's moves: the position after the move, highlighted as on Lichess,
+// with an arrow. Colors: see BRUSHES. (The Studies page's are a preview of clicking the move: see
+// showReviewHoverBoard.)
 
 let hoverBoard = null;
 
@@ -3712,7 +3762,12 @@ function addHoverBoard(el, m, orientation, thisTime = null, anchor = el) {
 
 function showHoverBoard(el, m, orientation, thisTime = null) {
   const yours = thisTime ? m.color === orientation : isShownAsYours(m, orientation);
-  const { position, lastMove, shapes, rows } = yours ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m, orientation);
+  showBoardPopup(el, yours ? yourMoveBoard(m, thisTime) : opponentMoveBoard(m, orientation), orientation);
+}
+
+// The small board, next to el: position (lastMove highlighted, shapes drawn), turned to orientation, with
+// rows of text above it.
+function showBoardPopup(el, { position, lastMove, shapes, rows }, orientation) {
   let box = $('move-preview');
   if (!box) {
     box = element('div', { id: 'move-preview', class: 'move-preview hidden' },
@@ -4106,6 +4161,14 @@ function shareText(stats, moveSan) {
   if (!totalGames(stats)) return '';
   const share = gamesWith(stats, moveSan) / totalGames(stats) * 100;
   return share > 0 && share < 1 ? '<1%' : `${Math.round(share)}%`;
+}
+// How the side playing a move scores in a position's games (draws count half), e.g. "White scores 56%";
+// null without statistics, or when no game played it.
+function moveScoreText(stats, moveSan, color) {
+  const mv = stats?.moves.find(x => withoutCheckMarks(x.san) === withoutCheckMarks(moveSan)), n = mv && totalGames(mv);
+  if (!n) return null;
+  const score = ((color === 'white' ? mv.white : mv.black) + mv.draws / 2) / n;
+  return `${color === 'white' ? 'White' : 'Black'} scores ${Math.round(score * 100)}%`;
 }
 // A move's popularity rank in a position: 1 for the most played; moves played equally often share a
 // rank. null when no game played it. (Lichess games keep the 10 most played moves plus the studies'
