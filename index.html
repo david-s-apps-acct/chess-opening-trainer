@@ -189,9 +189,13 @@
   .preset-name-form .form-error { flex-basis: 100%; margin-top: 0; min-height: 0; font-size: 13px; }
   .preset-name-form .form-error:empty { display: none; }
   .all-row { border-bottom: 1px solid var(--border); }
-  .study-row .hide-btn { margin-left: 4px; vertical-align: -2px; }
+  .study-row .hide-btn { flex: none; } /* the eyes go left of the names, so a long name can't hide them */
   .hidden-study, .review-chapter.hidden-chapter { opacity: .5; } /* hidden studies and chapters, shown in gray while the top eye is open */
-  .review-chapter .hide-btn { flex: none; margin-left: auto; }
+  .review-chapter .hide-btn { flex: none; }
+  /* A study's ▶ (practice it): shown on hover, always on touch screens */
+  .study-row .study-practice { flex: none; margin-left: auto; visibility: hidden; font-size: 12px; }
+  .study-row:hover .study-practice, .study-row .study-practice:focus { visibility: visible; }
+  @media (hover: none) { .study-row .study-practice { visibility: visible; } }
   button.small { padding: 3px 8px; font-size: 12px; font-weight: 400; }
   .toggle-space { width: 24px; flex: none; }
   .study + .study { border-top: 1px solid var(--border); }
@@ -278,7 +282,7 @@
   .comment-pop .muted { color: rgba(255, 255, 255, .85); }
   .hint-note { margin-top: 6px; color: var(--text); }
   .note-move { font-weight: 600; }
-  #review-opening:empty { display: none; } /* the chapter has no opening tags */
+  #review-opening:empty, #review-position:empty { display: none; } /* no opening tags; the same name as the chapter's */
   #practice-title .bubble { vertical-align: -1px; }
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   #board, #review-board { width: 100%; height: 100%; }
@@ -398,6 +402,7 @@
   .move-nav { display: flex; gap: 4px; align-items: center; margin-top: 4px; }
   .move-nav button { flex: 1; padding: 4px 0; font-size: 13px; }
   .move-nav button.review-all { flex: 0 0 auto; padding: 4px 10px; } /* + All / − All: every variation in the tree */
+  .move-nav button.review-practice { flex: 0 0 auto; padding: 4px 12px; } /* the lines through the position on the board */
   .panel { flex: 1; min-width: 260px; background: var(--surface); border: none; border-radius: 4px; box-shadow: var(--box-shadow); padding: 16px; }
   .panel h2 { font-size: 16px; margin: 0 0 2px; } /* the study name: bold white */
   #practice-position { font-size: 13px; }
@@ -698,6 +703,7 @@
             <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
             <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
             <button id="review-all" class="review-all"></button>
+            <button id="review-practice" class="primary review-practice" title="Practice the lines through this position">Practice</button>
           </div>
         </div>
         <div id="review-stats" class="panel review-stats"></div>
@@ -796,7 +802,7 @@
         <ul>
           <li>Choose <b>Lines</b> (whole lines) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen group (Studies to practice). <b>Main lines only</b> keeps to the main moves, for both sides: only your main move is correct.</li>
           <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
-          <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>.</li>
+          <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter, variation or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
           <li>A chapter played from both colors in its group (see Groups) gives lines for each side.</li>
@@ -888,6 +894,7 @@
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. Hover over a chapter's name to see its opening. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
           <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Errors</b> (your errors in this position in the last 10 tries, "×2" when made twice, and your study's moves, the main one with the move accuracy). Hover over the square an arrow points to for more (with Masters or Lichess, how the side playing the move scores, e.g. "White scores 56%"). Beside the board: the chapter's opening (from its Lichess tags), the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li><b>Practice</b>, by the move controls, practices the lines through the position on the board: at a chapter's start, all of them; deeper in, just that variation. The ▶ on a study's row (shown on hover) practices the whole study. Your Lines settings apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions</b>: where more than 20% of the Lichess games (at your chosen ratings and time controls) play a move that lowers the win rate of the side playing it by 10 points or more (draws count half; e.g. from 50% to 38%), at either side's move. An orange dot after a move in the tree leads to one; on the board, a tile under the comment lists the moves that go wrong, e.g. "♘c3 22% · win rate −12", with those played less than 5% of the time in one line, e.g. "+ 3 rarer moves (2%)"; the small board says e.g. "Critical: 34% go wrong here".</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -1745,7 +1752,8 @@ const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.color === line.yo
 // last 3 full moves (6 plies) are shown, with "…" before them when there are more, and at least the
 // last move played, even when the position itself is named ("King's Pawn Game, 1… e5"). Without any
 // named position, the moves from the start; "Starting position" before any move.
-// Used wherever the app names a position.
+// Used in the Show lines and Show positions tables, whose rows the moves tell apart (and as openingName's
+// fallback).
 const NAME_TAIL_PLIES = 6;
 function positionName(line, i) {
   let name = lichessGamesAt(line.root.epd)?.opening?.name, since = 0; // since: the first move after it
@@ -1758,6 +1766,17 @@ function positionName(line, i) {
   const cut = i - since > NAME_TAIL_PLIES;
   const moves = tail.map((m, k) => m.color === 'white' ? `${m.moveNumber}. ${withFigurines(m.san)}` : k === 0 ? `${m.moveNumber}… ${withFigurines(m.san)}` : withFigurines(m.san)).join(' ');
   return [name, moves && (cut ? '… ' : '') + moves].filter(Boolean).join(', ') || 'Starting position';
+}
+
+// A position's opening: the Lichess opening name of the last named position on the way to it, with its ECO
+// code, e.g. "Sicilian Defense: Najdorf Variation (B90)", without the moves since (they're in the move
+// tree or the move list). On the Studies page and in the practice heading. "Starting position" at the
+// start; before the move statistics have downloaded (no names yet), the moves, as positionName.
+function openingNameAt(line, i) {
+  if (i === 0) return 'Starting position';
+  let opening = lichessGamesAt(line.root.epd)?.opening;
+  for (const m of line.moves.slice(0, i)) opening = lichessGamesAt(m.epd)?.opening ?? opening;
+  return opening?.name ? opening.name + (opening.eco ? ` (${opening.eco})` : '') : positionName(line, i);
 }
 
 // ---------- Annotations (comments and glyphs) ----------
@@ -1993,7 +2012,8 @@ function renderStudiesList() {
     if (!listed(study.id, study.chapters.includes(shown))) continue;
     const studyHidden = hidden.has(study.id), open = openStudy === study.id;
     const studyEl = element('div', { class: 'study' + (studyHidden ? ' hidden-study' : '') },
-      studyRow(study, open, () => { openStudy = open ? null : study.id; renderStudies(); }, showHidden ? hideButton(study.id, studyHidden, 'study') : null)); // opening one closes any other
+      studyRow(study, open, () => { openStudy = open ? null : study.id; renderStudies(); }, showHidden ? hideButton(study.id, studyHidden, 'study') : null, null, // opening one closes any other
+        element('button', { class: 'icon-btn study-practice', title: 'Practice this study', 'aria-label': `Practice ${study.name}`, onclick: e => { e.stopPropagation(); practiceFromStudies(study.chapters); } }, '▶')));
     if (open) studyEl.append(element('div', { class: 'study-chapters', role: 'listbox', 'aria-label': study.name },
       study.chapters.map((c, k) => listed(c.key, c === shown) ? chapterLink(c, k) : null).filter(Boolean)));
     container.append(studyEl);
@@ -2031,9 +2051,9 @@ function chapterLink(c, k) {
   const p = parseChapter(c), current = c === review?.ch, isHidden = hidden.has(c.key);
   return element('div', { class: 'review-chapter' + (current ? ' current' : '') + (p.error ? ' unavailable' : '') + (isHidden ? ' hidden-chapter' : ''), role: 'option', 'aria-selected': String(current),
     'aria-disabled': p.error ? 'true' : null, onclick: p.error ? null : () => openReview(c) },
+    showHidden ? hideButton(c.key, isHidden, 'chapter') : null, // on the left, so a long name can't hide it
     element('span', { class: 'review-chapter-num' }, `${k + 1}.`),
-    element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : [c.name, openingName(p)].filter(Boolean).join(': ') }, c.name),
-    showHidden ? hideButton(c.key, isHidden, 'chapter') : null);
+    element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : [c.name, openingName(p)].filter(Boolean).join(': ') }, c.name));
 }
 
 // Whether a move is shown as one of yours (its accuracy, the "your move" hover board): a move of the
@@ -2081,10 +2101,10 @@ function opener(name, onOpen) {
 // A study's row: its triangle and name (clicking either shows or hides its chapters: toggle), and, after
 // the triangle, its white and black buttons (box, on the Groups page) or, after the name, its eye (while
 // the top eye is open).
-function studyRow(study, open, toggle, eye = null, box = null) {
+function studyRow(study, open, toggle, eye = null, box = null, play = null) {
   return element('div', { class: 'row study-row' },
-    triangle(open, ['Show chapters', 'Hide chapters'], toggle), box,
-    element('span', { class: 'name', title: study.name }, opener(study.name, toggle), eye));
+    triangle(open, ['Show chapters', 'Hide chapters'], toggle), box, eye,
+    element('span', { class: 'name', title: study.name }, opener(study.name, toggle)), play);
 }
 
 // A white or black button on the Groups page: a dot in its color, with an X through it when not played
@@ -2507,6 +2527,21 @@ function reviewFromPractice() {
   else showChooser(); // the chapter is no longer on Lichess
 }
 
+// Practice from the Studies page: the lines through the position on the board (the Practice button; at a
+// chapter's start, all its lines), or a whole study's (the ▶ on its row in the list). A one-off session
+// with the current Lines settings, each chapter played from the colors the chosen group gives it (else its
+// main color); the chosen group doesn't change, and End practice comes back here (returnTo).
+function practiceFromStudies(chapters, node = null) {
+  const depth = node ? pathTo(node).length : 0, mainOnly = settings.practice.mainLinesOnly.lines;
+  const through = chapters.filter(ch => !parseChapter(ch).error).flatMap(practisedLines).filter(line => !depth || line.moves[depth - 1]?.key === node.key); // by key: the studies may have been parsed again since
+  const all = through.filter(line => !mainOnly || line.isMainLine).map(line => ({ line, i: null }));
+  const chances = priorities(all, mainOnly), items = all.filter((item, k) => chances[k] > 0);
+  if (!items.length) return showBanner(all.length ? 'Every line here is untried, and Untried is at 0%.'
+    : through.length ? 'No main lines here (Main lines only is ticked).' : 'No lines to practice here.', true);
+  startSession('lines', items, review && { key: review.ch.key, at: pathTo(review.node).map(m => m.san) });
+}
+$('review-practice').addEventListener('click', () => review && practiceFromStudies([review.ch], review.node));
+
 // The moves from the root to a node, in order.
 const pathTo = node => { const moves = []; for (let n = node; n.parent; n = n.parent) moves.unshift(n); return moves; };
 
@@ -2703,7 +2738,8 @@ function showReviewNode(node) {
   // Above the moves: the chapter's own opening, from its Lichess tags (the same for the whole chapter), then
   // the position's name, which follows the board.
   $('review-opening').textContent = openingName(parsed) ?? '';
-  $('review-position').textContent = positionName({ root: parsed.root, moves }, moves.length);
+  const name = openingNameAt({ root: parsed.root, moves }, moves.length);
+  $('review-position').textContent = name === openingName(parsed) ? '' : name; // not twice
   renderReviewTree();
   // Under the moves, hidden when empty: the move's annotation (its glyphs, in their Lichess colors, named
   // on hover) and its comment (at the start, the chapter's introduction). (A Your accuracy tile followed
@@ -3265,9 +3301,9 @@ let session = null;
 
 // Practice lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
-function startSession(kind, items) {
+function startSession(kind, items, returnTo = null) {
   if (!items.length) return;
-  session = { kind, items, previous: null, mainOnly: settings.practice.mainLinesOnly[kind] };
+  session = { kind, items, previous: null, mainOnly: settings.practice.mainLinesOnly[kind], returnTo };
   showScreen('practice');
   ensureBoard();
   board.redrawAll();
@@ -3481,6 +3517,8 @@ $('end-practice-btn').addEventListener('click', () => {
     addAttemptOnCurrentMove();
     saveAttempts();
   }
+  const back = session?.returnTo, ch = back && chapterByKey(back.key); // started from the Studies page: back there
+  if (ch) { endPractice(); return openReview(ch, { at: back.at }); }
   showChooser();
 });
 
@@ -3685,7 +3723,7 @@ function updateNames() {
 
 // The position on the board: the live one, or the earlier one being looked at.
 const updatePositionName = () => {
-  $('practice-position').replaceChildren(nameShown('position') ? positionName(practice.line, practice.viewing ?? practice.movesPlayed) : hiddenName('position', 'Show position name'));
+  $('practice-position').replaceChildren(nameShown('position') ? openingNameAt(practice.line, practice.viewing ?? practice.movesPlayed) : hiddenName('position', 'Show position name'));
 };
 
 // Whether a name shows: once clicked (practice.shown) or once the line is over.

@@ -64,7 +64,8 @@ export const app = {
   endSession() { endPractice(); },
   onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies, explorerPace,
   setToken(t) { token = t; },
-  reviewHoverRows, moveScoreText,
+  reviewHoverRows, moveScoreText, openingNameAt,
+  get session() { return session; },
   restoreQuestion, chooseDefaultGames, ratingText, reviewArrows, squareTipLines, parseChapter, refreshPage,
   get token() { return token; },
   loginAddress, finishLogIn,
@@ -296,6 +297,10 @@ function run(app) {
   check('position name: start', names[0], 'Starting position');
   check('position name: a named position still lists its last move', names[2], "King's Pawn Game, 1… e5");
   check('position name: moves since the last name', names[4], "King's Pawn Game, 2. ♘f3 ♘c6");
+  check('opening name (Studies page, practice heading): the opening and ECO only; the start; the moves until statistics download',
+    [app.openingNameAt(italian[0], 0), app.openingNameAt(italian[0], 2), app.openingNameAt(italian[0], 4), (app.setMoveStats({}), app.openingNameAt(italian[0], 2))],
+    ['Starting position', "King's Pawn Game (C20)", "King's Pawn Game (C20)", '1. e4 e5']);
+  app.setMoveStats(structuredClone(POSITIONS));
 
   // Study export parsing
   const parsed = app.parseStudyExport(ITALIAN + '\n\n' + SICILIAN, 'tester');
@@ -903,6 +908,22 @@ async function runLichessPage(app) {
       [null, true, true]);
     app.setLibrary(lib);
   }
+  // Practice from the Studies page: the lines through the position on the board (here, after 1. e4 in the
+  // Sicilian: all of them); End practice comes back to the same chapter and position. A study's ▶: all its chapters.
+  $('review-practice').click();
+  const fromStudies = [app.practice?.line.chapterKey, app.session.items.length, app.session.items.every(({ line }) => line.moves[0].san === 'e4'), !$('practice-screen').classList.contains('hidden')];
+  $('end-practice-btn').click();
+  check('Studies page Practice: the lines through the position; End practice comes back', [...fromStudies, app.practice, !$('studies-screen').classList.contains('hidden'), chapterShown(), current()],
+    ['AAAAAAAA/CCCCCCCC', app.chapterLines(app.chapterByKey('AAAAAAAA/CCCCCCCC')).length, true, true, null, true, '2. Sicilian', 'e4']);
+  key('ArrowRight'); key('ArrowRight'); key('ArrowRight'); // 2… d6, the main line: only its lines
+  $('review-practice').click();
+  const throughD6 = app.session.items.map(({ line }) => line.key);
+  $('end-practice-btn').click();
+  document.querySelector('#studies .study-row .study-practice').click();
+  const wholeStudy = new Set(app.session.items.map(({ line }) => line.chapterKey)).size;
+  $('end-practice-btn').click();
+  check('Studies page Practice: deeper in, only the lines through that position; a study\'s ▶, all its chapters', [throughD6, wholeStudy], [['AAAAAAAA/CCCCCCCC|e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6'], 2]);
+  key('Home'); key('ArrowRight');
   // The header's Studies button: back where you left it.
   $('nav-lichess').click();
   $('nav-studies').click();
@@ -1012,7 +1033,7 @@ async function runPractice(app) {
   const hiddenPosition = positionEl().textContent;
   positionEl().querySelector('.hidden-name').click();
   check('practice: single position from the list; its name hidden behind stars until clicked', [p().singleAt != null, [8, 10].includes(p().singleAt), p().movesPlayed === p().singleAt,
-    hiddenPosition, positionEl().textContent === app.positionName(main, p().singleAt)], [true, true, true, '★★★★★★', true]);
+    hiddenPosition, positionEl().textContent === app.openingNameAt(main, p().singleAt)], [true, true, true, '★★★★★★', true]);
   await playRest();
   check('practice: single position answered', [status(), document.getElementById('next-btn').textContent, p() === first], ['Correct.', 'Next position', true]);
   document.getElementById('next-btn').click();
