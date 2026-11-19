@@ -751,6 +751,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Terms: move accuracy, line accuracy, errors and position reached
 
+- **To do (the user's decision, 19 November 2026; not built yet): "move accuracy" becomes "repertoire accuracy"** everywhere the user reads it, e.g. "75% repertoire accuracy (last 4 tries)": it says what it measures (how well you know your repertoire), apart from the expected loss idea (see Possible future improvements), which would measure how good the moves are. The measure itself doesn't change. **The Accuracy slider keeps its name** (the user's decision), its hover saying "repertoire accuracy". *Claude's details, for the user to accept or reject:* Help makes clear it's per position, as now; it changes in the Errors view's badge and tips, the violet dots' hover, the Show lines and Show positions tables' column ("Repertoire accuracy"), the slider's hover, Help (its section and Words used), the color key, SPEC.md's terms and CLAUDE.md's terminology rule (when built); code names (`accuracyAt`, `accuracyText`) stay.
 - The app uses two terms, consistently everywhere the user reads them (the user's standing rule):
   - **Move accuracy:** how well one of the user's moves is known, as a percentage. For one attempt it's the attempt's points × 10, e.g. "**80% move accuracy**" on the practice hover board (it used to say "80% accuracy this time"). Over time it's the weighted average of the move's last 10 attempts (see Progress tracking), e.g. "**75% move accuracy (last 4 tries)**" on the move tree's hover board (it used to say "Average 7.5 of 10 (last 4 tries)").
   - **Line accuracy:** the average move accuracy of the user's moves in one completed line, e.g. "**92% line accuracy**" under "Line complete." (it used to say "overall accuracy").
@@ -1064,6 +1065,8 @@ The app is published on GitHub Pages (repository `david-s-apps-acct/chess-openin
 ## Possible future improvements
 
 Ideas agreed or mentioned along the way that haven't been built yet:
+
+- **Your expected loss** (the user's idea, 19 November 2026; under discussion, the user is thinking about it): for each position of yours, the share of your tries that began with each move × how many pawns that move drops, added up: near 0 when you play your study's move or another good one (e.g. a masters move), larger for really bad moves. **Alongside repertoire accuracy, not replacing it** (the user's decision): repertoire accuracy measures whether you know your repertoire; expected loss how much your errors would cost over the board. Still to decide (Claude's suggestions): a drop measured against **your study's move**, not the engine's best (so playing your own repertoire costs nothing, and a better move counts as 0); a fixed cost for the hint (e.g. 1 pawn); what it drives (the violet dots, so only costly errors are flagged, and/or spaced repetition, so costly errors come up more). Needs the positions after the moves you've tried evaluated (a little more background work). Note: it brings back graded costs, which the user removed on 6 November 2026 (every attempt right or wrong; no reduced penalty for masters moves), in a different form.
 
 - **More uses of the engine** (19 November 2026): the engine is built (see Engine evaluations); what else uses it is still to decide, e.g. Punish moves.
 
