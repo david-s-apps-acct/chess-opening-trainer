@@ -500,7 +500,16 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Frequency's hover:** "How often opponents on Lichess lead to it (your own moves don't count)."
   - **Help** updated throughout (Words used, Practice, Move accuracy, Spaced repetition, Groups, the move tree); the Reverse sides section went.
 
-### Punish moves (4 November 2026; not built, its use still to decide)
+### Refutable moves and refutation positions (called Punish moves until 20 November 2026; not built, its use still to decide)
+
+- **The user's decision, 20 November 2026 (not built): "punish" is renamed, around "refutation"** (the user didn't like "punish"; "mistake" is kept for the study's marks). Proposed by Claude and accepted by the user:
+  - A **refutable move** (was "punish move") is a Lichess move (5% or more) that drops the engine's evaluation by the **refutation level** (was the punish level; the user's setting, default 1 pawn) or more against the engine's best move, for the side playing it. The definition below is otherwise unchanged, and still defined without sides.
+  - A **refutation position (Lichess)** is the position after a refutable move, where the side to move has a refutation; **the refutation** is your study's reply there (normally the engine's best move or close to it). It's a row in Position measures.
+  - It differs from Critical position (Lichess): critical is the position before the moves, averaging all of them; a refutation position follows one bad move (e.g. a move played 10% of the time that loses 2 pawns adds only 0.2 to the Lichess expected loss).
+  - The setting will read "Refutable moves: drop ≥ [1.0 ▾] pawns"; the future practice of them is **Refutations** (e.g. a Practice option to practice your refutation positions). "Punish" goes from SPEC.md's terms and CLAUDE.md.
+  - Caveat noted: to a strong player "refutation" can suggest an objectively losing move; the level is the user's to raise.
+  - *Still to decide (Claude's question):* whether only refutation positions your study answers count (practicable), with the others flagged as repertoire gaps.
+- Below, "punish move" and "punish level" are the old names.
 
 - **New definition (the user's decisions, 19 November 2026; not built, its use still to decide), replacing the two steps below:** a **punish move** is a **Lichess move** (played in 5% or more of the games, at the chosen ratings and time controls) in a position from your studies that **drops the engine's evaluation by the punish level or more** compared with the engine's best move there, from the side playing it. It counts whether or not the move is in the study, and whether or not the study marks it as a mistake.
   - **Defined without sides** (the user's decision: chapters can be practiced from either color, so "opponent" only means something once the side is known). Whose punish moves are yours to punish depends on the side you practice the chapter from (the group's colors, `sidesOf`): as White, Black's punish moves; as Black, White's; both colors, both sets. "Your" and "opponent's" are used only where the side is known (during practice).
@@ -788,8 +797,9 @@ The reference for what's worked out for a position (the user's name and decision
 | **Critical position (you)** | you | your expected loss | at the critical level (0.5) or more |
 | **Lichess expected loss** | the opening | Lichess moves (5% or more) | each move's Δ, weighted by how often it's played |
 | **Critical position (Lichess)** | the opening | Lichess expected loss | at the critical level (0.5) or more |
+| **Refutation position (Lichess)** | the opening | a refutable Lichess move (5% or more) before it | its Δ at the refutation level (1 pawn) or more |
 
-The critical level is the Lichess page's setting (default 0.5 pawns), one for both kinds of critical position; low recall's 75% is fixed. All are built.
+The critical level is the Lichess page's setting (default 0.5 pawns), one for both kinds of critical position; low recall's 75% is fixed. All are built except refutation positions (see Refutable moves and refutation positions).
 
 ## Naming positions
 
