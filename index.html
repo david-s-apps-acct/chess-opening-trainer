@@ -156,7 +156,7 @@
 
   .card h3 { font-size: 14px; margin: 16px 0 0; }
 
-  /* The Test probabilities table, shown by "Show lines" / "Show positions" (the Spaced repetition tile) */
+  /* The Test probabilities table, shown by "What comes next" (in each practice tile) */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   .report-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
   .report-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -172,11 +172,9 @@
   .practice-side .panel { flex: none; min-width: 0; }
   .studies-to-practice h2 { margin: 0 0 10px; }
   #practice-message:empty { display: none; }
-  /* The Spaced repetition tile: a heading that opens and closes it */
-  .tile-toggle { display: flex; align-items: center; gap: 6px; width: 100%; padding: 0; background: none; box-shadow: none; font-size: 18px; font-weight: 600; color: var(--text-strong); text-align: left; }
-  .tile-toggle:hover:not(:disabled) { background: none; color: var(--text-strong); }
-  .tile-toggle .tile-arrow { color: var(--muted); font-size: 14px; }
-  .srs-tile .actions { margin-top: 10px; }
+  /* "What comes next" under a tile's options: a small link to the Test probabilities table */
+  .next-link { align-self: flex-start; padding: 0; background: none; box-shadow: none; font-size: 13px; color: var(--accent); }
+  .next-link:hover:not(:disabled) { background: none; text-decoration: underline; color: var(--accent); }
   .preset-row { display: flex; align-items: center; gap: 8px; }
   #preset-select { flex: 1; min-width: 0; text-overflow: ellipsis; }
   #edit-preset-select { flex: 1 1 240px; max-width: 360px; text-overflow: ellipsis; }
@@ -448,9 +446,6 @@
   .kind-switch button[aria-pressed=true], .kind-switch button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
-  .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
-  .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
-  .weight-rows output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
   .practice-chooser p { margin: 0; font-size: 13px; }
   .practice-chooser p:empty { display: none; }
   .table-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; overflow-y: auto; }
@@ -633,12 +628,14 @@
         <div class="panel">
           <h2>Practice lines</h2>
           <div id="lines-choice" class="focus-choice" role="radiogroup" aria-label="Practice lines"></div>
+          <button id="show-lines-btn" class="next-link" title="The lines most likely to come up next, and their chances">What comes next</button>
           <p id="lines-note" class="muted"></p>
           <button id="lines-start" class="primary chooser-start">Start practice</button>
         </div>
         <div class="panel">
           <h2>Practice positions</h2>
           <div id="positions-choice" class="focus-choice" role="radiogroup" aria-label="Practice positions"></div>
+          <button id="show-positions-btn" class="next-link" title="With All, the positions most likely to come up next, and their chances">What comes next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
         </div>
@@ -666,18 +663,6 @@
       </div>
       <!-- Before your studies are here: any message about fetching them -->
       <div id="practice-message" class="panel hidden"></div>
-      <!-- Spaced repetition: collapsed; ▾ opens the sliders, Show lines, Show positions and Reset. Hidden during practice. -->
-      <div id="srs-tile" class="panel srs-tile hidden">
-        <button id="srs-toggle" class="tile-toggle" aria-expanded="false" aria-controls="srs-body"><span data-tip="How much each counts in choosing what comes next: 0% ignores it, 50% is normal, 100% dominates.">Spaced repetition</span> <span class="tile-arrow">▾</span></button>
-        <div id="srs-body" class="hidden">
-          <div id="weight-rows" class="weight-rows"></div>
-          <div class="actions">
-            <button id="show-lines-btn" class="small" title="The lines most likely to be tested next">Show lines</button>
-            <button id="show-positions-btn" class="small" title="The positions most likely to be tested next">Show positions</button>
-            <button id="weights-reset" class="small" title="All sliders to 50%">Reset</button>
-          </div>
-        </div>
-      </div>
       </div>
     </div>
   </section>
@@ -832,7 +817,7 @@
         <h2>Practice</h2>
         <ul>
           <li><b>Studies to practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
-          <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
+          <li>Spaced repetition chooses what comes next; <b>What comes next</b>, in each tile, lists what's most likely to come up.</li>
           <li><b>Practice lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
           <li><b>Practice positions</b>: <b>Spaced repetition positions</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1 pawn by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 pawns of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
@@ -884,14 +869,13 @@
         </details>
         <details>
           <summary>Spaced repetition</summary>
-          <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
+          <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. Common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
-            <li>The five sliders, in the Spaced repetition tile on the Practice page, set how much each counts: <b>Frequency</b> (how often opponents on Lichess lead to it), <b>Recall</b> (weak ones), <b>Last played</b> (overdue ones), <b>Untried</b> and <b>Critical</b> (your critical positions, see Studies). 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
-            <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely to be tested next, with their position reached, recall, when last tested and chance of coming up next.</li>
+            <li><b>What comes next</b> (in Practice lines, or Practice positions for All) lists the 25 most likely to be tested next, with their position reached, recall, when last tested and chance of coming up next.</li>
           </ul>
           <details>
             <summary>How the priority is worked out</summary>
-            <p>With every slider at 50%: <b>priority = frequency × critical × need</b>. Each slider raises its part to a power: 0 at 0%, 1 at 50%, 6 at 100%.</p>
+            <p><b>Priority = frequency × critical × need</b>.</p>
             <ul>
               <li><b>Frequency</b>: 0.2 to 1, by the shares of the opponent's moves on the way, multiplied (a line: all of them; your own moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale; 0.6 until the statistics download.</li>
               <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
@@ -927,7 +911,7 @@
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
           <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Recall</b> (your repertoire recall here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire recall; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Recall also the error's kind, e.g. "(masters move)". With Recall, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the critical level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Critical position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
-          <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines. The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
+          <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines, by spaced repetition; your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
           <li><b>Critical positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Critical positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
@@ -1186,7 +1170,6 @@ const DEFAULT_SETTINGS = {
   practice: {
     lines: 'all', // the Practice lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
     positions: 'spaced', // the Practice positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
-    weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 },
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
   review: { view: 'study' },
@@ -1208,15 +1191,12 @@ function checkedSettings(saved) {
   const oldFocus = p.focus === 'positions' ? 'spaced' : typeof p.focus === 'string' && p.focus !== 'everyday' ? p.focus : oldKind === 'positions' ? 'spaced' : 'lines';
   const oldMain = typeof p.mainLinesOnly === 'boolean' ? p.mainLinesOnly : p.mainLinesOnly?.[oldKind] === true;
   // Each of the defaults' keys, with the saved value where it's valid.
-  const valuesOf = (defaults, values, valid) => Object.fromEntries(Object.entries(defaults).map(([k, dv]) => [k, valid(values?.[k]) ? values[k] : dv]));
-  const isBetween = (lo, hi) => x => Number.isInteger(x) && x >= lo && x <= hi;
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     games: checkedGames(v.games),
     practice: {
       lines: ['all', 'main'].includes(p.lines) ? p.lines : oldMain && oldFocus === 'lines' ? 'main' : dp.lines,
       positions: POSITION_CHOICES.includes(p.positions) ? p.positions : POSITION_CHOICES.includes(oldFocus) ? oldFocus : dp.positions,
-      weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
     criticalLevel: CRITICAL_LEVELS.includes(v.criticalLevel) ? v.criticalLevel : d.criticalLevel,
@@ -1355,27 +1335,6 @@ function setToggle(id, on, title) {
 // When something happened, in this computer's time zone and the browser's date format, without the
 // zone: "on 10/26/26 at 12:01 PM".
 const onDateAtTime = ts => `on ${new Date(ts).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' })} at ${new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
-
-// The Spaced repetition tile's sliders, 0%–100% in steps of 5, in a grid: for each row ({ key, name, definition }),
-// its name (with its definition on hover), the slider (id prefix-key) and its value. onChange(key, value)
-// when one is let go.
-function addSliders(grid, prefix, rows, onChange) {
-  grid.replaceChildren(...rows.flatMap(({ key, name, definition }) => [
-    quickTip(element('label', { for: `${prefix}-${key}` }, name), definition),
-    element('input', { type: 'range', id: `${prefix}-${key}`, min: '0', max: '100', step: '5' }),
-    element('output', { id: `${prefix}-${key}-value`, for: `${prefix}-${key}` }),
-  ]));
-  for (const { key } of rows) {
-    $(`${prefix}-${key}`).addEventListener('input', e => { $(`${prefix}-${key}-value`).textContent = `${e.target.value}%`; });
-    $(`${prefix}-${key}`).addEventListener('change', e => onChange(key, +e.target.value));
-  }
-}
-function showSliders(prefix, rows, values) {
-  for (const { key } of rows) {
-    $(`${prefix}-${key}`).value = String(values[key]);
-    $(`${prefix}-${key}-value`).textContent = `${values[key]}%`;
-  }
-}
 
 // How long ago a move was last tested, in calendar days: "Today", "1 day", "5 days"; "–" when it
 // isn't known (moves last tested before these times were recorded).
@@ -2170,7 +2129,7 @@ let editing = null; // on the Groups page, the group being edited: { preset, col
 // The Practice page's Studies to practice and Spaced repetition tiles: once there are studies, and not
 // during practice (before there are studies, any message about fetching them instead).
 function showPracticeTiles() {
-  for (const id of ['studies-to-practice', 'srs-tile']) $(id).classList.toggle('hidden', !library || !!practice);
+  $('studies-to-practice').classList.toggle('hidden', !library || !!practice);
   if (library) $('practice-message').classList.add('hidden');
 }
 
@@ -2731,9 +2690,8 @@ function reviewFromPractice() {
 // and End practice comes back here (returnTo). (Until 19 November 2026 a Practice button under the move
 // tree practiced the lines through the position on the board.)
 function practiceFromStudies(chapters) {
-  const all = chapters.filter(ch => !parseChapter(ch).error).flatMap(practisedLines).map(line => ({ line, i: null }));
-  const chances = priorities(all, false), items = all.filter((item, k) => chances[k] > 0);
-  if (!items.length) return showBanner(all.length ? 'Every line here is untried, and Untried is at 0%.' : 'No lines to practice here.', true);
+  const items = chapters.filter(ch => !parseChapter(ch).error).flatMap(practisedLines).map(line => ({ line, i: null }));
+  if (!items.length) return showBanner('No lines to practice here.', true);
   startSession('lines', items, review && { key: review.ch.key, at: pathTo(review.node).map(m => m.san) }, { mainOnly: false });
 }
 
@@ -3107,7 +3065,7 @@ document.addEventListener('keydown', e => {
 // ---------- Spaced repetition ----------
 // What's practiced: all the lines (or positions) of the chosen preset's chapters (Studies to practice), from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
-// with chances in proportion to it. The priority is made of five parts, one per slider:
+// with chances in proportion to it. The priority is made of five parts:
 //   frequency: 0.2 to 1, by how likely your opponents are to lead you there: the product of the shares
 //     (in rated Lichess games) of the opponent's moves on the way (for a line, all of them; your own
 //     moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale from the
@@ -3125,25 +3083,12 @@ document.addEventListener('keydown', e => {
 // accuracy of your positions in it, untried ones counting as 0%), and last tested is when it was last
 // played through from move 1 to the end.
 //
-// Each slider (settings.practice.weights, 0–100, shared by lines and positions) is a power on its
-// part: 0 ignores it, 50 (the default) counts it as it is, 100 raises it to the 6th power, so the
-// items highest in it take almost every pick. So by default the priority is frequency × critical ×
-// weakness × due (frequency × critical × 6 when untried). Untried at 0 leaves untried items out, and at 100 gives them all
-// the picks until none are left.
+// The priority is frequency × critical × weakness × due (frequency × critical × 6 when untried). (Until 20
+// November 2026 five sliders, one per part, raised each to a power from 0 to 6: the user removed them, the
+// drills now doing what turning Recall or Critical up did.)
 const UNTRIED_NEED = 6;
 const CRITICAL_NEED = 2;
 const UNKNOWN_FREQUENCY = 0.6;
-const STRONGEST = 6; // the power at 100%
-const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
-
-// The five sliders: their names, and what each means (shown when hovering over its name).
-const WEIGHTS = [
-  { key: 'frequency', name: 'Frequency', definition: "How often opponents on Lichess lead to it (your own moves don't count). Higher: common ones come up more." },
-  { key: 'accuracy', name: 'Recall', definition: 'Your repertoire recall there (for a line, its weakest position). Higher: positions you recall less come up more.' },
-  { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
-  { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none are left.' },
-  { key: 'critical', name: 'Critical', definition: 'Your critical positions: the Lichess moves played there lose the critical level or more on average (for a line, any of yours in it). Higher: they come up more.' },
-];
 
 function weightedPick(items, weight) {
   const total = items.reduce((s, x) => s + weight(x), 0);
@@ -3301,16 +3246,8 @@ function itemFacts(items, mainOnly = mainOnlyNow(), now = Date.now()) {
   });
 }
 
-// Each item's priority, from its facts and the sliders.
-function priorityOf(facts, weights = settings.practice.weights) {
-  const [f, a, l, u, c] = WEIGHTS.map(w => strength(weights[w.key] ?? 50)); // a slider not set counts as its default
-  const onlyUntried = weights.untried === 100 && facts.some(p => p.untried);
-  return facts.map(p => {
-    const base = p.frequency ** f * (p.critical ? CRITICAL_NEED : 1) ** c;
-    if (p.untried) return weights.untried === 0 ? 0 : onlyUntried ? base : base * UNTRIED_NEED ** u;
-    return onlyUntried ? 0 : base * p.weakness ** a * p.due ** l;
-  });
-}
+// Each item's priority, from its facts.
+const priorityOf = facts => facts.map(p => p.frequency * (p.critical ? CRITICAL_NEED : 1) * (p.untried ? UNTRIED_NEED : p.weakness * p.due));
 
 const priorities = (items, mainOnly) => priorityOf(itemFacts(items, mainOnly));
 
@@ -3482,16 +3419,12 @@ function showChooser() {
   renderChooser();
 }
 
-// The items a kind of practice would use now (those with any chance of coming up), and a note when there
-// are none; for lines, with or without Main lines (mainOnly).
+// The items a kind of practice would use now, and a note when there are none; for lines, with or without
+// Main lines (mainOnly). (Every item has a chance of coming up: the priority is never 0.)
 const practicable = kind => practicableWith(kind, mainOnlyFor(kind));
 function practicableWith(kind, mainOnly) {
-  const all = practiceItems(kind, mainOnly);
-  const chances = priorities(all, mainOnly);
-  const items = all.filter((item, k) => chances[k] > 0);
-  const { noun } = KINDS[kind];
-  return { items, note: !all.length ? `No ${noun}s to practice: select some chapters.`
-    : !items.length ? `Every ${noun} is untried, and Untried is at 0%.` : '' };
+  const items = practiceItems(kind, mainOnly);
+  return { items, note: items.length ? '' : `No ${KINDS[kind].noun}s to practice: select some chapters.` };
 }
 
 function renderChooser() {
@@ -3501,7 +3434,7 @@ function renderChooser() {
   for (const key of Object.keys(DRILLS)) { const items = drillItems(key); positionChoices[key] = { items, note: items.length ? '' : 'No positions' }; }
   renderChoices($('lines-choice'), 'lines', lines, [['all', 'All lines', 'Every line, any of your study\'s moves right'],
     ['main', 'Main lines', 'Only lines of main moves, and only your main move right']], linesChoices);
-  renderChoices($('positions-choice'), 'positions', positions, [['spaced', 'Spaced repetition positions', KINDS.positions.title],
+  renderChoices($('positions-choice'), 'positions', positions, [['spaced', 'All', KINDS.positions.title],
     ...Object.entries(DRILLS).map(([key, d]) => [key, d.label, d.title])], positionChoices);
   for (const [tile, chosen] of [['lines', linesChoices[lines]], ['positions', positionChoices[positions]]]) {
     $(`${tile}-start`).disabled = !chosen.items.length;
@@ -3523,22 +3456,10 @@ function renderChoices(box, name, chosen, options, choices) {
   }));
 }
 
-// The Practice page's Spaced repetition tile: the sliders' values. It starts closed each time the app opens,
-// stays as you leave it during the visit, and is hidden during practice (see showPracticeTiles).
-const renderWeights = () => showSliders('weight', WEIGHTS, settings.practice.weights);
-function openSpacedRepetition(open) {
-  $('srs-body').classList.toggle('hidden', !open);
-  $('srs-toggle').setAttribute('aria-expanded', String(open));
-  $('srs-toggle').querySelector('.tile-arrow').textContent = open ? '▴' : '▾';
-  if (open) renderWeights();
-}
-$('srs-toggle').addEventListener('click', () => openSpacedRepetition($('srs-body').classList.contains('hidden')));
 
 // A change to the practice settings: saved, and the chooser and sliders shown again.
-const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); renderWeights(); };
+const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); };
 
-addSliders($('weight-rows'), 'weight', WEIGHTS, (key, value) => changePractice(p => { p.weights[key] = value; }));
-$('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
 $('lines-start').addEventListener('click', () => startSession('lines', practicable('lines').items));
 $('positions-start').addEventListener('click', () => {
   const chosen = settings.practice.positions;
@@ -3546,7 +3467,7 @@ $('positions-start').addEventListener('click', () => {
   else startSession('positions', drillItems(chosen), null, { drill: chosen });
 });
 for (const kind of Object.keys(KINDS)) {
-  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // in the Spaced repetition tile
+  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // "What comes next", in its tile
 }
 
 // "Show lines" / "Show positions": the Test probabilities table, the 25 most likely to come up next
@@ -3560,14 +3481,14 @@ const PROBABILITY_ROWS = 25;
 const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
 
 function showProbabilities(kind) {
-  const k = KINDS[kind], { weights } = settings.practice, mainLinesOnly = mainOnlyFor(kind);
+  const k = KINDS[kind], mainLinesOnly = mainOnlyFor(kind);
   const facts = itemFacts(practiceItems(kind), mainLinesOnly);
   const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
   const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
     .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance);
   const rows = likely.slice(0, PROBABILITY_ROWS), others = likely.slice(PROBABILITY_ROWS);
-  $('probabilities-settings').textContent = [k.label, ...WEIGHTS.map(w => `${w.name} ${weights[w.key]}%`), ...mainLinesOnly ? ['main lines'] : []].join(' · ');
+  $('probabilities-settings').textContent = [k.label, ...mainLinesOnly ? ['main lines'] : []].join(' · ');
   $('probabilities-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
   // The rest in one last row: what the rows shown leave of 100%, so the column adds up exactly.
   const shownPercent = rows.reduce((sum, r) => sum + Number(chanceText(r.chance).replace(/[<%]/g, '')), 0);

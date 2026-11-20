@@ -201,16 +201,15 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { lines: 'all', positions: 'spaced', weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' }, criticalLevel: 0.5, refutationLevel: 1 });
-  check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
+    practice: { lines: 'all', positions: 'spaced' }, review: { view: 'study' }, criticalLevel: 0.5, refutationLevel: 1 });
+  check('settings: invalid values fall back; old penalties and sliders ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [undefined, { lines: 'all', positions: 'spaced', weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50, critical: 50 } }]);
-  const w50 = { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 };
+    [undefined, { lines: 'all', positions: 'spaced' }]);
   check('settings: the old choices carry over (lines with Main lines only: Main lines; positions or a drill: that choice)', [
     app.checkedSettings({ practice: { focus: 'everyday', kind: 'positions', mainLinesOnly: { lines: false, positions: true } } }).practice,
     app.checkedSettings({ practice: { focus: 'lowRecall', mainLinesOnly: false } }).practice,
     app.checkedSettings({ practice: { focus: 'lines', mainLinesOnly: true } }).practice],
-    [{ lines: 'all', positions: 'spaced', weights: w50 }, { lines: 'all', positions: 'lowRecall', weights: w50 }, { lines: 'main', positions: 'spaced', weights: w50 }]);
+    [{ lines: 'all', positions: 'spaced' }, { lines: 'all', positions: 'lowRecall' }, { lines: 'main', positions: 'spaced' }]);
 
   // Masters moves: the top 3, played 10% of the time or more
   check('masters move: 5% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3', 'c4']);
@@ -274,10 +273,9 @@ function run(app) {
     app.setMoveStats({ [START]: { lichess: withResults([['e4', 20, 10, 5], ['Nh3', 2, 2, 10]]) } }); // 49 games
     check('critical: the position needs 50 games', app.expectedLossAt(START), null);
     app.setMoveStats(kept); app.setEvals(keptEvals);
-    // The fifth slider: critical items twice as likely by default, as likely at 0%.
+    // Critical items twice as likely.
     const facts = [{ frequency: 1, weakness: 1, due: 1, critical: true }, { frequency: 1, weakness: 1, due: 1, critical: false }];
-    const w = critical => ({ frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical });
-    check('critical: the Critical slider', [app.priorityOf(facts, w(50)), app.priorityOf(facts, w(0)), app.priorityOf(facts, w(100))], [[2, 1], [1, 1], [64, 1]]);
+    check('critical: twice the priority', app.priorityOf(facts), [2, 1]);
   }
   // Lichess moves: played 5% of the time or more, however many there are
   const statsKept = app.moveStats;
@@ -1280,14 +1278,10 @@ async function runPositions(app) {
   app.setHistory({ positions: tried, lines: { [lines[0].key]: [Date.now()] } });
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   const mainLinesOnly = on => app.setSettings({ practice: { lines: on ? 'main' : 'all' } });
-  // The priority and its sliders.
+  // The priority.
   const parts = [{ frequency: 1, weakness: 3, due: 3, untried: false }, { frequency: 0.2, weakness: 1, due: 0.1, untried: false }, { frequency: 0.6, untried: true }];
-  const weights = w => ({ frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, ...w });
   const rounded = v => v.map(x => Math.round(x * 1000) / 1000);
-  check('spaced repetition: by default, frequency × weakness × due (× 6 when untried)', rounded(app.priorityOf(parts, weights({}))), [9, 0.02, 3.6]);
-  check('spaced repetition: a slider at 0% ignores its part', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 0, lastPlayed: 0 }))), [1, 1, 6]);
-  check('spaced repetition: Untried at 0% leaves untried ones out, at 100% they come first', [app.priorityOf(parts, weights({ untried: 0 }))[2], rounded(app.priorityOf(parts, weights({ untried: 100 })))], [0, [0, 0, 0.6]]);
-  check('spaced repetition: a slider at 100% dominates', rounded(app.priorityOf(parts, weights({ frequency: 0, accuracy: 100, lastPlayed: 0, untried: 0 }))), [729, 1, 0]);
+  check('spaced repetition: frequency × weakness × due (× 6 when untried)', rounded(app.priorityOf(parts)), [9, 0.02, 3.6]);
   const positionItems = app.practiceItems('positions');
   check('spaced repetition: the parts of a position tried once, wrong, time unknown', (({ accuracy, weakness, due, untried }) => [accuracy, weakness, due, untried])(app.itemFacts(positionItems)[0]), [0, 3, 3, false]);
   // Frequency: by the opponent's moves on the way (3… a6 80%, 3… f6 20%), not your own.
@@ -1330,22 +1324,17 @@ async function runPositions(app) {
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   $('show-positions-btn').click();
   check('test probabilities: the title and settings', [$('probabilities').classList.contains('hidden'), $('probabilities-title').textContent, $('probabilities-settings').textContent],
-    [false, 'Test probabilities', 'Positions · Frequency 50% · Recall 50% · Last played 50% · Untried 50% · Critical 50%']);
+    [false, 'Test probabilities', 'Positions']);
   $('probabilities-close').click();
   check('test probabilities: × closes it', $('probabilities').classList.contains('hidden'), true);
-  // The sliders, in the Spaced repetition tile on the Practice page (closed until ▾).
-  check('spaced repetition: a tile on the Practice page', [$('weight-rows').closest('section').id, !!$('weight-rows').closest('#srs-tile')], ['practice-screen', true]);
-  $('weight-accuracy').value = '80';
-  $('weight-accuracy').dispatchEvent(new Event('change'));
-  check('options: a slider changes its setting', [app.settings.practice.weights.accuracy, $('weight-accuracy-value').textContent], [80, '80%']);
-  $('weights-reset').click();
-  check('options: the sliders\' Reset', app.settings.practice.weights, { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 });
+  check('no Spaced repetition tile or sliders; What comes next in each tile', [!!$('srs-tile'), !!$('weight-rows'), $('show-lines-btn').closest('.panel') !== $('show-positions-btn').closest('.panel'), $('show-lines-btn').textContent],
+    [false, false, true, 'What comes next']);
   // Studies to practice at the top, then Practice lines and Practice positions, each with its options (and
   // their counts) and its own Start practice.
   const optionLabels = tile => [...document.querySelectorAll(`#${tile}-choice .focus-option`)].map(o => o.querySelector('span').textContent);
   check('chooser: Studies to practice first, then the two tiles and their options; no Main lines only checkbox', [$('studies-to-practice').nextElementSibling === $('practice-chooser'),
     [...$('practice-chooser').querySelectorAll('h2')].map(h => h.textContent), optionLabels('lines'), optionLabels('positions'), !!$('chooser-main')],
-    [true, ['Practice lines', 'Practice positions'], ['All lines', 'Main lines'], ['Spaced repetition positions', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations'], false]);
+    [true, ['Practice lines', 'Practice positions'], ['All lines', 'Main lines'], ['All', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations'], false]);
   document.querySelector('#lines-choice input[value=main]').click();
   const mainChosen = [app.settings.practice.lines, app.settings.practice.positions];
   document.querySelector('#lines-choice input[value=all]').click();
@@ -1353,7 +1342,7 @@ async function runPositions(app) {
   $('positions-start').click();
   check('chooser: practicing, Studies to practice hidden', $('studies-to-practice').classList.contains('hidden'), true);
   check('chooser: practicing positions, the studies list hidden', [app.practice.singleAt != null, $('practice-position').textContent !== '',
-    $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), $('srs-tile').classList.contains('hidden'),
+    $('practice-chooser').classList.contains('hidden'), !$('end-practice-btn').classList.contains('hidden'), true,
     document.querySelector('#practice-screen .board-col').classList.contains('hidden')], [true, true, true, true, true, false]);
   $('end-practice-btn').click();
   check('chooser: End practice brings the chooser back', [app.practice, $('practice-chooser').classList.contains('hidden'), $('end-practice-btn').classList.contains('hidden')], [null, false, true]);
@@ -1420,11 +1409,6 @@ async function runPositions(app) {
     check('refutations: silent positions answered by the engine; the refutation level; an error; the try kept, not as recall', [atOne, atOneHalf, error, kept, lowRecall],
       [[['e4 g5', 'd4', true], ['Nh3', 'e5', true]], [['Nh3', 'e5', true]], "Not the engine's move", ['a6', 'e5'], 0]);
   }
-  // Untried at 0% with nothing tried: nothing to practice.
-  app.setSelection(['AAAAAAAA/BBBBBBBB']);
-  app.setSettings({ practice: { weights: { untried: 0 } } });
-  app.renderChooser();
-  check('chooser: nothing to practice when every line is untried and Untried is 0%', [$('lines-start').disabled, $('lines-note').textContent], [true, 'Every line is untried, and Untried is at 0%.']);
   app.setSelection([]);
   app.setSettings({});
   app.renderChooser();
