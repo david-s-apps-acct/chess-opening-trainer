@@ -430,7 +430,7 @@
   .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
   .actions .end-practice { margin-left: auto; } /* apart from the line's own buttons */
   .practice-chooser { display: flex; flex-direction: column; gap: 12px; }
-  /* Practice: Everyday or a drill, each drill with its number of positions right-aligned (see renderFocusChoice) */
+  /* Practice: spaced repetition lines or positions, or a drill, each with its number right-aligned (see renderFocusChoice) */
   .focus-choice { display: flex; flex-direction: column; gap: 4px; }
   .focus-choice .focus-label { color: var(--muted); font-size: 13px; }
   .practice-chooser .focus-option { display: flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -448,8 +448,8 @@
   .kind-switch button:last-child { border-radius: 0 4px 4px 0; }
   .kind-switch button[aria-pressed=true], .kind-switch button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
-  .chooser-frame { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--muted); border-radius: 4px; padding: 10px 12px; }
-  .chooser-frame > button { align-self: flex-start; }
+  .main-lines-label { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .main-lines-label input { margin: 0; }
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .weight-rows { display: grid; grid-template-columns: auto 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 8px 0; font-size: 14px; }
   .weight-rows input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -620,6 +620,16 @@
         </div>
       </div>
       <div class="practice-side">
+      <!-- Studies to practice, at the top (it decides what everything below chooses from): the chosen group
+           (All, or one of yours; groups are edited on the Groups page, which also says how many chapters each
+           has) and Main lines only. Hidden during practice. -->
+      <div id="studies-to-practice" class="panel studies-to-practice hidden">
+        <h2>Studies to practice</h2>
+        <div class="preset-row">
+          <select id="preset-select" aria-label="Group" title="Edit study groups on the Groups page"></select>
+        </div>
+        <label id="chooser-main-label" class="main-lines-label" title="Lines: only main moves. Positions and drills: only positions reached by main moves, and only the main move counts."><input type="checkbox" id="chooser-main"> Main lines only</label>
+      </div>
       <div class="panel">
         <div id="practice-drill" class="muted practice-drill"></div>
         <h2 id="practice-title"></h2>
@@ -636,12 +646,6 @@
         <div id="practice-status" class="status"></div>
         <div id="practice-chooser" class="practice-chooser hidden">
           <div id="focus-choice" class="focus-choice" role="radiogroup" aria-label="Practice"></div>
-          <div class="chooser-frame">
-            <div id="kind-switch" class="kind-switch" role="group" aria-label="What to practice">
-              <button id="chooser-kind-lines" aria-pressed="true" title="Whole lines">Lines</button><button id="chooser-kind-positions" aria-pressed="false" title="One of your moves at a time, from move 3">Positions</button>
-            </div>
-            <label id="chooser-main-label"><input type="checkbox" id="chooser-main"> <span id="chooser-main-text">Main lines only</span></label>
-          </div>
           <p id="chooser-note" class="muted"></p>
           <button id="chooser-start" class="primary chooser-start">Start practice</button>
         </div>
@@ -650,14 +654,6 @@
           <button id="hint-btn" class="hidden">Hint</button>
           <button id="skip-btn" class="hidden" title="On to the next; the moves answered still count">Skip</button>
           <button id="end-practice-btn" class="end-practice hidden" title="Stop and choose again; the moves answered still count">End practice</button>
-        </div>
-      </div>
-      <!-- Studies to practice: the chosen group (All, or one of yours; groups are edited on the Groups page,
-           which also says how many chapters each has). Hidden during practice. -->
-      <div id="studies-to-practice" class="panel studies-to-practice hidden">
-        <h2>Studies to practice</h2>
-        <div class="preset-row">
-          <select id="preset-select" aria-label="Group" title="Edit study groups on the Groups page"></select>
         </div>
       </div>
       <!-- Before your studies are here: any message about fetching them -->
@@ -796,7 +792,7 @@
           <li><b>Connect to Lichess</b> (Lichess page). Your studies are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li><b>Restore a backup, or download the statistics.</b> Used the app before? <b>Restore backup</b>. Otherwise check the <b>rating bands and time controls</b> (Move statistics, suggested from your Lichess rating) and press <b>Download statistics</b>.</li>
           <li><b>Choose what to practice.</b> Start with <b>All</b>, or make a group on the <b>Groups</b> page.</li>
-          <li><b>Practice.</b> On the Practice page, choose <b>Lines</b> (whole lines) or <b>Positions</b> (single moves) and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck (after your first try).</li>
+          <li><b>Practice.</b> On the Practice page, choose what to practice, e.g. <b>Spaced repetition lines</b>, and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck (after your first try).</li>
         </ol>
         <ul>
           <li>Look through a chapter first on the <b>Studies</b> page (offline too).</li>
@@ -827,9 +823,9 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li>Choose <b>Lines</b> (whole lines) or <b>Positions</b> (one of your moves at a time, from move 3), from the chapters of the chosen group (Studies to practice). <b>Main lines only</b> keeps to the main moves, for both sides: only your main move is correct.</li>
+          <li><b>Studies to practice</b>, at the top, decides what can be practiced: the chapters of the chosen group, and <b>Main lines only</b>, which keeps to the main moves, for both sides (only your main move is correct; for positions, only those reached by main moves).</li>
           <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
-          <li><b>Practice</b>: <b>Everyday</b> picks lines or positions by spaced repetition (below). A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then.</li>
+          <li><b>Practice</b>: <b>Spaced repetition lines</b> (whole lines) or <b>Spaced repetition positions</b> (one of your moves at a time, from move 3), picked by spaced repetition (below). A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
@@ -1171,17 +1167,17 @@ const ARROW_VIEWS = ['study', 'errors', 'lichess', 'masters']; // the Studies pa
 
 // Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
 // November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
-// What the Practice page practices: Everyday, or one of the drills (see DRILLS, with the same keys).
-const FOCUSES = ['everyday', 'lowRecall', 'criticalYou', 'criticalLichess'];
+// What the Practice page practices: spaced repetition lines or positions, or one of the drills (see DRILLS,
+// with the same keys).
+const FOCUSES = ['lines', 'positions', 'lowRecall', 'criticalYou', 'criticalLichess'];
 const DEFAULT_SETTINGS = {
   sounds: false,
   games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
   // The Practice page: lines or positions; main lines only, for each; and the five spaced-repetition
   // sliders (0–100, shared; see Spaced repetition).
   practice: {
-    focus: 'everyday', // or a drill (see DRILLS)
-    kind: 'lines',
-    mainLinesOnly: { lines: false, positions: false },
+    focus: 'lines', // spaced repetition lines, 'positions', or a drill (see DRILLS)
+    mainLinesOnly: false, // for everything (one setting since 20 November 2026; until then one each for lines and positions)
     weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 },
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
@@ -1195,6 +1191,7 @@ const CRITICAL_LEVELS = Array.from({ length: 14 }, (_, k) => (k + 2) / 10);
 function checkedSettings(saved) {
   const v = saved && typeof saved === 'object' ? saved : {};
   const d = DEFAULT_SETTINGS, dp = d.practice, p = v.practice || {};
+  const oldKind = ['lines', 'positions'].includes(p.kind) ? p.kind : dp.focus;
   // Each of the defaults' keys, with the saved value where it's valid.
   const valuesOf = (defaults, values, valid) => Object.fromEntries(Object.entries(defaults).map(([k, dv]) => [k, valid(values?.[k]) ? values[k] : dv]));
   const isBetween = (lo, hi) => x => Number.isInteger(x) && x >= lo && x <= hi;
@@ -1202,9 +1199,8 @@ function checkedSettings(saved) {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     games: checkedGames(v.games),
     practice: {
-      focus: FOCUSES.includes(p.focus) ? p.focus : dp.focus,
-      kind: ['lines', 'positions'].includes(p.kind) ? p.kind : dp.kind,
-      mainLinesOnly: valuesOf(dp.mainLinesOnly, p.mainLinesOnly, x => typeof x === 'boolean'),
+      focus: FOCUSES.includes(p.focus) ? p.focus : oldKind, // before 20 November 2026: 'everyday' and a kind
+      mainLinesOnly: typeof p.mainLinesOnly === 'boolean' ? p.mainLinesOnly : p.mainLinesOnly?.[oldKind] === true, // the tick for the kind chosen then
       weights: valuesOf(dp.weights, p.weights, isBetween(0, 100)),
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
@@ -1907,7 +1903,7 @@ const lastTriedAt = key => history.positions[key]?.at(-1)?.at ?? null;
 const lastPlayedAt = key => history.lines[key]?.at(-1) ?? null;
 
 // Whether Main lines only is ticked for what's practiced (or, between sessions, the kind chosen).
-const mainOnlyNow = () => session ? session.mainOnly : settings.practice.mainLinesOnly[settings.practice.kind];
+const mainOnlyNow = () => session ? session.mainOnly : settings.practice.mainLinesOnly;
 
 // An attempt is right if its first move is one of your study's moves there (see choicesAt): with Main
 // lines only (mainOnly), only the main move. Each position has these two move accuracies, from the same
@@ -3151,7 +3147,7 @@ const onMainLines = (line, i) => line.moves.slice(0, i + 1).every(m => m.variati
 // position of yours in them from move 3 (FIRST_POSITION_MOVE), once each (i: the move tested there as a
 // single position).
 const FIRST_POSITION_MOVE = 3;
-function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly[kind], { from = FIRST_POSITION_MOVE } = {}) {
+function practiceItems(kind, mainLinesOnly = settings.practice.mainLinesOnly, { from = FIRST_POSITION_MOVE } = {}) {
   const lines = tickedChapters().flatMap(practisedLines);
   if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
   const items = new Map(); // position key -> item
@@ -3179,7 +3175,7 @@ const DRILLS = {
   criticalLichess: { label: 'Critical (Lichess)', title: 'Your positions where the Lichess moves played lose the critical level or more on average',
     has: node => !!criticalAt(node.epd) },
 };
-const drillItems = (drill, mainOnly = settings.practice.mainLinesOnly.positions) =>
+const drillItems = (drill, mainOnly = settings.practice.mainLinesOnly) =>
   practiceItems('positions', mainOnly, { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, mainOnly, line.yourColor));
 
 const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].parent.key) : lastPlayedAt(line.key);
@@ -3376,13 +3372,11 @@ function choosePromotion(color) {
 // Lines and positions, the two kinds of practice: their words.
 const KINDS = {
   lines: {
-    noun: 'line', label: 'Lines', mainLines: 'Main lines only',
-    mainLinesTitle: 'Only main moves, for both sides',
+    noun: 'line', label: 'Lines', title: 'Whole lines, from move 1, picked by spaced repetition',
     columns: ['Line', 'End position reached (times)', 'Lowest repertoire recall', 'Last tested', 'Chance next'],
   },
   positions: {
-    noun: 'position', label: 'Positions', mainLines: 'Positions from main lines only',
-    mainLinesTitle: 'Only positions reached by main moves, and only the main move',
+    noun: 'position', label: 'Positions', title: 'One of your moves at a time, from move 3, picked by spaced repetition',
     columns: ['Position', 'Position reached (times)', 'Repertoire recall', 'Last tested', 'Chance next'],
   },
 };
@@ -3409,7 +3403,7 @@ function showChooser() {
 // are none.
 function practicable(kind) {
   const all = practiceItems(kind);
-  const chances = priorities(all, settings.practice.mainLinesOnly[kind]);
+  const chances = priorities(all, settings.practice.mainLinesOnly);
   const items = all.filter((item, k) => chances[k] > 0);
   const { noun } = KINDS[kind];
   return { items, note: !all.length ? `No ${noun}s to practice: select some chapters.`
@@ -3417,35 +3411,33 @@ function practicable(kind) {
 }
 
 function renderChooser() {
-  const { focus, kind, mainLinesOnly } = settings.practice, drill = focus !== 'everyday';
-  const shownKind = drill ? 'positions' : kind, k = KINDS[shownKind]; // a drill practices positions
-  for (const name of Object.keys(KINDS)) $(`chooser-kind-${name}`).setAttribute('aria-pressed', String(name === kind));
-  $('kind-switch').classList.toggle('hidden', drill);
-  $('chooser-main').checked = mainLinesOnly[shownKind];
-  $('chooser-main-text').textContent = k.mainLines;
-  $('chooser-main-label').title = k.mainLinesTitle;
-  const counts = renderFocusChoice();
-  const { items, note } = drill ? { items: drillItems(focus), note: counts[focus] ? '' : 'No positions' } : practicable(kind);
+  const { focus, mainLinesOnly } = settings.practice;
+  $('chooser-main').checked = mainLinesOnly;
+  const { items, note } = renderFocusChoice()[focus];
   $('chooser-start').disabled = !items.length;
   $('chooser-note').textContent = note;
 }
 
-// "Practice": Everyday (spaced repetition, as chosen below) or a drill, each drill with its number of
-// positions right-aligned; a drill with none is grayed out (unless chosen). Returns the counts.
+// "Practice": spaced repetition lines or positions (set by the Spaced repetition tile's sliders), or a drill,
+// each with its number right-aligned (for spaced repetition, those that can come up); one with none is grayed
+// out (unless chosen). Returns each one's items and a note when there are none.
 function renderFocusChoice() {
-  const focus = settings.practice.focus, counts = {};
-  const option = (value, label, title, count) => {
+  const focus = settings.practice.focus, choices = {};
+  const option = (value, label, title) => {
+    const { items } = choices[value];
     const input = element('input', { type: 'radio', name: 'focus', value });
     input.checked = value === focus;
-    input.disabled = count === 0 && value !== focus;
+    input.disabled = !items.length && value !== focus;
     input.addEventListener('change', () => changePractice(p => { p.focus = value; }));
-    return element('label', { class: 'focus-option' + (count === 0 ? ' empty' : ''), title }, input, element('span', {}, label),
-      count == null ? '' : element('span', { class: 'focus-count' }, String(count)));
+    return element('label', { class: 'focus-option' + (items.length ? '' : ' empty'), title }, input, element('span', {}, label),
+      element('span', { class: 'focus-count' }, String(items.length)));
   };
-  const drills = Object.entries(DRILLS).map(([key, d]) => option(key, d.label, d.title, counts[key] = drillItems(key).length));
+  for (const kind of Object.keys(KINDS)) choices[kind] = practicable(kind);
+  for (const key of Object.keys(DRILLS)) { const items = drillItems(key); choices[key] = { items, note: items.length ? '' : 'No positions' }; }
   $('focus-choice').replaceChildren(element('div', { class: 'focus-label' }, 'Practice'),
-    option('everyday', 'Everyday', 'Spaced repetition, as set below', null), ...drills);
-  return counts;
+    ...Object.entries(KINDS).map(([kind, k]) => option(kind, `Spaced repetition ${k.noun}s`, k.title)),
+    ...Object.entries(DRILLS).map(([key, d]) => option(key, d.label, d.title)));
+  return choices;
 }
 
 // The Practice page's Spaced repetition tile: the sliders' values. It starts closed each time the app opens,
@@ -3462,16 +3454,15 @@ $('srs-toggle').addEventListener('click', () => openSpacedRepetition($('srs-body
 // A change to the practice settings: saved, and the chooser and sliders shown again.
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); renderWeights(); };
 
-$('chooser-main').addEventListener('change', e => changePractice(p => { p.mainLinesOnly[p.focus === 'everyday' ? p.kind : 'positions'] = e.target.checked; }));
+$('chooser-main').addEventListener('change', e => changePractice(p => { p.mainLinesOnly = e.target.checked; }));
 addSliders($('weight-rows'), 'weight', WEIGHTS, (key, value) => changePractice(p => { p.weights[key] = value; }));
 $('weights-reset').addEventListener('click', () => changePractice(p => { p.weights = { ...DEFAULT_SETTINGS.practice.weights }; }));
 $('chooser-start').addEventListener('click', () => {
-  const { focus, kind } = settings.practice;
-  if (focus === 'everyday') startSession(kind, practicable(kind).items);
+  const { focus } = settings.practice;
+  if (focus in KINDS) startSession(focus, practicable(focus).items);
   else startSession('positions', drillItems(focus), null, { drill: focus });
 });
 for (const kind of Object.keys(KINDS)) {
-  $(`chooser-kind-${kind}`).addEventListener('click', () => changePractice(p => { p.kind = kind; }));
   $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // in the Spaced repetition tile
 }
 
@@ -3487,13 +3478,13 @@ const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
 
 function showProbabilities(kind) {
   const k = KINDS[kind], { mainLinesOnly, weights } = settings.practice;
-  const facts = itemFacts(practiceItems(kind), mainLinesOnly[kind]);
+  const facts = itemFacts(practiceItems(kind), mainLinesOnly);
   const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
   const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
     .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance);
   const rows = likely.slice(0, PROBABILITY_ROWS), others = likely.slice(PROBABILITY_ROWS);
-  $('probabilities-settings').textContent = [k.label, ...WEIGHTS.map(w => `${w.name} ${weights[w.key]}%`), ...mainLinesOnly[kind] ? [k.mainLines.toLowerCase()] : []].join(' · ');
+  $('probabilities-settings').textContent = [k.label, ...WEIGHTS.map(w => `${w.name} ${weights[w.key]}%`), ...mainLinesOnly ? ['main lines only'] : []].join(' · ');
   $('probabilities-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
   // The rest in one last row: what the rows shown leave of 100%, so the column adds up exactly.
   const shownPercent = rows.reduce((sum, r) => sum + Number(chanceText(r.chance).replace(/[<%]/g, '')), 0);
@@ -3536,7 +3527,7 @@ let session = null;
 
 // Practice lines or positions, one at a time, picked by priority (never the same one twice in a row
 // when there's another).
-function startSession(kind, items, returnTo = null, { mainOnly = settings.practice.mainLinesOnly[kind], drill = null } = {}) {
+function startSession(kind, items, returnTo = null, { mainOnly = settings.practice.mainLinesOnly, drill = null } = {}) {
   if (!items.length) return;
   session = { kind, items, previous: null, mainOnly, returnTo, drill, left: [...items] };
   showScreen('practice');
