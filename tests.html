@@ -720,8 +720,8 @@ async function runLichessPage(app) {
     check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
-    // A position of yours below 100%: a violet dot after the move leading to it (before the first move
-    // for the start), no background.
+    // Weak recall, a position of yours below 75%: a violet dot after the move leading to it (before the first
+    // move for the start), no background; at 75% (3 of 4), none.
     {
       const keptHistory = app.history;
       const wrong = [{ tried: ['d4', 'Nf3'], at: 1, main: false }];
@@ -730,8 +730,11 @@ async function runLichessPage(app) {
       const after = [tree.querySelectorAll('.needs-work').length, [...tree.querySelectorAll('.weak-dot')].map(d => [d.previousElementSibling.textContent, d.title])];
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': wrong }, lines: {} });
       const start = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelector('.tree-line').firstElementChild.className;
-      check('tree: a violet dot after the move leading to a position with errors, before the first move for the start; no background', [after, start],
-        [[0, [['e5', 'Your errors here: below 100% repertoire recall']]], 'tree-dot weak-dot']);
+      const right = { tried: ['Nf3'], at: 2, main: false };
+      app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [...wrong, right, right, right] }, lines: {} });
+      const atThreeQuarters = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelectorAll('.weak-dot').length;
+      check('tree: weak recall, a violet dot after the move leading to it, before the first move for the start; no background; none at 75%', [after, start, atThreeQuarters],
+        [[0, [['e5', 'Weak recall: below 75%']]], 'tree-dot weak-dot', 0]);
       app.setHistory(keptHistory);
     }
     check('no errors tile (the board and its square tips show the errors)', !!$('review-errors'), false);
@@ -1073,7 +1076,7 @@ async function runEngineTests(app, key) {
   const lossInStudy = $('review-loss').children.length;
   app.setHistory(historyKept); app.settings.review.view = viewKept;
   check('expected loss tile: with Accuracy, at a position of yours with tries, a Δ, last tested, each move colored; none with Study', [lossTile, lossColor, lossInStudy],
-    [['Your expected loss', 'Δ0.0 (last 1 try)', 'Last tested today', 'c5 100% · Δ0.0'], 'loss-none', 0]);
+    [['Your expected loss', 'Δ0.0 (last 1 try)', 'c5 100% · Δ0.0', 'Last tested today'], 'loss-none', 0]);
   // Without the engine (the version opened from disk): no bar.
   app.setEngine(false);
   key('Home');

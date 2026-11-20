@@ -365,6 +365,7 @@
   .review-loss:empty { display: none; }
   .review-loss h3 { margin: 0 0 4px; font-size: 15px; color: #b39dfa; }
   .review-loss p { margin: 0 0 4px; }
+  .review-loss .last-tested { margin: 6px 0 0; }
   .review-loss .critical-line { color: var(--critical-text); } /* Critical position (you), in the critical positions' orange */
   .review-loss .loss-moves div { color: var(--muted); }
   /* A move's Δ by its loss (see lossDelta): none, below the critical level, at it or more */
@@ -798,7 +799,7 @@
           <ul>
             <li><b>Line</b>: one path through a chapter: one of your study's moves at each of your turns, and every reply your study gives the opponent.</li>
             <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. It's correct too, unless the study marks it ?, ?? or ?!, or Main lines only is ticked.</li>
-            <li><b>Repertoire recall</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
+            <li><b>Repertoire recall</b>: how often you were right first time in a position, over your last 10 tries (see Practice). <b>Weak recall</b>: below 75%.</li>
             <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire recall.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
             <li><b>Critical position (Lichess)</b>: one where the Lichess moves played there lose 0.5 pawns or more on average, by the engine (its <b>Lichess expected loss</b>). <b>Critical position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
@@ -853,7 +854,7 @@
         </details>
         <details>
           <summary>Repertoire recall</summary>
-          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, or a move the study marks ?, ?? or ?!. Repertoire recall is the share right first time over your last 10 tries. (Until 20 November 2026 it was called repertoire accuracy.) Below 100%, a move gets a violet background (in the Studies page's move tree, a violet dot after it).</p>
+          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, or a move the study marks ?, ?? or ?!. Repertoire recall is the share right first time over your last 10 tries. (Until 20 November 2026 it was called repertoire accuracy.) Below 100%, a move gets a violet background. Below 75% is <b>weak recall</b>: in the Studies page's move tree, a violet dot after the move leading there.</p>
           <p>Each position has two: with <b>Main lines only</b>, only the main move is right (tries without it where you played one of your alternatives are left out); without it, any of your study's moves. You see the one for the current setting.</p>
           <details>
             <summary>What counts as a try</summary>
@@ -923,7 +924,7 @@
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% repertoire recall, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position (Lichess, or with Recall, you). Select the move to see a tile about that position.</li>
+            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, <b>weak recall</b> there: your repertoire recall is below 75% (from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position (Lichess, or with Recall, you). Select the move to see a tile about that position.</li>
             <li>Each view shows its own dots and tiles: <b>Recall</b> the violet ones and Critical positions (you), <b>Masters</b> the teal ones, <b>Lichess</b> Critical positions (Lichess). <b>Study</b> keeps to what's in your study, with none.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Click a move to show it on the big board, with the details.</li>
@@ -2219,9 +2220,11 @@ function chapterLink(c, k) {
 // chapter's own side (own) that's practiced, or any move whose position you've tried (e.g. played from
 // the other side).
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
-// A position of yours (your move there) below 100% repertoire recall: the move tree's violet dot, after
-// the move leading to it (as the critical dot), and the errors tile when it's on the board.
-const isWeakPosition = (node, own) => node.children.some(c => isShownAsYours(c, own)) && scoreClass(shareAt(node)) === 'needs-work';
+// Weak recall (the user's decision, 20 November 2026): a position of yours (your move there) whose
+// repertoire recall is below 75% (fixed; until then below 100%): the move tree's violet dot, after the move
+// leading to it (as the critical dot).
+const WEAK_RECALL = 0.75;
+const isWeakPosition = (node, own) => { const share = shareAt(node); return share != null && share < WEAK_RECALL - 1e-9 && node.children.some(c => isShownAsYours(c, own)); };
 
 // A position of yours where your study's main move isn't a masters move (see isMasterMove): the move
 // tree's teal dot and the masters tile. Not for a main move the study marks ?, ?? or ?! (it's known to be
@@ -2391,7 +2394,7 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   if (startDots.length) box.querySelector('.tree-line')?.prepend(...startDots, ' ');
   return box;
 }
-const weakPositionDot = () => element('span', { class: 'tree-dot weak-dot', title: 'Your errors here: below 100% repertoire recall' });
+const weakPositionDot = () => element('span', { class: 'tree-dot weak-dot', title: 'Weak recall: below 75%' });
 const criticalPositionDot = who => element('span', { class: 'tree-dot critical-dot', title: `Critical position (${who})` });
 const mastersPositionDot = () => element('span', { class: 'tree-dot masters-dot', title: "Your study's move here isn't a masters move" });
 
@@ -2788,7 +2791,7 @@ const KEY_ARROWS = [
 ];
 const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
-  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position where you made errors: below 100% repertoire recall (select it to see them)', views: ['errors'] },
+  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position of weak recall: below 75% (select it to see your errors)', views: ['errors'] },
   { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)", views: ['masters'] },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
@@ -2970,8 +2973,8 @@ function lossDelta(delta) {
 
 // With Recall, under the comment, at one of your positions with tries: "Your expected loss", then (in
 // orange) "Critical position (you)" when it's the critical level or more (see isYourCriticalPosition), e.g.
-// "Δ−0.4 (last 4 tries)", when it was last tested, e.g. "Last tested 3 days ago", and each first move with
-// its share and colored Δ, e.g. "d4 50% · Δ−0.1"; "Evaluating…" until it's known.
+// "Δ−0.4 (last 4 tries)", each first move with its share and colored Δ, e.g. "d4 50% · Δ−0.1", and last,
+// when it was last tested, e.g. "Last tested 3 days ago"; "Evaluating…" until it's known.
 function renderLossTile(node) {
   const e = engineAvailable() && settings.review.view === 'errors' && yourMovesAt(node).length ? yourExpectedLoss(node) : null;
   const last = e && lastTriedAt(node.key), days = last && daysAgo(last);
@@ -2980,8 +2983,8 @@ function renderLossTile(node) {
     ...critical ? [element('p', { class: 'critical-line' }, 'Critical position (you)')] : [],
     ...e.pending ? [element('p', { class: 'muted' }, 'Evaluating…')] : [
       element('p', {}, `${deltaText(-e.loss)} (last ${plural(e.tries, 'try', 'tries')})`),
-      ...last ? [element('p', { class: 'muted' }, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`)] : [],
-      element('div', { class: 'loss-moves' }, e.moves.map(m => element('div', {}, `${m.label} ${percent(m.share)}% · `, lossDelta(m.delta))))]]);
+      element('div', { class: 'loss-moves' }, e.moves.map(m => element('div', {}, `${m.label} ${percent(m.share)}% · `, lossDelta(m.delta)))),
+      ...last ? [element('p', { class: 'muted last-tested' }, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`)] : []]]);
 }
 
 // When your study's main move in the position on the board isn't a masters move (see isOffMastersPath):
