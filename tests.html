@@ -720,7 +720,7 @@ async function runLichessPage(app) {
     check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
-    // Weak recall, a position of yours below 75%: a violet dot after the move leading to it (before the first
+    // Low recall, a position of yours below 75%: a violet dot after the move leading to it (before the first
     // move for the start), no background; at 75% (3 of 4), none.
     {
       const keptHistory = app.history;
@@ -733,8 +733,8 @@ async function runLichessPage(app) {
       const right = { tried: ['Nf3'], at: 2, main: false };
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [...wrong, right, right, right] }, lines: {} });
       const atThreeQuarters = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelectorAll('.weak-dot').length;
-      check('tree: weak recall, a violet dot after the move leading to it, before the first move for the start; no background; none at 75%', [after, start, atThreeQuarters],
-        [[0, [['e5', 'Weak recall: below 75%']]], 'tree-dot weak-dot', 0]);
+      check('tree: low recall, a violet dot after the move leading to it, before the first move for the start; no background; none at 75%', [after, start, atThreeQuarters],
+        [[0, [['e5', 'Low recall: below 75%']]], 'tree-dot weak-dot', 0]);
       app.setHistory(keptHistory);
     }
     check('no errors tile (the board and its square tips show the errors)', !!$('review-errors'), false);
