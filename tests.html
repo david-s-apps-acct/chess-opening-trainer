@@ -1323,18 +1323,27 @@ async function runPositions(app) {
   app.setLibrary(library);
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   $('show-positions-btn').click();
-  check('test probabilities: the title and settings', [$('probabilities').classList.contains('hidden'), $('probabilities-title').textContent, $('probabilities-settings').textContent],
-    [false, 'Test probabilities', 'Positions']);
+  check('likely next: the title, no settings line for positions', [$('probabilities').classList.contains('hidden'), $('probabilities-title').textContent, $('probabilities-settings').textContent],
+    [false, 'Likely next positions', '']);
   $('probabilities-close').click();
-  check('test probabilities: × closes it', $('probabilities').classList.contains('hidden'), true);
-  check('no Spaced repetition tile or sliders; What comes next in each tile', [!!$('srs-tile'), !!$('weight-rows'), $('show-lines-btn').closest('.panel') !== $('show-positions-btn').closest('.panel'), $('show-lines-btn').textContent],
-    [false, false, true, 'What comes next']);
+  check('likely next: × closes it', $('probabilities').classList.contains('hidden'), true);
+  // A row opens it on the Studies page: a line at its last position (a move with nothing after it in the tree).
+  $('show-lines-btn').click();
+  const lineRow = document.querySelector('#probabilities-rows tr.opens');
+  const rowTitle = lineRow?.title;
+  lineRow?.click();
+  const current = document.querySelector('#review-tree .tree-move.current');
+  const opened = [!$('studies-screen').classList.contains('hidden'), $('probabilities').classList.contains('hidden'), rowTitle, !!current];
+  $('nav-practice').click();
+  check('likely next: a line\'s row opens it on the Studies page', opened, [true, true, 'Open on the Studies page', true]);
+  check('no Spaced repetition tile or sliders; Likely next in each tile', [!!$('srs-tile'), !!$('weight-rows'), $('show-lines-btn').closest('.panel') !== $('show-positions-btn').closest('.panel'), $('show-lines-btn').textContent],
+    [false, false, true, 'Likely next']);
   // Studies to practice at the top, then Practice lines and Practice positions, each with its options (and
   // their counts) and its own Start practice.
   const optionLabels = tile => [...document.querySelectorAll(`#${tile}-choice .focus-option`)].map(o => o.querySelector('span').textContent);
   check('chooser: Studies to practice first, then the two tiles and their options; no Main lines only checkbox', [$('studies-to-practice').nextElementSibling === $('practice-chooser'),
     [...$('practice-chooser').querySelectorAll('h2')].map(h => h.textContent), optionLabels('lines'), optionLabels('positions'), !!$('chooser-main')],
-    [true, ['Practice lines', 'Practice positions'], ['All lines', 'Main lines'], ['All', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations'], false]);
+    [true, ['Lines', 'Positions'], ['All lines', 'Main lines'], ['All', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations'], false]);
   document.querySelector('#lines-choice input[value=main]').click();
   const mainChosen = [app.settings.practice.lines, app.settings.practice.positions];
   document.querySelector('#lines-choice input[value=all]').click();

@@ -156,7 +156,7 @@
 
   .card h3 { font-size: 14px; margin: 16px 0 0; }
 
-  /* The Test probabilities table, shown by "What comes next" (in each practice tile) */
+  /* The Likely next table, shown by "Likely next" (in the Lines and Positions tiles); a row opens it on the Studies page */
   .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   .report-table th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; padding: 4px 8px; }
   .report-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -167,12 +167,12 @@
   /* Repertoire recall: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* On the Practice page, under the chooser: the Studies to practice tile (the group, how many chapters it has). */
+  /* On the Practice page: the Practice tile (the group), then the Lines and Positions tiles. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .studies-to-practice h2 { margin: 0 0 10px; }
   #practice-message:empty { display: none; }
-  /* "What comes next" under a tile's options: a small link to the Test probabilities table */
+  /* "Likely next" under a tile's options: a small link to the Likely next table */
   .next-link { align-self: flex-start; padding: 0; background: none; box-shadow: none; font-size: 13px; color: var(--accent); }
   .next-link:hover:not(:disabled) { background: none; text-decoration: underline; color: var(--accent); }
   .preset-row { display: flex; align-items: center; gap: 8px; }
@@ -471,6 +471,9 @@
   .overlay-close { font-size: 26px; line-height: 1; padding: 0 6px; }
   .overlay-close:hover:not(:disabled) { background: none; color: var(--text-strong); }
   #probabilities-settings { font-size: 13px; margin-top: 4px; }
+  #probabilities-settings:empty { display: none; }
+  #probabilities-rows tr.opens { cursor: pointer; }
+  #probabilities-rows tr.opens:hover td { color: var(--text-strong); }
   #probabilities-note:empty { display: none; }
 
   /* A message over the board that fades away: the end-of-line panel, or a short note. */
@@ -614,11 +617,11 @@
         </div>
       </div>
       <div class="practice-side">
-      <!-- Studies to practice, at the top (it decides what everything below chooses from): the chosen group
+      <!-- Practice (called Studies to practice until 20 November 2026), at the top (it decides what everything below chooses from): the chosen group
            (All, or one of yours; groups are edited on the Groups page, which also says how many chapters each
            has). Hidden during practice. -->
       <div id="studies-to-practice" class="panel studies-to-practice hidden">
-        <h2>Studies to practice</h2>
+        <h2>Practice</h2>
         <div class="preset-row">
           <select id="preset-select" aria-label="Group" title="Edit study groups on the Groups page"></select>
         </div>
@@ -626,16 +629,16 @@
       <!-- Choosing what to practice: two tiles, each with its own Start practice (see renderChooser). -->
       <div id="practice-chooser" class="practice-chooser hidden">
         <div class="panel">
-          <h2>Practice lines</h2>
-          <div id="lines-choice" class="focus-choice" role="radiogroup" aria-label="Practice lines"></div>
-          <button id="show-lines-btn" class="next-link" title="The lines most likely to come up next, and their chances">What comes next</button>
+          <h2>Lines</h2>
+          <div id="lines-choice" class="focus-choice" role="radiogroup" aria-label="Lines"></div>
+          <button id="show-lines-btn" class="next-link" title="The lines most likely to come up next, and their chances">Likely next</button>
           <p id="lines-note" class="muted"></p>
           <button id="lines-start" class="primary chooser-start">Start practice</button>
         </div>
         <div class="panel">
-          <h2>Practice positions</h2>
-          <div id="positions-choice" class="focus-choice" role="radiogroup" aria-label="Practice positions"></div>
-          <button id="show-positions-btn" class="next-link" title="With All, the positions most likely to come up next, and their chances">What comes next</button>
+          <h2>Positions</h2>
+          <div id="positions-choice" class="focus-choice" role="radiogroup" aria-label="Positions"></div>
+          <button id="show-positions-btn" class="next-link" title="With All, the positions most likely to come up next, and their chances">Likely next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
         </div>
@@ -762,10 +765,10 @@
     </div>
   </div>
 
-  <!-- Test probabilities: a table shown over the Practice page -->
+  <!-- Likely next: a table shown over the Practice page (Test probabilities until 20 November 2026) -->
   <div id="probabilities" class="table-overlay hidden">
     <div class="card table-card" role="dialog" aria-modal="true" aria-labelledby="probabilities-title">
-      <div class="overlay-head"><h2 id="probabilities-title">Test probabilities</h2><button id="probabilities-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
+      <div class="overlay-head"><h2 id="probabilities-title">Likely next</h2><button id="probabilities-close" class="icon-btn overlay-close" aria-label="Close" title="Close (Esc)">×</button></div>
       <div id="probabilities-settings" class="muted"></div>
       <table class="report-table"><thead><tr id="probabilities-columns"></tr></thead><tbody id="probabilities-rows"></tbody></table>
       <p id="probabilities-note" class="muted"></p>
@@ -816,10 +819,10 @@
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li><b>Studies to practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
-          <li>Spaced repetition chooses what comes next; <b>What comes next</b>, in each tile, lists what's most likely to come up.</li>
-          <li><b>Practice lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
-          <li><b>Practice positions</b>: <b>Spaced repetition positions</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1 pawn by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 pawns of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
+          <li><b>Practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
+          <li>Spaced repetition chooses what comes next, at random but weighted; <b>Likely next</b>, in each tile, lists what's most likely to come up. Click a row to open it on the Studies page (a line at its last position).</li>
+          <li><b>Lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
+          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1 pawn by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 pawns of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
@@ -871,7 +874,7 @@
           <summary>Spaced repetition</summary>
           <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. Common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
-            <li><b>What comes next</b> (in Practice lines, or Practice positions for All) lists the 25 most likely to be tested next, with their position reached, recall, when last tested and chance of coming up next.</li>
+            <li><b>Likely next</b> (in Lines, or Positions for All) lists the 25 most likely to be tested next, with their position reached, recall, when last tested and chance of coming up next.</li>
           </ul>
           <details>
             <summary>How the priority is worked out</summary>
@@ -898,7 +901,7 @@
       <div class="card" id="help-groups">
         <h2>Groups</h2>
         <ul>
-          <li>What you practice is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
+          <li>What you practice is always the group chosen on the Practice page (the <b>Practice</b> tile): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
           <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a button for its main color (the color its study is written for) and one for the other color, played or not (an X through it); with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out. A study's two buttons set every chapter's main color, or other color (a fainter X: only some play it; a half-white, half-black dot: the study has White and Black chapters).</li>
           <li>Then <b>Save</b>, <b>Save as new</b> (a new group with the chapters as shown; the group you started from stays as saved), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Save as new. Leaving the page asks before dropping changes not saved.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are in backups, but Merge backup leaves them alone, so each device can have its own.</li>
@@ -1160,7 +1163,7 @@ const ARROW_VIEWS = ['study', 'errors', 'lichess', 'masters']; // the Studies pa
 
 // Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
 // November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
-// The Practice positions tile's choices: spaced repetition, or one of the drills (see DRILLS, with the same keys).
+// The Positions tile's choices: spaced repetition, or one of the drills (see DRILLS, with the same keys).
 const POSITION_CHOICES = ['spaced', 'lowRecall', 'criticalYou', 'criticalLichess', 'refutations'];
 const DEFAULT_SETTINGS = {
   sounds: false,
@@ -1168,8 +1171,8 @@ const DEFAULT_SETTINGS = {
   // The Practice page: lines or positions; main lines only, for each; and the five spaced-repetition
   // sliders (0–100, shared; see Spaced repetition).
   practice: {
-    lines: 'all', // the Practice lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
-    positions: 'spaced', // the Practice positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
+    lines: 'all', // the Lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
+    positions: 'spaced', // the Positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
   review: { view: 'study' },
@@ -2122,11 +2125,11 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // and chapter is listed, each with a main color and an other color button (see chapterRow and groupColorButtons),
 // with Save, Save as new, Rename, Delete and Cancel (for All, only Save as new and Cancel; Save and
 // Cancel only once something has changed). Leaving the page with changes not saved asks first, then drops them.
-// Only groups decide what's practiced: the group chosen on the Practice page (the Studies to practice
+// Only groups decide what's practiced: the group chosen on the Practice page (the Practice tile
 // tile); the tile is hidden during practice, since a session's lines are chosen when it starts.
 let editing = null; // on the Groups page, the group being edited: { preset, colors (a Map: chapter key -> the Set of colors played; only the chapters in the group), open (the studies whose chapters are listed) }
 
-// The Practice page's Studies to practice and Spaced repetition tiles: once there are studies, and not
+// The Practice page's Practice tile: once there are studies, and not
 // during practice (before there are studies, any message about fetching them instead).
 function showPracticeTiles() {
   $('studies-to-practice').classList.toggle('hidden', !library || !!practice);
@@ -3063,7 +3066,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- Spaced repetition ----------
-// What's practiced: all the lines (or positions) of the chosen preset's chapters (Studies to practice), from
+// What's practiced: all the lines (or positions) of the chosen preset's chapters (the Practice tile), from
 // main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of five parts:
 //   frequency: 0.2 to 1, by how likely your opponents are to lead you there: the product of the shares
@@ -3226,7 +3229,7 @@ function logReach({ line, i }) {
 }
 
 // Each item's facts and the parts of its priority: { item, accuracy, lastTested, games (the games
-// reaching it, for the Test probabilities table; null while its statistics haven't downloaded),
+// reaching it, for the Likely next table; null while its statistics haven't downloaded),
 // frequency, weakness, due, untried, critical }, with or without Main lines only (mainOnly).
 function itemFacts(items, mainOnly = mainOnlyNow(), now = Date.now()) {
   const reach = items.map(logReach);
@@ -3382,9 +3385,9 @@ function choosePromotion(color) {
 }
 
 // ---------- Practice: choosing what to practice ----------
-// The Practice page when nothing is in progress: the Lines | Positions switch with its main-lines
-// checkbox, and Start practice; under it the Studies to practice and Spaced repetition tiles (the
-// sliders, with Show lines, Show positions and Reset). Everything here is kept in settings.practice.
+// The Practice page when nothing is in progress: the Practice tile (the group), then the Lines tile (All
+// lines or Main lines) and the Positions tile (All or a drill), each with its counts, Likely next and Start
+// practice. The choices are kept in settings.practice.
 // (Reverse sides, playing the opponent's moves unscored, went on 6 November 2026: a group can have a
 // chapter played from both sides instead.)
 
@@ -3467,10 +3470,10 @@ $('positions-start').addEventListener('click', () => {
   else startSession('positions', drillItems(chosen), null, { drill: chosen });
 });
 for (const kind of Object.keys(KINDS)) {
-  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // "What comes next", in its tile
+  $(`show-${kind}-btn`).addEventListener('click', () => showProbabilities(kind)); // "Likely next", in its tile
 }
 
-// "Show lines" / "Show positions": the Test probabilities table, the 25 most likely to come up next
+// "Likely next" (each tile's link): the Likely next table, the 25 most likely to come up next
 // with the current settings, the most likely first, and the rest together in a last row ("Other lines
 // to be tested (12)"), so the chances add up to 100%; over the Practice page, closed with ×, Esc or a
 // click outside it.
@@ -3488,7 +3491,8 @@ function showProbabilities(kind) {
   const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
     .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance);
   const rows = likely.slice(0, PROBABILITY_ROWS), others = likely.slice(PROBABILITY_ROWS);
-  $('probabilities-settings').textContent = [k.label, ...mainLinesOnly ? ['main lines'] : []].join(' · ');
+  $('probabilities-title').textContent = `Likely next ${k.noun}s`;
+  $('probabilities-settings').textContent = mainLinesOnly ? 'Main lines' : '';
   $('probabilities-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
   // The rest in one last row: what the rows shown leave of 100%, so the column adds up exactly.
   const shownPercent = rows.reduce((sum, r) => sum + Number(chanceText(r.chance).replace(/[<%]/g, '')), 0);
@@ -3510,6 +3514,10 @@ function probabilityRow({ item: { line, i }, accuracy, games, lastTested, chance
       : element('span', { class: scoreClass(accuracy) }, `${percent(accuracy)}%`)),
     element('td', { class: 'num' }, daysAgo(lastTested)),
     element('td', { class: 'num' }, chanceText(chance)));
+  // A click opens it on the Studies page: a position there, a line at its last position.
+  tr.classList.add('opens');
+  tr.title = 'Open on the Studies page';
+  tr.addEventListener('click', () => { hideProbabilities(); openReview(ch, { at: line.moves.slice(0, i ?? line.moves.length).map(m => m.san) }); });
   return addHoverBoard(tr, line.moves[hoverAt], line.yourColor, null, tr.firstChild);
 }
 
