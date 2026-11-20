@@ -1289,7 +1289,7 @@ async function runPositions(app) {
   check('spaced repetition: frequency from the opponent\'s moves: 4. Ba4 (after a6) more likely than 4. d4 (after f6)', [freq[0], freq[1] > freq[2], freq[2]], [1, true, 0.2]);
   check('positions: only your moves from move 3', [positionItems.every(({ line, i }) => line.moves[i].moveNumber >= 3), app.practiceItems('positions').map(({ line, i }) => line.moves[i].san)],
     [true, ['Bb5', 'Ba4', 'd4']]);
-  check('spaced repetition: all positions, including untried ones; Main lines doesn\'t apply to positions (though the filter works)', [positionItems.length, (mainLinesOnly(true), app.practiceItems('positions').length), app.practiceItems('positions', true).length], [3, 3, 2]);
+  check('spaced repetition: all positions, including untried ones; Main lines doesn\'t apply to positions', [positionItems.length, (mainLinesOnly(true), app.practiceItems('positions').length)], [3, 3]);
   check('spaced repetition: all lines', [(app.setSettings({}), app.practiceItems('lines').length), (mainLinesOnly(true), app.practiceItems('lines').length)], [2, 1]);
   app.setSettings({});
   const linePriorities = app.priorities(app.practiceItems('lines'));
@@ -1340,7 +1340,7 @@ async function runPositions(app) {
     [false, false, true, 'Likely next']);
   // Studies to practice at the top, then Practice lines and Practice positions, each with its options (and
   // their counts) and its own Start practice.
-  const optionLabels = tile => [...document.querySelectorAll(`#${tile}-choice .focus-option`)].map(o => o.querySelector('span').textContent);
+  const optionLabels = tile => [...document.querySelectorAll(`#${tile}-choice .choice`)].map(o => o.querySelector('span').textContent);
   check('chooser: Studies to practice first, then the two tiles and their options; no Main lines only checkbox', [$('studies-to-practice').nextElementSibling === $('practice-chooser'),
     [...$('practice-chooser').querySelectorAll('h2')].map(h => h.textContent), optionLabels('lines'), optionLabels('positions'), !!$('chooser-main')],
     [true, ['Lines', 'Positions'], ['All lines', 'Main lines'], ['All', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations'], false]);
@@ -1367,7 +1367,7 @@ async function runPositions(app) {
     app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'Nf3'], at: 1, main: false }],
       'AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6': [{ tried: ['Bc4'], at: 1, main: false }] }, lines: {} });
     app.renderChooser();
-    const options = () => [...document.querySelectorAll('#positions-choice .focus-option')].slice(1).map(o => [o.textContent, o.querySelector('input').disabled]);
+    const options = () => [...document.querySelectorAll('#positions-choice .choice')].slice(1).map(o => [o.textContent, o.querySelector('input').disabled]);
     const before = options();
     document.querySelector('#positions-choice input[value=lowRecall]').click();
     const drill = [app.settings.practice.positions, $('positions-start').disabled];

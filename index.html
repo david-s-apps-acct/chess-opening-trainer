@@ -56,9 +56,7 @@
     --border: #3d3a36;
     --accent: #3692e7;
     --accent-text: #ffffff;
-    --good: #629924;
     --bad: #cc3333;
-    --warn: #d59120;
     --critical: #e8742c; /* critical positions (orange) */
     --critical-text: #eb9a63; /* the same, for text on the dark background */
     --box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
@@ -431,19 +429,19 @@
   .practice-chooser .panel { display: flex; flex-direction: column; gap: 12px; }
   .practice-chooser h2 { margin: 0; }
   /* Each tile's options, each with its number right-aligned (see renderChooser) */
-  .focus-choice { display: flex; flex-direction: column; gap: 4px; }
-  .practice-chooser .focus-option { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-  .focus-option input { margin: 0; }
-  .focus-option .focus-count { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .focus-option.empty { color: var(--faint); cursor: default; }
+  .choices { display: flex; flex-direction: column; gap: 4px; }
+  .practice-chooser .choice { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .choice input { margin: 0; }
+  .choice .choice-count { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .choice.empty { color: var(--faint); cursor: default; }
   .practice-drill:empty { display: none; }
-  #practice-title:empty, #practice-position:empty { display: none; } /* nothing above the chooser */
-  /* Lines or Positions: two halves of one switch, the chosen one blue. */
-  .kind-switch { display: flex; }
-  .kind-switch button { flex: 1; padding: 9px 12px; font-size: 15px; font-weight: 600; border-radius: 0; }
-  .kind-switch button:first-child { border-radius: 4px 0 0 4px; }
-  .kind-switch button:last-child { border-radius: 0 4px 4px 0; }
-  .kind-switch button[aria-pressed=true], .kind-switch button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
+  #practice-title:empty, #practice-position:empty { display: none; }
+  /* The Studies page's arrows switch: one button per view, the chosen one blue. */
+  .review-view { display: flex; }
+  .review-view button { flex: 1; padding: 9px 12px; font-size: 15px; font-weight: 600; border-radius: 0; }
+  .review-view button:first-child { border-radius: 4px 0 0 4px; }
+  .review-view button:last-child { border-radius: 0 4px 4px 0; }
+  .review-view button[aria-pressed=true], .review-view button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .practice-chooser p { margin: 0; font-size: 13px; }
@@ -630,14 +628,14 @@
       <div id="practice-chooser" class="practice-chooser hidden">
         <div class="panel">
           <h2>Lines</h2>
-          <div id="lines-choice" class="focus-choice" role="radiogroup" aria-label="Lines"></div>
+          <div id="lines-choice" class="choices" role="radiogroup" aria-label="Lines"></div>
           <button id="show-lines-btn" class="next-link" title="The lines most likely to come up next, and their chances">Likely next</button>
           <p id="lines-note" class="muted"></p>
           <button id="lines-start" class="primary chooser-start">Start practice</button>
         </div>
         <div class="panel">
           <h2>Positions</h2>
-          <div id="positions-choice" class="focus-choice" role="radiogroup" aria-label="Positions"></div>
+          <div id="positions-choice" class="choices" role="radiogroup" aria-label="Positions"></div>
           <button id="show-positions-btn" class="next-link" title="With All, the positions most likely to come up next, and their chances">Likely next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
@@ -707,7 +705,7 @@
         <div class="board-with-bar"><div class="board-wrap"><div id="review-board"></div></div>
           <div id="eval-bar" class="eval-bar hidden" role="img"><div class="eval-fill"></div><span class="eval-text"></span></div></div>
         <div class="review-view-row">
-        <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
+        <div class="review-view" role="group" aria-label="Arrows on the board">
           <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-errors" aria-pressed="false" title="Your repertoire recall here: your study's move and the errors you played first (last 10 tries)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Recall</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
         </div>
         <button id="color-key-btn" class="icon-btn key-btn" title="Color key" aria-label="Color key" aria-expanded="false" aria-controls="color-key"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.9-2.6 2.3-2.6 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg></button>
@@ -1104,11 +1102,11 @@ const saveHidden = () => { store.set('hidden', [...hidden]); store.remove('hidde
 // Your history (see Move results and grading):
 //   positions: position key (a position in a chapter where it's your move: its tree node's key) -> its
 //          last 10 attempts, oldest first, each { tried: what you did, in order (moves as SAN, "hint",
-//          "show"), at: when (null if unknown), main: whether Main lines only was ticked }
+//          "show"), at: when (null if unknown), main: whether Main lines was ticked }
 //   lines: line key -> the last 10 times it was played from its start to the end, oldest first
 // Whether an attempt was right is worked out from what was tried (see firstTryRight). (Until 6 November
 // 2026 attempts were kept by your move, under "moves", and scored with penalties; checkedHistory moves
-// them to their positions, as made with Main lines only, since only the main move counted then.)
+// them to their positions, as made with Main lines, since only the main move counted then.)
 const emptyHistory = () => ({ positions: {}, lines: {} });
 const isAttemptList = v => !!v && typeof v === 'object' && Object.values(v).every(Array.isArray);
 // An attempt as stored, or null if it's damaged (e.g. a hand-edited backup): it's then left out.
@@ -1168,8 +1166,7 @@ const POSITION_CHOICES = ['spaced', 'lowRecall', 'criticalYou', 'criticalLichess
 const DEFAULT_SETTINGS = {
   sounds: false,
   games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
-  // The Practice page: lines or positions; main lines only, for each; and the five spaced-repetition
-  // sliders (0–100, shared; see Spaced repetition).
+  // The Practice page: the Lines and Positions tiles' choices.
   practice: {
     lines: 'all', // the Lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
     positions: 'spaced', // the Positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
@@ -1189,7 +1186,7 @@ function checkedSettings(saved) {
   const v = saved && typeof saved === 'object' ? saved : {};
   const d = DEFAULT_SETTINGS, dp = d.practice, p = v.practice || {};
   // Before 20 November 2026: one choice (focus: 'lines', 'positions' or a drill; before that 'everyday' and a
-  // kind) and Main lines only (one setting; before that one each for lines and positions).
+  // kind) and Main lines (one setting; before that one each for lines and positions).
   const oldKind = ['lines', 'positions'].includes(p.kind) ? p.kind : 'lines';
   const oldFocus = p.focus === 'positions' ? 'spaced' : typeof p.focus === 'string' && p.focus !== 'everyday' ? p.focus : oldKind === 'positions' ? 'spaced' : 'lines';
   const oldMain = typeof p.mainLinesOnly === 'boolean' ? p.mainLinesOnly : p.mainLinesOnly?.[oldKind] === true;
@@ -1745,15 +1742,6 @@ function chapterLines(ch, side = parseChapter(ch).yourColor) {
 // The lines a chapter is practiced with, from each of its sides.
 const practisedLines = ch => sidesOf(ch).flatMap(side => chapterLines(ch, side));
 
-// Every move node in a chapter's tree, in order (each move, then everything after it).
-function allMoveNodes(ch) {
-  const parsed = parseChapter(ch);
-  const out = [];
-  const walk = node => { for (const child of node.children) { out.push(child); walk(child); } };
-  if (!parsed.error) walk(parsed.root);
-  return out;
-}
-
 // The moves of yours in a line (their indexes).
 const yourMoveIndexes = line => line.moves.flatMap((m, i) => m.color === line.yourColor ? [i] : []);
 
@@ -1880,14 +1868,14 @@ const attemptsAt = node => history.positions[node.key] || [];
 const lastTriedAt = key => history.positions[key]?.at(-1)?.at ?? null;
 const lastPlayedAt = key => history.lines[key]?.at(-1) ?? null;
 
-// Whether Main lines only is ticked for what's practiced (or, between sessions, the kind chosen).
+// Whether only your main move counts as right now: in Main lines practice.
 const mainOnlyNow = () => session ? session.mainOnly : false; // outside Main lines practice, any of your study's moves is right
 // Main lines (only main moves, and only your main move right) for a kind of practice: lines only, when chosen.
 const mainOnlyFor = kind => kind === 'lines' && settings.practice.lines === 'main';
 
 // An attempt is right if its first move is one of your study's moves there (see choicesAt): with Main
 // lines only (mainOnly), only the main move. Each position has these two move accuracies, from the same
-// attempts; with Main lines only, attempts made without it whose first move was one of your
+// attempts; with Main lines, attempts made without it whose first move was one of your
 // alternatives are left out (you were free to choose it). Returns true, false, or null (left out).
 function firstTryRight(a, node, mainOnly) {
   const first = a.tried[0], is = c => !!first && withoutCheckMarks(first) === withoutCheckMarks(c.san);
@@ -2230,11 +2218,11 @@ function isOffMastersPath(node, own) {
 // orange, Critical position (you)), Masters only the teal ones (off the masters' path), Lichess only the
 // orange ones (Critical position (Lichess)). Study keeps the tree to what's in the study (the user's choice): none of them.
 // The same goes for the dots in the tree and the tiles.
-const MARK_VIEWS = { weak: 'errors', yourCritical: 'errors', masters: 'masters', critical: 'lichess' };
+const MARK_VIEWS = { lowRecall: 'errors', yourCritical: 'errors', masters: 'masters', critical: 'lichess' };
 const showsMark = (mark, view = settings.review.view) => MARK_VIEWS[mark] === view;
 
 // Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
-// its chapter's side, from the node's key), as counted now (Main lines only, see mainOnlyNow).
+// its chapter's side, from the node's key), as counted now (Main lines, see mainOnlyNow).
 function yourMovesAt(node) {
   const own = parseChapter(chapterByKey(node.key.split('|')[0])).yourColor;
   return node.children.some(c => isShownAsYours(c, own)) ? choicesAt(node, mainOnlyNow()) : [];
@@ -2338,7 +2326,7 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
     }
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
     // The dots for the position this move leads to (see showsMark): errors, off the masters' path, critical.
-    const weakDot = showsMark('weak', view) && isLowRecall(node, parsed.yourColor) ? lowRecallDot() : null;
+    const weakDot = showsMark('lowRecall', view) && isLowRecall(node, parsed.yourColor) ? lowRecallDot() : null;
     const mastersDot = showsMark('masters', view) && isOffMastersPath(node, parsed.yourColor) ? mastersPositionDot() : null;
     const dot = showsMark('critical', view) && criticalAt(node.epd) ? criticalPositionDot('Lichess')
       : showsMark('yourCritical', view) && isYourCriticalPosition(node, parsed.yourColor) ? criticalPositionDot('you') : null;
@@ -2379,7 +2367,7 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   };
   if (!parsed.error) walk(parsed.root, [], box);
   // Your first move's position (the start): its dots before the first move.
-  const startDots = parsed.error ? [] : [showsMark('weak', view) && isLowRecall(parsed.root, parsed.yourColor) && lowRecallDot(),
+  const startDots = parsed.error ? [] : [showsMark('lowRecall', view) && isLowRecall(parsed.root, parsed.yourColor) && lowRecallDot(),
     showsMark('masters', view) && isOffMastersPath(parsed.root, parsed.yourColor) && mastersPositionDot(),
     showsMark('yourCritical', view) && isYourCriticalPosition(parsed.root, parsed.yourColor) && criticalPositionDot('you')].filter(Boolean);
   if (startDots.length) box.querySelector('.tree-line')?.prepend(...startDots, ' ');
@@ -2688,7 +2676,7 @@ function reviewFromPractice() {
 }
 
 // Practice from the Studies page: a chapter's or study's lines (the ▶ on its row in the list). A one-off
-// session of all its lines (Main lines only doesn't apply), with the spaced repetition sliders, each chapter
+// session of all its lines (not Main lines), picked by spaced repetition, each chapter
 // played from the colors the chosen group gives it (else its main color); the chosen group doesn't change,
 // and End practice comes back here (returnTo). (Until 19 November 2026 a Practice button under the move
 // tree practiced the lines through the position on the board.)
@@ -3066,8 +3054,8 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- Spaced repetition ----------
-// What's practiced: all the lines (or positions) of the chosen preset's chapters (the Practice tile), from
-// main lines only if ticked. Before each one, every item gets a priority, and one is picked at random
+// What's practiced: all the lines (or positions) of the chosen preset's chapters (the Practice tile), with
+// Main lines those of main moves. Before each one, every item gets a priority, and one is picked at random
 // with chances in proportion to it. The priority is made of five parts:
 //   frequency: 0.2 to 1, by how likely your opponents are to lead you there: the product of the shares
 //     (in rated Lichess games) of the opponent's moves on the way (for a line, all of them; your own
@@ -3081,7 +3069,7 @@ document.addEventListener('keydown', e => {
 //     due; it gets 6 in their place.
 //   critical: 2 for a critical position of yours (see criticalAt; for a line, if any of your positions
 //     in it is critical), 1 otherwise; the opponent's critical positions don't count.
-// A position's accuracy is its repertoire recall (with or without Main lines only, as ticked), and last
+// A position's accuracy is its repertoire recall (with or without Main lines, as ticked), and last
 // tested is when it was last tried. A line's accuracy is its weakest position's (the lowest move
 // accuracy of your positions in it, untried ones counting as 0%), and last tested is when it was last
 // played through from move 1 to the end.
@@ -3105,21 +3093,18 @@ function weightedPick(items, weight) {
 
 const tickedChapters = () => allChapters().filter(c => selection.has(c.key));
 
-// Whether every move up to and including move i is the study's main move.
-const onMainLines = (line, i) => line.moves.slice(0, i + 1).every(m => m.variationIndex === 0);
-
-// What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked
-// chapters, from each side practiced (i is null: played from its start); for 'positions', every
-// position of yours in them from move 3 (FIRST_POSITION_MOVE), once each (i: the move tested there as a
-// single position).
+// What a kind of practice covers, as items { line, i }: for 'lines', every line of the ticked chapters,
+// from each side practiced (i is null: played from its start), with Main lines (mainOnly) only those of
+// main moves; for 'positions', every position of yours in them from move 3 (FIRST_POSITION_MOVE; a drill's
+// from move 1), once each (i: the move tested there as a single position). Positions have no main-lines
+// filter (since 20 November 2026).
 const FIRST_POSITION_MOVE = 3;
-function practiceItems(kind, mainLinesOnly = mainOnlyFor(kind), { from = FIRST_POSITION_MOVE } = {}) {
+function practiceItems(kind, { mainOnly = mainOnlyFor(kind), from = FIRST_POSITION_MOVE } = {}) {
   const lines = tickedChapters().flatMap(practisedLines);
-  if (kind === 'lines') return lines.filter(line => !mainLinesOnly || line.isMainLine).map(line => ({ line, i: null }));
+  if (kind === 'lines') return lines.filter(line => !mainOnly || line.isMainLine).map(line => ({ line, i: null }));
   const items = new Map(); // position key -> item
   for (const line of lines) line.moves.forEach((m, i) => {
-    if (m.color !== line.yourColor || m.moveNumber < from) return; // your first moves are practiced in lines only (drills: from move 1)
-    if (!items.has(m.parent.key) && (!mainLinesOnly || onMainLines(line, i))) items.set(m.parent.key, { line, i });
+    if (m.color === line.yourColor && m.moveNumber >= from && !items.has(m.parent.key)) items.set(m.parent.key, { line, i });
   });
   return [...items.values()];
 }
@@ -3135,15 +3120,15 @@ function itemAccuracy({ line, i }, mainOnly) {
 // hover, and whether a position (node, your move there) is in it.
 const DRILLS = {
   lowRecall: { label: 'Low recall', title: 'Your positions below 75% repertoire recall',
-    has: (node, mainOnly) => { const share = shareAt(node, mainOnly); return share != null && share < LOW_RECALL - 1e-9; } },
+    has: node => { const share = shareAt(node, false); return share != null && share < LOW_RECALL - 1e-9; } },
   criticalYou: { label: 'Critical (you)', title: 'Where your first tries lose the critical level or more on average',
-    has: (node, mainOnly, own) => isYourCriticalPosition(node, own) },
+    has: (node, own) => isYourCriticalPosition(node, own) },
   criticalLichess: { label: 'Critical (Lichess)', title: 'Your positions where the Lichess moves played lose the critical level or more on average',
     has: node => !!criticalAt(node.epd) },
   refutations: { label: 'Refutations', title: "The positions after an opponent's Lichess move that loses the refutation level or more: your study's answer, or the engine's" },
 };
-const drillItems = (drill, mainOnly = false) => drill === 'refutations' ? refutationItems(mainOnly)
-  : practiceItems('positions', mainOnly, { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, mainOnly, line.yourColor));
+const drillItems = drill => drill === 'refutations' ? refutationItems()
+  : practiceItems('positions', { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, line.yourColor));
 
 // The Refutations drill's positions (the user's decisions, 20 November 2026): at each position of the
 // chosen group's chapters where it's the opponent's move (by each side practiced, from move 1), each
@@ -3151,18 +3136,18 @@ const drillItems = (drill, mainOnly = false) => drill === 'refutations' ? refuta
 // refutation level or more against the engine's best (see expectedLossAt), gives the position after it.
 // Where your study has that move and answers it, the item is your study's position, as usual; where it's
 // silent, a line built for it (see silentRefutationLine), once the engine has evaluated the position.
-function refutationItems(mainOnly) {
+function refutationItems() {
   const items = new Map(); // the position's key -> item
   for (const ch of tickedChapters()) for (const side of sidesOf(ch)) for (const line of chapterLines(ch, side)) {
     line.moves.forEach((m, k) => {
-      if (m.color === side || (mainOnly && !onMainLines(line, k - 1))) return; // with Main lines, reached by main moves (positions practice has none: false)
+      if (m.color === side) return;
       const before = m.parent, e = expectedLossAt(before.epd);
       for (const r of e?.moves ?? []) {
         if (r.drop < settings.refutationLevel - 1e-9) continue;
         const inStudy = before.children.find(c => withoutCheckMarks(c.san) === withoutCheckMarks(r.san));
         const key = inStudy ? inStudy.key : `${before.key}${before.parent ? ' ' : ''}${r.san}`;
         if (items.has(key + side)) continue;
-        const answered = inStudy && choicesAt(inStudy, mainOnly).length && chapterLines(ch, side).find(l => l.moves.includes(inStudy) && l.moves.length > l.moves.indexOf(inStudy) + 1);
+        const answered = inStudy && choicesAt(inStudy).length && chapterLines(ch, side).find(l => l.moves.includes(inStudy) && l.moves.length > l.moves.indexOf(inStudy) + 1);
         const item = answered ? { line: answered, i: answered.moves.indexOf(inStudy) + 1 } : silentRefutationLine(line.moves.slice(0, k), before, r.san, side, line);
         if (item) items.set(key + side, item);
       }
@@ -3230,7 +3215,7 @@ function logReach({ line, i }) {
 
 // Each item's facts and the parts of its priority: { item, accuracy, lastTested, games (the games
 // reaching it, for the Likely next table; null while its statistics haven't downloaded),
-// frequency, weakness, due, untried, critical }, with or without Main lines only (mainOnly).
+// frequency, weakness, due, untried, critical }, with or without Main lines (mainOnly).
 function itemFacts(items, mainOnly = mainOnlyNow(), now = Date.now()) {
   const reach = items.map(logReach);
   const least = Math.min(0, ...reach.filter(r => r != null && r > -Infinity));
@@ -3394,11 +3379,11 @@ function choosePromotion(color) {
 // Lines and positions, the two kinds of practice: their words.
 const KINDS = {
   lines: {
-    noun: 'line', label: 'Lines', title: 'Whole lines, from move 1, picked by spaced repetition',
+    noun: 'line',
     columns: ['Line', 'End position reached (times)', 'Lowest repertoire recall', 'Last tested', 'Chance next'],
   },
   positions: {
-    noun: 'position', label: 'Positions', title: 'One of your moves at a time, from move 3, picked by spaced repetition',
+    noun: 'position',
     columns: ['Position', 'Position reached (times)', 'Repertoire recall', 'Last tested', 'Chance next'],
   },
 };
@@ -3426,7 +3411,7 @@ function showChooser() {
 // Main lines (mainOnly). (Every item has a chance of coming up: the priority is never 0.)
 const practicable = kind => practicableWith(kind, mainOnlyFor(kind));
 function practicableWith(kind, mainOnly) {
-  const items = practiceItems(kind, mainOnly);
+  const items = practiceItems(kind, { mainOnly });
   return { items, note: items.length ? '' : `No ${KINDS[kind].noun}s to practice: select some chapters.` };
 }
 
@@ -3437,7 +3422,7 @@ function renderChooser() {
   for (const key of Object.keys(DRILLS)) { const items = drillItems(key); positionChoices[key] = { items, note: items.length ? '' : 'No positions' }; }
   renderChoices($('lines-choice'), 'lines', lines, [['all', 'All lines', 'Every line, any of your study\'s moves right'],
     ['main', 'Main lines', 'Only lines of main moves, and only your main move right']], linesChoices);
-  renderChoices($('positions-choice'), 'positions', positions, [['spaced', 'All', KINDS.positions.title],
+  renderChoices($('positions-choice'), 'positions', positions, [['spaced', 'All', 'One of your moves at a time, from move 3, picked by spaced repetition'],
     ...Object.entries(DRILLS).map(([key, d]) => [key, d.label, d.title])], positionChoices);
   for (const [tile, chosen] of [['lines', linesChoices[lines]], ['positions', positionChoices[positions]]]) {
     $(`${tile}-start`).disabled = !chosen.items.length;
@@ -3454,13 +3439,13 @@ function renderChoices(box, name, chosen, options, choices) {
     input.checked = value === chosen;
     input.disabled = !items.length && value !== chosen;
     input.addEventListener('change', () => changePractice(p => { p[name] = value; }));
-    return element('label', { class: 'focus-option' + (items.length ? '' : ' empty'), title }, input, element('span', {}, label),
-      element('span', { class: 'focus-count' }, String(items.length)));
+    return element('label', { class: 'choice' + (items.length ? '' : ' empty'), title }, input, element('span', {}, label),
+      element('span', { class: 'choice-count' }, String(items.length)));
   }));
 }
 
 
-// A change to the practice settings: saved, and the chooser and sliders shown again.
+// A change to the practice settings: saved, and the chooser shown again.
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); };
 
 $('lines-start').addEventListener('click', () => startSession('lines', practicable('lines').items));
@@ -3485,7 +3470,7 @@ const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
 
 function showProbabilities(kind) {
   const k = KINDS[kind], mainLinesOnly = mainOnlyFor(kind);
-  const facts = itemFacts(practiceItems(kind), mainLinesOnly);
+  const facts = itemFacts(practiceItems(kind, { mainOnly: mainLinesOnly }), mainLinesOnly);
   const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
   const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
@@ -3533,7 +3518,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('probab
 // ---------- Practice: playing lines ----------
 
 // What's being practiced: { kind: 'lines' or 'positions', items (see practiceItems), previous (the
-// item practiced last), mainOnly (Main lines only, as ticked when it started), and for a drill, drill (its
+// item practiced last), mainOnly (Main lines, as ticked when it started), and for a drill, drill (its
 // key in DRILLS) and left (its positions still to come this round) }. Null when nothing is.
 let session = null;
 
@@ -3550,7 +3535,7 @@ function startSession(kind, items, returnTo = null, { mainOnly = mainOnlyFor(kin
 
 function nextItem() {
   if (session.drill && !session.left.length) { // the drill again, with the positions flagged now
-    const items = drillItems(session.drill, session.mainOnly);
+    const items = drillItems(session.drill);
     if (!items.length) return showChooser();
     Object.assign(session, { items, left: [...items] });
   }
@@ -3692,7 +3677,7 @@ async function rejectMove(status) {
 
 // The status after an error, one fact per line:
 //   what the move is, in violet, like every error's arrow: "Not your preferred move"; for one of your
-//     study's alternatives (with Main lines only), "Alternative move, not your preferred move", or, for
+//     study's alternatives (with Main lines), "Alternative move, not your preferred move", or, for
 //     one the study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from
 //     that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
 //   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; teal),
@@ -4107,7 +4092,7 @@ function opponentMoveBoard(m) {
 }
 
 // One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labeled by
-// what it is: "a3 (alternative move)" (one of your study's alternatives, an error with Main lines only), an
+// what it is: "a3 (alternative move)" (one of your study's alternatives, an error with Main lines), an
 // alternative the study marks ?, ?? or ?! with the mark, "a3 (alternative move ?!)", "b3 (masters move)" (see
 // isMasterMove); anything else unlabeled; and "hint" or "show correct move".
 function errorLabel(m, x) {
@@ -4175,7 +4160,6 @@ function glyphBadge(node) {
 }
 
 // A list of elements separated by commas.
-const joined = els => els.flatMap((el, k) => k ? [', ', el] : [el]);
 
 // A violet arrow for each error that's a move, whatever kind (errors: [[x, label], …]; the hint has
 // none), if labeled with its label in a badge (e.g. "40%"), and the correct moves' (move nodes; the
