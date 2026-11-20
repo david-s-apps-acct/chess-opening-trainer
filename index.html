@@ -130,6 +130,7 @@
   .tick-column input:disabled + span { color: var(--muted); }
   #games-warning:empty { display: none; }
   .update-status.error { color: var(--bad); }
+  .update-status.backup-error { color: #a98bff; } /* a backup's problem, in the errors' violet */
   select { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
 
   /* Help screen */
@@ -366,6 +367,8 @@
   .review-loss h3 { margin: 0 0 4px; font-size: 15px; color: #b39dfa; }
   .review-loss p { margin: 0 0 4px; }
   .review-loss .loss-moves div { color: var(--muted); }
+  /* A move's Δ by its loss (see lossDelta): none, below the critical level, at it or more */
+  .loss-none { color: #7fb83a; } .loss-some { color: #e0a43a; } .loss-big { color: #e06060; }
   .panel.review-critical { padding: 12px 14px; border-left: 4px solid var(--critical); }
   .review-critical:empty { display: none; }
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
@@ -574,6 +577,7 @@
         </div>
         <p id="backup-info" class="muted after-actions"></p>
         <div id="backup-suggestion" class="update-status"></div>
+        <div id="backup-message" class="update-status" role="status" aria-live="polite"></div>
       </div>
 
       <div id="getting-started" class="card hidden">
@@ -673,7 +677,7 @@
         <span id="edit-summary" class="muted"></span>
         <div class="preset-buttons">
           <button id="preset-save-btn" class="small primary" title="Save the chapters chosen in this group">Save</button>
-          <button id="preset-new-btn" class="small" title="A new group with the chapters chosen (turn off All's white and black first to start empty)">Create new</button>
+          <button id="preset-new-btn" class="small" title="A new group with the chapters as shown">Save as new</button>
           <button id="preset-rename-btn" class="small">Rename</button>
           <button id="preset-delete-btn" class="small">Delete</button>
           <button id="preset-cancel-btn" class="small" title="Undo the changes not saved">Cancel</button>
@@ -781,7 +785,7 @@
           <li><b>Connect to Lichess</b> (Lichess page). Your studies are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
           <li><b>Restore a backup, or download the statistics.</b> Used the app before? <b>Restore backup</b>. Otherwise check the <b>rating bands and time controls</b> (Move statistics, suggested from your Lichess rating) and press <b>Download statistics</b>.</li>
           <li><b>Choose what to practice.</b> Start with <b>All</b>, or make a group on the <b>Groups</b> page.</li>
-          <li><b>Practice.</b> On the Practice page, choose <b>Lines</b> (whole lines) or <b>Positions</b> (single moves) and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck.</li>
+          <li><b>Practice.</b> On the Practice page, choose <b>Lines</b> (whole lines) or <b>Positions</b> (single moves) and press <b>Start practice</b>. <b>Hint</b> helps when you're stuck (after your first try).</li>
         </ol>
         <ul>
           <li>Look through a chapter first on the <b>Studies</b> page (offline too).</li>
@@ -795,7 +799,7 @@
             <li><b>Line</b>: one path through a chapter: one of your study's moves at each of your turns, and every reply your study gives the opponent.</li>
             <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. It's correct too, unless the study marks it ?, ?? or ?!, or Main lines only is ticked.</li>
             <li><b>Repertoire accuracy</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
-            <li><b>Error</b>: any move you play that isn't one of your study's moves, or the hint. Errors cost repertoire accuracy.</li>
+            <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire accuracy.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
             <li><b>Critical position</b>: one where the Lichess moves played there lose 0.5 pawns or more on average, by the engine (the level is yours to set; see Studies).</li>
             <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
@@ -818,7 +822,7 @@
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
           <li>A chapter played from both colors in its group (see Groups) gives lines for each side.</li>
-          <li><b>Hint</b> circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. Both count as an error.</li>
+          <li><b>Hint</b>, after your first try at a move, circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. It costs nothing more: your first try was already an error.</li>
           <li><b>Skip</b> goes on to the next one; <b>End practice</b> stops. The moves you've answered still count.</li>
           <li>Comments from your study appear as blue bubbles in the move list; hover over one to read it. Click a move, or use ◀ ▶ or the arrow keys, to look back.</li>
           <li>At the end of a line you see how it went, e.g. "5 of 6 moves correct". Press <b>Next line</b> (<b>Next position</b> for positions), or Enter.</li>
@@ -849,7 +853,7 @@
         </details>
         <details>
           <summary>Repertoire accuracy</summary>
-          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, a move the study marks ?, ?? or ?!, or the hint. Repertoire accuracy is the share right first time over your last 10 tries. Below 100%, a move gets a violet background (in the Studies page's move tree, a violet dot after it).</p>
+          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, or a move the study marks ?, ?? or ?!. Repertoire accuracy is the share right first time over your last 10 tries. Below 100%, a move gets a violet background (in the Studies page's move tree, a violet dot after it).</p>
           <p>Each position has two: with <b>Main lines only</b>, only the main move is right (tries without it where you played one of your alternatives are left out); without it, any of your study's moves. You see the one for the current setting.</p>
           <details>
             <summary>What counts as a try</summary>
@@ -895,7 +899,7 @@
         <ul>
           <li>What you practice is always the group chosen on the Practice page (<b>Studies to practice</b>): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
           <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a button for its main color (the color its study is written for) and one for the other color, played or not (an X through it); with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out. A study's two buttons set every chapter's main color, or other color (a fainter X: only some play it; a half-white, half-black dot: the study has White and Black chapters).</li>
-          <li>Then <b>Save</b>, <b>Create new</b> (a new group from the chapters chosen; turn off All's white and black first to start empty), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Create new. Leaving the page asks before dropping changes not saved.</li>
+          <li>Then <b>Save</b>, <b>Save as new</b> (a new group with the chapters as shown; the group you started from stays as saved), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Save as new. Leaving the page asks before dropping changes not saved.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are in backups, but Merge backup leaves them alone, so each device can have its own.</li>
         </ul>
       </div>
@@ -904,11 +908,11 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Accuracy</b> (your repertoire accuracy here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire accuracy; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Accuracy also the error's kind, e.g. "(masters move)", and for your study's move how often you used the hint and when you last tested it. With Accuracy, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move (the hint costs 1 pawn), e.g. "Δ−0.4 pawns (last 4 tries)", with each move's share and Δ. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Accuracy</b> (your repertoire accuracy here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire accuracy; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Accuracy also the error's kind, e.g. "(masters move)". With Accuracy, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the critical level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Critical position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Critical positions</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the expected loss and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves.</li>
+          <li><b>Critical positions</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves.</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
         </ul>
         <details>
@@ -1248,7 +1252,7 @@ let currentScreen = null;
 
 function showScreen(name) {
   currentScreen = name;
-  hideBanner(); // a message belongs to the page it was shown on
+  hideBanner(); clearBackupMessage(); // a message belongs to the page it was shown on
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); showColorKey(false); // no pop-up carries over to another page
   document.body.dataset.page = name; // e.g. the Studies page is wider
   // Each page, and its header button (always shown; the current page's is highlighted).
@@ -2118,7 +2122,7 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // The Groups page (between Practice and Studies) edits the groups (presets in the code: named sets of
 // chapters; All, every chapter, is built in): the chosen group is always being edited there; every study
 // and chapter is listed, each with a main color and an other color button (see chapterRow and groupColorButtons),
-// with Save, Create new, Rename, Delete and Cancel (for All, only Create new and Cancel; Save and
+// with Save, Save as new, Rename, Delete and Cancel (for All, only Save as new and Cancel; Save and
 // Cancel only once something has changed). Leaving the page with changes not saved asks first, then drops them.
 // Only groups decide what's practiced: the group chosen on the Practice page (the Studies to practice
 // tile); the tile is hidden during practice, since a session's lines are chosen when it starts.
@@ -2460,7 +2464,7 @@ function renderPresets() {
       ...[...presets].sort((a, b) => a.name.localeCompare(b.name)).map(p => element('option', { value: p.name }, p.name)));
     $(id).value = preset.builtIn ? '' : preset.name;
   }
-  for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Create new
+  for (const id of ['preset-save-btn', 'preset-rename-btn', 'preset-delete-btn']) $(id).classList.toggle('hidden', !!preset.builtIn); // All: only Save as new
   $('preset-new-btn').disabled = !editing?.colors.size;
   $('preset-save-btn').disabled = !editing?.colors.size || !editsUnsaved();
   $('preset-cancel-btn').disabled = !editsUnsaved();
@@ -2480,7 +2484,7 @@ $('preset-select').addEventListener('change', e => {
 
 // The Groups page: the chosen group's chapters and colors, to change; Cancel puts them back as saved.
 // Another group from the drop-down is chosen (as on the Practice page), and its chapters shown instead
-// (changes not saved are dropped). Save, Create new and Delete start again from what's saved.
+// (changes not saved are dropped). Save, Save as new and Delete start again from what's saved.
 function startEditing() {
   const open = new Set(library.studies.filter(st => st.chapters.some(c => selection.has(c.key))).map(st => st.id)); // the group's studies
   const preset = chosenPreset(), chapters = chaptersOf(preset);
@@ -2559,7 +2563,7 @@ $('preset-delete-btn').addEventListener('click', () => {
   startEditing();
 });
 
-// The name box, for Create new and Rename.
+// The name box, for Save as new and Rename.
 let namingMode = null; // 'new' or 'rename'
 
 function showNameForm(mode) {
@@ -2812,9 +2816,8 @@ function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view
 // moveDelta), e.g. "♘c3 · Δ−0.5" (just the move until it's known). With Study, your study's moves (not its
 // drawn arrows and circles); with Masters, the masters moves and your study's other moves; with Lichess,
 // the Lichess moves; with Accuracy (`errors`), the errors you played first, with their kind, e.g. "d4 ·
-// Δ−0.1 (masters move)", and your study's moves with how often the hint was used and when the position was
-// last tested, e.g. "e4 · Δ0.0 · hint 25% · last tested today". The shares and repertoire accuracy are on the
-// arrows. (Until 19 November 2026 the tips showed each move's rank, share and score, then for a few hours
+// Δ−0.1 (masters move)", and your study's moves, e.g. "e4 · Δ0.0" (until 20 November 2026 also "hint 25% ·
+// last tested today"). The shares and repertoire accuracy are on the arrows. (Until 19 November 2026 the tips showed each move's rank, share and score, then for a few hours
 // the evaluation after it.)
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
@@ -2828,13 +2831,12 @@ function squareTipLines(node, square) {
   }
   const correct = yourMovesAt(node);
   if (!correct.length) return [];
-  const shares = errorShares(attemptsAt(node), correct.map(c => c.san)), hint = shares.find(([x]) => x === 'hint');
+  const shares = errorShares(attemptsAt(node), correct.map(c => c.san));
   const errors = shares.map(([x]) => [x, x !== 'hint' && san.parseSan(pos, x)]).filter(([, mv]) => mv && to(mv))
     .map(([x, mv]) => { const d = delta(mv); return errorLabel(correct[0], x).replace(/ \(|$/, `${d ? ` · ${d}` : ''}$&`); });
-  // Your study's moves: "♘f3 · Δ0.0 · hint 20% · last tested 3 days ago" (once the position has been tried).
-  const last = lastTriedAt(node.key), days = last && daysAgo(last);
-  const yours = accuracyAt(node) ? correct.filter(c => to(parseUci(c.uci))).map(c => [withFigurines(c.san), delta(parseUci(c.uci)), hint && `hint ${percent(hint[1])}%`,
-    last && (days === 'Today' ? 'last tested today' : `last tested ${days} ago`)].filter(Boolean).join(' · ')) : [];
+  // Your study's moves: "♘f3 · Δ0.0" (once the position has been tried; when it was last tested is in the
+  // Your expected loss tile, and Hint, only after an error since 20 November 2026, has no share).
+  const yours = accuracyAt(node) ? correct.filter(c => to(parseUci(c.uci))).map(c => [withFigurines(c.san), delta(parseUci(c.uci))].filter(Boolean).join(' · ')) : [];
   return [...yours, ...errors];
 }
 
@@ -2927,34 +2929,43 @@ function renderPositionTiles(node) {
 
 // Your expected loss at one of your positions, from your last 10 tries there, each counted by its first
 // move (as the Accuracy view's arrows): the sum of each first move's share × how much it changes the
-// evaluation against the engine's best move (moveDelta; the hint or Show correct move costs 1 pawn). null
+// evaluation against the engine's best move (moveDelta). Hint works only after a move (since 20 November
+// 2026), so it costs nothing; older tries that began with it have no move to judge and are left out. null
 // with no tries; { pending: true } until every move's evaluation is known; else { loss (pawns, ≥ 0),
 // tries, moves: [{ label, share, delta }] } most often first.
-const HINT_COST = 1;
 function yourExpectedLoss(node) {
-  const attempts = attemptsAt(node);
-  if (!attempts.length) return null;
-  const firsts = attempts.map(a => a.tried[0] === 'show' ? 'hint' : a.tried[0]).filter(Boolean);
+  const firsts = attemptsAt(node).map(a => a.tried[0]).filter(x => x && x !== 'hint' && x !== 'show');
+  if (!firsts.length) return null;
   const moves = [];
   for (const x of new Set(firsts)) {
-    const move = x !== 'hint' && san.parseSan(node.position, x);
-    const delta = x === 'hint' ? -HINT_COST : move ? moveDelta(node.epd, node.position, move) : undefined;
+    const move = san.parseSan(node.position, x);
+    const delta = move ? moveDelta(node.epd, node.position, move) : undefined;
     if (delta === undefined) return { pending: true };
-    moves.push({ label: x === 'hint' ? 'hint' : withFigurines(x), share: firsts.filter(y => y === x).length / attempts.length, delta });
+    moves.push({ label: withFigurines(x), share: firsts.filter(y => y === x).length / firsts.length, delta });
   }
   moves.sort((a, b) => b.share - a.share);
-  return { loss: moves.reduce((sum, m) => sum - m.share * m.delta, 0), tries: attempts.length, moves };
+  return { loss: moves.reduce((sum, m) => sum - m.share * m.delta, 0), tries: firsts.length, moves };
+}
+
+// A move's change in evaluation, colored by its loss (in the Your expected loss and Critical position
+// tiles only, never for arrows or errors): green at Δ0.0 as shown, amber below the critical level, red
+// at it or more, e.g. "Δ−1.2" in red.
+function lossDelta(delta) {
+  const lost = Math.round(-delta * 10) / 10;
+  return element('span', { class: lost <= 0 ? 'loss-none' : lost < settings.criticalLevel ? 'loss-some' : 'loss-big' }, deltaText(delta));
 }
 
 // With Accuracy, under the comment, at one of your positions with tries: "Your expected loss", e.g.
-// "Δ−0.4 pawns (last 4 tries)", and each first move with its share and Δ, e.g. "d4 50% · Δ−0.1", "hint
-// 25% · Δ−1.0"; "Evaluating…" until it's known.
+// "Δ−0.4 (last 4 tries)", when it was last tested, e.g. "Last tested 3 days ago", and each first move with
+// its share and colored Δ, e.g. "d4 50% · Δ−0.1"; "Evaluating…" until it's known.
 function renderLossTile(node) {
   const e = engineAvailable() && settings.review.view === 'errors' && yourMovesAt(node).length ? yourExpectedLoss(node) : null;
+  const last = e && lastTriedAt(node.key), days = last && daysAgo(last);
   $('review-loss').replaceChildren(...!e ? [] : [element('h3', {}, 'Your expected loss'),
     ...e.pending ? [element('p', { class: 'muted' }, 'Evaluating…')] : [
-      element('p', {}, `${deltaText(-e.loss)} pawns (last ${plural(e.tries, 'try', 'tries')})`),
-      element('div', { class: 'loss-moves' }, e.moves.map(m => element('div', {}, `${m.label} ${percent(m.share)}% · ${deltaText(m.delta)}`)))]]);
+      element('p', {}, `${deltaText(-e.loss)} (last ${plural(e.tries, 'try', 'tries')})`),
+      ...last ? [element('p', { class: 'muted' }, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`)] : [],
+      element('div', { class: 'loss-moves' }, e.moves.map(m => element('div', {}, `${m.label} ${percent(m.share)}% · `, lossDelta(m.delta))))]]);
 }
 
 // When your study's main move in the position on the board isn't a masters move (see isOffMastersPath):
@@ -2979,13 +2990,13 @@ function renderCriticalTile(node) {
   const critical = showsMark('critical') && criticalAt(node.epd);
   $('review-critical').replaceChildren(...critical ? [
     element('h3', {}, 'Critical position'),
-    element('p', {}, `Expected loss ${critical.loss.toFixed(1)} pawns`),
-    element('div', { class: 'critical-moves' }, criticalMoveTexts(critical).map(t => element('div', {}, t)))] : []);
+    element('p', {}, `Expected loss ${deltaText(-critical.loss)}`),
+    element('div', { class: 'critical-moves' }, criticalMoveTexts(critical).map(([t, drop]) => element('div', {}, t, lossDelta(-drop))))] : []);
 }
 
 // The Lichess moves that lose 0.1 pawns or more, most played first, each with its share and the pawns
-// it drops, e.g. "♗f4 14% · Δ−1.2".
-const criticalMoveTexts = critical => critical.moves.filter(m => m.drop >= 0.05).map(m => `${withFigurines(m.san)} ${percent(m.share)}% · ${deltaText(-m.drop)}`);
+// it drops: [["♗f4 14% · ", 1.24]], shown as "♗f4 14% · Δ−1.2" with the Δ colored (lossDelta).
+const criticalMoveTexts = critical => critical.moves.filter(m => m.drop >= 0.05).map(m => [`${withFigurines(m.san)} ${percent(m.share)}% · `, m.drop]);
 
 function renderReviewTree() {
   hideHoverBoard(); // its move may be about to be redrawn
@@ -3281,10 +3292,12 @@ function updateBoard(lastMove) {
   // One button: "Hint" circles the piece to move; after that it becomes "Show correct move",
   // which draws the arrow (the player then plays the move).
   // After "Show correct move" the arrow stays and the button is disabled until the move is played.
-  const hinted = hintStep() > 0;
+  // Grayed out until you've tried a move here (since 20 November 2026), so each try starts with a move
+  // and the hint costs nothing: that move was already an error.
+  const hinted = hintStep() > 0, triedOne = practice.tried.length > 0;
   $('hint-btn').textContent = hinted ? 'Show correct move' : 'Hint';
-  $('hint-btn').title = hinted ? 'Shows the move with an arrow (counts as an error)' : 'Circles the piece to move (counts as an error)';
-  $('hint-btn').disabled = !yourTurn || hintStep() >= 2;
+  $('hint-btn').title = hinted ? 'Shows the move with an arrow' : triedOne ? 'Circles the piece to move' : 'After your first try';
+  $('hint-btn').disabled = !yourTurn || !triedOne || hintStep() >= 2;
   renderMoveList();
 }
 
@@ -4810,9 +4823,9 @@ $('backup-btn').addEventListener('click', async () => {
       await w.write(blob);
       await w.close();
       backupSaved();
-      showBanner(`Backup saved as ${handle.name}.`);
+      showBackupMessage(`Backup saved as ${handle.name}.`);
     } catch (e) {
-      if (e.name !== 'AbortError') showBanner("Couldn't save the backup: " + e.message, true); // AbortError: the user canceled
+      if (e.name !== 'AbortError') showBackupMessage("Couldn't save the backup: " + e.message, { isError: true }); // AbortError: the user canceled
     }
     return;
   }
@@ -4824,8 +4837,21 @@ $('backup-btn').addEventListener('click', async () => {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   backupSaved(); // the download can't be checked, so it counts as saved
-  showBanner(`Backup saved as ${name} in your download folder.`);
+  showBackupMessage(`Backup saved as ${name} in your download folder.`);
 });
+
+// A backup action's message, on the Backup card's last line: a confirmation goes after 10 seconds; an
+// error (violet), or one saying what to do next, stays until the next backup action or leaving the page.
+let backupMessageTimer;
+function showBackupMessage(msg, { isError = false, stays = isError } = {}) {
+  clearTimeout(backupMessageTimer);
+  const box = $('backup-message');
+  box.textContent = msg;
+  box.className = 'update-status' + (isError ? ' backup-error' : '');
+  if (!stays) backupMessageTimer = setTimeout(clearBackupMessage, backupMessageMs);
+}
+let backupMessageMs = 10000; // shorter in the tests
+function clearBackupMessage() { clearTimeout(backupMessageTimer); $('backup-message').replaceChildren(); }
 
 // When the last backup was saved from this browser (not itself in backups), shown on the Lichess page.
 function backupSaved() {
@@ -4855,11 +4881,11 @@ async function chosenBackup(e) {
   let b;
   try { b = JSON.parse(await file.text()); } catch { b = null; }
   if (!b || b.app !== BACKUP_APP) {
-    showBanner("That file isn't an Opening Trainer backup.", true);
+    showBackupMessage("That file isn't an Opening Trainer backup.", { isError: true });
     return null;
   }
   if (![5, 6, BACKUP_VERSION].includes(b.version) || !checkedHistory(b.history)) {
-    showBanner('This backup is from an earlier version and can\'t be used.', true);
+    showBackupMessage('This backup is from an earlier version and can\'t be used.', { isError: true });
     return null;
   }
   return b;
@@ -4929,7 +4955,7 @@ $('merge-file').addEventListener('change', async e => {
   refreshPage();
   startDownloads();
   const added = Object.keys(history.positions).length - before;
-  showBanner(`Backup merged: history for ${plural(Object.keys(history.positions).length, 'position')}` + (added ? ` (${added} new).` : '.'));
+  showBackupMessage(`Backup merged: history for ${plural(Object.keys(history.positions).length, 'position')}` + (added ? ` (${added} new).` : '.'));
 });
 
 $('restore-file').addEventListener('change', async e => {
@@ -4952,7 +4978,8 @@ $('restore-file').addEventListener('change', async e => {
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
   refreshPage();
   startDownloads(); // statistics for the backup's games, if they're other games
-  showBanner(`Backup restored: history for ${plural(Object.keys(history.positions).length, 'position')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'));
+  showBackupMessage(`Backup restored: history for ${plural(Object.keys(history.positions).length, 'position')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'),
+    { stays: !token }); // saying what to do next, it stays
 });
 
 // ---------- Navigation ----------

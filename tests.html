@@ -41,7 +41,7 @@ export const app = {
   checkedSettings, chapterByKey, chapterLines, allStudyPositions,
   renderChapterTree,
   positionName, firstTryRight, accuracyAt, checkedHistory, mergedHistory, isMasterMove, isLichessMove, criticalAt, moveRank, errorCounts,
-  saveHistory, mainColor, criticalMoveTexts,
+  saveHistory, mainColor, criticalMoveTexts, lossDelta,
   setSaveMoveStats(f) { saveMoveStats = f; },
   storageFull(on) { store.set = on ? () => false : () => {}; },
   playBothColors(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
@@ -75,6 +75,7 @@ export const app = {
   get library() { return library; },
   // The engine: off in the tests (isolate), or a stand-in worker.
   setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
+  setBackupMessageMs(ms) { backupMessageMs = ms; },
   get evals() { return evals; }, setEvals(e) { evals = e; forgetCritical(); },
   pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions,
   evaluation, evalText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
@@ -244,7 +245,10 @@ function run(app) {
   }
   // The tile's moves: those losing 0.1 pawns or more, with their share and drop.
   check('critical: the moves losing 0.1 pawns or more, with share and drop', app.criticalMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 1.24 }, { san: 'e4', share: 0.5, drop: 0 }, { san: 'h3', share: 0.08, drop: 0.1 }] }),
-    ['♗f4 14% · Δ−1.2', 'h3 8% · Δ−0.1']);
+    [['♗f4 14% · ', 1.24], ['h3 8% · ', 0.1]]);
+  // A move's Δ colored by its loss: green at Δ0.0 as shown, amber below the critical level (0.5), red at it or more.
+  check('loss colors: green, amber, red', [-0.04, -0.3, -0.46, -0.5, -1.2].map(d => [app.lossDelta(d).textContent, app.lossDelta(d).className]),
+    [['Δ0.0', 'loss-none'], ['Δ−0.3', 'loss-some'], ['Δ−0.5', 'loss-big'], ['Δ−0.5', 'loss-big'], ['Δ−1.2', 'loss-big']]);
   check('critical: evaluations in pawns, mate as 10', [{ cp: 45 }, { cp: -120 }, { mate: 3 }, { mate: -2 }].map(app.pawnsOf), [0.45, -1.2, 10, -10]);
   // Critical positions: the Lichess moves' expected loss, by the engine, at the critical level (0.5) or more.
   {
@@ -482,11 +486,35 @@ async function runLichessPage(app) {
   const before = { history: app.history, selection: app.selection, presets: app.presets, confirm: window.confirm };
   window.confirm = () => true;
   const chosen = new DataTransfer();
-  chosen.items.add(new File([JSON.stringify({ app: 'chess-opening-trainer', version: 5, settings: {}, history: { moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['e4'], at: null }] }, lines: {} } })], 'backup.json'));
+  const v5Backup = () => new File([JSON.stringify({ app: 'chess-opening-trainer', version: 5, settings: {}, history: { moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['e4'], at: null }] }, lines: {} } })], 'backup.json');
+  chosen.items.add(v5Backup());
   $('restore-file').files = chosen.files;
   $('restore-file').dispatchEvent(new Event('change'));
-  await until(() => $('banner').textContent.startsWith('Backup restored'), 'the restore to finish');
-  check('restore: a version 5 backup, its moves moved to their positions', [Object.keys(app.history.positions), $('banner').textContent.split('.')[0]], [['AAAAAAAA/BBBBBBBB|'], 'Backup restored: history for 1 position, and settings']);
+  app.setBackupMessageMs(50);
+  await until(() => $('backup-message').textContent.startsWith('Backup restored'), 'the restore to finish');
+  const restored = [Object.keys(app.history.positions), $('backup-message').textContent.split('.')[0], $('banner').classList.contains('hidden') || !$('banner').textContent];
+  await new Promise(r => setTimeout(r, 150));
+  const stays = $('backup-message').textContent; // no token: it says what to do next, so it stays
+  app.setToken('lip_test');
+  const again = new DataTransfer();
+  again.items.add(v5Backup());
+  $('restore-file').files = again.files;
+  $('restore-file').dispatchEvent(new Event('change'));
+  await until(() => $('backup-message').textContent === 'Backup restored: history for 1 position, and settings.', 'the second restore');
+  await until(() => !$('backup-message').textContent, 'the message to go');
+  app.setToken(null);
+  check('restore: with no token, the message says what to do next and stays', /Now (connect to Lichess|add your token)\.$/.test(stays), true);
+  check('restore: a version 5 backup, its moves moved to their positions; the message in the Backup card, gone after a while', restored, [['AAAAAAAA/BBBBBBBB|'], 'Backup restored: history for 1 position, and settings', true]);
+  // A file that isn't a backup: the error stays, in violet.
+  const notBackup = new DataTransfer();
+  notBackup.items.add(new File(['{}'], 'other.json'));
+  $('restore-file').files = notBackup.files;
+  $('restore-file').dispatchEvent(new Event('change'));
+  await until(() => $('backup-message').textContent, 'the error');
+  await new Promise(r => setTimeout(r, 150));
+  check("backup: an error stays, in violet", [$('backup-message').textContent, $('backup-message').className], ["That file isn't an Opening Trainer backup.", 'update-status backup-error']);
+  app.setBackupMessageMs(10000);
+  $('backup-message').replaceChildren();
   window.confirm = before.confirm;
   app.setHistory(before.history); app.setSelection(before.selection); app.setPresets(before.presets); app.setSettings({});
 
@@ -603,9 +631,10 @@ async function runLichessPage(app) {
     /chapter/.test(document.querySelector('#studies .study-row').textContent), !!document.querySelector('#studies .side-dot')], [false, false, false]);
   check('header: Groups between Practice and Studies', [...document.querySelectorAll('header nav button')].map(b => b.textContent), ['Practice', 'Groups', 'Studies', 'Lichess', 'Help']);
   $('nav-groups').click();
-  check('Groups page: its own page, with no All row; Create new and Cancel for All, Cancel only once something changes', [!$('groups-screen').classList.contains('hidden'), $('studies-screen').classList.contains('hidden'), $('nav-groups').classList.contains('current'),
+  check('Groups page: its own page, with no All row; Save as new and Cancel for All, Cancel only once something changes', [!$('groups-screen').classList.contains('hidden'), $('studies-screen').classList.contains('hidden'), $('nav-groups').classList.contains('current'),
     !$('all-row'), ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')), $('preset-cancel-btn').disabled],
     [true, true, true, true, ['preset-new-btn', 'preset-cancel-btn'], true]);
+  check('Groups page: Save as new', [$('preset-new-btn').textContent, $('preset-new-btn').title], ['Save as new', 'A new group with the chapters as shown']);
   if (!document.querySelector('#edit-studies .chapter-row')) document.querySelector('#edit-studies .study-row .opener').click(); // the study's chapters
   const firstDot = () => document.querySelector('#edit-studies .chapter-row .side-dot').className, wasDot = firstDot();
   document.querySelector('#edit-studies .chapter-row .chapter-label').click(); // its name
@@ -687,7 +716,7 @@ async function runLichessPage(app) {
     key('ArrowRight');
     const notCritical = tileAt();
     check('critical: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notCritical],
-      [['Critical position', 'Expected loss 0.5 pawns', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Critical position', 'Expected loss 0.4 pawns', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
+      [['Critical position', 'Expected loss Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Critical position', 'Expected loss Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
     check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
@@ -839,11 +868,11 @@ async function runLichessPage(app) {
   app.settings.review = { view: 'study' };
   const studyTips = [app.squareTipLines(italianRoot, 'e4'), app.squareTipLines(italianRoot, 'f5')];
   app.setEvals(evalsBefore);
-  check('your expected loss: first moves only, against the engine\'s best (d4 50% · Δ−0.1, hint 25% · 1 pawn, e4 25% · Δ0.0); the positions after your errors to evaluate', [Math.round(yourLoss.loss * 100), yourLoss.tries, yourLoss.moves.map(m => [m.label, m.share, Math.round(m.delta * 10) / 10]),
+  check('your expected loss: first moves only, against the engine\'s best (d4 2 of 3 · Δ−0.1, e4 1 of 3 · Δ0.0; the old try that began with the hint left out); the positions after your errors to evaluate', [Math.round(yourLoss.loss * 100), yourLoss.tries, yourLoss.moves.map(m => [m.label, Math.round(m.share * 100), Math.round(m.delta * 10) / 10]),
     ['rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -', 'rnbqkbnr/pppppppp/8/8/8/6P1/PPPPPP1P/RNBQKBNR b KQkq -'].every(epd => tried.includes(epd))],
-    [30, 4, [['d4', 0.5, -0.1], ['hint', 0.25, -1], ['e4', 0.25, 0]], true]);
-  check('review: square tips with the change in evaluation: with Accuracy the error\'s kind, the hint and last tested; with Study your study\'s moves', [accuracyTips, studyTips],
-    [[['d4 · Δ−0.1 (masters move)'], ['e4 · Δ0.0 · hint 25% · last tested today']], [['e4 · Δ0.0'], []]]);
+    [7, 3, [['d4', 67, -0.1], ['e4', 33, 0]], true]);
+  check('review: square tips with the change in evaluation: with Accuracy the error\'s kind (no hint or last tested); with Study your study\'s moves', [accuracyTips, studyTips],
+    [[['d4 · Δ−0.1 (masters move)'], ['e4 · Δ0.0']], [['e4 · Δ0.0'], []]]);
   app.setHistory(historyBefore);
   app.settings.review = { view: 'study' };
   app.setMoveStats(statsBefore);
@@ -857,8 +886,8 @@ async function runLichessPage(app) {
   check('review: a comment before a move', beforeRoot.children[0].children[0].children.map(c => c.before ?? null), [null, 'Not in this repertoire.']);
   check('review: Lichess, the moves played 5% or more, with their shares', lichess,
     [['e2e4 halo', 'e2e4 gray 50%', 'd2d4 gray 30%', 'c2c4 gray 10%', 'g1f3 gray 10%'], ['c7c5 gray 38%', 'e7e5 halo', 'e7e5 gray 38%', 'e7e6 gray 25%']]);
-  check('review: Errors, the first move of each try only (g3 came second: not shown), with the correct move: 100% in all; hovering over a square (the hint on your move\'s)', errorsShown,
-    [['d2d4 violet 50%', 'e2e4 white+ 25%'], [], ['d4 (masters move)'], [], ['e4 · hint 25% · last tested today']]);
+  check('review: Errors, the first move of each try only (g3 came second: not shown), with the correct move: 100% in all; hovering over a square', errorsShown,
+    [['d2d4 violet 50%', 'e2e4 white+ 25%'], [], ['d4 (masters move)'], [], ['e4']]);
   // The study's own arrows and circles, in their Lichess colors, after the study's moves.
   const drawnRoot = app.parseChapter({ key: 'XXXXXXXX/YYYYYYYY', pgn: '1. e4 { Center. [%cal Gd2d4,Rf7f5] [%csl Bd5,Ye5] } e5 *' }).root;
   check('review: the study\'s own arrows and circles', app.reviewArrows(drawnRoot.children[0]).map(arrowText), ['e7e5 white+', 'd2d4 green', 'f7f5 red', 'd5 blue', 'e5 yellow']);
@@ -1025,17 +1054,18 @@ async function runEngineTests(app, key) {
   check("engine: the Lichess page's progress; merged backups keep the newer evaluation", [!!done && done === of && +of >= app.allStudyPositions().size, older, app.evals[epd].depth],
     [true, [20, false, true], 30]);
   // With Accuracy, the Expected loss tile at a position of yours with tries (the Sicilian after 1. e4, where
-  // the board is): the hint first in one try of two (1 pawn), your study's 1… c5 in the other (Δ0.0).
+  // the board is): an old try that began with the hint (left out), your study's 1… c5 in the other (Δ0.0, green),
+  // today.
   const historyKept = app.history, viewKept = app.settings.review.view;
-  app.setHistory({ positions: { 'AAAAAAAA/CCCCCCCC|e4': [{ tried: ['hint', 'c5'], at: 1, main: false }, { tried: ['c5'], at: 2, main: false }] }, lines: {} });
+  app.setHistory({ positions: { 'AAAAAAAA/CCCCCCCC|e4': [{ tried: ['hint', 'c5'], at: 1, main: false }, { tried: ['c5'], at: Date.now(), main: false }] }, lines: {} });
   $('arrows-errors').click();
   key('Home'); key('ArrowRight');
-  const lossTile = [...$('review-loss').children].map(e => e.textContent);
+  const lossTile = [...$('review-loss').children].map(e => e.textContent), lossColor = $('review-loss').querySelector('.loss-moves span')?.className;
   $('arrows-study').click();
   const lossInStudy = $('review-loss').children.length;
   app.setHistory(historyKept); app.settings.review.view = viewKept;
-  check('expected loss tile: with Accuracy, at a position of yours with tries; none with Study', [lossTile, lossInStudy],
-    [['Your expected loss', 'Δ−0.5 pawns (last 2 tries)', 'hint 50% · Δ−1.0c5 50% · Δ0.0'], 0]);
+  check('expected loss tile: with Accuracy, at a position of yours with tries, a Δ, last tested, each move colored; none with Study', [lossTile, lossColor, lossInStudy],
+    [['Your expected loss', 'Δ0.0 (last 1 try)', 'Last tested today', 'c5 100% · Δ0.0'], 'loss-none', 0]);
   // Without the engine (the version opened from disk): no bar.
   app.setEngine(false);
   key('Home');
@@ -1128,10 +1158,15 @@ async function runPractice(app) {
     ['AAAAAAAA/BBBBBBBB|e4 e5 Nc3', ['No errors.'], ['Nc3'], false]);
   app.endSession();
 
-  // 3. Hint, Show correct move, then Skip (on to the next: the same line, the only one).
+  // 3. Hint (only after a first try), Show correct move, then Skip (on to the next: the same line, the only one).
   app.startLine(main);
   const skipped = p();
   await until(yourTurn, 'your turn');
+  const hintBefore = [document.getElementById('hint-btn').disabled, document.getElementById('hint-btn').title];
+  await play('g2g3');
+  await until(yourTurn, 'the error to be taken back');
+  const hintAfter = [document.getElementById('hint-btn').disabled, document.getElementById('hint-btn').title];
+  check('practice: Hint grayed out until your first try', [hintBefore, hintAfter], [[true, 'After your first try'], [false, 'Circles the piece to move']]);
   document.getElementById('hint-btn').click();
   document.getElementById('hint-btn').click();
   check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
@@ -1139,7 +1174,7 @@ async function runPractice(app) {
   check('practice: Skip goes on to the next', [p() !== skipped, p().line === main], [true, true]);
   app.endSession();
   const lastE4 = app.history.positions['AAAAAAAA/BBBBBBBB|'].at(-1);
-  check('practice: the move on was recorded', [lastE4.tried, typeof lastE4.at], [['hint', 'show'], 'number']);
+  check('practice: the move on was recorded', [lastE4.tried, typeof lastE4.at], [['g3', 'hint', 'show'], 'number']);
   check('practice: the times', [app.lastTriedAt('AAAAAAAA/BBBBBBBB|') === lastE4.at, typeof app.lastPlayedAt(main.key)], [true, 'number']);
   check('practice: what\'s stored', Object.keys(app.storedHistory().positions['AAAAAAAA/BBBBBBBB|'].at(-1)).sort(), ['at', 'main', 'tried']);
   check('practice: a skipped line is not a play-through', app.history.lines[main.key]?.length, 2);
