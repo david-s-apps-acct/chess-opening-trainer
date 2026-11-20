@@ -775,6 +775,21 @@ The last selection is remembered between visits (stored in the browser, like the
   - **Position reached:** how many times a position was reached in rated Lichess games (from the move statistics), shown with the same short counts everywhere (see Naming positions): "**Position reached 23k times**" on the hover boards (the position after the move) and the column "**Position reached (times)**" on the Positions page (the position where it's the user's move; the column used to be called "Lichess games").
 - Where they appear: the practice and move-tree hover boards, the end of a line, the positions table (title "Frequent positions with low move accuracy", column "Move accuracy"), the Studies page's percentages (hover text "Average move accuracy over the last 10 attempts"; it used to say "Accuracy over the last 10 attempts"), the Options page's error penalties text and the Help page. The Help page and the rest of this spec say "move accuracy" where they used to say a move's "score". *Claude's choices, accepted by the user:* the Studies page hover text adds "Average" because a study's or chapter's percentage averages several moves; the move tree's hover board shows a whole percentage, rounded down like the Studies page.
 
+## Position measures
+
+The reference for what's worked out for a position (the user's name and decision, 20 November 2026): three measures, each with the flag it sets. Help may use the same table later.
+
+| Measure | About | From | Judged by |
+|---|---|---|---|
+| **Repertoire recall** | you | your last 10 tries (first move) | right or wrong, with or without Main lines only |
+| **Weak recall** | you | repertoire recall | recall below 75% |
+| **Your expected loss** | you | your last 10 tries (first move) | each move's Δ against the engine's best |
+| **Critical position (you)** | you | your expected loss | at the critical level (0.5) or more |
+| **Lichess expected loss** | the opening | Lichess moves (5% or more) | each move's Δ, weighted by how often it's played |
+| **Critical position (Lichess)** | the opening | Lichess expected loss | at the critical level (0.5) or more |
+
+The critical level is the Lichess page's setting (default 0.5 pawns), one for both kinds of critical position; weak recall's 75% is fixed. Weak recall is to do (see Terms); the rest is built.
+
 ## Naming positions
 
 - **Built 19 November 2026 (the user's decision): just the opening name and ECO code, without the moves, on the Studies page and in the practice heading.** The position's name becomes the Lichess opening name of the last named position on the way to it, with its ECO code, e.g. "Sicilian Defense: Najdorf Variation (B90)", without the moves since (they're in the move tree and the practice move list). The user's reasoning: the moves add little. *Claude's details, accepted by the user:* on the Studies page the position's name is left out when it's the same as the chapter's own opening line above it (its tags); the Show lines and Show positions tables keep the current names (the opening name plus the last few moves), since without the moves their rows couldn't be told apart. *Claude's details, also accepted by the user:* the start reads "Starting position"; before the move statistics have downloaded (no opening names yet), the moves show as now, as a fallback.
