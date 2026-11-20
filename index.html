@@ -130,7 +130,6 @@
   .tick-column input:disabled + span { color: var(--muted); }
   #games-warning:empty { display: none; }
   .update-status.error { color: var(--bad); }
-  .update-status.backup-error { color: #a98bff; } /* a backup's problem, in the errors' violet */
   select { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
 
   /* Help screen */
@@ -165,7 +164,7 @@
   .report-table tbody tr { cursor: default; }
   .report-table tbody tr:hover { background: var(--surface-2); }
   .position-name { font-size: 13px; }
-  /* Repertoire accuracy: every highlight box the same width, wide enough for "100%". */
+  /* Repertoire recall: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
   /* On the Practice page, under the chooser: the Studies to practice tile (the group, how many chapters it has). */
@@ -237,7 +236,7 @@
   /* Move scores: only moves that need work are highlighted, with a violet background (a color
      chess sites don't use for move quality, so it isn't read as "this move is bad"). The stronger
      the tint, the weaker the move. 100% and never tried: plain. */
-  /* A move (or study, chapter, line or position) whose accuracy is below 100%: one violet. */
+  /* A move (or study, chapter, line or position) whose recall is below 100%: one violet. */
   :root { --needs-work: rgba(138, 92, 246, .5); }
   .needs-work { background: var(--needs-work); border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
   .tree-move-number { color: var(--muted); }
@@ -361,11 +360,12 @@
   .review-masters:empty { display: none; }
   .review-masters h3 { margin: 0 0 4px; font-size: 15px; color: #2fc4c4; }
   .review-masters p { margin: 0 0 4px; }
-  /* With Accuracy, your expected loss at the position on the board (see renderLossTile), with the errors' violet edge */
+  /* With Recall, your expected loss at the position on the board (see renderLossTile), with the errors' violet edge */
   .panel.review-loss { padding: 12px 14px; border-left: 4px solid #8a5cf6; }
   .review-loss:empty { display: none; }
   .review-loss h3 { margin: 0 0 4px; font-size: 15px; color: #b39dfa; }
   .review-loss p { margin: 0 0 4px; }
+  .review-loss .critical-line { color: var(--critical-text); } /* Critical position (you), in the critical positions' orange */
   .review-loss .loss-moves div { color: var(--muted); }
   /* A move's Δ by its loss (see lossDelta): none, below the critical level, at it or more */
   .loss-none { color: #7fb83a; } .loss-some { color: #e0a43a; } .loss-big { color: #e06060; }
@@ -374,12 +374,12 @@
   .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
   .review-critical p { margin: 0 0 4px; }
   .review-critical .critical-moves div { color: var(--muted); }
-  /* The move tree's dots after a move: violet, your move below 100% repertoire accuracy; orange, it leads to a critical position */
+  /* The move tree's dots after a move: violet, your move below 100% repertoire recall; orange, it leads to a critical position */
   .tree-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 2px 2px 1px; vertical-align: middle; }
   .critical-dot { background: var(--critical); }
   .weak-dot { background: #8a5cf6; } /* the errors' violet (see BRUSHES) */
   .masters-dot { background: #00a3a3; } /* the masters' teal */
-  /* Under the board: Study | Masters | Lichess | Accuracy, the arrows shown (one at a time), with their colors */
+  /* Under the board: Study | Recall | Lichess | Masters, the arrows shown (one at a time), with their colors */
   .review-view-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
   .review-view-row .review-view { flex: 1; min-width: 0; }
   .key-btn { flex: none; padding: 4px; }
@@ -556,7 +556,7 @@
           <button id="games-apply" class="primary">Apply</button>
           <button id="games-cancel" class="primary">Cancel</button>
         </div>
-        <p class="critical-level"><label for="critical-level"><span data-tip="How much the Lichess moves played in a position lose on average, by the engine. Lower: more positions count as critical.">Critical positions: expected loss ≥</span>
+        <p class="critical-level"><label for="critical-level"><span data-tip="How much is lost on average, by the engine: by the Lichess moves played (Lichess), or by your first tries (you). Lower: more positions count as critical.">Critical positions: expected loss ≥</span>
           <select id="critical-level"></select> pawns</label></p>
         <p id="lichess-moves" class="muted after-actions"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
@@ -696,7 +696,7 @@
 
   <!-- Studies: your studies, and a chapter on a board (see Studies page) -->
   <section id="studies-screen" class="hidden">
-    <!-- The board, with the Study | Masters | Lichess | Accuracy switch under it; beside it the moves, the annotation
+    <!-- The board, with the Study | Recall | Lichess | Masters switch under it; beside it the moves, the annotation
          and comment, and a critical position; your studies and their chapters to the left of the board where
          there's room, else under the tiles (see .review-layout) -->
     <div class="review-layout">
@@ -705,7 +705,7 @@
           <div id="eval-bar" class="eval-bar hidden" role="img"><div class="eval-fill"></div><span class="eval-text"></span></div></div>
         <div class="review-view-row">
         <div class="kind-switch review-view" role="group" aria-label="Arrows on the board">
-          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-errors" aria-pressed="false" title="Your repertoire accuracy here: your study's move and the errors you played first (last 10 tries)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Accuracy</button>
+          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-errors" aria-pressed="false" title="Your repertoire recall here: your study's move and the errors you played first (last 10 tries)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Recall</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+), with how often they're played"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-masters" aria-pressed="false" title="Masters moves, with how often they're played"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
         </div>
         <button id="color-key-btn" class="icon-btn key-btn" title="Color key" aria-label="Color key" aria-expanded="false" aria-controls="color-key"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.9-2.6 2.3-2.6 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg></button>
         </div>
@@ -798,10 +798,10 @@
           <ul>
             <li><b>Line</b>: one path through a chapter: one of your study's moves at each of your turns, and every reply your study gives the opponent.</li>
             <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. It's correct too, unless the study marks it ?, ?? or ?!, or Main lines only is ticked.</li>
-            <li><b>Repertoire accuracy</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
-            <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire accuracy.</li>
+            <li><b>Repertoire recall</b>: how often you were right first time in a position, over your last 10 tries (see Practice).</li>
+            <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire recall.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Critical position</b>: one where the Lichess moves played there lose 0.5 pawns or more on average, by the engine (the level is yours to set; see Studies).</li>
+            <li><b>Critical position (Lichess)</b>: one where the Lichess moves played there lose 0.5 pawns or more on average, by the engine (its <b>Lichess expected loss</b>). <b>Critical position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
             <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
             <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
@@ -852,15 +852,15 @@
           <table id="help-arrow-colors" class="help-table"></table>
         </details>
         <details>
-          <summary>Repertoire accuracy</summary>
-          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, or a move the study marks ?, ?? or ?!. Repertoire accuracy is the share right first time over your last 10 tries. Below 100%, a move gets a violet background (in the Studies page's move tree, a violet dot after it).</p>
+          <summary>Repertoire recall</summary>
+          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, or a move the study marks ?, ?? or ?!. Repertoire recall is the share right first time over your last 10 tries. Below 100%, a move gets a violet background (in the Studies page's move tree, a violet dot after it).</p>
           <p>Each position has two: with <b>Main lines only</b>, only the main move is right (tries without it where you played one of your alternatives are left out); without it, any of your study's moves. You see the one for the current setting.</p>
           <details>
             <summary>What counts as a try</summary>
             <ul>
               <li>Each of your moves in a line, and the move in a single position.</li>
               <li>With Skip or End practice: the moves answered so far, and the move you're on if you'd already tried something there.</li>
-              <li>Every line through the same position in a chapter shares its accuracy, whichever of your moves you play there. The same position in another chapter, or by another move order, has its own.</li>
+              <li>Every line through the same position in a chapter shares its recall, whichever of your moves you play there. The same position in another chapter, or by another move order, has its own.</li>
               <li>When your studies are updated, your history is kept, even for positions no longer in them: it counts again if they come back.</li>
             </ul>
           </details>
@@ -869,8 +869,8 @@
           <summary>Spaced repetition</summary>
           <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. By default, common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
           <ul>
-            <li>The five sliders, in the Spaced repetition tile on the Practice page, set how much each counts: <b>Frequency</b> (how often opponents on Lichess lead to it), <b>Accuracy</b> (weak ones), <b>Last played</b> (overdue ones), <b>Untried</b> and <b>Critical</b> (your critical positions, see Studies). 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
-            <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely to be tested next, with their position reached, accuracy, when last tested and chance of coming up next.</li>
+            <li>The five sliders, in the Spaced repetition tile on the Practice page, set how much each counts: <b>Frequency</b> (how often opponents on Lichess lead to it), <b>Recall</b> (weak ones), <b>Last played</b> (overdue ones), <b>Untried</b> and <b>Critical</b> (your critical positions, see Studies). 0% ignores it, 50% is normal, 100% makes it dominate. Untried at 0% leaves untried ones out; at 100% they come first. <b>Reset</b> puts them back to 50%.</li>
+            <li><b>Show lines</b> (or <b>Show positions</b>) lists the 25 most likely to be tested next, with their position reached, recall, when last tested and chance of coming up next.</li>
           </ul>
           <details>
             <summary>How the priority is worked out</summary>
@@ -878,10 +878,10 @@
             <ul>
               <li><b>Frequency</b>: 0.2 to 1, by the shares of the opponent's moves on the way, multiplied (a line: all of them; your own moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale; 0.6 until the statistics download.</li>
               <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
-              <li><b>Weakness</b>: 1 + 2 × (1 − accuracy): 1 at 100%, 3 at 0%.</li>
+              <li><b>Weakness</b>: 1 + 2 × (1 − recall): 1 at 100%, 3 at 0%.</li>
               <li><b>Critical</b>: ×2 for a critical position of yours (a line: any of yours in it; see Studies).</li>
-              <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × accuracy</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
-              <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its weakest position's repertoire accuracy (untried positions count as 0%); a position, its own.</li>
+              <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × recall</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
+              <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its weakest position's repertoire recall (untried positions count as 0%); a position, its own.</li>
             </ul>
             <table class="help-table">
               <tr><th>Example</th><th>Need</th></tr>
@@ -908,11 +908,11 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Accuracy</b> (your repertoire accuracy here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire accuracy; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Accuracy also the error's kind, e.g. "(masters move)". With Accuracy, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the critical level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Critical position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Recall</b> (your repertoire recall here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire recall; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Recall also the error's kind, e.g. "(masters move)". With Recall, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the critical level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Critical position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines (Main lines only doesn't apply). The spaced repetition sliders apply, and your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Critical positions</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves.</li>
+          <li><b>Critical positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Critical positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
         </ul>
         <details>
@@ -923,8 +923,8 @@
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% repertoire accuracy, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position. Select the move to see a tile about that position.</li>
-            <li>Each view shows its own dots and tiles: <b>Accuracy</b> the violet ones, <b>Masters</b> the teal ones, <b>Lichess</b> the orange ones. <b>Study</b> keeps to what's in your study, with none.</li>
+            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, you've made errors there (your move is below 100% repertoire recall, from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position (Lichess, or with Recall, you). Select the move to see a tile about that position.</li>
+            <li>Each view shows its own dots and tiles: <b>Recall</b> the violet ones and Critical positions (you), <b>Masters</b> the teal ones, <b>Lichess</b> Critical positions (Lichess). <b>Study</b> keeps to what's in your study, with none.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Click a move to show it on the big board, with the details.</li>
             <li>A comment the study puts before a move (e.g. at the start of a variation) has its own bubble before the move.</li>
@@ -1155,7 +1155,7 @@ let moveStats = {};
 const RATING_BANDS = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
 const SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
 
-const ARROW_VIEWS = ['study', 'masters', 'lichess', 'errors']; // the Studies page's switch
+const ARROW_VIEWS = ['study', 'errors', 'lichess', 'masters']; // the Studies page's switch
 
 // Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
 // November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
@@ -1904,14 +1904,13 @@ function firstTryRight(a, node, mainOnly) {
   return false;
 }
 
-// A position's repertoire accuracy: the share of its last 10 attempts right first time (0–1), and how many
+// A position's repertoire recall: the share of its last 10 attempts right first time (0–1), and how many
 // attempts count; null when none.
 function accuracyAt(node, mainOnly = mainOnlyNow()) {
   const results = attemptsAt(node).map(a => firstTryRight(a, node, mainOnly)).filter(r => r != null);
   return results.length ? { share: results.filter(Boolean).length / results.length, tries: results.length } : null;
 }
 const shareAt = (node, mainOnly) => accuracyAt(node, mainOnly)?.share ?? null;
-const accuracyText = a => `${percent(a.share)}% repertoire accuracy (last ${plural(a.tries, 'try', 'tries')})`;
 // Whether an attempt in practice was right first time: one try (the attempt ends with a correct move).
 const rightThisTime = a => a.tried.length === 1 && a.tried[0] !== 'hint' && a.tried[0] !== 'show';
 
@@ -2047,7 +2046,7 @@ function extraPositions(studied, { evaluated = false } = {}) { // evaluated: tho
     const moves = [...lichessMovesAt(epd), ...mastersMovesAt(epd)], pos = moves.length && positionOf(epd);
     for (const m of moves) if (m.ended === undefined && !lineFor(ev, pos, m) && (evaluated || !evalAt(m.epdAfter)) && !studied.has(m.epdAfter)) out.set(m.epdAfter, m.fenAfter);
   }
-  // And after every move you've tried (your errors), for the Accuracy view's Δ and your expected loss.
+  // And after every move you've tried (your errors), for the Recall view's Δ and your expected loss.
   for (const [epdAfter, fenAfter] of triedPositions()) if ((evaluated || !evalAt(epdAfter)) && !studied.has(epdAfter)) out.set(epdAfter, fenAfter);
   return [...out];
 }
@@ -2085,6 +2084,16 @@ function evaluateAfterError(pos, move) {
 function criticalAt(epd) {
   const e = expectedLossAt(epd);
   return e && e.loss >= settings.criticalLevel - 1e-9 ? e : null;
+}
+
+// A Critical position (you) (the user's definition, 20 November 2026): one of your positions whose your
+// expected loss (see yourExpectedLoss) is the critical level or more, as a Critical position (Lichess) is by
+// its Lichess expected loss (see criticalAt). The Recall view's orange dot and the Your expected loss tile's
+// line; null until known (no tries, or evaluations still to come) or below the level.
+function isYourCriticalPosition(node, own) {
+  if (!node.children.some(c => isShownAsYours(c, own))) return false; // (judged from saved evaluations, as criticalAt)
+  const e = yourExpectedLoss(node);
+  return !!e && !e.pending && e.loss >= settings.criticalLevel - 1e-9;
 }
 
 // Saves this line's attempts into your history, each under its position.
@@ -2210,7 +2219,7 @@ function chapterLink(c, k) {
 // chapter's own side (own) that's practiced, or any move whose position you've tried (e.g. played from
 // the other side).
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
-// A position of yours (your move there) below 100% repertoire accuracy: the move tree's violet dot, after
+// A position of yours (your move there) below 100% repertoire recall: the move tree's violet dot, after
 // the move leading to it (as the critical dot), and the errors tile when it's on the board.
 const isWeakPosition = (node, own) => node.children.some(c => isShownAsYours(c, own)) && scoreClass(shareAt(node)) === 'needs-work';
 
@@ -2223,11 +2232,11 @@ function isOffMastersPath(node, own) {
     && !!masters && totalGames(masters) >= MASTERS_MIN_GAMES && !isMasterMove(node.epd, main.san);
 }
 
-// The Studies page's marks by the arrows switch: Errors shows only the violet ones (your errors), Masters
-// only the teal ones (off the masters' path), Lichess only the orange ones (critical positions, from
-// Lichess games). Study keeps the tree to what's in the study (the user's choice): none of them.
+// The Studies page's marks by the arrows switch: Recall (`errors`) shows only your own (violet, your errors;
+// orange, Critical position (you)), Masters only the teal ones (off the masters' path), Lichess only the
+// orange ones (Critical position (Lichess)). Study keeps the tree to what's in the study (the user's choice): none of them.
 // The same goes for the dots in the tree and the tiles.
-const MARK_VIEWS = { weak: 'errors', masters: 'masters', critical: 'lichess' };
+const MARK_VIEWS = { weak: 'errors', yourCritical: 'errors', masters: 'masters', critical: 'lichess' };
 const showsMark = (mark, view = settings.review.view) => MARK_VIEWS[mark] === view;
 
 // Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
@@ -2314,7 +2323,7 @@ function openingName(parsed) {
 
 // A chapter's moves as a tree, as on Lichess: the main line flows along; after a move that has
 // alternatives, a small + opens those variations underneath (indented), and − closes them.
-// A violet dot after a move leading to a position of yours below 100% repertoire accuracy, where your errors
+// A violet dot after a move leading to a position of yours below 100% repertoire recall, where your errors
 // were (see isWeakPosition; at the start, before the first move; until 18 November 2026 a violet
 // background on your move itself); moves after (or as) one of your marked alternatives (never practiced) are italics; moves with a move-quality glyph take its color. On the Studies page, hovering over a move
 // shows the small hover board, and clicking it shows it on the big board (pick; current, highlighted).
@@ -2337,7 +2346,8 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
     // The dots for the position this move leads to (see showsMark): errors, off the masters' path, critical.
     const weakDot = showsMark('weak', view) && isWeakPosition(node, parsed.yourColor) ? weakPositionDot() : null;
     const mastersDot = showsMark('masters', view) && isOffMastersPath(node, parsed.yourColor) ? mastersPositionDot() : null;
-    const dot = showsMark('critical', view) && criticalAt(node.epd) ? element('span', { class: 'tree-dot critical-dot', title: 'Critical position' }) : null;
+    const dot = showsMark('critical', view) && criticalAt(node.epd) ? criticalPositionDot('Lichess')
+      : showsMark('yourCritical', view) && isYourCriticalPosition(node, parsed.yourColor) ? criticalPositionDot('you') : null;
     return { els: [node.before ? [commentBubble(moveLabel(node), { text: [node.before], nags: [] }), ' '] : null, // a comment before the move, where Lichess puts it
       num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       el, glyphMarks(node), weakDot, mastersDot, dot,
@@ -2376,11 +2386,13 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   if (!parsed.error) walk(parsed.root, [], box);
   // Your first move's position (the start): its dots before the first move.
   const startDots = parsed.error ? [] : [showsMark('weak', view) && isWeakPosition(parsed.root, parsed.yourColor) && weakPositionDot(),
-    showsMark('masters', view) && isOffMastersPath(parsed.root, parsed.yourColor) && mastersPositionDot()].filter(Boolean);
+    showsMark('masters', view) && isOffMastersPath(parsed.root, parsed.yourColor) && mastersPositionDot(),
+    showsMark('yourCritical', view) && isYourCriticalPosition(parsed.root, parsed.yourColor) && criticalPositionDot('you')].filter(Boolean);
   if (startDots.length) box.querySelector('.tree-line')?.prepend(...startDots, ' ');
   return box;
 }
-const weakPositionDot = () => element('span', { class: 'tree-dot weak-dot', title: 'Your errors here: below 100% repertoire accuracy' });
+const weakPositionDot = () => element('span', { class: 'tree-dot weak-dot', title: 'Your errors here: below 100% repertoire recall' });
+const criticalPositionDot = who => element('span', { class: 'tree-dot critical-dot', title: `Critical position (${who})` });
 const mastersPositionDot = () => element('span', { class: 'tree-dot masters-dot', title: "Your study's move here isn't a masters move" });
 
 // The eye icon (the top eye, and each study's and chapter's): a line through it when its button is "off".
@@ -2608,7 +2620,7 @@ $('preset-name-form').addEventListener('submit', e => {
 // A chapter on a board, to look through before (or instead of) practicing; it works offline. Opened from
 // the header's Studies button, a chapter in the studies list beside it (see Studies list), or the icon by
 // the study's name during practice. The board shows the position, with arrows for the study's moves there
-// (see reviewArrows; Study | Masters | Lichess | Errors under it). Beside it, tiles: the moves (the position's
+// (see reviewArrows; Study | Recall | Lichess | Masters under it). Beside it, tiles: the moves (the position's
 // name and how often it's reached, the tree with the current move highlighted, ⏮ ◀ ▶ ⏭); the move's
 // annotation and comment. ← → Home End step through the moves, ↑ ↓ the study's
 // chapters; playing one of the study's moves on the board follows it. (In the code it's "review".)
@@ -2716,7 +2728,7 @@ function reviewArrows(node) {
 
 // Errors: in a position of yours, the errors of your last 10 tries there (violet), each with the share of
 // those tries it was made in ("40%", see errorShares), and your study's moves (the main one first, with
-// its repertoire accuracy in a badge, "75%", once tested); nothing in the opponent's positions.
+// its repertoire recall in a badge, "75%", once tested); nothing in the opponent's positions.
 function errorArrows(node) {
   const correct = yourMovesAt(node);
   if (!correct.length) return [];
@@ -2726,7 +2738,7 @@ function errorArrows(node) {
 
 // Each error made as the first move of a try (as errorCounts names them), with the share of the tries
 // it began, most often first: [['Bc4', 0.4], ['hint', 0.2]]. "show" counts as the hint. Each try counts
-// once, by its first move, so with the repertoire accuracy (the tries right first time) they add up to 100%.
+// once, by its first move, so with the repertoire recall (the tries right first time) they add up to 100%.
 // (Until 19 November 2026 every error in a try counted, so they could add up to more.)
 function errorShares(attempts, correct) {
   const firsts = attempts.map(a => errorCounts([{ tried: a.tried.slice(0, 1).map(x => x === 'show' ? 'hint' : x) }], correct)[0]?.[0]).filter(Boolean);
@@ -2771,16 +2783,17 @@ const KEY_ARROWS = [
   { sample: arrowSample('#00a3a3', '#fff'), name: 'White outline on teal or gray', meaning: 'Also in your study', views: ['masters', 'lichess'] },
   { sample: arrowSample('#8a5cf6'), name: 'Violet', meaning: "An error: any move you tried that isn't one of your study's moves", views: ['errors'] },
   { sample: badgeSample('40%'), name: 'On a violet arrow', meaning: 'How often you played it first (last 10 tries)', views: ['errors'] },
-  { sample: badgeSample('75%', '#3291ff'), name: 'On the outlined arrow', meaning: "Accuracy: the position's repertoire accuracy", views: ['errors'] },
+  { sample: badgeSample('75%', '#3291ff'), name: 'On the outlined arrow', meaning: "Recall: the position's repertoire recall", views: ['errors'] },
   { sample: ['#15781b', '#882020', '#003088', '#e68f00'].map(c => `<span class="key-dot" style="background: ${c}"></span>`).join(''), name: 'Green, red, blue, amber', meaning: "Your study's own arrows and circles (Studies page)", views: ['study'] },
 ];
 const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
-  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position where you made errors: below 100% repertoire accuracy (select it to see them)', views: ['errors'] },
+  { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position where you made errors: below 100% repertoire recall (select it to see them)', views: ['errors'] },
   { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)", views: ['masters'] },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
-  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position', views: ['lichess'] },
+  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position (Lichess): the Lichess moves played there lose the critical level or more on average', views: ['lichess'] },
+  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position (you): your first tries there lose the critical level or more on average', views: ['errors'] },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
@@ -2815,9 +2828,9 @@ function updateArrowsSwitch() { for (const view of ARROW_VIEWS) $(`arrows-${view
 // much it changes the evaluation compared with the engine's best move there, for the side playing it (see
 // moveDelta), e.g. "♘c3 · Δ−0.5" (just the move until it's known). With Study, your study's moves (not its
 // drawn arrows and circles); with Masters, the masters moves and your study's other moves; with Lichess,
-// the Lichess moves; with Accuracy (`errors`), the errors you played first, with their kind, e.g. "d4 ·
+// the Lichess moves; with Recall (`errors`), the errors you played first, with their kind, e.g. "d4 ·
 // Δ−0.1 (masters move)", and your study's moves, e.g. "e4 · Δ0.0" (until 20 November 2026 also "hint 25% ·
-// last tested today"). The shares and repertoire accuracy are on the arrows. (Until 19 November 2026 the tips showed each move's rank, share and score, then for a few hours
+// last tested today"). The shares and repertoire recall are on the arrows. (Until 19 November 2026 the tips showed each move's rank, share and score, then for a few hours
 // the evaluation after it.)
 function squareTipLines(node, square) {
   const pos = node.position, to = mv => arrowSquares(pos, mv)[1] === square, view = settings.review.view;
@@ -2928,7 +2941,7 @@ function renderPositionTiles(node) {
 }
 
 // Your expected loss at one of your positions, from your last 10 tries there, each counted by its first
-// move (as the Accuracy view's arrows): the sum of each first move's share × how much it changes the
+// move (as the Recall view's arrows): the sum of each first move's share × how much it changes the
 // evaluation against the engine's best move (moveDelta). Hint works only after a move (since 20 November
 // 2026), so it costs nothing; older tries that began with it have no move to judge and are left out. null
 // with no tries; { pending: true } until every move's evaluation is known; else { loss (pawns, ≥ 0),
@@ -2955,13 +2968,16 @@ function lossDelta(delta) {
   return element('span', { class: lost <= 0 ? 'loss-none' : lost < settings.criticalLevel ? 'loss-some' : 'loss-big' }, deltaText(delta));
 }
 
-// With Accuracy, under the comment, at one of your positions with tries: "Your expected loss", e.g.
+// With Recall, under the comment, at one of your positions with tries: "Your expected loss", then (in
+// orange) "Critical position (you)" when it's the critical level or more (see isYourCriticalPosition), e.g.
 // "Δ−0.4 (last 4 tries)", when it was last tested, e.g. "Last tested 3 days ago", and each first move with
 // its share and colored Δ, e.g. "d4 50% · Δ−0.1"; "Evaluating…" until it's known.
 function renderLossTile(node) {
   const e = engineAvailable() && settings.review.view === 'errors' && yourMovesAt(node).length ? yourExpectedLoss(node) : null;
   const last = e && lastTriedAt(node.key), days = last && daysAgo(last);
+  const critical = e && !e.pending && isYourCriticalPosition(node, review.parsed.yourColor);
   $('review-loss').replaceChildren(...!e ? [] : [element('h3', {}, 'Your expected loss'),
+    ...critical ? [element('p', { class: 'critical-line' }, 'Critical position (you)')] : [],
     ...e.pending ? [element('p', { class: 'muted' }, 'Evaluating…')] : [
       element('p', {}, `${deltaText(-e.loss)} (last ${plural(e.tries, 'try', 'tries')})`),
       ...last ? [element('p', { class: 'muted' }, days === 'Today' ? 'Last tested today' : `Last tested ${days} ago`)] : [],
@@ -2989,8 +3005,8 @@ function renderMastersTile(node) {
 function renderCriticalTile(node) {
   const critical = showsMark('critical') && criticalAt(node.epd);
   $('review-critical').replaceChildren(...critical ? [
-    element('h3', {}, 'Critical position'),
-    element('p', {}, `Expected loss ${deltaText(-critical.loss)}`),
+    element('h3', {}, 'Critical position (Lichess)'),
+    element('p', {}, `Lichess expected loss ${deltaText(-critical.loss)}`),
     element('div', { class: 'critical-moves' }, criticalMoveTexts(critical).map(([t, drop]) => element('div', {}, t, lossDelta(-drop))))] : []);
 }
 
@@ -3072,7 +3088,7 @@ document.addEventListener('keydown', e => {
 //     due; it gets 6 in their place.
 //   critical: 2 for a critical position of yours (see criticalAt; for a line, if any of your positions
 //     in it is critical), 1 otherwise; the opponent's critical positions don't count.
-// A position's accuracy is its repertoire accuracy (with or without Main lines only, as ticked), and last
+// A position's accuracy is its repertoire recall (with or without Main lines only, as ticked), and last
 // tested is when it was last tried. A line's accuracy is its weakest position's (the lowest move
 // accuracy of your positions in it, untried ones counting as 0%), and last tested is when it was last
 // played through from move 1 to the end.
@@ -3091,7 +3107,7 @@ const strength = s => s <= 50 ? s / 50 : 1 + (s - 50) / 50 * (STRONGEST - 1);
 // The five sliders: their names, and what each means (shown when hovering over its name).
 const WEIGHTS = [
   { key: 'frequency', name: 'Frequency', definition: "How often opponents on Lichess lead to it (your own moves don't count). Higher: common ones come up more." },
-  { key: 'accuracy', name: 'Accuracy', definition: 'Repertoire accuracy (for a line, its weakest position). Higher: weak ones come up more.' },
+  { key: 'accuracy', name: 'Recall', definition: 'Your repertoire recall there (for a line, its weakest position). Higher: positions you recall less come up more.' },
   { key: 'lastPlayed', name: 'Last played', definition: 'Time since last tested, against how long you should remember it. Higher: overdue ones come up more.' },
   { key: 'untried', name: 'Untried', definition: 'Not tried yet. 0%: never; 100%: first, until none are left.' },
   { key: 'critical', name: 'Critical', definition: 'Your critical positions: the Lichess moves played there lose the critical level or more on average (for a line, any of yours in it). Higher: they come up more.' },
@@ -3330,12 +3346,12 @@ const KINDS = {
   lines: {
     noun: 'line', label: 'Lines', mainLines: 'Main lines only',
     mainLinesTitle: 'Only main moves, for both sides',
-    columns: ['Line', 'End position reached (times)', 'Lowest repertoire accuracy', 'Last tested', 'Chance next'],
+    columns: ['Line', 'End position reached (times)', 'Lowest repertoire recall', 'Last tested', 'Chance next'],
   },
   positions: {
     noun: 'position', label: 'Positions', mainLines: 'Positions from main lines only',
     mainLinesTitle: 'Only positions reached by main moves, and only the main move',
-    columns: ['Position', 'Position reached (times)', 'Repertoire accuracy', 'Last tested', 'Chance next'],
+    columns: ['Position', 'Position reached (times)', 'Repertoire recall', 'Last tested', 'Chance next'],
   },
 };
 
@@ -3990,7 +4006,7 @@ function showBoardPopup(el, { position, lastMove, shapes, rows }, orientation) {
 
 // Every hover board's only text: the move, e.g. "3. ♗c4", above the board. (Until 19 November 2026 the
 // Practice page's hover boards also showed the move's rank and share, how often the position is reached,
-// the critical row, the repertoire accuracy and the errors.)
+// the critical row, the repertoire recall and the errors.)
 const hoverBoardHeading = m => element('div', {}, element('b', {}, moveLabel(m)));
 
 // Before one of your moves the opponent's previous move is highlighted (no arrow).
@@ -4841,13 +4857,13 @@ $('backup-btn').addEventListener('click', async () => {
 });
 
 // A backup action's message, on the Backup card's last line: a confirmation goes after 10 seconds; an
-// error (violet), or one saying what to do next, stays until the next backup action or leaving the page.
+// error (red), or one saying what to do next, stays until the next backup action or leaving the page.
 let backupMessageTimer;
 function showBackupMessage(msg, { isError = false, stays = isError } = {}) {
   clearTimeout(backupMessageTimer);
   const box = $('backup-message');
   box.textContent = msg;
-  box.className = 'update-status' + (isError ? ' backup-error' : '');
+  box.className = 'update-status' + (isError ? ' error' : ''); // red, as the app's other problems (violet is for errors in your moves)
   if (!stays) backupMessageTimer = setTimeout(clearBackupMessage, backupMessageMs);
 }
 let backupMessageMs = 10000; // shorter in the tests

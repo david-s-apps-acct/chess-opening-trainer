@@ -77,7 +77,7 @@ export const app = {
   setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
   setBackupMessageMs(ms) { backupMessageMs = ms; },
   get evals() { return evals; }, setEvals(e) { evals = e; forgetCritical(); },
-  pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions,
+  pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions, isYourCriticalPosition,
   evaluation, evalText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
 };`;
 
@@ -512,7 +512,7 @@ async function runLichessPage(app) {
   $('restore-file').dispatchEvent(new Event('change'));
   await until(() => $('backup-message').textContent, 'the error');
   await new Promise(r => setTimeout(r, 150));
-  check("backup: an error stays, in violet", [$('backup-message').textContent, $('backup-message').className], ["That file isn't an Opening Trainer backup.", 'update-status backup-error']);
+  check("backup: an error stays, in red", [$('backup-message').textContent, $('backup-message').className], ["That file isn't an Opening Trainer backup.", 'update-status error']);
   app.setBackupMessageMs(10000);
   $('backup-message').replaceChildren();
   window.confirm = before.confirm;
@@ -716,7 +716,7 @@ async function runLichessPage(app) {
     key('ArrowRight');
     const notCritical = tileAt();
     check('critical: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notCritical],
-      [['Critical position', 'Expected loss Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Critical position', 'Expected loss Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
+      [['Critical position (Lichess)', 'Lichess expected loss Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Critical position (Lichess)', 'Lichess expected loss Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
     check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
@@ -731,7 +731,7 @@ async function runLichessPage(app) {
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': wrong }, lines: {} });
       const start = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelector('.tree-line').firstElementChild.className;
       check('tree: a violet dot after the move leading to a position with errors, before the first move for the start; no background', [after, start],
-        [[0, [['e5', 'Your errors here: below 100% repertoire accuracy']]], 'tree-dot weak-dot']);
+        [[0, [['e5', 'Your errors here: below 100% repertoire recall']]], 'tree-dot weak-dot']);
       app.setHistory(keptHistory);
     }
     check('no errors tile (the board and its square tips show the errors)', !!$('review-errors'), false);
@@ -794,7 +794,7 @@ async function runLichessPage(app) {
     $('color-key-btn').click();
     document.body.click();
     check('color key: the view shown\'s rows plain, following the switch; closed by Esc or a click elsewhere; Help\'s table from the same list', [masters, errors, afterEsc, keyOpen(), $('help-arrow-colors').rows.length], [
-      [true, 'true', ["Your study's main move (also Hint and Show correct move)", 'Another move in your study', "The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 7],
+      [true, 'true', ["Your study's main move (also Hint and Show correct move)", 'Another move in your study', "The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 8],
       [true, 6], false, false, 11]);
     wasView.click();
     app.setMoveStats(kept);
@@ -864,6 +864,14 @@ async function runLichessPage(app) {
   const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3'), app.squareTipLines(italianRoot, 'e4')];
   app.setEvals(structuredClone(CRITICAL_EVALS));
   const yourLoss = app.yourExpectedLoss(italianRoot), tried = [...app.triedPositions().keys()];
+  // Critical position (you): your expected loss at the critical level (0.5) or more. Here 0.07: no; with 1. ♘h3
+  // (Δ−3.3) first in 1 of the 3 tries with a move: 1.1, yes; never at a position of the other side.
+  const yourCritical = [app.isYourCriticalPosition(italianRoot, 'white')];
+  const triesKept = app.history.positions['AAAAAAAA/BBBBBBBB|'];
+  app.history.positions['AAAAAAAA/BBBBBBBB|'] = [{ tried: ['Nh3', 'e4'], at: 1, main: true }, ...triesKept.slice(1)];
+  yourCritical.push(app.isYourCriticalPosition(italianRoot, 'white'));
+  app.history.positions['AAAAAAAA/BBBBBBBB|'] = triesKept;
+  check('critical position (you): your expected loss at the critical level or more', yourCritical, [false, true]);
   const accuracyTips = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'e4')];
   app.settings.review = { view: 'study' };
   const studyTips = [app.squareTipLines(italianRoot, 'e4'), app.squareTipLines(italianRoot, 'f5')];
@@ -925,8 +933,8 @@ async function runLichessPage(app) {
   $('nav-studies').click();
   app.setHidden([]);
   app.setLibrary(structuredClone(LIBRARY));
-  check('review: the Study | Masters | Lichess | Errors switch; no Move statistics tile; Position reached in its own tile under the moves; ids unique', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).textContent), !!$('review-lichess'),
-    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null && !$('review-engine'), document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Masters', 'Lichess', 'Accuracy'], false, true, true]);
+  check('review: the Study | Recall | Lichess | Masters switch; no Move statistics tile; Position reached in its own tile under the moves; ids unique', [[...document.querySelectorAll('.review-view button')].map(b => b.textContent), !!$('review-lichess'),
+    $('review-stats').previousElementSibling.querySelector('#review-tree') !== null && !$('review-engine'), document.querySelectorAll('[id]').length === new Set([...document.querySelectorAll('[id]')].map(e => e.id)).size], [['Study', 'Recall', 'Lichess', 'Masters'], false, true, true]);
   $('arrows-errors').click();
   check('review: one view at a time, remembered', [['study', 'masters', 'lichess', 'errors'].map(v => $('arrows-' + v).getAttribute('aria-pressed')), app.settings.review.view], [['false', 'false', 'false', 'true'], 'errors']);
   $('arrows-study').click();
@@ -1313,7 +1321,7 @@ function runPositions(app) {
   app.setSelection(['AAAAAAAA/DDDDDDDD']);
   $('show-positions-btn').click();
   check('test probabilities: the title and settings', [$('probabilities').classList.contains('hidden'), $('probabilities-title').textContent, $('probabilities-settings').textContent],
-    [false, 'Test probabilities', 'Positions · Frequency 50% · Accuracy 50% · Last played 50% · Untried 50% · Critical 50%']);
+    [false, 'Test probabilities', 'Positions · Frequency 50% · Recall 50% · Last played 50% · Untried 50% · Critical 50%']);
   $('probabilities-close').click();
   check('test probabilities: × closes it', $('probabilities').classList.contains('hidden'), true);
   // The sliders, in the Spaced repetition tile on the Practice page (closed until ▾).
