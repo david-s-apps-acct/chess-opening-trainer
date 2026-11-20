@@ -201,10 +201,10 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' }, criticalLevel: 0.5 });
+    practice: { focus: 'everyday', kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' }, criticalLevel: 0.5 });
   check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [undefined, { kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50, critical: 50 } }]);
+    [undefined, { focus: 'everyday', kind: 'lines', mainLinesOnly: { lines: false, positions: false }, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50, critical: 50 } }]);
 
   // Masters moves: the top 3, played 10% of the time or more
   check('masters move: 5% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3', 'c4']);
@@ -1256,7 +1256,7 @@ const SIDE_LINE = `[Event "Test Study: Side line"]
 
 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 ( 3... f6 $2 4. d4 ) 4. Ba4 *`;
 
-function runPositions(app) {
+async function runPositions(app) {
   const $ = id => document.getElementById(id);
   const library = structuredClone(LIBRARY);
   library.studies[0].chapters.push({ key: 'AAAAAAAA/DDDDDDDD', id: 'DDDDDDDD', name: 'Side line', pgn: SIDE_LINE });
@@ -1349,6 +1349,35 @@ function runPositions(app) {
   $('chooser-start').click();
   check('chooser: practicing lines, from move 1', app.practice.singleAt, null);
   app.endSession();
+  // A drill: Low recall, your positions below 75% (here 2. ♘f3, never right first time), from move 1, as
+  // single positions, its count by the option, the Lines/Positions switch hidden; the heading shows the round.
+  {
+    const historyKept = app.history;
+    app.setSelection(['AAAAAAAA/BBBBBBBB']);
+    app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'Nf3'], at: 1, main: false }],
+      'AAAAAAAA/BBBBBBBB|e4 e5 Nf3 Nc6': [{ tried: ['Bc4'], at: 1, main: false }] }, lines: {} });
+    app.renderChooser();
+    const options = () => [...document.querySelectorAll('#focus-choice .focus-option')].map(o => [o.textContent, o.querySelector('input').disabled]);
+    const before = options();
+    document.querySelector('#focus-choice input[value=lowRecall]').click();
+    const drill = [app.settings.practice.focus, $('kind-switch').classList.contains('hidden'), $('chooser-start').disabled];
+    $('chooser-start').click();
+    const playing = [app.practice.singleAt, app.practice.line.moves[app.practice.singleAt].san, $('practice-drill').textContent, app.session.left.length];
+    // The round's last position done: "Drill complete" and Start again; it starts the drill again (still below 75%).
+    await until(() => app.practice && !app.practice.busy, 'your move');
+    await app.onYourMove('g1', 'f3');
+    await until(() => app.practice.isOver, 'the position to end');
+    const complete = [$('board-notice').querySelector('.notice-title')?.textContent, $('next-btn').textContent];
+    $('next-btn').click();
+    const again = [app.practice.line.moves[app.practice.singleAt].san, $('practice-drill').textContent];
+    app.endSession();
+    document.querySelector('#focus-choice input[value=everyday]').click();
+    const everyday = [$('kind-switch').classList.contains('hidden'), $('practice-drill').textContent];
+    app.setHistory(historyKept);
+    check('drill: Low recall, its count; empty drills grayed out; a position below 75%, from move 1; the round in the heading; Drill complete, Start again; Everyday as before', [before, drill, playing, complete, again, everyday],
+      [[['Everyday', false], ['Low recall1', false], ['Critical (you)0', true], ['Critical (Lichess)0', true]], ['lowRecall', true, false], [2, 'Nf3', 'Low recall · 1 of 1', 0],
+       ['Drill complete', 'Start again'], ['Nf3', 'Low recall · 1 of 1'], [false, '']]);
+  }
   // Untried at 0% with nothing tried: nothing to practice.
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
   app.setSettings({ practice: { weights: { untried: 0 } } });
@@ -1496,7 +1525,7 @@ function runPresets(app) {
 try {
   const app = await loadApp();
   run(app);
-  runPositions(app);
+  await runPositions(app);
   await runPractice(app);
   runPresets(app);
   await runLichessPage(app);
