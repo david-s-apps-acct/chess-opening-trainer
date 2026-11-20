@@ -558,10 +558,10 @@
           <button id="games-apply" class="primary">Apply</button>
           <button id="games-cancel" class="primary">Cancel</button>
         </div>
-        <p class="critical-level"><label for="critical-level"><span data-tip="How much is lost on average, by the engine: by the Lichess moves played (Lichess), or by your first tries (you). Lower: more positions count as critical.">Critical positions: expected loss ≥</span>
-          <select id="critical-level"></select> pawns</label></p>
-        <p class="critical-level"><label for="refutation-level"><span data-tip="How much a Lichess move must lose, by the engine, to be worth learning to refute (the Refutations drill).">Refutable moves: drop ≥</span>
-          <select id="refutation-level"></select> pawns</label></p>
+        <p class="critical-level"><label for="critical-level"><span data-tip="How much is lost on average, by the engine: by the Lichess moves played (Lichess), or by your first tries (you). Lower: more positions count as critical.">Critical positions: expected eval loss ≥</span>
+          <select id="critical-level"></select></label></p>
+        <p class="critical-level"><label for="refutation-level"><span data-tip="How much a Lichess move must lose, by the engine, to be worth learning to refute (the Refutations drill).">Refutable moves: eval loss ≥</span>
+          <select id="refutation-level"></select></label></p>
         <p id="lichess-moves" class="muted after-actions"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="lichess-masters" class="muted"></p>
@@ -802,7 +802,7 @@
             <li><b>Repertoire recall</b>: how often you were right first time in a position, over your last 10 tries (see Practice). <b>Low recall</b>: below 75%.</li>
             <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire recall.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Critical position (Lichess)</b>: one where the Lichess moves played there lose 0.5 pawns or more on average, by the engine (its <b>Lichess expected loss</b>). <b>Critical position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
+            <li><b>Critical position (Lichess)</b>: one where the Lichess moves played there lose 0.5 or more of the engine's evaluation on average (its <b>Lichess expected loss</b>). <b>Critical position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
             <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
             <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
@@ -820,7 +820,7 @@
           <li><b>Practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
           <li>Spaced repetition chooses what comes next, at random but weighted; <b>Likely next</b>, in each tile, lists what's most likely to come up. Click a row to open it on the Studies page (a line at its last position).</li>
           <li><b>Lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
-          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1 pawn by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 pawns of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
+          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1.0 by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
@@ -911,10 +911,10 @@
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
           <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Recall</b> (your repertoire recall here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire recall; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Recall also the error's kind, e.g. "(masters move)". With Recall, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the critical level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Critical position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
-          <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, in pawns from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
+          <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines, by spaced repetition; your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Critical positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 pawns or more. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10 pawns); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5 pawns) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 pawns or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Critical positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
+          <li><b>Critical positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 or more of the engine's evaluation. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Critical positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
         </ul>
         <details>
@@ -1064,8 +1064,7 @@ let token = store.get('token', null);
 let library = null; // the studies fetched from Lichess: { fetchedAt, username, ratings, studies: [{ id, name, chapters: [{ key, id, name, pgn }] }] }
 // Presets: named sets of chapters, [{ name, chapters: [chapter keys], colors: { key: ['white', 'black'] } }]
 // (colors: for the chapters not played only from their main color (the chapter's own side), the colors
-// they're played from, both or just the other; the rest play their main color; until 18 November 2026
-// a list, bothSides, of those played from both, moved over by checkedPresets), and the name of the one chosen
+// they're played from, both or just the other; the rest play their main color), and the name of the one chosen
 // (null for the built-in All: every chapter, from its own side, worked out each time, not stored).
 // What's practiced is always the chosen preset's chapters (selection, worked out from it: see
 // useChosenPreset). A preset of your own can't be called "All": one that is (e.g. from a backup) becomes
@@ -1084,7 +1083,6 @@ function checkedColors(p) {
   for (const k of p.chapters) {
     const c = p.colors && typeof p.colors === 'object' ? p.colors[k] : undefined;
     if (Array.isArray(c)) { const ok = COLORS.filter(x => c.includes(x)); if (ok.length) colors[k] = ok; }
-    else if (Array.isArray(p.bothSides) && p.bothSides.includes(k)) colors[k] = [...COLORS];
   }
   return colors;
 }
@@ -1093,20 +1091,17 @@ let chapterColors = new Map(); // those of them not played only from their main 
 let presets = checkedPresets(store.get('presets', []));
 let chosenPresetName = store.get('chosenPreset', null);
 // The studies (by id) and chapters (by key, "studyId/chapterId") hidden from the Studies page's list. Only
-// the list: hiding doesn't affect practice (only groups do). (Until 4 November 2026 only studies could be
-// hidden, under "hiddenStudies", and they weren't practiced.)
+// the list: hiding doesn't affect practice (only groups do).
 const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
-let hidden = new Set(strings(store.get('hidden', null) ?? store.get('hiddenStudies', [])));
-const saveHidden = () => { store.set('hidden', [...hidden]); store.remove('hiddenStudies'); };
+let hidden = new Set(strings(store.get('hidden', [])));
+const saveHidden = () => store.set('hidden', [...hidden]);
 
 // Your history (see Move results and grading):
 //   positions: position key (a position in a chapter where it's your move: its tree node's key) -> its
 //          last 10 attempts, oldest first, each { tried: what you did, in order (moves as SAN, "hint",
 //          "show"), at: when (null if unknown), main: whether Main lines was ticked }
 //   lines: line key -> the last 10 times it was played from its start to the end, oldest first
-// Whether an attempt was right is worked out from what was tried (see firstTryRight). (Until 6 November
-// 2026 attempts were kept by your move, under "moves", and scored with penalties; checkedHistory moves
-// them to their positions, as made with Main lines, since only the main move counted then.)
+// Whether an attempt was right is worked out from what was tried (see firstTryRight).
 const emptyHistory = () => ({ positions: {}, lines: {} });
 const isAttemptList = v => !!v && typeof v === 'object' && Object.values(v).every(Array.isArray);
 // An attempt as stored, or null if it's damaged (e.g. a hand-edited backup): it's then left out.
@@ -1114,16 +1109,8 @@ const checkedAttempt = a => a && typeof a === 'object' && Array.isArray(a.tried)
   ? { tried: a.tried, at: Number.isFinite(a.at) ? a.at : null, main: !!a.main } : null;
 const checkedList = (lists, check) => Object.fromEntries(Object.entries(lists).map(([key, list]) => [key, list.map(check).filter(x => x != null)]));
 function checkedHistory(h) {
-  if (!h || typeof h !== 'object' || !isAttemptList(h.lines)) return null;
-  const lines = checkedList(h.lines, t => Number.isFinite(t) ? t : null);
-  if (isAttemptList(h.positions)) return { positions: checkedList(h.positions, checkedAttempt), lines };
-  if (!isAttemptList(h.moves)) return null;
-  const positions = {};
-  for (const [key, attempts] of Object.entries(checkedList(h.moves, checkedAttempt))) {
-    const [chapter, path = ''] = key.split('|');
-    positions[`${chapter}|${path.split(' ').slice(0, -1).join(' ')}`] = attempts.map(({ tried, at }) => ({ tried, at, main: true }));
-  }
-  return { positions, lines };
+  if (!h || typeof h !== 'object' || !isAttemptList(h.lines) || !isAttemptList(h.positions)) return null;
+  return { positions: checkedList(h.positions, checkedAttempt), lines: checkedList(h.lines, t => Number.isFinite(t) ? t : null) };
 }
 let history = checkedHistory(store.get('history')) ?? emptyHistory();
 const storedHistory = () => ({
@@ -1185,18 +1172,12 @@ const REFUTATION_LEVELS = Array.from({ length: 26 }, (_, k) => (k + 5) / 10);
 function checkedSettings(saved) {
   const v = saved && typeof saved === 'object' ? saved : {};
   const d = DEFAULT_SETTINGS, dp = d.practice, p = v.practice || {};
-  // Before 20 November 2026: one choice (focus: 'lines', 'positions' or a drill; before that 'everyday' and a
-  // kind) and Main lines (one setting; before that one each for lines and positions).
-  const oldKind = ['lines', 'positions'].includes(p.kind) ? p.kind : 'lines';
-  const oldFocus = p.focus === 'positions' ? 'spaced' : typeof p.focus === 'string' && p.focus !== 'everyday' ? p.focus : oldKind === 'positions' ? 'spaced' : 'lines';
-  const oldMain = typeof p.mainLinesOnly === 'boolean' ? p.mainLinesOnly : p.mainLinesOnly?.[oldKind] === true;
-  // Each of the defaults' keys, with the saved value where it's valid.
   return {
     sounds: typeof v.sounds === 'boolean' ? v.sounds : d.sounds,
     games: checkedGames(v.games),
     practice: {
-      lines: ['all', 'main'].includes(p.lines) ? p.lines : oldMain && oldFocus === 'lines' ? 'main' : dp.lines,
-      positions: POSITION_CHOICES.includes(p.positions) ? p.positions : POSITION_CHOICES.includes(oldFocus) ? oldFocus : dp.positions,
+      lines: ['all', 'main'].includes(p.lines) ? p.lines : dp.lines,
+      positions: POSITION_CHOICES.includes(p.positions) ? p.positions : dp.positions,
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
     criticalLevel: CRITICAL_LEVELS.includes(v.criticalLevel) ? v.criticalLevel : d.criticalLevel,
@@ -3158,7 +3139,7 @@ function refutationItems() {
 
 // A line for a refutation position your study is silent on: the moves to the position before it (path,
 // ending at the node before), the refutable move, then the engine's best move there; the moves accepted
-// are those among the engine's best 3 within 0.5 pawns of its best (REFUTATION_MARGIN), as the refutable
+// are those among the engine's best 3 within 0.5 of its best (REFUTATION_MARGIN), as the refutable
 // move's children. Its nodes are built for practice only, not added to the chapter's tree; your tries
 // there are recorded under the refutable move's key (study position + move), but repertoire recall is only
 // for positions in a study, so they're used only to order this drill. null until the engine has
@@ -4882,7 +4863,7 @@ $('welcome-start-btn').addEventListener('click', leaveWelcome);
 // ---------- Backup ----------
 
 const BACKUP_APP = 'chess-opening-trainer';
-const BACKUP_VERSION = 7; // 7 added the engine's evaluations; version 5's history is moved to positions (see checkedHistory); earlier ones can't be restored
+const BACKUP_VERSION = 7; // 7 added the engine's evaluations; 6 still restores; earlier ones can't
 
 // The Lichess account whose studies these are: recorded in backups, to warn when one is restored
 // under another.
@@ -4969,7 +4950,7 @@ async function chosenBackup(e) {
     showBackupMessage("That file isn't an Opening Trainer backup.", { isError: true });
     return null;
   }
-  if (![5, 6, BACKUP_VERSION].includes(b.version) || !checkedHistory(b.history)) {
+  if (![6, BACKUP_VERSION].includes(b.version) || !checkedHistory(b.history)) {
     showBackupMessage('This backup is from an earlier version and can\'t be used.', { isError: true });
     return null;
   }
@@ -5052,7 +5033,7 @@ $('restore-file').addEventListener('change', async e => {
   settings = checkedSettings(b.settings);
   presets = checkedPresets(b.presets);
   chosenPresetName = presets.some(p => p.name === b.chosenPreset) ? b.chosenPreset : null; // else All
-  hidden = new Set(strings(b.hidden ?? b.hiddenStudies));
+  hidden = new Set(strings(b.hidden));
   useChosenPreset();
   mergeMoveStats(b);
   mergeEvals(b);

@@ -205,11 +205,6 @@ function run(app) {
   check('settings: invalid values fall back; old penalties and sliders ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
     [undefined, { lines: 'all', positions: 'spaced' }]);
-  check('settings: the old choices carry over (lines with Main lines only: Main lines; positions or a drill: that choice)', [
-    app.checkedSettings({ practice: { focus: 'everyday', kind: 'positions', mainLinesOnly: { lines: false, positions: true } } }).practice,
-    app.checkedSettings({ practice: { focus: 'lowRecall', mainLinesOnly: false } }).practice,
-    app.checkedSettings({ practice: { focus: 'lines', mainLinesOnly: true } }).practice],
-    [{ lines: 'all', positions: 'spaced' }, { lines: 'all', positions: 'lowRecall' }, { lines: 'main', positions: 'spaced' }]);
 
   // Masters moves: the top 3, played 10% of the time or more
   check('masters move: 5% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3', 'c4']);
@@ -303,8 +298,7 @@ function run(app) {
   check('repertoire accuracy: none; right first time over the tries; with Main lines only, a free alternative left out', [app.accuracyAt(e4.parent, false), app.accuracyAt(nf3.parent, false), app.accuracyAt(nf3.parent, true)],
     [null, { share: 0.75, tries: 4 }, { share: 2 / 3, tries: 3 }]);
   app.setHistory({ positions: {}, lines: {} });
-  check('history: the old moves moved to their positions, as made with Main lines only', app.checkedHistory({ moves: { 'X/Y|e4 e5 Nf3': [{ tried: ['Nf3'], at: 1, points: 10 }], 'X/Y|e4': [] }, lines: {} }),
-    { positions: { 'X/Y|e4 e5': [{ tried: ['Nf3'], at: 1, main: true }], 'X/Y|': [] }, lines: {} });
+  check('history: the old moves format (before 6 November 2026) is no longer read', app.checkedHistory({ moves: { 'X/Y|e4 e5 Nf3': [{ tried: ['Nf3'], at: 1 }] }, lines: {} }), null);
 
   // Ranks
   check('rank: ties share a rank', ['e5', 'c5', 'e6', 'a6'].map(s => app.moveRank(POSITIONS[AFTER_E4].lichess, s)), [1, 1, 3, null]);
@@ -490,8 +484,8 @@ async function runLichessPage(app) {
   const before = { history: app.history, selection: app.selection, presets: app.presets, confirm: window.confirm };
   window.confirm = () => true;
   const chosen = new DataTransfer();
-  const v5Backup = () => new File([JSON.stringify({ app: 'chess-opening-trainer', version: 5, settings: {}, history: { moves: { 'AAAAAAAA/BBBBBBBB|e4': [{ tried: ['e4'], at: null }] }, lines: {} } })], 'backup.json');
-  chosen.items.add(v5Backup());
+  const v6Backup = () => new File([JSON.stringify({ app: 'chess-opening-trainer', version: 6, settings: {}, history: { positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['e4'], at: null, main: false }] }, lines: {} } })], 'backup.json');
+  chosen.items.add(v6Backup());
   $('restore-file').files = chosen.files;
   $('restore-file').dispatchEvent(new Event('change'));
   app.setBackupMessageMs(50);
@@ -501,14 +495,14 @@ async function runLichessPage(app) {
   const stays = $('backup-message').textContent; // no token: it says what to do next, so it stays
   app.setToken('lip_test');
   const again = new DataTransfer();
-  again.items.add(v5Backup());
+  again.items.add(v6Backup());
   $('restore-file').files = again.files;
   $('restore-file').dispatchEvent(new Event('change'));
   await until(() => $('backup-message').textContent === 'Backup restored: history for 1 position, and settings.', 'the second restore');
   await until(() => !$('backup-message').textContent, 'the message to go');
   app.setToken(null);
   check('restore: with no token, the message says what to do next and stays', /Now (connect to Lichess|add your token)\.$/.test(stays), true);
-  check('restore: a version 5 backup, its moves moved to their positions; the message in the Backup card, gone after a while', restored, [['AAAAAAAA/BBBBBBBB|'], 'Backup restored: history for 1 position, and settings', true]);
+  check('restore: a version 6 backup; the message in the Backup card, gone after a while', restored, [['AAAAAAAA/BBBBBBBB|'], 'Backup restored: history for 1 position, and settings', true]);
   // A file that isn't a backup: the error stays, in violet.
   const notBackup = new DataTransfer();
   notBackup.items.add(new File(['{}'], 'other.json'));
@@ -1431,10 +1425,9 @@ function runPresets(app) {
   app.setLibrary(structuredClone(LIBRARY));
   check('presets: invalid and duplicate names dropped; "All" is taken', app.checkedPresets([{ name: 'A', chapters: ['x', 3] }, { name: 'a', chapters: [] }, { name: ' ', chapters: [] }, null, { name: 'all', chapters: [] }]),
     [{ name: 'A', chapters: ['x'], colors: {} }, { name: 'All 2', chapters: [], colors: {} }]);
-  check('presets: colors checked; an old group\'s both sides moved over', app.checkedPresets([
-    { name: 'New', chapters: ['x', 'y', 'z'], colors: { x: ['black'], y: ['white', 'red'], z: [], w: ['black'] } },
-    { name: 'Old', chapters: ['x', 'y'], bothSides: ['y', 'w'] }]),
-    [{ name: 'New', chapters: ['x', 'y', 'z'], colors: { x: ['black'], y: ['white'] } }, { name: 'Old', chapters: ['x', 'y'], colors: { y: ['white', 'black'] } }]);
+  check('presets: colors checked', app.checkedPresets([
+    { name: 'New', chapters: ['x', 'y', 'z'], colors: { x: ['black'], y: ['white', 'red'], z: [], w: ['black'] } }]),
+    [{ name: 'New', chapters: ['x', 'y', 'z'], colors: { x: ['black'], y: ['white'] } }]);
   const $ = id => document.getElementById(id);
   const realConfirm = window.confirm;
   window.confirm = () => true;
