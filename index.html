@@ -567,6 +567,8 @@
         </div>
         <p class="critical-level"><label for="critical-level"><span data-tip="How much is lost on average, by the engine: by the Lichess moves played (Lichess), or by your first tries (you). Lower: more positions count as critical.">Critical positions: expected loss ≥</span>
           <select id="critical-level"></select> pawns</label></p>
+        <p class="critical-level"><label for="refutation-level"><span data-tip="How much a Lichess move must lose, by the engine, to be worth learning to refute (the Refutations drill).">Refutable moves: drop ≥</span>
+          <select id="refutation-level"></select> pawns</label></p>
         <p id="lichess-moves" class="muted after-actions"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="lichess-masters" class="muted"></p>
@@ -825,7 +827,7 @@
         <ul>
           <li><b>Studies to practice</b>, at the top, decides what can be practiced: the chapters of the chosen group, and <b>Main lines only</b>, which keeps to the main moves, for both sides (only your main move is correct; for positions, only those reached by main moves).</li>
           <li>Spaced repetition chooses what comes next; the sliders in the <b>Spaced repetition</b> tile under Studies to practice (▾ opens it) change the balance, and <b>Show lines</b> and <b>Show positions</b> there list what's most likely to come up next.</li>
-          <li><b>Practice</b>: <b>Spaced repetition lines</b> (whole lines) or <b>Spaced repetition positions</b> (one of your moves at a time, from move 3), picked by spaced repetition (below). A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then.</li>
+          <li><b>Practice</b>: <b>Spaced repetition lines</b> (whole lines) or <b>Spaced repetition positions</b> (one of your moves at a time, from move 3), picked by spaced repetition (below). A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1 pawn by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 pawns of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines only, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
@@ -1169,7 +1171,7 @@ const ARROW_VIEWS = ['study', 'errors', 'lichess', 'masters']; // the Studies pa
 // November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
 // What the Practice page practices: spaced repetition lines or positions, or one of the drills (see DRILLS,
 // with the same keys).
-const FOCUSES = ['lines', 'positions', 'lowRecall', 'criticalYou', 'criticalLichess'];
+const FOCUSES = ['lines', 'positions', 'lowRecall', 'criticalYou', 'criticalLichess', 'refutations'];
 const DEFAULT_SETTINGS = {
   sounds: false,
   games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
@@ -1184,8 +1186,11 @@ const DEFAULT_SETTINGS = {
   review: { view: 'study' },
   // A position is critical when its expected loss is this many pawns or more (see criticalAt): 0.2–1.5, in tenths.
   criticalLevel: 0.5,
+  // A Lichess move is refutable when it drops the evaluation this many pawns or more (see refutationItems): 0.5–3.0.
+  refutationLevel: 1,
 };
 const CRITICAL_LEVELS = Array.from({ length: 14 }, (_, k) => (k + 2) / 10);
+const REFUTATION_LEVELS = Array.from({ length: 26 }, (_, k) => (k + 5) / 10);
 
 // Saved settings, with anything missing or invalid replaced by its default.
 function checkedSettings(saved) {
@@ -1205,6 +1210,7 @@ function checkedSettings(saved) {
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
     criticalLevel: CRITICAL_LEVELS.includes(v.criticalLevel) ? v.criticalLevel : d.criticalLevel,
+    refutationLevel: REFUTATION_LEVELS.includes(v.refutationLevel) ? v.refutationLevel : d.refutationLevel,
   };
 }
 
@@ -3174,9 +3180,72 @@ const DRILLS = {
     has: (node, mainOnly, own) => isYourCriticalPosition(node, own) },
   criticalLichess: { label: 'Critical (Lichess)', title: 'Your positions where the Lichess moves played lose the critical level or more on average',
     has: node => !!criticalAt(node.epd) },
+  refutations: { label: 'Refutations', title: "The positions after an opponent's Lichess move that loses the refutation level or more: your study's answer, or the engine's" },
 };
-const drillItems = (drill, mainOnly = settings.practice.mainLinesOnly) =>
-  practiceItems('positions', mainOnly, { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, mainOnly, line.yourColor));
+const drillItems = (drill, mainOnly = settings.practice.mainLinesOnly) => drill === 'refutations' ? refutationItems(mainOnly)
+  : practiceItems('positions', mainOnly, { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, mainOnly, line.yourColor));
+
+// The Refutations drill's positions (the user's decisions, 20 November 2026): at each position of the
+// chosen group's chapters where it's the opponent's move (by each side practiced, from move 1), each
+// refutable move, a Lichess move (5% or more of 50 games or more) that drops the evaluation by the
+// refutation level or more against the engine's best (see expectedLossAt), gives the position after it.
+// Where your study has that move and answers it, the item is your study's position, as usual; where it's
+// silent, a line built for it (see silentRefutationLine), once the engine has evaluated the position.
+function refutationItems(mainOnly) {
+  const items = new Map(); // the position's key -> item
+  for (const ch of tickedChapters()) for (const side of sidesOf(ch)) for (const line of chapterLines(ch, side)) {
+    line.moves.forEach((m, k) => {
+      if (m.color === side || (mainOnly && !onMainLines(line, k - 1))) return; // with Main lines only, reached by main moves
+      const before = m.parent, e = expectedLossAt(before.epd);
+      for (const r of e?.moves ?? []) {
+        if (r.drop < settings.refutationLevel - 1e-9) continue;
+        const inStudy = before.children.find(c => withoutCheckMarks(c.san) === withoutCheckMarks(r.san));
+        const key = inStudy ? inStudy.key : `${before.key}${before.parent ? ' ' : ''}${r.san}`;
+        if (items.has(key + side)) continue;
+        const answered = inStudy && choicesAt(inStudy, mainOnly).length && chapterLines(ch, side).find(l => l.moves.includes(inStudy) && l.moves.length > l.moves.indexOf(inStudy) + 1);
+        const item = answered ? { line: answered, i: answered.moves.indexOf(inStudy) + 1 } : silentRefutationLine(line.moves.slice(0, k), before, r.san, side, line);
+        if (item) items.set(key + side, item);
+      }
+    });
+  }
+  return [...items.values()];
+}
+
+// A line for a refutation position your study is silent on: the moves to the position before it (path,
+// ending at the node before), the refutable move, then the engine's best move there; the moves accepted
+// are those among the engine's best 3 within 0.5 pawns of its best (REFUTATION_MARGIN), as the refutable
+// move's children. Its nodes are built for practice only, not added to the chapter's tree; your tries
+// there are recorded under the refutable move's key (study position + move), but repertoire recall is only
+// for positions in a study, so they're used only to order this drill. null until the engine has
+// evaluated the position after the move.
+const REFUTATION_MARGIN = 0.5;
+function silentRefutationLine(path, before, refutableSan, side, like) {
+  const move = san.parseSan(before.position, refutableSan);
+  if (!move) return null;
+  const r = builtNode(before, move, 1);
+  const ev = evalAt(r.epd);
+  if (!ev?.lines.length) return null;
+  const sign = r.position.turn === 'white' ? 1 : -1, best = sign * pawnsOf(ev.lines[0]);
+  for (const [k, l] of ev.lines.entries()) {
+    const first = parseUci(l.pv.split(' ')[0]);
+    if (!first || best - sign * pawnsOf(l) > REFUTATION_MARGIN + 1e-9) continue;
+    const answer = variant.normalizeMove(r.position, first);
+    if (r.position.isLegal(answer) && !r.children.some(c => c.uci === makeUci(answer))) r.children.push(builtNode(r, answer, k));
+  }
+  if (!r.children.length) return null;
+  const line = { key: `${r.key} (refutation${side === like.yourColor ? '' : ', ' + side})`, chapterKey: like.chapterKey, yourColor: side, root: like.root,
+    moves: [...path, r, r.children[0]], isMainLine: false, silent: true };
+  return { line, i: line.moves.length - 1 };
+}
+// A move node like the chapter tree's (see parseChapter), built for practice after parent.
+function builtNode(parent, move, variationIndex) {
+  const position = parent.position.clone(), moveSan = san.makeSan(parent.position, move);
+  position.play(move);
+  const fen = fenOf(position), path = [...parent.path, moveSan];
+  return { san: moveSan, uci: makeUci(move), moveNumber: parent.position.fullmoves, color: parent.position.turn, notes: { text: [], nags: [] },
+    before: undefined, drawn: [], nags: [], epdBefore: parent.epd, position, fen, epd: epdOf(fen), parent, children: [], path,
+    key: `${parent.key.split('|')[0]}|${path.join(' ')}`, variationIndex, built: true };
+}
 
 const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].parent.key) : lastPlayedAt(line.key);
 
@@ -3274,6 +3343,7 @@ const testedColor = () => practice.line.yourColor;
 // The moves that count as correct instead of the line's move m (its own first): your study's moves
 // there (see choicesAt) that one of the lines being practiced continues with.
 function correctMoves(m) {
+  if (m.parent.built) return m.parent.children; // a refutation your study is silent on: the engine's moves (see silentRefutationLine)
   const i = practice.movesPlayed;
   return [m, ...choicesAt(m.parent, session.mainOnly).filter(c => c !== m && lineThrough(c, i))];
 }
@@ -3653,7 +3723,8 @@ async function onYourMove(orig, dest) {
 
   const correct = correctMoves(expected), answer = correct.find(c => c.san === played);
   if (answer) {
-    if (answer !== expected) practice.line = lineThrough(answer, practice.movesPlayed); // on along your other choice
+    if (answer !== expected) practice.line = expected.built ? { ...practice.line, moves: [...practice.line.moves.slice(0, -1), answer] } // another of the engine's moves
+      : lineThrough(answer, practice.movesPlayed); // on along your other choice
     practice.attempts.push(newAttempt(practice.movesPlayed));
     playMove(answer);
     setStatus('Correct.'); // status messages are standard gray
@@ -3693,7 +3764,7 @@ function errorStatus(expected, played) {
   const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
   const line = (text, color) => element('div', { class: 'error-' + color }, text);
   return [
-    line(marked ? `Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`
+    line(expected.built ? "Not the engine's move" : marked ? `Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`
       : alt ? 'Alternative move, not your preferred move' : 'Not your preferred move', 'violet'),
     marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'violet'),
     masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', isMasters ? 'teal' : 'violet'),
@@ -4685,6 +4756,7 @@ function renderLichessPage() {
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
   renderGamesCard();
   $('critical-level').value = String(settings.criticalLevel);
+  $('refutation-level').value = String(settings.refutationLevel);
   // Backup: once there are studies; nothing to save while Getting started shows.
   $('backup-card').classList.toggle('hidden', !library);
   $('backup-btn').disabled = welcomeReady;
@@ -4699,6 +4771,12 @@ function renderLichessPage() {
 $('critical-level').replaceChildren(...CRITICAL_LEVELS.map(x => element('option', { value: String(x) }, x.toFixed(1))));
 $('critical-level').addEventListener('change', e => {
   settings.criticalLevel = Number(e.target.value);
+  saveSettings();
+});
+// The refutation level (see refutationItems), beside it: 0.5 to 3.0 pawns.
+$('refutation-level').replaceChildren(...REFUTATION_LEVELS.map(x => element('option', { value: String(x) }, x.toFixed(1))));
+$('refutation-level').addEventListener('change', e => {
+  settings.refutationLevel = Number(e.target.value);
   saveSettings();
 });
 

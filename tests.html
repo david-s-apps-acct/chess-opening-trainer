@@ -60,7 +60,7 @@ export const app = {
   get practice() { return practice; },
   get history() { return history; },
   startLine(line) { startSession('lines', [{ line, i: null }]); }, // practicing just this line
-  startSession, renderChooser, errorStatus, priorities, priorityOf, itemFacts, practiceItems,
+  startSession, renderChooser, errorStatus, drillItems, priorities, priorityOf, itemFacts, practiceItems,
   get settings() { return settings; },
   endSession() { endPractice(); },
   onYourMove, downloadExplorer, allStudyPositions, fetchStudies, syncStudies, explorerPace,
@@ -201,7 +201,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { focus: 'lines', mainLinesOnly: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' }, criticalLevel: 0.5 });
+    practice: { focus: 'lines', mainLinesOnly: false, weights: { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 } }, review: { view: 'study' }, criticalLevel: 0.5, refutationLevel: 1 });
   check('settings: invalid values fall back; old penalties ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
     [undefined, { focus: 'lines', mainLinesOnly: false, weights: { frequency: 50, accuracy: 20, lastPlayed: 50, untried: 50, critical: 50 } }]);
@@ -1341,9 +1341,9 @@ async function runPositions(app) {
   check('options: the sliders\' Reset', app.settings.practice.weights, { frequency: 50, accuracy: 50, lastPlayed: 50, untried: 50, critical: 50 });
   // Studies to practice at the top, with Main lines only; then the options, each with its count.
   const optionLabels = () => [...document.querySelectorAll('#focus-choice .focus-option')].map(o => o.querySelector('span').textContent);
-  check('chooser: Studies to practice first, with Main lines only; the five options', [$('studies-to-practice').nextElementSibling.contains($('practice-chooser')),
+  check('chooser: Studies to practice first, with Main lines only; the six options', [$('studies-to-practice').nextElementSibling.contains($('practice-chooser')),
     $('studies-to-practice').contains($('chooser-main')), !!$('kind-switch'), optionLabels()],
-    [true, true, false, ['Spaced repetition lines', 'Spaced repetition positions', 'Low recall', 'Critical (you)', 'Critical (Lichess)']]);
+    [true, true, false, ['Spaced repetition lines', 'Spaced repetition positions', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations']]);
   $('chooser-main').click();
   const mainTicked = app.settings.practice.mainLinesOnly;
   $('chooser-main').click();
@@ -1387,8 +1387,38 @@ async function runPositions(app) {
     const everyday = [app.settings.practice.focus, $('practice-drill').textContent];
     app.setHistory(historyKept);
     check('drill: Low recall, its count; empty drills grayed out; a position below 75%, from move 1; the round in the heading; Drill complete, Start again; lines again', [before, drill, playing, complete, again, everyday],
-      [[['Low recall1', false], ['Critical (you)0', true], ['Critical (Lichess)0', true]], ['lowRecall', false], [2, 'Nf3', 'Low recall · 1 of 1', 0],
+      [[['Low recall1', false], ['Critical (you)0', true], ['Critical (Lichess)0', true], ['Refutations0', true]], ['lowRecall', false], [2, 'Nf3', 'Low recall · 1 of 1', 0],
        ['Drill complete', 'Start again'], ['Nf3', 'Low recall · 1 of 1'], ['lines', '']]);
+  }
+  // Refutations: after an opponent's Lichess move losing 1 pawn or more. Italian (White): 1… g5 (Δ−1.2); the
+  // Sicilian (Black): 1. ♘h3 (Δ−3.3). Both chapters are silent there, so the engine's best moves are the answers
+  // (here one each: 2. d4, 1… e5). At 1.5 pawns, only ♘h3. Played: an error says "Not the engine's move"; e5 is
+  // right; the try is kept under the move's key, but isn't repertoire recall (not in Low recall).
+  {
+    const statsKept = app.moveStats, evalsKept = app.evals, historyKept = app.history;
+    app.setMoveStats(structuredClone(CRITICAL)); app.setEvals(structuredClone(CRITICAL_EVALS)); app.setHistory({ positions: {}, lines: {} });
+    app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
+    const found = () => app.drillItems('refutations', false).map(({ line, i }) => [line.moves.slice(0, i).map(m => m.san).join(' '), line.moves[i].san, !!line.silent]);
+    const atOne = found();
+    app.settings.refutationLevel = 1.5;
+    const atOneHalf = found();
+    app.settings.refutationLevel = 1;
+    app.setSelection(['AAAAAAAA/CCCCCCCC']);
+    app.renderChooser();
+    document.querySelector('#focus-choice input[value=refutations]').click();
+    $('chooser-start').click();
+    await until(() => app.practice && !app.practice.busy, 'your move');
+    await app.onYourMove('a7', 'a6');
+    const error = $('practice-status').querySelector('div')?.textContent;
+    await until(() => !app.practice.busy, 'the error to be taken back');
+    await app.onYourMove('e7', 'e5');
+    await until(() => app.practice.isOver, 'the position to end');
+    const kept = app.history.positions['AAAAAAAA/CCCCCCCC|Nh3']?.[0]?.tried, lowRecall = app.drillItems('lowRecall', false).length;
+    app.endSession();
+    document.querySelector('#focus-choice input[value=lines]').click();
+    app.setMoveStats(statsKept); app.setEvals(evalsKept); app.setHistory(historyKept);
+    check('refutations: silent positions answered by the engine; the refutation level; an error; the try kept, not as recall', [atOne, atOneHalf, error, kept, lowRecall],
+      [[['e4 g5', 'd4', true], ['Nh3', 'e5', true]], [['Nh3', 'e5', true]], "Not the engine's move", ['a6', 'e5'], 0]);
   }
   // Untried at 0% with nothing tried: nothing to practice.
   app.setSelection(['AAAAAAAA/BBBBBBBB']);
