@@ -973,6 +973,8 @@ A page, **Positions**, listing the user's most common weak positions (built at t
 
 ## Help page
 
+- **Built 25 November 2026 (the user's request: as few words as possible, for experienced players, consistent with the app): Help rewritten, about 40% shorter**, with a new **Definitions** section (second in the contents): the terms (line, main and alternative move, error, mistake, Lichess move, masters move, position reached, Δ) and the Position measures as a table (repertoire recall, low recall, your expected loss, Danger position (you), Lichess expected loss, Danger position (Lichess), refutable move, rarely reached). Corrected on the way: the violet background marks only the moves you got wrong in the line just played (and recall below 100% in Likely next), not moves below 100%; "Show lines / Show positions" became Likely next; the separate "Where your data is kept" and "Words used in the app" sections went (into Getting started and Definitions); the old name repertoire accuracy is no longer mentioned.
+
 A Help page, opened from the "Help" button in the header. It opens only when clicked, never automatically. Opening it during a line keeps the line; Practice returns to it.
 
 - **Built 4 November 2026 (the user's decision): step-by-step quickstart.** The steps in Help's **Getting started** card are replaced by this numbered list (the user's outline, with Claude's additions, accepted; the wording below is the agreed draft):

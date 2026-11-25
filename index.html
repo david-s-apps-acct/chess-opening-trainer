@@ -779,77 +779,73 @@
 
   <section id="help-screen" class="hidden">
     <div class="cards help">
-      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-practice">Practice</a> · <a href="#help-groups">Groups</a> · <a href="#help-studies">Studies</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
+      <nav class="card help-contents" aria-label="Help contents"><a href="#help-start">Getting started</a> · <a href="#help-definitions">Definitions</a> · <a href="#help-practice">Practice</a> · <a href="#help-groups">Groups</a> · <a href="#help-studies">Studies</a> · <a href="#help-lichess">Lichess</a> · <a href="#help-about">About</a></nav>
 
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li><b>Make your repertoire on Lichess</b> (lichess.org/study). One study per opening, one chapter per line. Set each chapter's <b>Orientation</b> to the side you play: that decides which moves you're tested on. Mark moves with ?, ?! and so on as you like.</li>
-          <li><b>Connect to Lichess</b> (Lichess page). Your studies are fetched. (Opened from disk, it opens Lichess's token page instead: create a token, copy it and paste it into the box.)</li>
-          <li><b>Restore a backup, or download the statistics.</b> Used the app before? <b>Restore backup</b>. Otherwise check the <b>rating bands and time controls</b> (Move statistics, suggested from your Lichess rating) and press <b>Download statistics</b>.</li>
-          <li><b>Choose what to practice.</b> Start with <b>All</b>, or make a group on the <b>Groups</b> page.</li>
-          <li><b>Practice.</b> On the Practice page, choose what to practice, e.g. <b>All lines</b>, and press its <b>Start practice</b>. <b>Hint</b> helps when you're stuck (after your first try).</li>
+          <li><b>Build your repertoire on Lichess</b> (lichess.org/study): a study per opening, a chapter per line. Set each chapter's <b>Orientation</b> to the side you play. Mark moves ?, ?! etc. as you like.</li>
+          <li><b>Connect to Lichess</b> (Lichess page). From disk: <b>Add token</b>, create one on Lichess, and paste it.</li>
+          <li>Used the app before? <b>Restore backup</b>. Otherwise check the rating bands and time controls, then <b>Download statistics</b>.</li>
+          <li><b>Practice</b>: pick a group (<b>All</b>, or make one on the Groups page), then a tile's <b>Start practice</b>.</li>
         </ol>
         <ul>
-          <li>Look through a chapter first on the <b>Studies</b> page (offline too).</li>
-          <li>Save a backup now and then (Lichess page): your stats live only in this browser.</li>
-          <li>Install it as an app: on an iPad or iPhone, Safari's Share button → <b>Add to Home Screen</b>; in Chrome or Edge, the install icon in the address bar. The installed app keeps its own data: connect to Lichess there, and restore a backup to bring your stats.</li>
+          <li>Your data lives only in this browser: save a backup now and then (Lichess page).</li>
+          <li>Install it as an app: Safari's Share → <b>Add to Home Screen</b> (iPad, iPhone), or the install icon in Chrome's or Edge's address bar. The app has its own data: connect there and restore a backup.</li>
+          <li>Once opened online, it works offline, except for Lichess.</li>
         </ul>
-        <p>Statistics download in the background; you can practice meanwhile. New studies appear the next time the app opens. Once opened online, the app works offline, except for anything that needs Lichess.</p>
-        <details>
-          <summary>Words used in the app</summary>
-          <ul>
-            <li><b>Line</b>: one path through a chapter: one of your study's moves at each of your turns, and every reply your study gives the opponent.</li>
-            <li><b>Alternative move</b>: another move for you in your study, e.g. 3. Bb5 where your main move is 3. Bc4. It's correct too, unless the study marks it ?, ?? or ?!, or you're practicing Main lines.</li>
-            <li><b>Repertoire recall</b>: how often you were right first time in a position, over your last 10 tries (see Practice). <b>Low recall</b>: below 75%.</li>
-            <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire recall.</li>
-            <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Danger position (Lichess)</b>: one where the Lichess moves played there lose 0.5 or more of the engine's evaluation on average (its <b>Lichess expected loss</b>). <b>Danger position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
-            <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
-            <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
-            <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
-          </ul>
-        </details>
-        <details>
-          <summary>Where your data is kept</summary>
-          <p>Everything (your token, studies, stats and settings) stays in this browser. The app only talks to Lichess, to fetch your studies and move statistics. To keep your stats safe or move them to another browser, save a backup (see the Lichess page).</p>
-        </details>
+      </div>
+
+      <div class="card" id="help-definitions">
+        <h2>Definitions</h2>
+        <ul>
+          <li><b>Line</b>: a path through a chapter from move 1: one of your study's moves at each of your turns, and each reply it gives.</li>
+          <li><b>Main move</b>: your study's first move in a position; the others are <b>alternative moves</b>.</li>
+          <li><b>Error</b>: a move you play that isn't one of your study's moves, or is one it marks ?, ?? or ?!.</li>
+          <li><b>Mistake</b>: a move a study marks ? (mistake), ?? (blunder) or ?! (dubious). Not the same as an error.</li>
+          <li><b>Lichess move</b>: played in 5%+ of the rated Lichess games in a position (your chosen ratings and time controls).</li>
+          <li><b>Masters move</b>: played in 5%+ of the master games (2200+ FIDE, over the board), where there are 20 or more.</li>
+          <li><b>Position reached</b>: how often a position occurs in those games, e.g. "Reached 23k times (Lichess)".</li>
+          <li><b>Δ</b>: a move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10).</li>
+        </ul>
+        <table class="help-table">
+          <tr><th>Measure</th><th>Meaning</th></tr>
+          <tr><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
+          <tr><td><b>Low recall</b></td><td>Recall below 75%</td></tr>
+          <tr><td><b>Your expected loss</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
+          <tr><td><b>Danger position (you)</b></td><td>Your expected loss at the danger level (0.5) or more</td></tr>
+          <tr><td><b>Lichess expected loss</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
+          <tr><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the danger level (0.5) or more</td></tr>
+          <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level (1.0) or more; the position after it is a <b>refutation position</b></td></tr>
+          <tr><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
+        </table>
+        <p>Set the danger and refutation levels on the Lichess page.</p>
       </div>
 
       <div class="card" id="help-practice">
         <h2>Practice</h2>
         <ul>
-          <li><b>Practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
-          <li>Spaced repetition chooses what comes next, at random but weighted; <b>Likely next</b>, in each tile, lists what's most likely to come up. Click a row to open it on the Studies page (a line at its last position).</li>
-          <li><b>Lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
-          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Danger (you)</b> or <b>Danger (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1.0 by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall. Under the choices, <b>Exclude</b> leaves out positions your opponents lead you to in under 1 game in 100, or 1 in 1,000 (Lichess): the shares of their moves on the way, multiplied (your own moves don't count). An opponent's move with no games at your chosen ratings and time controls makes it 0, so left out; positions without statistics yet are kept. Lines are never left out.</li>
-          <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
-          <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
-          <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
-          <li>A chapter played from both colors in its group (see Groups) gives lines for each side.</li>
-          <li><b>Hint</b>, after your first try at a move, circles the piece to move; pressed again (<b>Show correct move</b>), it draws the move. It costs nothing more: your first try was already an error.</li>
-          <li><b>Skip</b> goes on to the next one; <b>End practice</b> stops. The moves you've answered still count.</li>
-          <li>Comments from your study appear as blue bubbles in the move list; hover over one to read it. Click a move, or use ◀ ▶ or the arrow keys, to look back.</li>
-          <li>At the end of a line you see how it went, e.g. "5 of 6 moves correct". Press <b>Next line</b> (<b>Next position</b> for positions), or Enter.</li>
-          <li>You can visit other pages mid-line; <b>Practice</b> takes you back. The bell under the board turns sounds on and off.</li>
+          <li>The <b>Practice</b> tile's group decides what you practice.</li>
+          <li><b>Lines</b>: whole lines from move 1. <b>All lines</b>, or <b>Main lines</b>: main moves only, for both sides, and only your main move is right.</li>
+          <li><b>Positions</b>: one of your moves at a time. <b>All</b> (from move 3, by spaced repetition) or a drill: <b>Low recall</b>, <b>Danger (you)</b>, <b>Danger (Lichess)</b> or <b>Refutations</b>. A drill plays each of its positions once a round, from move 1; the heading shows how far, e.g. "Low recall · 3 of 12", and <b>Start again</b> begins a new round with the positions that qualify then.</li>
+          <li><b>Refutations</b>: refutation positions. Your study's reply is right; where it has none, the engine's best move or one of its best 3 within 0.5. They never count for recall.</li>
+          <li><b>Exclude</b> leaves out rarely reached positions (not lines). After an opponent's move with no games, a position counts as rarely reached; without statistics yet, it's kept.</li>
+          <li><b>Likely next</b> lists what's most likely to come up; click a row to open it on the Studies page.</li>
+          <li>Play your moves on the board. Any of your study's moves is right (not one marked ?, ?? or ?!), and the line follows it; with Main lines, only the main move. Try as often as you like.</li>
+          <li>The chapter and position name stay hidden (★★★) during a line; click to show.</li>
+          <li><b>Hint</b>, after your first try, circles the piece to move and shows any note your study has on the move you tried; <b>Show correct move</b> then draws the move. Neither costs anything more.</li>
+          <li><b>Skip</b> moves on; <b>End practice</b> stops. Answers so far count.</li>
+          <li>Study comments are blue bubbles in the move list. Click a move, or use ◀ ▶ or ← →, to look back.</li>
+          <li>At the end of a line, e.g. "5 of 6 moves correct", the moves you got wrong are violet. <b>Next line</b> (or <b>Next position</b>), or Enter.</li>
+          <li>A chapter played from both colors gives lines for each side. You can leave mid-line: <b>Practice</b> brings you back. The bell turns sounds on and off.</li>
         </ul>
         <details>
           <summary>Error messages</summary>
-          <p>One fact per line, e.g.:</p>
-          <ul>
-            <li>What the move is: "Not your preferred move", "Alternative move, not your preferred move" (with Main lines), or "Alternative move marked as a mistake" with your study's answer, e.g. "Your study answers 4… ♘xe4".</li>
-            <li>How masters rate it: "#3 masters move (12%)" or "Not a masters move".</li>
-            <li>How often it's played on Lichess: "#4 Lichess move (8%)" or "Not played in Lichess games".</li>
-          </ul>
-          <p>What the move is shows in violet, as errors do on the boards; the masters line in teal for a masters move, the Lichess line in gray for a Lichess move. After 3 seconds the message gives way to "Your move (3 of 5 in line)". After an error, Hint also shows what your study says about the move you tried.</p>
+          <p>Up to three lines: what the move is ("Not your preferred move"; with Main lines "Alternative move, not your preferred move"; or "Alternative move marked as a mistake", with your study's answer); for masters, "#3 masters move (12%)" or "Not a masters move"; for Lichess, "#4 Lichess move (8%)" or "Not played in Lichess games". Violet for errors, teal for a masters move, gray for a Lichess move. After 3 seconds: "Your move (3 of 5 in line)". In Refutations: "Not the engine's move".</p>
         </details>
         <details>
           <summary>The small board</summary>
-          <p>Hover over (or tap) a move in the practice move list or the Show lines and Show positions tables: the move, and the board. (On the Studies page, see Studies.)</p>
-          <ul>
-            <li><b>Your move</b>: the position you had to answer, with arrows for your study's moves and each error (see Arrow colors).</li>
-            <li><b>The opponent's move</b>: the position after it, with its arrow.</li>
-          </ul>
+          <p>Hover over (or tap) a move in the move list or the Likely next table: the move and its board. Your move shows your study's moves and your errors as arrows; the opponent's, its own arrow.</p>
         </details>
         <details>
           <summary>Arrow colors</summary>
@@ -858,108 +854,82 @@
         </details>
         <details>
           <summary>Repertoire recall</summary>
-          <p>Each try in a position is right (100%) if your first move is one of your study's moves, otherwise wrong (0%): any other move, or a move the study marks ?, ?? or ?!. Repertoire recall is the share right first time over your last 10 tries. (Until 20 November 2026 it was called repertoire accuracy.) Below 100%, a move gets a violet background. Below 75% is <b>low recall</b>: in the Studies page's move tree, a violet dot after the move leading there.</p>
-          <p>Each position has two: practicing <b>Main lines</b>, only the main move is right (tries outside Main lines where you played one of your alternatives are left out); otherwise any of your study's moves. Main lines practice uses the first; everywhere else you see the second.</p>
-          <details>
-            <summary>What counts as a try</summary>
-            <ul>
-              <li>Each of your moves in a line, and the move in a single position.</li>
-              <li>With Skip or End practice: the moves answered so far, and the move you're on if you'd already tried something there.</li>
-              <li>Every line through the same position in a chapter shares its recall, whichever of your moves you play there. The same position in another chapter, or by another move order, has its own.</li>
-              <li>When your studies are updated, your history is kept, even for positions no longer in them: it counts again if they come back.</li>
-            </ul>
-          </details>
+          <ul>
+            <li>Each position has two: with Main lines only the main move is right (tries outside Main lines where you played an alternative are left out); otherwise any of your study's moves. Main lines practice uses the first, everything else the second.</li>
+            <li>A try is each of your moves in a line, or the move in a single position; with Skip or End practice, the moves answered, and the one you're on if you'd tried it.</li>
+            <li>Every line through a position in a chapter shares its recall. The same position in another chapter, or by another move order, has its own.</li>
+            <li>Your history is kept when your studies change, and counts again if a position comes back.</li>
+          </ul>
         </details>
         <details>
           <summary>Spaced repetition</summary>
-          <p>Before each line or position, every one gets a priority, and the next is picked at random in proportion to it. Common, weak, overdue and untried ones come up more. The same one never comes twice in a row when there's another.</p>
+          <p>Each line or position gets a priority; the next is picked at random in proportion to it, never the same twice in a row. <b>Priority = frequency × danger × need</b>.</p>
           <ul>
-            <li><b>Likely next</b> (in Lines, or Positions for All) lists the 25 most likely to be tested next, with their position reached, recall, when last tested and chance of coming up next.</li>
+            <li><b>Frequency</b>: 0.2 to 1, from the shares of the opponent's moves on the way, multiplied, on a log scale (your own moves don't count); 0.6 until the statistics arrive.</li>
+            <li><b>Danger</b>: ×2 for a danger position of yours (a line: any in it).</li>
+            <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
+            <li><b>Weakness</b>: 1 + 2 × (1 − recall): 1 at 100%, 3 at 0%.</li>
+            <li><b>Due</b>: days since last tested ÷ 2<sup>7 × recall</sup> days (1 at 0%, about 11 at 50%, 128 at 100%), from 0.1 to 3 (3 if unknown).</li>
+            <li>A line uses its weakest position's recall (untried: 0%), and counts as tested only when played through from move 1.</li>
           </ul>
-          <details>
-            <summary>How the priority is worked out</summary>
-            <p><b>Priority = frequency × danger × need</b>.</p>
-            <ul>
-              <li><b>Frequency</b>: 0.2 to 1, by the shares of the opponent's moves on the way, multiplied (a line: all of them; your own moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale; 0.6 until the statistics download.</li>
-              <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
-              <li><b>Weakness</b>: 1 + 2 × (1 − recall): 1 at 100%, 3 at 0%.</li>
-              <li><b>Danger</b>: ×2 for a danger position of yours (a line: any of yours in it; see Studies).</li>
-              <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × recall</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
-              <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its weakest position's repertoire recall (untried positions count as 0%); a position, its own.</li>
-            </ul>
-            <table class="help-table">
-              <tr><th>Example</th><th>Need</th></tr>
-              <tr><td>100%, tested yesterday</td><td>1 × 0.1 = 0.1</td></tr>
-              <tr><td>50%, tested a month ago</td><td>2 × 2.65 = 5.3</td></tr>
-              <tr><td>Never tried</td><td>6</td></tr>
-              <tr><td>0%, last test unknown</td><td>3 × 3 = 9</td></tr>
-            </table>
-          </details>
+          <table class="help-table">
+            <tr><th>Example</th><th>Need</th></tr>
+            <tr><td>100%, tested yesterday</td><td>1 × 0.1 = 0.1</td></tr>
+            <tr><td>50%, tested a month ago</td><td>2 × 2.65 = 5.3</td></tr>
+            <tr><td>Never tried</td><td>6</td></tr>
+            <tr><td>0%, last test unknown</td><td>3 × 3 = 9</td></tr>
+          </table>
         </details>
       </div>
 
       <div class="card" id="help-groups">
         <h2>Groups</h2>
         <ul>
-          <li>What you practice is always the group chosen on the Practice page (the <b>Practice</b> tile): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
-          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a button for its main color (the color its study is written for) and one for the other color, played or not (an X through it); with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out.</li>
-          <li>Then <b>Save</b>, <b>Save as new</b> (a new group with the chapters as shown; the group you started from stays as saved), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Save as new. Leaving the page asks before dropping changes not saved.</li>
-          <li>Chapters no longer on Lichess are left out of every group. Groups are in backups, but Merge backup leaves them alone, so each device can have its own.</li>
+          <li>You practice the group chosen in the Practice tile: <b>All</b> (every chapter, from its main color) or one of yours.</li>
+          <li>On the <b>Groups</b> page each chapter has a button for its main color (its Orientation) and one for the other; an X: not played. With neither, it's out (grayed). Clicking its name puts it in from its main color, or takes it out.</li>
+          <li><b>Save</b>, <b>Save as new</b>, <b>Rename</b>, <b>Delete</b> or <b>Cancel</b>; for All, only Save as new. Leaving asks before dropping unsaved changes.</li>
+          <li>Chapters no longer on Lichess drop out. Groups are in backups; Merge backup leaves them alone, so each device can have its own.</li>
         </ul>
       </div>
 
       <div class="card" id="help-studies">
         <h2>Studies</h2>
         <ul>
-          <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Recall</b> (your repertoire recall here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire recall; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Recall also the error's kind, e.g. "(masters move)". With Recall, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the danger level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Danger position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
-          <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
-          <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines, by spaced repetition; your group doesn't change; <b>End practice</b> brings you back here.</li>
-          <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Danger positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 or more of the engine's evaluation. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Danger positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
-          <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
+          <li>A chapter on a board (offline too), with your studies beside it: click a study for its chapters, a chapter to open it. ← → step through the moves, ↑ ↓ change chapter. The header's <b>Studies</b> button returns to where you were.</li>
+          <li>The switch under the board chooses the arrows (see Arrow colors): <b>Study</b> (your study's moves, arrows and circles), <b>Recall</b> (the moves you tried first, each with its share of your last 10 tries, and your study's moves with their recall), <b>Lichess</b> or <b>Masters</b> (their moves and shares; Masters also shows your other study moves in white). Hover over an arrow's square for the move and its Δ. The <b>?</b> by the switch is the color key.</li>
+          <li>Beside the board: the position's name and the moves; with Lichess or Masters, how often the position is reached and the results; the move's annotation and comment.</li>
+          <li>Tiles: with Recall, <b>Your expected loss</b> at a position of yours, with when you last tested it, and each move's Δ (<span class="loss-none">green</span> 0.0, <span class="loss-some">amber</span> below the danger level, <span class="loss-big">red</span> at it or more); with Lichess, <b>Danger position (Lichess)</b> with its expected loss and the moves losing 0.1 or more; with Masters, when your main move isn't a masters move.</li>
+          <li>Dots after a move are about the position it leads to: with Recall, <b>violet</b> (low recall) and <b>orange</b> (Danger position (you)); with Lichess, <b>orange</b> (Danger position (Lichess)); with Masters, <b>teal</b> (your main move isn't a masters move). Study shows none.</li>
+          <li>The bar right of the board is Stockfish's evaluation, from White's side (#4: White mates in 4); hover for the depth. Every position in your studies is evaluated once, in the background; the Lichess page shows progress. Online only, not from disk.</li>
+          <li>The ▶ on a chapter or study (on hover) practices all its lines; End practice brings you back. During practice, the board icon after the study's name opens the position here.</li>
         </ul>
-        <details>
-          <summary>Hiding studies and chapters</summary>
-          <p>The eye beside the <b>Studies</b> heading shows hidden studies and chapters (in gray), each with its own eye: click it to hide or unhide that study or chapter. Click the eye beside Studies again to put them out of sight. Hiding only tidies the list: it doesn't change what's practiced.</p>
-          <p>The <b>↺</b> beside it resets a chapter's stats: click it, then the ↺ by a chapter (only those you've tried have one), and confirm. Its tries and play-throughs are forgotten, from both colors, so its positions and lines are untried again. Restoring or merging an older backup brings them back.</p>
-        </details>
         <details>
           <summary>The move tree</summary>
           <ul>
-            <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, <b>low recall</b> there: your repertoire recall is below 75% (from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a danger position (Lichess, or with Recall, you). Select the move to see a tile about that position.</li>
-            <li>Each view shows its own dots and tiles: <b>Recall</b> the violet ones and Danger positions (you), <b>Masters</b> the teal ones, <b>Lichess</b> Danger positions (Lichess). <b>Study</b> keeps to what's in your study, with none.</li>
-            <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
-            <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Click a move to show it on the big board, with the details.</li>
-            <li>A comment the study puts before a move (e.g. at the start of a variation) has its own bubble before the move.</li>
+            <li><b>+</b> after a move opens its variations, <b>−</b> closes them; <b>+ All</b> / <b>− All</b> does every one.</li>
+            <li>Glyphs take their colors, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
+            <li>Hover over a move for a small board; click it to show it on the big board.</li>
+            <li>A comment the study puts before a move has its own bubble.</li>
           </ul>
+        </details>
+        <details>
+          <summary>Hiding and resetting</summary>
+          <p>The eye by the <b>Studies</b> heading shows hidden studies and chapters, each with its own eye to hide or unhide it. Hiding only tidies the list; it doesn't change what's practiced.</p>
+          <p>The <b>↺</b> beside it gives each chapter you've tried a ↺ that resets its stats (after asking), from both colors. Restoring or merging an older backup brings them back.</p>
         </details>
       </div>
 
       <div class="card" id="help-lichess">
         <h2>Lichess</h2>
         <ul>
-          <li>The header's <b>Lichess</b> button shows a red dot when you're not connected (including when Lichess has ended the connection). Other messages, such as Lichess asking to slow down, show only on the Lichess page.</li>
-          <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, and any message about fetching your studies), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> and, after your first connection, <b>Getting started</b> (Download statistics). Before you connect, only Status and Connection show.</li>
-          <li><b>Move statistics</b>: how many positions have their move statistics and masters statistics so far, and the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
-          <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser; <b>Merge backup</b> adds one's history to yours, e.g. from another device. Backups never include your token.</li>
-          <li><b>Disconnect</b> saves a backup, then ends the connection (also on Lichess) and clears your studies, stats and settings from this browser (the Lichess statistics stay). To come back, <b>Connect to Lichess</b> and <b>Restore backup</b>. To let someone else use the app here: Disconnect, they sign in on lichess.org, then Connect. Lichess also ends a connection after about a year: just connect again then (nothing is cleared). Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
-          <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept.</li>
+          <li>A red dot on the header's <b>Lichess</b> button: not connected (or Lichess has ended the connection).</li>
+          <li>Cards: <b>Status</b>, <b>Connection</b>, <b>Move statistics</b> and <b>Backup</b> (before you connect, only the first two), and after your first connection <b>Getting started</b>.</li>
+          <li>Your studies update from Lichess each time the app opens (mid-practice, once you end it); reload to update now.</li>
+          <li><b>Move statistics</b> come from Lichess games in your rating bands (the players' average Lichess rating, which runs higher: Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, combined, and from master games. First set from your Lichess rating (its band and the next, blitz and rapid; 1200–2000 without one). To change them, unlock, tick and <b>Apply</b>: everything downloads again (the old statistics are used meanwhile). They download in the background each time the app opens; when they're done, the Backup card suggests a backup. The danger and refutation levels are set here too.</li>
+          <li><b>Backup</b>: <b>Save backup</b> (Chrome and Edge ask where; Safari and Firefox use your download folder). <b>Restore backup</b> replaces your stats, settings and groups. <b>Merge backup</b> adds a backup's tries to yours; your settings, groups and hidden studies stay. Either way the Lichess statistics merge (the newer copy wins). Backups never include your token; ones from earlier versions can't be used.</li>
+          <li>Two devices: Save backup on one, Merge it on the other, and back again.</li>
+          <li><b>Disconnect</b> saves a backup, then clears your data from this browser (not the Lichess statistics). To come back: Connect, then Restore. To let someone else use the app: Disconnect; they sign in on lichess.org and Connect. When Lichess ends a connection (after about a year), just Connect. From disk: <b>Add token</b> and <b>Clear token</b>.</li>
         </ul>
-        <details>
-          <summary>Backups</summary>
-          <ul>
-            <li>Chrome and Edge ask where to save. Safari and Firefox use your download folder (in Safari, Settings → General → File download location → Ask for each download lets you choose).</li>
-            <li>Restoring replaces your stats, settings and groups, and merges the Lichess statistics with those already here (the newer copy of each wins). Backups from earlier versions of the app can't be used.</li>
-            <li>Merging adds the backup's practice history to yours: each position keeps its last 10 tries from both, in time order, and the same try is never counted twice, so merging a backup again changes nothing. The Lichess statistics merge as for Restore. Your settings, groups and hidden studies stay as they are.</li>
-            <li>To practice on two devices, e.g. an iPad and a computer: on the iPad, Save backup and send the file to the computer (AirDrop, iCloud Drive); there, Merge backup. To bring the iPad up to date too, Save backup on the computer and Merge it on the iPad.</li>
-          </ul>
-        </details>
-        <details>
-          <summary>Move statistics</summary>
-          <p>How often each move is played in rated Lichess games and in master games. They download in the background whenever the app opens (after your studies are updated), and carry on later by themselves if Lichess can't be reached. Positions no game reaches are skipped. When they're complete, the Lichess page's Backup card suggests a backup, so they needn't be downloaded again.</p>
-        </details>
       </div>
 
       <div class="card" id="help-about">
