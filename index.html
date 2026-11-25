@@ -1005,22 +1005,6 @@ const store = {
 // evaluations stay: they're about positions, the same for anyone.
 const YOUR_KEYS = ['token', 'tokenSavedAt', 'settings', 'presets', 'chosenPreset', 'hidden', 'history', 'lastBackup'];
 
-// Profiles, one per Lichess account, were built and removed on 25 November 2026 (Disconnect clears your
-// data instead). Data stored for one ("cot.<account>.<name>", and "library:<account>": see init) moves
-// back to the plain names. Once every device has opened this version, this can go.
-const profileAccount = store.get('account', null);
-if (typeof profileAccount === 'string') {
-  try {
-    for (const key of YOUR_KEYS) {
-      const v = localStorage.getItem(`cot.${profileAccount}.${key}`);
-      if (v != null) localStorage.setItem('cot.' + key, v);
-    }
-    for (const k of Object.keys(localStorage)) if (/^cot\.[^.]+\./.test(k)) localStorage.removeItem(k);
-  } catch (e) { console.warn('localStorage write failed', e); }
-  store.remove('account');
-  store.remove('accounts');
-}
-
 let database = null;
 
 function openDatabase() {
@@ -1049,20 +1033,6 @@ async function inDatabase(storeName, mode, work) {
 async function loadLibrary() {
   const req = await inDatabase('library', 'readonly', s => s.get('library'));
   return req.result || null;
-}
-
-// A profile's studies ("library:<account>") back under "library", the rest deleted (see profileAccount).
-async function unprofileLibrary() {
-  if (typeof profileAccount !== 'string') return;
-  await inDatabase('library', 'readwrite', s => {
-    const keys = s.getAllKeys(), own = s.get('library:' + profileAccount);
-    keys.onsuccess = () => {
-      own.onsuccess = () => {
-        if (own.result) s.put(own.result, 'library');
-        for (const k of keys.result) if (String(k).startsWith('library:')) s.delete(k);
-      };
-    };
-  });
 }
 
 async function saveLibrary() {
@@ -5197,7 +5167,6 @@ async function init() {
   // Online, the service worker (sw.js) keeps the app working offline; a page opened from disk can't have one.
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered', e));
   try {
-    await unprofileLibrary();
     library = await loadLibrary();
     if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
     moveStats = await loadMoveStats();
