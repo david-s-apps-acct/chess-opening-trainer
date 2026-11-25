@@ -448,7 +448,8 @@
   .review-view button:first-child { border-radius: 4px 0 0 4px; }
   .review-view button:last-child { border-radius: 0 4px 4px 0; }
   .review-view button[aria-pressed=true], .review-view button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  .rare-select { align-self: flex-start; margin-top: 8px; } /* Include / Exclude very rarely reached / Exclude rarely reached (see RARE_CHOICES) */
+  .rare-row { align-self: flex-start; margin-top: 8px; } /* Exclude: none / under 1 in 100 / under 1 in 1,000 (see RARE_CHOICES) */
+  .rare-row select { margin-left: 4px; }
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .practice-chooser p { margin: 0; font-size: 13px; }
@@ -647,7 +648,7 @@
         <div class="panel">
           <h2>Positions</h2>
           <div id="positions-choice" class="choices" role="radiogroup" aria-label="Positions"></div>
-          <select id="rare-select" class="rare-select" aria-label="Rarely reached positions"></select>
+          <label class="rare-row" title="Positions your opponents lead you to less often than this (Lichess)">Exclude <select id="rare-select"></select></label>
           <button id="show-positions-btn" class="next-link" title="With All, the positions most likely to come up next, and their chances">Likely next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
@@ -832,7 +833,7 @@
           <li><b>Practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
           <li>Spaced repetition chooses what comes next, at random but weighted; <b>Likely next</b>, in each tile, lists what's most likely to come up. Click a row to open it on the Studies page (a line at its last position).</li>
           <li><b>Lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
-          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Danger (you)</b> or <b>Danger (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1.0 by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall. Under the choices, <b>Exclude very rarely reached</b> or <b>Exclude rarely reached</b> leaves out positions your opponents lead you to in fewer than 1 game in 1,000 or 1 in 100 (Lichess): the shares of their moves on the way, multiplied (your own moves don't count). Positions without statistics yet are kept. Lines are never left out.</li>
+          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Danger (you)</b> or <b>Danger (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1.0 by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall. Under the choices, <b>Exclude</b> leaves out positions your opponents lead you to in under 1 game in 100, or 1 in 1,000 (Lichess): the shares of their moves on the way, multiplied (your own moves don't count). An opponent's move with no games at your chosen ratings and time controls makes it 0, so left out; positions without statistics yet are kept. Lines are never left out.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
@@ -1188,13 +1189,13 @@ const ARROW_VIEWS = ['study', 'errors', 'lichess', 'masters']; // the Studies pa
 // November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
 // The Positions tile's choices: spaced repetition, or one of the drills (see DRILLS, with the same keys).
 const POSITION_CHOICES = ['spaced', 'lowRecall', 'dangerYou', 'dangerLichess', 'refutations'];
-// The Positions tile's dropdown (the user's decision, 25 November 2026): positions rarely reached are kept,
-// or left out, judged by how likely your opponents are to lead you there (see isRarelyReached). Each: its
-// label, the chance below which a position is left out, and its hover.
+// The Positions tile's "Exclude" dropdown (the user's decisions, 25 November 2026): positions rarely reached
+// are kept, or left out, judged by how likely your opponents are to lead you there (see isRarelyReached).
+// Each: its label (in the user's order) and the chance below which a position is left out.
 const RARE_CHOICES = {
-  include: { label: 'Include rarely reached', below: null, title: 'Every position' },
-  veryRare: { label: 'Exclude very rarely reached', below: 0.001, title: 'Leaves out positions reached in fewer than 1 game in 1,000 (Lichess)' },
-  rare: { label: 'Exclude rarely reached', below: 0.01, title: 'Leaves out positions reached in fewer than 1 game in 100 (Lichess)' },
+  include: { label: 'none', below: null },
+  rare: { label: 'under 1 in 100', below: 0.01 },
+  veryRare: { label: 'under 1 in 1,000', below: 0.001 },
 };
 const DEFAULT_SETTINGS = {
   sounds: false,
@@ -3596,7 +3597,6 @@ function renderChooser() {
   const rare = $('rare-select');
   rare.replaceChildren(...Object.entries(RARE_CHOICES).map(([value, c]) => element('option', { value }, c.label)));
   rare.value = settings.practice.rare;
-  rare.title = RARE_CHOICES[settings.practice.rare].title;
   for (const [tile, chosen] of [['lines', linesChoices[lines]], ['positions', positionChoices[positions]]]) {
     $(`${tile}-start`).disabled = !chosen.items.length;
     $(`${tile}-note`).textContent = chosen.note;
