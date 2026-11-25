@@ -635,7 +635,7 @@ async function runLichessPage(app) {
   check('Studies to practice: under the chooser, the board shown; the group (its hint: edited on the Groups page), no chapters or chapter count here', [!$('studies-to-practice').classList.contains('hidden'),
     !document.querySelector('#practice-screen .board-col').classList.contains('hidden'), !$('practice-chooser').classList.contains('hidden'), !!document.querySelector('#practice-screen #studies, #practice-screen #edit-studies'),
     $('preset-select').title, !!$('sel-summary')],
-    [true, true, true, false, 'Edit study groups on the Groups page', false]);
+    [true, true, true, false, 'Edit groups on the Groups page', false]);
   $('nav-studies').click();
   check('Studies page: no Groups tile; no chapter count by a study; no side circles in the studies list', [!!document.querySelector('#studies-screen .groups-tile, #studies-screen #edit-studies'),
     /chapter/.test(document.querySelector('#studies .study-row').textContent), !!document.querySelector('#studies .side-dot')], [false, false, false]);
@@ -644,7 +644,7 @@ async function runLichessPage(app) {
   check('Groups page: its own page, with no All row; Save as new and Cancel for All, Cancel only once something changes', [!$('groups-screen').classList.contains('hidden'), $('studies-screen').classList.contains('hidden'), $('nav-groups').classList.contains('current'),
     !$('all-row'), ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')), $('preset-cancel-btn').disabled],
     [true, true, true, true, ['preset-new-btn', 'preset-cancel-btn'], true]);
-  check('Groups page: Save as new', [$('preset-new-btn').textContent, $('preset-new-btn').title], ['Save as new', 'A new group with the chapters as shown']);
+  check('Groups page: Save as new', [$('preset-new-btn').textContent, $('preset-new-btn').title], ['Save as new', 'Save as a new group']);
   if (!document.querySelector('#edit-studies .chapter-row')) document.querySelector('#edit-studies .study-row .opener').click(); // the study's chapters
   const firstDot = () => document.querySelector('#edit-studies .chapter-row .side-dot').className, wasDot = firstDot();
   document.querySelector('#edit-studies .chapter-row .chapter-label').click(); // its name
@@ -1187,7 +1187,7 @@ async function runPractice(app) {
   await play('g2g3');
   await until(yourTurn, 'the error to be taken back');
   const hintAfter = [document.getElementById('hint-btn').disabled, document.getElementById('hint-btn').title];
-  check('practice: Hint grayed out until your first try', [hintBefore, hintAfter], [[true, 'After your first try'], [false, 'Circles the piece to move']]);
+  check('practice: Hint grayed out until your first try', [hintBefore, hintAfter], [[true, 'After your first try'], [false, 'Circle the piece']]);
   document.getElementById('hint-btn').click();
   document.getElementById('hint-btn').click();
   check('practice: show correct move', status(), 'The move is 1. e4. Play it on the board.');
@@ -1504,8 +1504,8 @@ function runPresets(app) {
   colorBtn(B, 'white').click(); sideStates.push(buttons()); // Black only
   colorBtn(B, 'black').click(); sideStates.push(buttons()); // neither: out of the group
   row(B).querySelector('.chapter-label').click(); sideStates.push(buttons()); // its name: in, from its main color
-  const notWhite = ['Click: play white (main color)', 'side-dot white x'], white = ['Plays white (main color). Click: not white', 'side-dot white'];
-  const notBlack = ['Click: play black (other color)', 'side-dot black x'], black = ['Plays black (other color). Click: not black', 'side-dot black'];
+  const notWhite = ['Not playing white (main color)', 'side-dot white x'], white = ['Playing white (main color)', 'side-dot white'];
+  const notBlack = ['Not playing black (other color)', 'side-dot black x'], black = ['Playing black (other color)', 'side-dot black'];
   const order = key => [...row(key).querySelectorAll('.side-dot')].map(d => d.classList[1]);
   check('groups: main color first (White for the Italian, Black for the Sicilian); no line count', [order(B), order(C), /line/.test(row(B).textContent)], [['white', 'black'], ['black', 'white'], false]);
   check('groups: a main color and an other color button, each on or off (an X); with neither, out (grayed); the name adds the main color', sideStates, [
