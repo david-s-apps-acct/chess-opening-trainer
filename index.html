@@ -214,7 +214,6 @@
   .side-dot.white { background: #fff; }
   .side-dot.black { background: #222; border-color: #aaa; } /* a light edge, so it isn't taken for an empty ring */
   .side-dot.off { background: none; border-style: dashed; }
-  .side-dot.mixed { background: linear-gradient(90deg, #fff 50%, #222 50%); border-color: #aaa; } /* a study mixing White and Black chapters */
   /* On the Groups page, the main color and other color buttons (each chapter's and each study's), in place of tick boxes. */
   .side-btn { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; box-shadow: none; }
   .side-btn .side-dot { width: 13px; height: 13px; margin: 0; }
@@ -224,7 +223,6 @@
   .side-dot.x { position: relative; }
   .side-dot.x::before, .side-dot.x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 17px; height: 2px; border-radius: 1px; background: #a35a55; /* a muted red, quieter than --bad */ transform: translate(-50%, -50%) rotate(45deg); }
   .side-dot.x::after { transform: translate(-50%, -50%) rotate(-45deg); }
-  .side-dot.x.some::before, .side-dot.x.some::after { opacity: .4; }
   .side-btn:hover:not(:disabled) { background: none; }
   .side-btn:hover:not(:disabled) .side-dot { border-color: var(--text); }
   .chapter-row.unplayed .name { opacity: .55; }
@@ -904,7 +902,7 @@
         <h2>Groups</h2>
         <ul>
           <li>What you practice is always the group chosen on the Practice page (the <b>Practice</b> tile): <b>All</b> (every chapter, from its main color; it can't be renamed or deleted) or one of your own. Only groups decide what you practice.</li>
-          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a button for its main color (the color its study is written for) and one for the other color, played or not (an X through it); with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out. A study's two buttons set every chapter's main color, or other color (a fainter X: only some play it; a half-white, half-black dot: the study has White and Black chapters).</li>
+          <li>The <b>Groups</b> page edits them, with every study and chapter: choose a group; each chapter has a button for its main color (the color its study is written for) and one for the other color, played or not (an X through it); with neither, it's left out (its name grayed). Clicking its name adds it from its main color, or leaves it out.</li>
           <li>Then <b>Save</b>, <b>Save as new</b> (a new group with the chapters as shown; the group you started from stays as saved), <b>Rename</b>, <b>Delete</b> or <b>Cancel</b> (back to what's saved). For All, only Save as new. Leaving the page asks before dropping changes not saved.</li>
           <li>Chapters no longer on Lichess are left out of every group. Groups are in backups, but Merge backup leaves them alone, so each device can have its own.</li>
         </ul>
@@ -2141,7 +2139,7 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // board), or, with the eye by the Studies heading, shown dimmed, each with its own eye.
 // The Groups page (between Practice and Studies) edits the groups (presets in the code: named sets of
 // chapters; All, every chapter, is built in): the chosen group is always being edited there; every study
-// and chapter is listed, each with a main color and an other color button (see chapterRow and groupColorButtons),
+// and chapter is listed, each chapter with a main color and an other color button (see chapterRow),
 // with Save, Save as new, Rename, Delete and Cancel (for All, only Save as new and Cancel; Save and
 // Cancel only once something has changed). Leaving the page with changes not saved asks first, then drops them.
 // Only groups decide what's practiced: the group chosen on the Practice page (the Practice tile
@@ -2181,7 +2179,7 @@ function renderStudiesList() {
     if (!listed(study.id, study.chapters.includes(shown))) continue;
     const studyHidden = hidden.has(study.id), open = openStudy === study.id;
     const studyEl = element('div', { class: 'study' + (studyHidden ? ' hidden-study' : '') },
-      studyRow(study, open, () => { openStudy = open ? null : study.id; renderStudies(); }, showHidden ? hideButton(study.id, studyHidden, 'study') : null, null, // opening one closes any other
+      studyRow(study, open, () => { openStudy = open ? null : study.id; renderStudies(); }, showHidden ? hideButton(study.id, studyHidden, 'study') : null, // opening one closes any other
         element('button', { class: 'icon-btn study-practice', title: 'Practice this study', 'aria-label': `Practice ${study.name}`, onclick: e => { e.stopPropagation(); practiceFromStudies(study.chapters); } }, '▶')));
     if (open) studyEl.append(element('div', { class: 'study-chapters', role: 'listbox', 'aria-label': study.name },
       study.chapters.map((c, k) => listed(c.key, c === shown) ? chapterLink(c, k) : null).filter(Boolean)));
@@ -2199,15 +2197,15 @@ function renderStudiesList() {
 }
 
 // The Groups page while a group is edited: every study (several can be open at once, since there's
-// room), each with main color and other color buttons for all its chapters, and its chapters' buttons.
-// (An All row, with white and black buttons for every chapter, was above them until 19 November 2026.)
+// room), and its chapters' buttons. (An All row, with white and black buttons for every chapter, was above
+// them until 19 November 2026, and each study had main color and other color buttons for all its chapters
+// until 25 November 2026: the user removed them, since mostly only a few chapters are adjusted.)
 function renderGroupEditor() {
   if (!editing) return;
   const list = $('edit-studies'), scroll = window.scrollY;
   list.replaceChildren(...library.studies.map(study => {
     const open = editing.open.has(study.id);
-    const box = element('span', { class: 'side-btns' }, groupColorButtons('st-' + study.id, study.chapters.map(c => c.key), study.name));
-    return element('div', { class: 'study' }, studyRow(study, open, () => { open ? editing.open.delete(study.id) : editing.open.add(study.id); renderGroupEditor(); }, null, box),
+    return element('div', { class: 'study' }, studyRow(study, open, () => { open ? editing.open.delete(study.id) : editing.open.add(study.id); renderGroupEditor(); }),
       open ? element('div', { class: 'chapters' }, study.chapters.map(chapterRow)) : null);
   }));
   window.scrollTo(0, scroll); // the page stays where it was
@@ -2271,37 +2269,18 @@ function opener(name, onOpen) {
     onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } } }, name);
 }
 
-// A study's row: its triangle and name (clicking either shows or hides its chapters: toggle), and, after
-// the triangle, its main color and other color buttons (box, on the Groups page) or, after the name, its eye (while
-// the top eye is open).
-function studyRow(study, open, toggle, eye = null, box = null, play = null) {
+// A study's row: its triangle and name (clicking either shows or hides its chapters: toggle), its eye
+// (while the top eye is open) and its practice button (play), on the Studies page.
+function studyRow(study, open, toggle, eye = null, play = null) {
   return element('div', { class: 'row study-row' },
-    triangle(open, ['Show chapters', 'Hide chapters'], toggle), box, eye,
+    triangle(open, ['Show chapters', 'Hide chapters'], toggle), eye,
     element('span', { class: 'name', title: study.name }, opener(study.name, toggle)), play);
 }
 
-// A color button on the Groups page: a dot in its color (half and half for a mixed study), with an X through it when not played
-// (a fainter X when only some of a study's chapters play it). state: 'on', 'off' or 'some'.
-function colorButton(bid, color, state, title, onclick, label, disabled = false) {
-  return element('button', { id: bid, class: 'side-btn', title, disabled, 'aria-label': `${label}: ${title}`,
-    'aria-pressed': state === 'on' ? 'true' : state === 'some' ? 'mixed' : 'false', onclick },
-    element('span', { class: `side-dot ${color}` + (state === 'off' ? ' x' : state === 'some' ? ' x some' : '') }));
-}
-
-// A study's two buttons, in the chapters' columns: main color, then other color. On when every chapter
-// plays it, a fainter X when some do, an X when none do; clicking plays it in all of them, or (when all
-// do) in none. The dots are the color itself when every chapter has the same main color, half white and
-// half black when the study mixes them. Chapters that can't be read are left out.
-const CHAPTER_COLORS = { main: key => mainColor(key), other: key => opposite(mainColor(key)) };
-function groupColorButtons(idBase, keys, label) {
-  const usable = keys.filter(k => !parseChapter(chapterByKey(k)).error);
-  return Object.entries(CHAPTER_COLORS).map(([which, colorOf]) => {
-    const n = usable.filter(k => editing.colors.get(k)?.has(colorOf(k))).length;
-    const state = n && n === usable.length ? 'on' : n ? 'some' : 'off';
-    const colors = new Set(usable.map(colorOf)), dot = colors.size === 1 ? [...colors][0] : 'mixed';
-    const title = state === 'on' ? `All play their ${which} color. Click: none` : state === 'some' ? `Some play their ${which} color. Click: all` : `Click: all play their ${which} color`;
-    return colorButton(`${idBase}-${which}`, dot, state, title, () => setColors(usable, colorOf, state !== 'on'), label, !usable.length);
-  });
+// A chapter's color button on the Groups page: a dot in its color, with an X through it when not played.
+function colorButton(bid, color, on, title, onclick, label) {
+  return element('button', { id: bid, class: 'side-btn', title, 'aria-label': `${label}: ${title}`, 'aria-pressed': String(on), onclick },
+    element('span', { class: `side-dot ${color}` + (on ? '' : ' x') }));
 }
 
 // A chapter's row on the Groups page (indented under its study's name): its main color's button (the
@@ -2316,7 +2295,7 @@ function chapterRow(ch) {
   const button = color => {
     if (parsed.error) return element('button', { id: `${id}-${color}`, class: 'side-btn', disabled: true, 'aria-label': `${ch.name}: ${parsed.error}` }, element('span', { class: 'side-dot off' }));
     const on = !!played?.has(color), which = color === own ? ' (main color)' : ' (other color)';
-    return colorButton(`${id}-${color}`, color, on ? 'on' : 'off', on ? `Plays ${color}${which}. Click: not ${color}` : `Click: play ${color}${which}`,
+    return colorButton(`${id}-${color}`, color, on, on ? `Plays ${color}${which}. Click: not ${color}` : `Click: play ${color}${which}`,
       () => setColor([ch.key], color, !on), ch.name);
   };
   const toggle = () => setPlayed([ch.key], !played);
@@ -2474,14 +2453,12 @@ function setPlayed(keys, on) {
 }
 
 // Plays chapters (by key) from a color, or not, in the group being edited; a chapter with no color left
-// is out of the group. Redraws. setColors takes each chapter's color from colorOf(key) (its main or
-// other color, for a study's buttons).
-const setColor = (keys, color, on) => setColors(keys, () => color, on);
-function setColors(keys, colorOf, on) {
+// is out of the group. Redraws.
+function setColor(keys, color, on) {
   if (!editing) return;
   for (const k of keys) {
     const set = editing.colors.get(k) ?? new Set();
-    on ? set.add(colorOf(k)) : set.delete(colorOf(k));
+    on ? set.add(color) : set.delete(color);
     set.size ? editing.colors.set(k, set) : editing.colors.delete(k);
   }
   renderStudies();

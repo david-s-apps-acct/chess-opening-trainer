@@ -1518,23 +1518,7 @@ function runPresets(app) {
   colorBtn(B, 'white').click(); // Black only, in a White chapter
   $('preset-save-btn').click();
   check('presets: a chapter played only from its other color', [app.presets[0].colors, sidesPlayed(B), sidesPlayed(C)], [{ [B]: ['black'] }, ['black'], ['black']]);
-  // A study's buttons: every chapter's main color, or other color (here the Italian, White's, played as
-  // Black only, and the Sicilian, Black's: a mixed study, half-and-half dots).
-  const studyBtn = which => $('st-AAAAAAAA-' + which), dot = b => b.querySelector('.side-dot').className;
-  const before = [dot(studyBtn('main')), studyBtn('main').title, dot(studyBtn('other')), studyBtn('other').title];
-  studyBtn('main').click(); // every chapter from its main color
-  const allMain = [dot(studyBtn('main')), studyBtn('main').title, dot(colorBtn(B, 'white')), dot(colorBtn(C, 'black'))];
-  studyBtn('main').click(); // none from its main color: the Sicilian out
-  const noMain = [dot(colorBtn(B, 'white')), dot(colorBtn(C, 'black')), row(C).classList.contains('unplayed')];
-  studyBtn('other').click(); // every chapter from its other color
-  const allOther = [dot(colorBtn(B, 'black')), dot(colorBtn(C, 'white')), studyBtn('other').title];
-  studyBtn('other').click(); // none: both out
-  const out = [row(B).classList.contains('unplayed'), row(C).classList.contains('unplayed'), $('edit-summary').textContent];
-  check("groups: a study's buttons set every chapter's main color, or other color; half-and-half dots for a mixed study; a fainter X when only some play it", [before, allMain, noMain, allOther, out], [
-    ['side-dot mixed x some', 'Some play their main color. Click: all', 'side-dot mixed x some', 'Some play their other color. Click: all'],
-    ['side-dot mixed', 'All play their main color. Click: none', 'side-dot white', 'side-dot black'],
-    ['side-dot white x', 'side-dot black x', true], ['side-dot black', 'side-dot white', 'All play their other color. Click: none'],
-    [true, true, '0 chapters selected']]);
+  check("groups: no color buttons on a study's row", document.querySelectorAll('#edit-studies .study-row .side-btn').length, 0);
   $('preset-cancel-btn').click();
   openGroups();
   tick(C, false);
