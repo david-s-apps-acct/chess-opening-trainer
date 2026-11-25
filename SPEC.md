@@ -743,6 +743,7 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Progress tracking
 
+- **Built 25 November 2026 (the user's request): a line through the heading's ↺ while resetting is off** (the chapters' ↺ hidden), as the eye beside it has. *Claude's detail:* it no longer brightens when on, so the two toggles look alike.
 - **Built 25 November 2026 (the user's decisions): resetting a chapter's stats.** Rarely needed, so nothing shows by the chapters until asked for: a small **reset icon (↺) beside the eye by the Studies heading** on the Studies page. Clicking it turns on resetting (as the eye turns on showing hidden studies and chapters); each chapter row then has a ↺, and clicking one asks first, e.g. "Reset your stats for Italian? 34 tries." Clicking the heading's ↺ again turns it off.
   - **What it clears:** the chapter's tries (`history.positions`) and play-throughs (`history.lines`), from both colors, so its positions and lines are untried again (repertoire recall, your expected loss, last tested; spaced repetition brings them up as new). The Lichess statistics and engine evaluations are shared and stay.
   - **Other open tabs** (e.g. one left open for days on an iPad) are told through the browser's storage events and delete the same tries from their copy, so none brings them back when it next saves (see `saveHistory`).

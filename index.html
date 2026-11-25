@@ -311,7 +311,6 @@
   .studies-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .studies-head h2 { margin: 0; }
   .studies-head-btns { display: flex; gap: 4px; }
-  .reset-btn:not(.off) { color: var(--text-strong); } /* resetting is on (see resetting) */
   /* Your studies, each opening to its chapters (numbered as on Lichess), in a box that scrolls, with a scroll
      bar always shown when it scrolls (Safari and Chrome) */
   .studies-list { margin-top: 10px; max-height: 400px; overflow-y: auto; overflow-x: hidden; }
@@ -752,7 +751,7 @@
       <div class="studies-col">
         <div class="panel studies-tile">
           <div class="studies-head"><h2>Studies</h2>
-            <span class="studies-head-btns"><button id="reset-mode-btn" class="icon-btn reset-btn off" aria-pressed="false"></button><button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button></span>
+            <span class="studies-head-btns"><button id="reset-mode-btn" class="icon-btn off" aria-pressed="false"></button><button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button></span>
           </div>
           <div id="studies-list" class="studies-list">
             <div id="studies"></div>
@@ -2499,7 +2498,8 @@ const eyeIcon = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size
   + '<circle cx="12" cy="12" r="2.2" fill="currentColor"/><line class="off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 $('show-hidden-btn').innerHTML = eyeIcon(16);
 const resetIcon = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">`
-  + '<path d="M12 4V1L7 5.5 12 10V6.5a5.5 5.5 0 1 1-5.5 5.5H4a8 8 0 1 0 8-8z" fill="currentColor"/></svg>';
+  + '<path d="M12 4V1L7 5.5 12 10V6.5a5.5 5.5 0 1 1-5.5 5.5H4a8 8 0 1 0 8-8z" fill="currentColor"/>'
+  + '<line class="off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'; // the line only while off, as the eye's
 $('reset-mode-btn').innerHTML = resetIcon(16);
 
 // Resetting a chapter's stats (the user's decisions, 25 November 2026): rarely needed, so only while the
