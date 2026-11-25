@@ -57,8 +57,8 @@
     --accent: #3692e7;
     --accent-text: #ffffff;
     --bad: #cc3333;
-    --critical: #e8742c; /* critical positions (orange) */
-    --critical-text: #eb9a63; /* the same, for text on the dark background */
+    --danger: #e8742c; /* danger positions (orange) */
+    --danger-text: #eb9a63; /* the same, for text on the dark background */
     --box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
   }
   * { box-sizing: border-box; }
@@ -96,6 +96,10 @@
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   /* The Lichess button's red dot (not connected): small, centered on the lowercase letters */
+  .account-menu { position: fixed; z-index: 45; display: flex; flex-direction: column; min-width: 160px; padding: 4px;
+    background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+  .account-menu button { background: none; box-shadow: none; text-align: left; padding: 7px 10px; }
+  .account-menu button:hover { background: var(--accent); color: var(--accent-text); }
   header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: middle; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
@@ -120,8 +124,8 @@
      first; time controls, fastest first) */
   .lock-heading { display: flex; align-items: center; gap: 6px; }
   .tick-columns { display: flex; gap: 48px; font-size: 14px; }
-  .critical-level { margin: 14px 0 0; font-size: 14px; } /* the critical level, under the rating bands */
-  .critical-level select { margin: 0 4px; }
+  .level-setting { margin: 14px 0 0; font-size: 14px; } /* the danger and refutation levels, under the rating bands */
+  .level-setting select { margin: 0 4px; }
   .tick-title { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .tick-column { display: flex; flex-direction: column; gap: 4px; }
   .tick-column label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -222,7 +226,7 @@
   .side-btns { display: inline-flex; flex: none; align-items: center; margin-right: 6px; }
   /* Not played: an X through the color's dot (fainter when only some of a study's chapters play it) */
   .side-dot.x { position: relative; }
-  .side-dot.x::before, .side-dot.x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 17px; height: 2px; border-radius: 1px; background: var(--bad); transform: translate(-50%, -50%) rotate(45deg); }
+  .side-dot.x::before, .side-dot.x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 17px; height: 2px; border-radius: 1px; background: #a35a55; /* a muted red, quieter than --bad */ transform: translate(-50%, -50%) rotate(45deg); }
   .side-dot.x::after { transform: translate(-50%, -50%) rotate(-45deg); }
   .side-dot.x.some::before, .side-dot.x.some::after { opacity: .4; }
   .side-btn:hover:not(:disabled) { background: none; }
@@ -284,7 +288,7 @@
   .glyph { font-weight: 700; margin-left: 4px; cursor: help; }
   #board, #review-board { width: 100%; height: 100%; }
   /* The Studies page: tiles beside the board (the moves, the current one highlighted; the comment; a
-     critical position), and your studies with their chapters. Three columns where there's room (the
+     danger position), and your studies with their chapters. Three columns where there's room (the
      studies, 260 pixels; the board; the tiles), with the page wider than usual; two (the board; the
      tiles with the studies under them); one on a phone. */
   body[data-page=studies] main { max-width: 1440px; }
@@ -306,6 +310,8 @@
   .review-tiles .panel { flex: none; min-width: 0; }
   .studies-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .studies-head h2 { margin: 0; }
+  .studies-head-btns { display: flex; gap: 4px; }
+  .reset-btn:not(.off) { color: var(--text-strong); } /* resetting is on (see resetting) */
   /* Your studies, each opening to its chapters (numbered as on Lichess), in a box that scrolls, with a scroll
      bar always shown when it scrolls (Safari and Chrome) */
   .studies-list { margin-top: 10px; max-height: 400px; overflow-y: auto; overflow-x: hidden; }
@@ -347,7 +353,7 @@
   .win-bar .black-wins { background: #2b2a28; color: #ddd; box-shadow: inset 0 0 0 1px #4a4743; }
   .panel.review-comment { padding: 12px 14px; background: var(--surface-2); font-size: 16px; } /* stands out when shown */
   .review-comment:empty { display: none; }
-  /* A critical position (see criticalAt): its tile on the Studies page, with an orange edge, and the
+  /* A danger position (see dangerAt): its tile on the Studies page, with an orange edge, and the
      orange dot after a move leading to one in the move tree. Orange, as amber is the study authors',
      violet the errors', and teal and gray the masters and Lichess moves'. */
   /* A move of yours below 100% (the violet dot), selected: its errors, with a violet edge */
@@ -362,18 +368,18 @@
   .review-loss h3 { margin: 0 0 4px; font-size: 15px; color: #b39dfa; }
   .review-loss p { margin: 0 0 4px; }
   .review-loss .last-tested { margin: 6px 0 0; }
-  .review-loss .critical-line { color: var(--critical-text); } /* Critical position (you), in the critical positions' orange */
+  .review-loss .danger-line { color: var(--danger-text); } /* Danger position (you), in the danger positions' orange */
   .review-loss .loss-moves div { color: var(--muted); }
-  /* A move's Δ by its loss (see lossDelta): none, below the critical level, at it or more */
+  /* A move's Δ by its loss (see lossDelta): none, below the danger level, at it or more */
   .loss-none { color: #7fb83a; } .loss-some { color: #e0a43a; } .loss-big { color: #e06060; }
-  .panel.review-critical { padding: 12px 14px; border-left: 4px solid var(--critical); }
-  .review-critical:empty { display: none; }
-  .review-critical h3 { margin: 0 0 4px; font-size: 15px; color: var(--critical-text); }
-  .review-critical p { margin: 0 0 4px; }
-  .review-critical .critical-moves div { color: var(--muted); }
-  /* The move tree's dots after a move: violet, your move below 100% repertoire recall; orange, it leads to a critical position */
+  .panel.review-danger { padding: 12px 14px; border-left: 4px solid var(--danger); }
+  .review-danger:empty { display: none; }
+  .review-danger h3 { margin: 0 0 4px; font-size: 15px; color: var(--danger-text); }
+  .review-danger p { margin: 0 0 4px; }
+  .review-danger .danger-moves div { color: var(--muted); }
+  /* The move tree's dots after a move: violet, your move below 100% repertoire recall; orange, it leads to a danger position */
   .tree-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin: 0 2px 2px 1px; vertical-align: middle; }
-  .critical-dot { background: var(--critical); }
+  .danger-dot { background: var(--danger); }
   .weak-dot { background: #8a5cf6; } /* the errors' violet (see BRUSHES) */
   .masters-dot { background: #00a3a3; } /* the masters' teal */
   /* Under the board: Study | Recall | Lichess | Masters, the arrows shown (one at a time), with their colors */
@@ -442,6 +448,7 @@
   .review-view button:first-child { border-radius: 4px 0 0 4px; }
   .review-view button:last-child { border-radius: 0 4px 4px 0; }
   .review-view button[aria-pressed=true], .review-view button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
+  .rare-select { align-self: flex-start; margin-top: 8px; } /* Include / Exclude very rarely reached / Exclude rarely reached (see RARE_CHOICES) */
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .practice-chooser p { margin: 0; font-size: 13px; }
@@ -508,9 +515,11 @@
     <button id="nav-practice">Practice</button>
     <button id="nav-groups">Groups</button>
     <button id="nav-studies">Studies</button>
-    <button id="nav-lichess">Lichess</button>
+    <button id="nav-lichess" aria-haspopup="menu" aria-expanded="false">Lichess</button>
     <button id="nav-help">Help</button>
   </nav>
+  <!-- The account menu, opened by the account button (see showAccountMenu) -->
+  <div id="account-menu" class="account-menu hidden" role="menu" aria-label="Accounts"></div>
 </header>
 
 <main>
@@ -536,7 +545,9 @@
         <div class="actions">
           <button id="connect-btn" class="primary">Connect to Lichess</button>
           <button id="disconnect-btn" class="primary">Disconnect</button>
+          <button id="remove-account-btn" class="primary" title="Delete this account's studies, stats and settings on this device">Remove from this device</button>
         </div>
+        <p id="add-account-note" class="muted hidden">Lichess connects whoever is signed in on lichess.org: sign in there as the new account first.</p>
         <div id="token-box" class="hidden">
           <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
           <form id="token-form" class="token-row">
@@ -558,9 +569,9 @@
           <button id="games-apply" class="primary">Apply</button>
           <button id="games-cancel" class="primary">Cancel</button>
         </div>
-        <p class="critical-level"><label for="critical-level"><span data-tip="How much is lost on average, by the engine: by the Lichess moves played (Lichess), or by your first tries (you). Lower: more positions count as critical.">Critical positions: expected eval loss ≥</span>
-          <select id="critical-level"></select></label></p>
-        <p class="critical-level"><label for="refutation-level"><span data-tip="How much a Lichess move must lose, by the engine, to be worth learning to refute (the Refutations drill).">Refutable moves: eval loss ≥</span>
+        <p class="level-setting"><label for="danger-level"><span data-tip="How much is lost on average, by the engine: by the Lichess moves played (Lichess), or by your first tries (you). Lower: more positions count as danger positions.">Danger positions: expected eval loss ≥</span>
+          <select id="danger-level"></select></label></p>
+        <p class="level-setting"><label for="refutation-level"><span data-tip="How much a Lichess move must lose, by the engine, to be worth learning to refute (the Refutations drill).">Refutable moves: eval loss ≥</span>
           <select id="refutation-level"></select></label></p>
         <p id="lichess-moves" class="muted after-actions"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
@@ -636,6 +647,7 @@
         <div class="panel">
           <h2>Positions</h2>
           <div id="positions-choice" class="choices" role="radiogroup" aria-label="Positions"></div>
+          <select id="rare-select" class="rare-select" aria-label="Rarely reached positions"></select>
           <button id="show-positions-btn" class="next-link" title="With All, the positions most likely to come up next, and their chances">Likely next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
@@ -698,7 +710,7 @@
   <!-- Studies: your studies, and a chapter on a board (see Studies page) -->
   <section id="studies-screen" class="hidden">
     <!-- The board, with the Study | Recall | Lichess | Masters switch under it; beside it the moves, the annotation
-         and comment, and a critical position; your studies and their chapters to the left of the board where
+         and comment, and a danger position; your studies and their chapters to the left of the board where
          there's room, else under the tiles (see .review-layout) -->
     <div class="review-layout">
       <div class="board-col">
@@ -727,7 +739,7 @@
         <div id="review-comment" class="panel review-comment"></div>
         <div id="review-loss" class="panel review-loss" aria-live="polite"></div>
         <div id="review-masters" class="panel review-masters" aria-live="polite"></div>
-        <div id="review-critical" class="panel review-critical" aria-live="polite"></div>
+        <div id="review-danger" class="panel review-danger" aria-live="polite"></div>
       </div>
       <!-- The color key, opened by the ? at the end of the arrows switch (see renderColorKey) -->
       <div id="color-key" class="color-key hidden" role="dialog" aria-label="Color key">
@@ -739,7 +751,7 @@
       <div class="studies-col">
         <div class="panel studies-tile">
           <div class="studies-head"><h2>Studies</h2>
-            <button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button>
+            <span class="studies-head-btns"><button id="reset-mode-btn" class="icon-btn reset-btn off" aria-pressed="false"></button><button id="show-hidden-btn" class="icon-btn off" aria-pressed="false"></button></span>
           </div>
           <div id="studies-list" class="studies-list">
             <div id="studies"></div>
@@ -802,7 +814,7 @@
             <li><b>Repertoire recall</b>: how often you were right first time in a position, over your last 10 tries (see Practice). <b>Low recall</b>: below 75%.</li>
             <li><b>Error</b>: any move you play that isn't one of your study's moves. Errors cost repertoire recall.</li>
             <li><b>Mistake</b>: a move a study marks <b>?</b> (mistake), <b>??</b> (blunder) or <b>?!</b> (dubious). Not the same as an error.</li>
-            <li><b>Critical position (Lichess)</b>: one where the Lichess moves played there lose 0.5 or more of the engine's evaluation on average (its <b>Lichess expected loss</b>). <b>Critical position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
+            <li><b>Danger position (Lichess)</b>: one where the Lichess moves played there lose 0.5 or more of the engine's evaluation on average (its <b>Lichess expected loss</b>). <b>Danger position (you)</b>: one where your first tries do (<b>your expected loss</b>). The level is yours to set; see Studies.</li>
             <li><b>Masters move</b>: one played in 5% or more of the master games (over the board, players rated 2200+ FIDE) in that position, where the position has at least 20 master games.</li>
             <li><b>Lichess move</b>: a move played 5% of the time or more in rated Lichess games (at your chosen ratings and time controls) in that position.</li>
             <li><b>Position reached</b>: how many times a position was reached in rated Lichess games, and in master games, e.g. "Reached 23k times (Lichess) 46 times (Masters)".</li>
@@ -820,7 +832,7 @@
           <li><b>Practice</b>, at the top, decides what can be practiced: the chapters of the chosen group.</li>
           <li>Spaced repetition chooses what comes next, at random but weighted; <b>Likely next</b>, in each tile, lists what's most likely to come up. Click a row to open it on the Studies page (a line at its last position).</li>
           <li><b>Lines</b>: whole lines from move 1, picked by spaced repetition (below): <b>All lines</b>, or <b>Main lines</b>, which keeps to the main moves, for both sides, with only your main move correct. Each tile has its own <b>Start practice</b>.</li>
-          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Critical (you)</b> or <b>Critical (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1.0 by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall.</li>
+          <li><b>Positions</b>: <b>All</b> (one of your moves at a time, from move 3, picked by spaced repetition), or a drill. A <b>drill</b> practices only your positions with <b>Low recall</b> (below 75%), <b>Danger (you)</b> or <b>Danger (Lichess)</b> (see Studies), each once a round, as single positions from move 1, the order set by spaced repetition; the number by each says how many there are. During a drill the heading shows how far through you are, e.g. "Low recall · 3 of 12"; at the end, <b>Start again</b> runs it again with the positions that qualify by then. <b>Refutations</b> practices the positions after an opponent's Lichess move (5% or more) that loses the refutation level or more (1.0 by default; set on the Lichess page): where your study has the move, your study's answer is right; where it doesn't, the engine's best move, or one of its best 3 within 0.5 of it ("Not the engine's move" otherwise). Those positions aren't in your study, so they never count as repertoire recall. Under the choices, <b>Exclude very rarely reached</b> or <b>Exclude rarely reached</b> leaves out positions your opponents lead you to in fewer than 1 game in 1,000 or 1 in 100 (Lichess): the shares of their moves on the way, multiplied (your own moves don't count). Positions without statistics yet are kept. Lines are never left out.</li>
           <li>Press <b>Start practice</b>. Practice carries on until <b>End practice</b>. (You can also practice one chapter or study from the Studies page.)</li>
           <li>During a line, the chapter and the position's name are hidden (★★★★★★), so they don't give the answer away. Click the stars to see one; both show when the line ends.</li>
           <li>Play your moves on the board. Any of your study's moves is correct (not one it marks ?, ?? or ?!), and the line follows the one you play; with Main lines, just the main move. Keep trying as long as you like. Each error gets a short message.</li>
@@ -876,12 +888,12 @@
           </ul>
           <details>
             <summary>How the priority is worked out</summary>
-            <p><b>Priority = frequency × critical × need</b>.</p>
+            <p><b>Priority = frequency × danger × need</b>.</p>
             <ul>
               <li><b>Frequency</b>: 0.2 to 1, by the shares of the opponent's moves on the way, multiplied (a line: all of them; your own moves don't count, so a rare choice of yours doesn't sink its lines), on a log scale; 0.6 until the statistics download.</li>
               <li><b>Need</b>: 6 if never tried; otherwise <b>weakness × due</b>.</li>
               <li><b>Weakness</b>: 1 + 2 × (1 − recall): 1 at 100%, 3 at 0%.</li>
-              <li><b>Critical</b>: ×2 for a critical position of yours (a line: any of yours in it; see Studies).</li>
+              <li><b>Danger</b>: ×2 for a danger position of yours (a line: any of yours in it; see Studies).</li>
               <li><b>Due</b>: days since last tested ÷ the review interval, between 0.1 and 3 (3 if unknown). The interval is 2<sup>7 × recall</sup> days: 1 day at 0%, about 11 at 50%, about 30 at 70%, 128 at 100%.</li>
               <li><b>Last tested</b>: a line counts only when played all the way through, from move 1 (not when skipped or ended early); a position whenever it's tried, in a line or on its own, so it can be more recent than any line through it. A line uses its weakest position's repertoire recall (untried positions count as 0%); a position, its own.</li>
             </ul>
@@ -910,23 +922,24 @@
         <h2>Studies</h2>
         <ul>
           <li>The <b>Studies</b> page shows a chapter on a board (offline too), with your studies and their chapters beside it: click a study's name or ▸ to show its chapters, and a chapter to open it. The header's <b>Studies</b> button goes back to the chapter and position you last looked at.</li>
-          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Recall</b> (your repertoire recall here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire recall; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Recall also the error's kind, e.g. "(masters move)". With Recall, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the critical level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Critical position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
+          <li>Under the board, choose the arrows (see Arrow colors): <b>Study</b> (your study's moves and its own arrows and circles), <b>Masters</b> (the masters moves, and your study's other moves in white), <b>Lichess</b> (the Lichess moves), each with how often it's played, or <b>Recall</b> (your repertoire recall here: the errors you played first in this position, each with the share of your last 10 tries it began, e.g. "40%", and your study's moves, the main one with the repertoire recall; together they make 100%). Hover over the square an arrow points to: the move and how much it changes the engine's evaluation compared with the best move, for the side playing it, e.g. "♘c3 · Δ−0.5" (Δ0.0: as good as the best); with Recall also the error's kind, e.g. "(masters move)". With Recall, at a position of yours, a tile gives <b>your expected loss</b> there: your last 10 tries, each by its first move, weighted by how much that move changes the evaluation against the engine's best move e.g. "Δ−0.4 (last 4 tries)", when you last tested it, and each move's share and Δ: <span class="loss-none">green</span> for Δ0.0, <span class="loss-some">amber</span> for a loss below the danger level (0.5 by default), <span class="loss-big">red</span> for one at it or more. The Danger position tile colors its moves the same way. Beside the board: the position's name and the moves; under them, with <b>Masters</b> or <b>Lichess</b>, how often that database's games reach the position and a bar of their results (White wins, draws, Black wins; Lichess at your chosen ratings and time controls) and the move's annotation (e.g. !) and comment, then any comment the study puts before a move played here, e.g. "3. ♗b5: Not in this repertoire." ←/→ step through the moves, ↑/↓ change chapter.</li>
           <li><b>Engine</b>: the bar right of the board is Stockfish's evaluation of the position, as on Chess.com: White's share fills from White's side, and the evaluation, from White's side (e.g. +0.3; #4: White mates in 4; #−3: Black mates in 3), is at the better side's end; hover for the depth. Gray until it's evaluated. Every position in your studies is evaluated once (depth 20), in the background, the one on the board first; the Lichess page shows the progress. Only in the online version, not when the app is opened from disk.</li>
           <li>The ▶ on a chapter's or study's row (shown on hover) practices all its lines, by spaced repetition; your group doesn't change; <b>End practice</b> brings you back here.</li>
           <li>During practice, the small board icon after the study's name ends practice and opens the chapter here, at the position on the board.</li>
-          <li><b>Critical positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 or more of the engine's evaluation. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Critical positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
+          <li><b>Danger positions (Lichess)</b>: where the Lichess moves played (5% or more of the games, at your chosen ratings and time controls; the position needs 50 games) lose, on average, 0.5 or more of the engine's evaluation. Each move's loss is how far it drops the engine's evaluation below the engine's best move, for the side playing it (a mate counts as 10); the <b>expected loss</b> adds them up, each weighted by how often it's played: the <b>Lichess expected loss</b>. At either side's move. Set the level (0.2 to 1.5) on the Lichess page, under the rating bands: what matters depends on your level. An orange dot after a move in the tree leads to one; on the board (with Lichess), a tile under the comment gives the Lichess expected loss, e.g. "Δ−0.6", and the moves that lose 0.1 or more, e.g. "♘c3 22% · Δ−1.2". A position is judged once the engine has evaluated it and the positions after its Lichess moves. <b>Danger positions (you)</b>: positions of yours where your expected loss (see Recall) is the same level or more; with Recall, an orange dot, and a line in the Your expected loss tile.</li>
           <li>The <b>?</b> at the end of the arrows switch shows what every color means; the current view's rows stand out.</li>
         </ul>
         <details>
           <summary>Hiding studies and chapters</summary>
           <p>The eye beside the <b>Studies</b> heading shows hidden studies and chapters (in gray), each with its own eye: click it to hide or unhide that study or chapter. Click the eye beside Studies again to put them out of sight. Hiding only tidies the list: it doesn't change what's practiced.</p>
+          <p>The <b>↺</b> beside it resets a chapter's stats: click it, then the ↺ by a chapter (only those you've tried have one), and confirm. Its tries and play-throughs are forgotten, from both colors, so its positions and lines are untried again. Restoring or merging an older backup brings them back.</p>
         </details>
         <details>
           <summary>The move tree</summary>
           <ul>
             <li>The main line runs along the top; <b>+</b> after a move opens its variations, <b>−</b> closes them. <b>+ All</b>, beside the move buttons, opens every variation; <b>− All</b> closes them.</li>
-            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, <b>low recall</b> there: your repertoire recall is below 75% (from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a critical position (Lichess, or with Recall, you). Select the move to see a tile about that position.</li>
-            <li>Each view shows its own dots and tiles: <b>Recall</b> the violet ones and Critical positions (you), <b>Masters</b> the teal ones, <b>Lichess</b> Critical positions (Lichess). <b>Study</b> keeps to what's in your study, with none.</li>
+            <li>Dots after a move are about the position it leads to (for your first move, before move 1): <b>violet</b>, <b>low recall</b> there: your repertoire recall is below 75% (from either side once you've played it); <b>teal</b>, your study's main move there isn't a masters move (with 20 master games or more there; not for a move it marks ?, ?? or ?!); <b>orange</b>, a danger position (Lichess, or with Recall, you). Select the move to see a tile about that position.</li>
+            <li>Each view shows its own dots and tiles: <b>Recall</b> the violet ones and Danger positions (you), <b>Masters</b> the teal ones, <b>Lichess</b> Danger positions (Lichess). <b>Study</b> keeps to what's in your study, with none.</li>
             <li>Moves your study marks with a glyph take its color, as on Lichess (<span class="quality-good">!</span> green, <span class="quality-mistake">?</span> orange).</li>
             <li>Hover over a move for a small board showing what clicking it shows: the position after it, with the arrows of the view chosen. Click a move to show it on the big board, with the details.</li>
             <li>A comment the study puts before a move (e.g. at the start of a variation) has its own bubble before the move.</li>
@@ -942,6 +955,7 @@
           <li><b>Move statistics</b>: how many positions have their move statistics and masters statistics so far, and the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser; <b>Merge backup</b> adds one's history to yours, e.g. from another device. Backups never include your token.</li>
           <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
+          <li><b>Sharing a device:</b> each Lichess account has its own studies, stats, groups and settings here (the statistics and evaluations are shared). The header shows whose they are; click it to switch, or <b>Add account</b> (sign in on lichess.org as that account first). <b>Remove from this device</b> deletes an account's data here. Restoring or merging another account's backup offers to put it in that account.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept.</li>
         </ul>
         <details>
@@ -983,20 +997,44 @@ const MAX_LINES_PER_CHAPTER = 5000;
 // preset, the hidden studies and chapters, and your history. IndexedDB (database "chess-opening-trainer"): the studies
 // fetched from Lichess (store "library"), the move statistics for each board position (store
 // "moveStats", keyed by EPD) and Stockfish's evaluation of each (store "evals", keyed by EPD). They can be large.
-const store = {
+//
+// Profiles (the user's decisions, 25 November 2026): several people can share a device, each with their
+// own Lichess account. Each account's data is kept apart: localStorage names "cot.<account>.<name>"
+// (PROFILE_KEYS), and its studies under "library:<account>" in IndexedDB. The move statistics and the
+// evaluations are shared (by position, the same for anyone). Before the first connection there's no
+// account yet (account null): its data has the plain names ("cot.token", "library") and becomes the
+// account's once it's known (see becomeAccount). "cot.account" (the account used last: the app opens on
+// it), "cot.accounts" (every account on this device) and "cot.login" (while logging in) belong to the
+// device, not an account.
+const PROFILE_KEYS = ['token', 'tokenSavedAt', 'settings', 'presets', 'chosenPreset', 'hidden', 'history', 'lastBackup'];
+const DEVICE_KEYS = new Set(['account', 'accounts', 'login']);
+const storageName = (key, who) => 'cot.' + (who && !DEVICE_KEYS.has(key) ? who + '.' : '') + key;
+const libraryName = who => who ? 'library:' + who : 'library';
+// The stored data of an account (who; null before the first connection).
+const storeOf = who => ({
   get(key, fallback) {
     try {
-      const v = localStorage.getItem('cot.' + key);
+      const v = localStorage.getItem(storageName(key, who));
       return v == null ? fallback : JSON.parse(v);
     } catch { return fallback; }
   },
   set(key, value) { // false when it can't be saved (e.g. storage full)
-    try { localStorage.setItem('cot.' + key, JSON.stringify(value)); return true; } catch (e) { console.warn('localStorage write failed', e); return false; }
+    try { localStorage.setItem(storageName(key, who), JSON.stringify(value)); return true; } catch (e) { console.warn('localStorage write failed', e); return false; }
   },
   remove(key) {
-    try { localStorage.removeItem('cot.' + key); } catch {}
+    try { localStorage.removeItem(storageName(key, who)); } catch {}
   },
+});
+// This account's (and the device's).
+const store = {
+  get: (key, fallback) => storeOf(account).get(key, fallback),
+  set: (key, value) => storeOf(account).set(key, value),
+  remove: key => storeOf(account).remove(key),
 };
+const validName = v => typeof v === 'string' && v.length > 0;
+let account = validName(storeOf(null).get('account')) ? storeOf(null).get('account') : null;
+let accounts = (v => Array.isArray(v) ? v.filter(validName) : [])(storeOf(null).get('accounts'));
+const saveAccounts = list => { accounts = list; storeOf(null).set('accounts', list); };
 
 let database = null;
 
@@ -1023,13 +1061,13 @@ async function inDatabase(storeName, mode, work) {
   });
 }
 
-async function loadLibrary() {
-  const req = await inDatabase('library', 'readonly', s => s.get('library'));
+async function loadLibrary(who = account) {
+  const req = await inDatabase('library', 'readonly', s => s.get(libraryName(who)));
   return req.result || null;
 }
 
 async function saveLibrary() {
-  try { await inDatabase('library', 'readwrite', s => s.put(library, 'library')); }
+  try { await inDatabase('library', 'readwrite', s => s.put(library, libraryName(account))); }
   catch (e) { console.warn('IndexedDB write failed', e); }
   keepData();
 }
@@ -1128,7 +1166,7 @@ function saveHistory({ replace = false } = {}) {
 }
 // Tries saved by another tab or window, added to this one's copy as they're saved.
 window.addEventListener('storage', e => {
-  if (e.key !== 'cot.history' || !e.newValue) return;
+  if (e.key !== storageName('history', account) || !e.newValue) return;
   let saved = null;
   try { saved = checkedHistory(JSON.parse(e.newValue)); } catch {}
   if (saved) history = mergedHistory(history, saved);
@@ -1149,7 +1187,15 @@ const ARROW_VIEWS = ['study', 'errors', 'lichess', 'masters']; // the Studies pa
 // Settings (chosen on the Practice and Lichess pages). (The error penalties were a setting until 3
 // November 2026, then fixed; since 6 November attempts are just right or wrong. A saved setting is ignored.)
 // The Positions tile's choices: spaced repetition, or one of the drills (see DRILLS, with the same keys).
-const POSITION_CHOICES = ['spaced', 'lowRecall', 'criticalYou', 'criticalLichess', 'refutations'];
+const POSITION_CHOICES = ['spaced', 'lowRecall', 'dangerYou', 'dangerLichess', 'refutations'];
+// The Positions tile's dropdown (the user's decision, 25 November 2026): positions rarely reached are kept,
+// or left out, judged by how likely your opponents are to lead you there (see isRarelyReached). Each: its
+// label, the chance below which a position is left out, and its hover.
+const RARE_CHOICES = {
+  include: { label: 'Include rarely reached', below: null, title: 'Every position' },
+  veryRare: { label: 'Exclude very rarely reached', below: 0.001, title: 'Leaves out positions reached in fewer than 1 game in 1,000 (Lichess)' },
+  rare: { label: 'Exclude rarely reached', below: 0.01, title: 'Leaves out positions reached in fewer than 1 game in 100 (Lichess)' },
+};
 const DEFAULT_SETTINGS = {
   sounds: false,
   games: null, // { ratings, speeds } the move statistics come from; null until chosen (see chooseDefaultGames)
@@ -1157,15 +1203,16 @@ const DEFAULT_SETTINGS = {
   practice: {
     lines: 'all', // the Lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
     positions: 'spaced', // the Positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
+    rare: 'include', // the Positions tile's rarely reached positions: kept, or left out (see RARE_CHOICES)
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
   review: { view: 'study' },
-  // A position is critical when its expected loss is this many pawns or more (see criticalAt): 0.2–1.5, in tenths.
-  criticalLevel: 0.5,
+  // A position is a danger position when its expected loss is this many pawns or more (see dangerAt): 0.2–1.5, in tenths.
+  dangerLevel: 0.5,
   // A Lichess move is refutable when it drops the evaluation this many pawns or more (see refutationItems): 0.5–3.0.
   refutationLevel: 1,
 };
-const CRITICAL_LEVELS = Array.from({ length: 14 }, (_, k) => (k + 2) / 10);
+const DANGER_LEVELS = Array.from({ length: 14 }, (_, k) => (k + 2) / 10);
 const REFUTATION_LEVELS = Array.from({ length: 26 }, (_, k) => (k + 5) / 10);
 
 // Saved settings, with anything missing or invalid replaced by its default.
@@ -1178,9 +1225,10 @@ function checkedSettings(saved) {
     practice: {
       lines: ['all', 'main'].includes(p.lines) ? p.lines : dp.lines,
       positions: POSITION_CHOICES.includes(p.positions) ? p.positions : dp.positions,
+      rare: Object.hasOwn(RARE_CHOICES, p.rare) ? p.rare : dp.rare,
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
-    criticalLevel: CRITICAL_LEVELS.includes(v.criticalLevel) ? v.criticalLevel : d.criticalLevel,
+    dangerLevel: DANGER_LEVELS.includes(v.dangerLevel) ? v.dangerLevel : d.dangerLevel,
     refutationLevel: REFUTATION_LEVELS.includes(v.refutationLevel) ? v.refutationLevel : d.refutationLevel,
   };
 }
@@ -1198,6 +1246,7 @@ const saveSettings = () => store.set('settings', settings);
 // The studies list's open/closed state (not remembered).
 let openStudy = null;                // the study (id) whose chapters are listed: one at a time
 let showHidden = false;              // the top eye: hidden studies and chapters are listed (in gray)
+let resetting = false;               // the top ↺: each chapter with tries has a ↺ to reset its stats (one mode at a time with showHidden)
 
 // ---------- Page helpers ----------
 
@@ -1443,14 +1492,17 @@ function chooseDefaultGames() {
 }
 
 // Puts studies just fetched in place of the stored ones, and saves them. Your history is kept, even
-// for positions no longer in them (it's ignored there, and comes back if they do).
+// for positions no longer in them (it's ignored there, and comes back if they do). False when they're
+// another account's: the app switches to it (see becomeAccount).
 async function useStudies(fetched) {
+  if (!await becomeAccount(fetched.username)) return false; // another account's: switching to it
   if (library) moveLinesOfTurnedChapters(library, fetched);
   library = fetched;
   chooseDefaultGames();
   await saveLibrary();
   forgetParsedChapters();
   pruneAfterRefresh();
+  return true;
 }
 
 // Fetching your studies when there are none yet (connecting), with "Fetching…"
@@ -1463,7 +1515,7 @@ async function fetchStudies({ welcome = false } = {}) {
   setUpdateStatus('Fetching your studies from Lichess…');
   try {
     const fetched = await downloadStudies();
-    await useStudies(fetched);
+    if (!await useStudies(fetched)) return;
     if (!welcome) startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Status card says what was fetched, and when
     if (welcome) showWelcomeReady();
@@ -1491,7 +1543,7 @@ async function syncStudies() {
     } else if (session) {
       waitingStudies = fetched;
       return;
-    } else await useStudies(fetched);
+    } else if (!await useStudies(fetched)) return;
     refreshPage();
   } catch (e) {
     if (e.status === 401) setUpdateStatus(e.message, true);
@@ -1608,6 +1660,86 @@ async function finishLogIn() {
     saveToken((await res.json()).access_token);
   } catch (e) { return fail(errorText(e)); }
   return true;
+}
+
+// ---------- Accounts ----------
+// Switching between the accounts on this device (see Profiles, in Storage), from the header's account
+// menu; Add account opens a new, empty profile to connect; Remove from this device (the Lichess page)
+// deletes one. Switching opens the app again on the account, so everything is read afresh.
+
+function switchAccount(name) {
+  storeOf(null).set('account', name);
+  location.reload();
+}
+
+// Deletes an account's data on this device (not the shared statistics and evaluations).
+async function clearProfile(who) {
+  for (const key of PROFILE_KEYS) storeOf(who).remove(key);
+  try { await inDatabase('library', 'readwrite', s => s.delete(libraryName(who))); } catch (e) { console.warn('IndexedDB write failed', e); }
+}
+
+// The account whose studies were just fetched (name) becomes this profile's, if it has none yet and
+// isn't on this device: what's here (the token, and anything restored) becomes its. Otherwise, if it's
+// another account (already on this device, or signed in on lichess.org instead of this one), the
+// connection goes to that account and the app switches to it. True when the studies belong here, false
+// when the app is switching.
+async function becomeAccount(name) {
+  if (name === account) return true;
+  if (!account && !accounts.includes(name)) {
+    for (const key of PROFILE_KEYS) {
+      const value = storeOf(null).get(key);
+      if (value === undefined) continue;
+      storeOf(name).set(key, value);
+      storeOf(null).remove(key);
+    }
+    const moved = await loadLibrary(null);
+    if (moved) {
+      try { await inDatabase('library', 'readwrite', s => { s.put(moved, libraryName(name)); s.delete(libraryName(null)); }); }
+      catch (e) { console.warn('IndexedDB write failed', e); }
+    }
+    account = name;
+    storeOf(null).set('account', name);
+    saveAccounts([...accounts, name]);
+    return true;
+  }
+  storeOf(name).set('token', token);
+  storeOf(name).set('tokenSavedAt', Date.now());
+  if (account) { store.remove('token'); store.remove('tokenSavedAt'); } // not this account's
+  else await clearProfile(null);
+  if (!accounts.includes(name)) saveAccounts([...accounts, name]);
+  switchAccount(name);
+  return false;
+}
+
+// The header's account button: the account's name (Lichess before there's one), with a dot when not
+// connected; it opens the account menu: the other accounts on this device (a click switches), Add
+// account and Lichess page. With no account on this device yet, it opens the Lichess page.
+function showAccountMenu(open) {
+  const menu = $('account-menu');
+  menu.classList.toggle('hidden', !open);
+  $('nav-lichess').setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  const item = (text, title, onclick) => element('button', { role: 'menuitem', title, onclick }, text);
+  menu.replaceChildren(
+    ...accounts.filter(a => a !== account).map(a => item(a, `Switch to ${a}`, () => switchAccount(a))),
+    item('Add account', 'Connect another Lichess account on this device', () => switchAccount(null)),
+    item('Lichess page', 'Your Lichess account, studies and statistics', () => { showAccountMenu(false); showLichess(); }));
+  placePopup(menu, $('nav-lichess'));
+}
+const accountMenuOpen = () => !$('account-menu').classList.contains('hidden');
+document.addEventListener('click', e => { if (accountMenuOpen() && !e.target.closest('#account-menu, #nav-lichess')) showAccountMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && accountMenuOpen()) showAccountMenu(false); });
+
+// Remove from this device (the Lichess page), after "Are you sure?": the account's token, studies and
+// stats here are deleted (a connection made by logging in is canceled on Lichess too, as Disconnect
+// does), and the app switches to another account on this device, or to none.
+async function removeAccount() {
+  if (!account || !confirm(`Remove ${account} from this device? Its studies, stats and settings here are deleted. Save a backup first to keep them.`)) return;
+  if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
+  await clearProfile(account);
+  const rest = accounts.filter(a => a !== account);
+  saveAccounts(rest);
+  switchAccount(rest[0] ?? null);
 }
 
 // ---------- Chapters and lines ----------
@@ -1893,8 +2025,8 @@ function isLichessMove(epd, s) {
   return !!n && gamesWith(st, s) / n >= LICHESS_SHARE;
 }
 
-// A critical position (the user's definition, 19 November 2026): one where the Lichess moves played there
-// lose, on average, the critical level or more (settings.criticalLevel, 0.5 pawns by default): its
+// A danger position (the user's definition, 19 November 2026): one where the Lichess moves played there
+// lose, on average, the danger level or more (settings.dangerLevel, 0.5 pawns by default): its
 // expected loss, the sum over its Lichess moves (5% or more of the games, at the chosen ratings and time
 // controls) of each move's share of the games × how many pawns it drops the engine's evaluation, compared
 // with the engine's best move there, for the side playing it (mate counts as 10 pawns; a drop is never
@@ -1903,7 +2035,7 @@ function isLichessMove(epd, s) {
 // Claude's details: the position needs 50 games or more. A Lichess move among the engine's best 3 moves
 // takes its evaluation from that line; any other needs the position after it evaluated (see
 // extraPositions). Until every one is known, the expected loss isn't (null).
-const CRITICAL_MIN_GAMES = 50, MATE_PAWNS = 10;
+const DANGER_MIN_GAMES = 50, MATE_PAWNS = 10;
 // An evaluation line in pawns from White's side (mate as 10 pawns).
 const pawnsOf = line => 'mate' in line ? Math.sign(line.mate || -1) * MATE_PAWNS : line.cp / 100;
 // The position on the board from a position's EPD, for working out its moves.
@@ -1914,7 +2046,7 @@ const positionOf = epd => variant.setupPosition('chess', fen.parseFen(epd + ' 0 
 // ±10, stalemate 0; else undefined) }], most played first; [] without statistics or with fewer than 50 games.
 function lichessMovesAt(epd) {
   const st = lichessGamesAt(epd), n = st && totalGames(st);
-  if (!n || n < CRITICAL_MIN_GAMES) return [];
+  if (!n || n < DANGER_MIN_GAMES) return [];
   return judgedMoves(epd, st.moves.filter(m => totalGames(m) / n >= LICHESS_SHARE), m => totalGames(m) / n);
 }
 // The masters moves in a position (see isMasterMove), the same way, for the Masters view's evaluations.
@@ -1936,13 +2068,13 @@ function judgedMoves(epd, list, shareOf) {
 
 // A position's expected loss: { loss (pawns), moves: [{ san, share, drop (pawns) }] } (most played
 // first), or null while it can't be known (no statistics, under 50 games, or evaluations still to come).
-// Cached until the statistics, the evaluations or the level change (forgetCritical).
-const criticalCache = new Map();
-const forgetCritical = () => criticalCache.clear();
+// Cached until the statistics, the evaluations or the level change (forgetDanger).
+const dangerCache = new Map();
+const forgetDanger = () => dangerCache.clear();
 function expectedLossAt(epd) {
-  if (criticalCache.has(epd)) return criticalCache.get(epd);
+  if (dangerCache.has(epd)) return dangerCache.get(epd);
   const answer = workOutExpectedLoss(epd);
-  criticalCache.set(epd, answer);
+  dangerCache.set(epd, answer);
   return answer;
 }
 function workOutExpectedLoss(epd) {
@@ -1992,7 +2124,7 @@ function moveDelta(epd, pos, move) {
   if (!after) return undefined;
   return Math.min(0, (pos.turn === 'white' ? 1 : -1) * (pawnsOf(after) - pawnsOf(ev.lines[0])));
 }
-// "Δ0.0", "Δ−0.5": a change in evaluation (see moveDelta; the Critical tile's drops too).
+// "Δ0.0", "Δ−0.5": a change in evaluation (see moveDelta; the Danger tile's drops too).
 const deltaText = d => { const t = Math.abs(d).toFixed(1); return t === '0.0' ? 'Δ0.0' : `Δ−${t}`; };
 
 // The positions after the Lichess moves of the study positions (given) that the engine also needs, for
@@ -2041,20 +2173,20 @@ function evaluateAfterError(pos, move) {
   else startEvaluations();
 }
 
-// The position's expected loss if it's critical (at the critical level or more), else null.
-function criticalAt(epd) {
+// The position's expected loss if it's a danger position (at the danger level or more), else null.
+function dangerAt(epd) {
   const e = expectedLossAt(epd);
-  return e && e.loss >= settings.criticalLevel - 1e-9 ? e : null;
+  return e && e.loss >= settings.dangerLevel - 1e-9 ? e : null;
 }
 
-// A Critical position (you) (the user's definition, 20 November 2026): one of your positions whose your
-// expected loss (see yourExpectedLoss) is the critical level or more, as a Critical position (Lichess) is by
-// its Lichess expected loss (see criticalAt). The Recall view's orange dot and the Your expected loss tile's
+// A Danger position (you) (the user's definition, 20 November 2026): one of your positions whose your
+// expected loss (see yourExpectedLoss) is the danger level or more, as a Danger position (Lichess) is by
+// its Lichess expected loss (see dangerAt). The Recall view's orange dot and the Your expected loss tile's
 // line; null until known (no tries, or evaluations still to come) or below the level.
-function isYourCriticalPosition(node, own) {
-  if (!node.children.some(c => isShownAsYours(c, own))) return false; // (judged from saved evaluations, as criticalAt)
+function isYourDangerPosition(node, own) {
+  if (!node.children.some(c => isShownAsYours(c, own))) return false; // (judged from saved evaluations, as dangerAt)
   const e = yourExpectedLoss(node);
-  return !!e && !e.pending && e.loss >= settings.criticalLevel - 1e-9;
+  return !!e && !e.pending && e.loss >= settings.dangerLevel - 1e-9;
 }
 
 // Saves this line's attempts into your history, each under its position.
@@ -2120,6 +2252,7 @@ function renderStudies() {
 function renderStudiesList() {
   const container = $('studies'), shown = review?.ch;
   setToggle('show-hidden-btn', showHidden, showHidden ? 'Stop showing hidden studies and chapters' : 'Show hidden studies and chapters');
+  setToggle('reset-mode-btn', resetting, resetting ? 'Stop resetting stats' : 'Reset stats');
   // Listed: what isn't hidden (all of it with the eye open), and the chapter on the board.
   const listed = (id, isShown) => showHidden || !hidden.has(id) || isShown;
   container.replaceChildren();
@@ -2170,6 +2303,7 @@ function chapterLink(c, k) {
   return element('div', { class: 'review-chapter' + (current ? ' current' : '') + (p.error ? ' unavailable' : '') + (isHidden ? ' hidden-chapter' : ''), role: 'option', 'aria-selected': String(current),
     'aria-disabled': p.error ? 'true' : null, onclick: p.error ? null : () => openReview(c) },
     showHidden ? hideButton(c.key, isHidden, 'chapter') : null, // on the left, so a long name can't hide it
+    resetting && chapterTries(c.key) ? resetButton(c) : null, // likewise
     element('span', { class: 'review-chapter-num' }, `${k + 1}.`),
     element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, c.name),
     p.error ? null : element('button', { class: 'icon-btn study-practice', title: 'Practice this chapter', 'aria-label': `Practice ${c.name}`,
@@ -2182,7 +2316,7 @@ function chapterLink(c, k) {
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
 // Low recall (the user's decision, 20 November 2026; "weak recall" for a few hours): a position of yours (your move there) whose
 // repertoire recall is below 75% (fixed; until then below 100%): the move tree's violet dot, after the move
-// leading to it (as the critical dot).
+// leading to it (as the danger dot).
 const LOW_RECALL = 0.75;
 const isLowRecall = (node, own) => { const share = shareAt(node); return share != null && share < LOW_RECALL - 1e-9 && node.children.some(c => isShownAsYours(c, own)); };
 
@@ -2196,10 +2330,10 @@ function isOffMastersPath(node, own) {
 }
 
 // The Studies page's marks by the arrows switch: Recall (`errors`) shows only your own (violet, your errors;
-// orange, Critical position (you)), Masters only the teal ones (off the masters' path), Lichess only the
-// orange ones (Critical position (Lichess)). Study keeps the tree to what's in the study (the user's choice): none of them.
+// orange, Danger position (you)), Masters only the teal ones (off the masters' path), Lichess only the
+// orange ones (Danger position (Lichess)). Study keeps the tree to what's in the study (the user's choice): none of them.
 // The same goes for the dots in the tree and the tiles.
-const MARK_VIEWS = { lowRecall: 'errors', yourCritical: 'errors', masters: 'masters', critical: 'lichess' };
+const MARK_VIEWS = { lowRecall: 'errors', yourDanger: 'errors', masters: 'masters', danger: 'lichess' };
 const showsMark = (mark, view = settings.review.view) => MARK_VIEWS[mark] === view;
 
 // Your study's moves in a position on the Studies page, if it's one of yours (see isShownAsYours; own:
@@ -2306,11 +2440,11 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
       el.addEventListener('mouseleave', hideHoverBoard);
     }
     const num = node.color === 'white' ? `${node.moveNumber}.` : showNo ? `${node.moveNumber}…` : null;
-    // The dots for the position this move leads to (see showsMark): errors, off the masters' path, critical.
+    // The dots for the position this move leads to (see showsMark): errors, off the masters' path, danger.
     const weakDot = showsMark('lowRecall', view) && isLowRecall(node, parsed.yourColor) ? lowRecallDot() : null;
     const mastersDot = showsMark('masters', view) && isOffMastersPath(node, parsed.yourColor) ? mastersPositionDot() : null;
-    const dot = showsMark('critical', view) && criticalAt(node.epd) ? criticalPositionDot('Lichess')
-      : showsMark('yourCritical', view) && isYourCriticalPosition(node, parsed.yourColor) ? criticalPositionDot('you') : null;
+    const dot = showsMark('danger', view) && dangerAt(node.epd) ? dangerPositionDot('Lichess')
+      : showsMark('yourDanger', view) && isYourDangerPosition(node, parsed.yourColor) ? dangerPositionDot('you') : null;
     return { els: [node.before ? [commentBubble(moveLabel(node), { text: [node.before], nags: [] }), ' '] : null, // a comment before the move, where Lichess puts it
       num ? element('span', { class: 'tree-move-number' }, num, ' ') : null,
       el, glyphMarks(node), weakDot, mastersDot, dot,
@@ -2350,12 +2484,12 @@ function renderChapterTree(ch, { openSet = new Set(), redraw = () => {}, pick = 
   // Your first move's position (the start): its dots before the first move.
   const startDots = parsed.error ? [] : [showsMark('lowRecall', view) && isLowRecall(parsed.root, parsed.yourColor) && lowRecallDot(),
     showsMark('masters', view) && isOffMastersPath(parsed.root, parsed.yourColor) && mastersPositionDot(),
-    showsMark('yourCritical', view) && isYourCriticalPosition(parsed.root, parsed.yourColor) && criticalPositionDot('you')].filter(Boolean);
+    showsMark('yourDanger', view) && isYourDangerPosition(parsed.root, parsed.yourColor) && dangerPositionDot('you')].filter(Boolean);
   if (startDots.length) box.querySelector('.tree-line')?.prepend(...startDots, ' ');
   return box;
 }
 const lowRecallDot = () => element('span', { class: 'tree-dot weak-dot', title: 'Low recall: below 75%' });
-const criticalPositionDot = who => element('span', { class: 'tree-dot critical-dot', title: `Critical position (${who})` });
+const dangerPositionDot = who => element('span', { class: 'tree-dot danger-dot', title: `Danger position (${who})` });
 const mastersPositionDot = () => element('span', { class: 'tree-dot masters-dot', title: "Your study's move here isn't a masters move" });
 
 // The eye icon (the top eye, and each study's and chapter's): a line through it when its button is "off".
@@ -2363,6 +2497,45 @@ const eyeIcon = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size
   + '<path d="M12 5C6.5 5 2.7 9.3 1.5 12c1.2 2.7 5 7 10.5 7s9.3-4.3 10.5-7C21.3 9.3 17.5 5 12 5zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" fill="currentColor"/>'
   + '<circle cx="12" cy="12" r="2.2" fill="currentColor"/><line class="off-line" x1="4" y1="3" x2="20" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 $('show-hidden-btn').innerHTML = eyeIcon(16);
+const resetIcon = size => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">`
+  + '<path d="M12 4V1L7 5.5 12 10V6.5a5.5 5.5 0 1 1-5.5 5.5H4a8 8 0 1 0 8-8z" fill="currentColor"/></svg>';
+$('reset-mode-btn').innerHTML = resetIcon(16);
+
+// Resetting a chapter's stats (the user's decisions, 25 November 2026): rarely needed, so only while the
+// top ↺ is on (resetting), each chapter with tries has a ↺ left of its name; it asks first, then forgets
+// the chapter's tries and play-throughs, from both colors (its positions and lines are untried again).
+// Nothing records the reset: Restore or Merge backup with an older backup brings them back (the user's
+// decision). Other open tabs are told (the storage event of cot.resetChapter, removed at once), so
+// none brings them back when it next saves (see saveHistory).
+const ofChapter = (key, chapterKey) => key.startsWith(chapterKey + '|');
+const chapterTries = chapterKey => Object.entries(history.positions).reduce((n, [key, a]) => n + (ofChapter(key, chapterKey) ? a.length : 0), 0);
+function forgetChapter(chapterKey) {
+  for (const part of ['positions', 'lines']) for (const key of Object.keys(history[part])) if (ofChapter(key, chapterKey)) delete history[part][key];
+}
+function resetButton(c) {
+  const btn = element('button', { class: 'icon-btn', title: 'Reset your stats for this chapter', 'aria-label': `Reset your stats for ${c.name}`,
+    onclick: e => {
+      e.stopPropagation();
+      if (!confirm(`Reset your stats for ${c.name}? ${plural(chapterTries(c.key), 'try', 'tries')}.`)) return;
+      forgetChapter(c.key);
+      saveHistory({ replace: true });
+      store.set('resetChapter', { key: c.key, at: Date.now() });
+      store.remove('resetChapter');
+      if (review?.ch === c) showReviewNode(review.node); // its tiles and dots, now untried
+      renderStudies();
+    } });
+  btn.innerHTML = resetIcon(15);
+  return btn;
+}
+window.addEventListener('storage', e => {
+  if (e.key !== storageName('resetChapter', account) || !e.newValue) return;
+  let key = null;
+  try { key = JSON.parse(e.newValue).key; } catch {}
+  if (typeof key !== 'string') return;
+  forgetChapter(key);
+  if (review?.ch?.key === key) showReviewNode(review.node);
+  renderStudies();
+});
 
 // A study's or chapter's eye (by its id or key; only while the top eye shows hidden ones): a plain eye
 // when it's shown (click to hide it), an eye with a line when it's hidden (click to unhide).
@@ -2402,7 +2575,8 @@ function toggleHidden(id) {
   renderStudies();
 }
 
-$('show-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; renderStudies(); });
+$('show-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; resetting = false; renderStudies(); });
+$('reset-mode-btn').addEventListener('click', () => { resetting = !resetting; showHidden = false; renderStudies(); });
 
 // How many chapters are chosen while editing a group (Groups page). (The Practice page said how many the
 // chosen group has, under its drop-down, until 19 November 2026.)
@@ -2754,8 +2928,8 @@ const KEY_TREE = [
   { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)", views: ['masters'] },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
-  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position (Lichess): the Lichess moves played there lose the critical level or more on average', views: ['lichess'] },
-  { sample: '<span class="tree-dot critical-dot"></span>', meaning: 'Leads to a critical position (you): your first tries there lose the critical level or more on average', views: ['errors'] },
+  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (Lichess): the Lichess moves played there lose the danger level or more on average', views: ['lichess'] },
+  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first tries there lose the danger level or more on average', views: ['errors'] },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
@@ -2892,13 +3066,13 @@ function renderStatsTile(node) {
 }
 
 // The tiles under the comment for the position on the board, each when the view shows its mark (see
-// showsMark): off the masters' path (teal), critical (orange). (Your errors had a tile too until 19
+// showsMark): off the masters' path (teal), danger (orange). (Your errors had a tile too until 19
 // November 2026; the board and its square tips show them.)
 function renderPositionTiles(node) {
   renderEvalBar(node); // and the evaluation bar beside the board, and under the moves the statistics tile
   renderStatsTile(node);
   renderMastersTile(node);
-  renderCriticalTile(node);
+  renderDangerTile(node);
   renderLossTile(node);
 }
 
@@ -2922,24 +3096,24 @@ function yourExpectedLoss(node) {
   return { loss: moves.reduce((sum, m) => sum - m.share * m.delta, 0), tries: firsts.length, moves };
 }
 
-// A move's change in evaluation, colored by its loss (in the Your expected loss and Critical position
-// tiles only, never for arrows or errors): green at Δ0.0 as shown, amber below the critical level, red
+// A move's change in evaluation, colored by its loss (in the Your expected loss and Danger position
+// tiles only, never for arrows or errors): green at Δ0.0 as shown, amber below the danger level, red
 // at it or more, e.g. "Δ−1.2" in red.
 function lossDelta(delta) {
   const lost = Math.round(-delta * 10) / 10;
-  return element('span', { class: lost <= 0 ? 'loss-none' : lost < settings.criticalLevel ? 'loss-some' : 'loss-big' }, deltaText(delta));
+  return element('span', { class: lost <= 0 ? 'loss-none' : lost < settings.dangerLevel ? 'loss-some' : 'loss-big' }, deltaText(delta));
 }
 
 // With Recall, under the comment, at one of your positions with tries: "Your expected loss", then (in
-// orange) "Critical position (you)" when it's the critical level or more (see isYourCriticalPosition), e.g.
+// orange) "Danger position (you)" when it's the danger level or more (see isYourDangerPosition), e.g.
 // "Δ−0.4 (last 4 tries)", each first move with its share and colored Δ, e.g. "d4 50% · Δ−0.1", and last,
 // when it was last tested, e.g. "Last tested 3 days ago"; "Evaluating…" until it's known.
 function renderLossTile(node) {
   const e = engineAvailable() && settings.review.view === 'errors' && yourMovesAt(node).length ? yourExpectedLoss(node) : null;
   const last = e && lastTriedAt(node.key), days = last && daysAgo(last);
-  const critical = e && !e.pending && isYourCriticalPosition(node, review.parsed.yourColor);
+  const danger = e && !e.pending && isYourDangerPosition(node, review.parsed.yourColor);
   $('review-loss').replaceChildren(...!e ? [] : [element('h3', {}, 'Your expected loss'),
-    ...critical ? [element('p', { class: 'critical-line' }, 'Critical position (you)')] : [],
+    ...danger ? [element('p', { class: 'danger-line' }, 'Danger position (you)')] : [],
     ...e.pending ? [element('p', { class: 'muted' }, 'Evaluating…')] : [
       element('p', {}, `${deltaText(-e.loss)} (last ${plural(e.tries, 'try', 'tries')})`),
       element('div', { class: 'loss-moves' }, e.moves.map(m => element('div', {}, `${m.label} ${percent(m.share)}% · `, lossDelta(m.delta)))),
@@ -2960,21 +3134,21 @@ function renderMastersTile(node) {
       : 'No move is played by masters 5% of the time or more'));
 }
 
-// Under the comment, when the position on the board is critical (see criticalAt), at either side's move:
-// "Critical position" (no "your" or "opponent's": the chapter may be practiced from either color; until
+// Under the comment, when the position on the board is a danger position (see dangerAt), at either side's move:
+// "Danger position" (no "your" or "opponent's": the chapter may be practiced from either color; until
 // 19 November 2026 "· opponent's move" at the other side's move), its expected loss, and the Lichess moves
-// that drop 0.1 pawns or more (see criticalMoveTexts).
-function renderCriticalTile(node) {
-  const critical = showsMark('critical') && criticalAt(node.epd);
-  $('review-critical').replaceChildren(...critical ? [
-    element('h3', {}, 'Critical position (Lichess)'),
-    element('p', {}, `Lichess expected loss ${deltaText(-critical.loss)}`),
-    element('div', { class: 'critical-moves' }, criticalMoveTexts(critical).map(([t, drop]) => element('div', {}, t, lossDelta(-drop))))] : []);
+// that drop 0.1 pawns or more (see dangerMoveTexts).
+function renderDangerTile(node) {
+  const danger = showsMark('danger') && dangerAt(node.epd);
+  $('review-danger').replaceChildren(...danger ? [
+    element('h3', {}, 'Danger position (Lichess)'),
+    element('p', {}, `Lichess expected loss ${deltaText(-danger.loss)}`),
+    element('div', { class: 'danger-moves' }, dangerMoveTexts(danger).map(([t, drop]) => element('div', {}, t, lossDelta(-drop))))] : []);
 }
 
 // The Lichess moves that lose 0.1 pawns or more, most played first, each with its share and the pawns
 // it drops: [["♗f4 14% · ", 1.24]], shown as "♗f4 14% · Δ−1.2" with the Δ colored (lossDelta).
-const criticalMoveTexts = critical => critical.moves.filter(m => m.drop >= 0.05).map(m => [`${withFigurines(m.san)} ${percent(m.share)}% · `, m.drop]);
+const dangerMoveTexts = danger => danger.moves.filter(m => m.drop >= 0.05).map(m => [`${withFigurines(m.san)} ${percent(m.share)}% · `, m.drop]);
 
 function renderReviewTree() {
   hideHoverBoard(); // its move may be about to be redrawn
@@ -3048,18 +3222,18 @@ document.addEventListener('keydown', e => {
 //     11 days at 50%, 128 days at 100%.
 //   untried: an item never tried (a line none of whose positions have been tried) has no accuracy or
 //     due; it gets 6 in their place.
-//   critical: 2 for a critical position of yours (see criticalAt; for a line, if any of your positions
-//     in it is critical), 1 otherwise; the opponent's critical positions don't count.
+//   danger: 2 for a danger position of yours (see dangerAt; for a line, if any of your positions
+//     in it is one), 1 otherwise; the opponent's danger positions don't count.
 // A position's accuracy is its repertoire recall (with or without Main lines, as ticked), and last
 // tested is when it was last tried. A line's accuracy is its weakest position's (the lowest move
 // accuracy of your positions in it, untried ones counting as 0%), and last tested is when it was last
 // played through from move 1 to the end.
 //
-// The priority is frequency × critical × weakness × due (frequency × critical × 6 when untried). (Until 20
+// The priority is frequency × danger × weakness × due (frequency × danger × 6 when untried). (Until 20
 // November 2026 five sliders, one per part, raised each to a power from 0 to 6: the user removed them, the
-// drills now doing what turning Recall or Critical up did.)
+// drills now doing what turning Recall or Danger up did.)
 const UNTRIED_NEED = 6;
-const CRITICAL_NEED = 2;
+const DANGER_NEED = 2;
 const UNKNOWN_FREQUENCY = 0.6;
 
 function weightedPick(items, weight) {
@@ -3087,7 +3261,21 @@ function practiceItems(kind, { mainOnly = mainOnlyFor(kind), from = FIRST_POSITI
   for (const line of lines) line.moves.forEach((m, i) => {
     if (m.color === line.yourColor && m.moveNumber >= from && !items.has(m.parent.key)) items.set(m.parent.key, { line, i });
   });
-  return [...items.values()];
+  return withoutRare([...items.values()]);
+}
+
+// Positions, without those rarely reached when the Positions tile leaves them out (see RARE_CHOICES):
+// those your opponents lead you to less often than its chance, by the shares of their moves on the way
+// (logReach: the raw chance, not spaced repetition's frequency, so it doesn't depend on the group). An
+// opponent's move never played there counts as rarely reached; a position whose statistics haven't
+// downloaded is kept. Lines are never left out (the user's decision).
+function isRarelyReached(item, below) {
+  const r = logReach(item);
+  return r != null && r < Math.log(below);
+}
+function withoutRare(items) {
+  const { below } = RARE_CHOICES[settings.practice.rare];
+  return below == null ? items : items.filter(item => !isRarelyReached(item, below));
 }
 
 function itemAccuracy({ line, i }, mainOnly) {
@@ -3102,13 +3290,13 @@ function itemAccuracy({ line, i }, mainOnly) {
 const DRILLS = {
   lowRecall: { label: 'Low recall', title: 'Your positions below 75% repertoire recall',
     has: node => { const share = shareAt(node, false); return share != null && share < LOW_RECALL - 1e-9; } },
-  criticalYou: { label: 'Critical (you)', title: 'Where your first tries lose the critical level or more on average',
-    has: (node, own) => isYourCriticalPosition(node, own) },
-  criticalLichess: { label: 'Critical (Lichess)', title: 'Your positions where the Lichess moves played lose the critical level or more on average',
-    has: node => !!criticalAt(node.epd) },
+  dangerYou: { label: 'Danger (you)', title: 'Where your first tries lose the danger level or more on average',
+    has: (node, own) => isYourDangerPosition(node, own) },
+  dangerLichess: { label: 'Danger (Lichess)', title: 'Your positions where the Lichess moves played lose the danger level or more on average',
+    has: node => !!dangerAt(node.epd) },
   refutations: { label: 'Refutations', title: "The positions after an opponent's Lichess move that loses the refutation level or more: your study's answer, or the engine's" },
 };
-const drillItems = drill => drill === 'refutations' ? refutationItems()
+const drillItems = drill => drill === 'refutations' ? withoutRare(refutationItems())
   : practiceItems('positions', { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, line.yourColor));
 
 // The Refutations drill's positions (the user's decisions, 20 November 2026): at each position of the
@@ -3175,8 +3363,8 @@ function builtNode(parent, move, variationIndex) {
 
 const itemLastTested = ({ line, i }) => i != null ? lastTriedAt(line.moves[i].parent.key) : lastPlayedAt(line.key);
 
-// Whether an item is critical for you: the position of your move (for a line, any of yours in it).
-const itemCritical = ({ line, i }) => (i != null ? [i] : yourMoveIndexes(line)).some(k => !!criticalAt(line.moves[k].epdBefore));
+// Whether an item is a danger position for you: the position of your move (for a line, any of yours in it).
+const itemDanger = ({ line, i }) => (i != null ? [i] : yourMoveIndexes(line)).some(k => !!dangerAt(line.moves[k].epdBefore));
 
 const itemEpd = ({ line, i }) => i != null ? line.moves[i].epdBefore : line.moves[line.moves.length - 1].epd;
 
@@ -3196,7 +3384,7 @@ function logReach({ line, i }) {
 
 // Each item's facts and the parts of its priority: { item, accuracy, lastTested, games (the games
 // reaching it, for the Likely next table; null while its statistics haven't downloaded),
-// frequency, weakness, due, untried, critical }, with or without Main lines (mainOnly).
+// frequency, weakness, due, untried, danger }, with or without Main lines (mainOnly).
 function itemFacts(items, mainOnly = mainOnlyNow(), now = Date.now()) {
   const reach = items.map(logReach);
   const least = Math.min(0, ...reach.filter(r => r != null && r > -Infinity));
@@ -3210,13 +3398,13 @@ function itemFacts(items, mainOnly = mainOnlyNow(), now = Date.now()) {
       weakness: 1 + 2 * (1 - (accuracy ?? 0)),
       due: lastTested ? Math.min(3, Math.max(0.1, (now - lastTested) / DAY_MS / interval)) : 3,
       untried: accuracy == null,
-      critical: itemCritical(item),
+      danger: itemDanger(item),
     };
   });
 }
 
 // Each item's priority, from its facts.
-const priorityOf = facts => facts.map(p => p.frequency * (p.critical ? CRITICAL_NEED : 1) * (p.untried ? UNTRIED_NEED : p.weakness * p.due));
+const priorityOf = facts => facts.map(p => p.frequency * (p.danger ? DANGER_NEED : 1) * (p.untried ? UNTRIED_NEED : p.weakness * p.due));
 
 const priorities = (items, mainOnly) => priorityOf(itemFacts(items, mainOnly));
 
@@ -3405,6 +3593,10 @@ function renderChooser() {
     ['main', 'Main lines', 'Only lines of main moves, and only your main move right']], linesChoices);
   renderChoices($('positions-choice'), 'positions', positions, [['spaced', 'All', 'One of your moves at a time, from move 3, picked by spaced repetition'],
     ...Object.entries(DRILLS).map(([key, d]) => [key, d.label, d.title])], positionChoices);
+  const rare = $('rare-select');
+  rare.replaceChildren(...Object.entries(RARE_CHOICES).map(([value, c]) => element('option', { value }, c.label)));
+  rare.value = settings.practice.rare;
+  rare.title = RARE_CHOICES[settings.practice.rare].title;
   for (const [tile, chosen] of [['lines', linesChoices[lines]], ['positions', positionChoices[positions]]]) {
     $(`${tile}-start`).disabled = !chosen.items.length;
     $(`${tile}-note`).textContent = chosen.note;
@@ -3429,6 +3621,7 @@ function renderChoices(box, name, chosen, options, choices) {
 // A change to the practice settings: saved, and the chooser shown again.
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); };
 
+$('rare-select').addEventListener('change', e => changePractice(p => { p.rare = e.target.value; }));
 $('lines-start').addEventListener('click', () => startSession('lines', practicable('lines').items));
 $('positions-start').addEventListener('click', () => {
   const chosen = settings.practice.positions;
@@ -3745,7 +3938,7 @@ function endPractice() {
   if (waitingStudies) { // updated studies that arrived during practice (see syncStudies)
     const fetched = waitingStudies;
     waitingStudies = null;
-    useStudies(fetched).then(() => { refreshPage(); startDownloads(); });
+    useStudies(fetched).then(ours => { if (ours) { refreshPage(); startDownloads(); } });
   }
   hideBoardNotice(true);
   $('next-btn').classList.add('hidden');
@@ -4050,7 +4243,7 @@ function showBoardPopup(el, { position, lastMove, shapes, rows }, orientation) {
 
 // Every hover board's only text: the move, e.g. "3. ♗c4", above the board. (Until 19 November 2026 the
 // Practice page's hover boards also showed the move's rank and share, how often the position is reached,
-// the critical row, the repertoire recall and the errors.)
+// the danger row, the repertoire recall and the errors.)
 const hoverBoardHeading = m => element('div', {}, element('b', {}, moveLabel(m)));
 
 // Before one of your moves the opponent's previous move is highlighted (no arrow).
@@ -4183,7 +4376,7 @@ async function startDownloads() {
       await downloadExplorer('masters');
     } while (downloadsAgain);
   } finally { downloadsRunning = false; }
-  startEvaluations(); // the new statistics may need positions evaluated for critical positions
+  startEvaluations(); // the new statistics may need positions evaluated for danger positions
 }
 
 // The games the move statistics come from: as chosen (settings.games), or all rated games until
@@ -4283,7 +4476,7 @@ const masterGamesAt = epd => moveStats[epd]?.masters;
 // Saves one part of what Lichess says about a position ('lichess' or 'masters'); false if it can't be saved.
 function setPositionData(epd, part, value) {
   (moveStats[epd] ||= {})[part] = value;
-  forgetCritical();
+  forgetDanger();
   return saveMoveStats([epd]);
 }
 const STORAGE_FULL = "This browser's storage is full, so the statistics can't be saved. Free some space, then reopen the app.";
@@ -4503,7 +4696,7 @@ const evaluation = { running: false, waiting: [], evaluating: new Set(), wanted:
 const studyPositionsToEvaluate = () => new Map([...allStudyPositions()].filter(([, p]) => !p.position.isCheckmate() && !p.position.isStalemate()));
 
 // Evaluates what's missing: the study positions (in download order, the one on the Studies page first),
-// then the positions after their Lichess moves that critical positions need (see extraPositions; those
+// then the positions after their Lichess moves that danger positions need (see extraPositions; those
 // are known only once their study position is evaluated and its statistics downloaded, so each run that
 // evaluated something looks again when it ends; the downloads also start it again when they finish).
 function startEvaluations() {
@@ -4548,13 +4741,13 @@ async function runEngine() {
   } finally { engine?.stop(); }
 }
 
-// A position has its evaluation: shown at once if it's on the Studies page's board, with the Critical
+// A position has its evaluation: shown at once if it's on the Studies page's board, with the Danger
 // tile (which may now be known); the progress updated.
 function evaluated(epd) {
-  forgetCritical();
+  forgetDanger();
   if (currentScreen === 'studies' && review) {
     if (review.node.epd === epd) renderEvalBar(review.node);
-    renderCriticalTile(review.node);
+    renderDangerTile(review.node);
     renderLossTile(review.node);
   }
   showProgress();
@@ -4659,11 +4852,13 @@ function renderLichessPage() {
   // connected.
   $('connect-btn').classList.toggle('hidden', !!token && !connectionExpired());
   $('disconnect-btn').classList.toggle('hidden', !token);
+  $('remove-account-btn').classList.toggle('hidden', !account);
+  $('add-account-note').classList.toggle('hidden', !!account || !accounts.length);
   // Getting started: after the first connection, once your studies are here.
   $('getting-started').classList.toggle('hidden', !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
   renderGamesCard();
-  $('critical-level').value = String(settings.criticalLevel);
+  $('danger-level').value = String(settings.dangerLevel);
   $('refutation-level').value = String(settings.refutationLevel);
   // Backup: once there are studies; nothing to save while Getting started shows.
   $('backup-card').classList.toggle('hidden', !library);
@@ -4674,11 +4869,11 @@ function renderLichessPage() {
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
-// The critical level (see criticalAt), in the Move statistics card beside the rating bands (it depends on
-// your level too): 0.2 to 1.5 pawns. Changing it changes which positions are critical at once.
-$('critical-level').replaceChildren(...CRITICAL_LEVELS.map(x => element('option', { value: String(x) }, x.toFixed(1))));
-$('critical-level').addEventListener('change', e => {
-  settings.criticalLevel = Number(e.target.value);
+// The danger level (see dangerAt), in the Move statistics card beside the rating bands (it depends on
+// your level too): 0.2 to 1.5 pawns. Changing it changes which positions are danger positions at once.
+$('danger-level').replaceChildren(...DANGER_LEVELS.map(x => element('option', { value: String(x) }, x.toFixed(1))));
+$('danger-level').addEventListener('change', e => {
+  settings.dangerLevel = Number(e.target.value);
   saveSettings();
 });
 // The refutation level (see refutationItems), beside it: 0.5 to 3.0 pawns.
@@ -4763,7 +4958,7 @@ const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 // on the Lichess page).
 function updateLichessStatus() {
   const expired = !!token && connectionExpired();
-  $('nav-lichess').replaceChildren('Lichess', ...!token || expired ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'not connected' })] : []);
+  $('nav-lichess').replaceChildren(account ?? 'Lichess', ...!token || expired ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'not connected' })] : []);
   $('nav-lichess').title = !token ? 'Not connected to Lichess' : expired ? 'Lichess has ended the connection: connect again' : 'Your Lichess account, studies and statistics';
 }
 
@@ -4819,6 +5014,8 @@ $('disconnect-btn').addEventListener('click', () => {
   renderLichessPage(); // the Status card shows it (no banner)
 });
 
+$('remove-account-btn').addEventListener('click', removeAccount);
+
 // The welcome splash: over the Lichess page each time the app opens until you've started (connected).
 // Get started (or Enter: it has the focus), × or Esc closes it.
 // Its board: the Ruy Lopez after 1. e4 e5 2. Nf3 Nc6 3. Bb5, with the app's own arrows: the study's
@@ -4869,6 +5066,15 @@ const BACKUP_VERSION = 7; // 7 added the engine's evaluations; 6 still restores;
 // under another.
 const ownAccount = () => library?.username ?? null;
 
+// The backup's file name (the user's decision, 25 November 2026): the account and when, in local time, e.g.
+// "trainer-david-2026-11-25-1430.json" (no colon: Windows doesn't allow one); without an account,
+// "trainer-2026-11-25-1430.json".
+function backupFileName(account, at) {
+  const two = n => String(n).padStart(2, '0');
+  const when = `${at.getFullYear()}-${two(at.getMonth() + 1)}-${two(at.getDate())}-${two(at.getHours())}${two(at.getMinutes())}`;
+  return `trainer-${account ? account + '-' : ''}${when}.json`;
+}
+
 $('backup-btn').addEventListener('click', async () => {
   // Never include the Lichess token (or any API key).
   const backup = {
@@ -4880,7 +5086,7 @@ $('backup-btn').addEventListener('click', async () => {
     evals, // the engine's evaluations, likewise
   };
   const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' }); // not indented: a third smaller
-  const name = `opening-trainer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  const name = backupFileName(ownAccount(), new Date());
   // Where the browser supports it (Chrome, Edge), ask where to save the file.
   if (window.showSaveFilePicker) {
     try {
@@ -4925,6 +5131,18 @@ function backupSaved() {
   renderLichessPage();
 }
 
+// The account on this device a backup belongs to, when it's not this one: Restore and Merge backup
+// offer to put it there (the user's decision, 25 November 2026), switching to it.
+const backupsAccount = b => validName(b.account) && b.account !== account && accounts.includes(b.account) ? b.account : null;
+
+// The shared parts of a backup (move statistics, evaluations) merged and saved.
+async function mergeSharedData(b) {
+  mergeMoveStats(b);
+  mergeEvals(b);
+  await saveMoveStats();
+  await saveEvals(Object.keys(evals));
+}
+
 // Restore's "Are you sure?": from another Lichess account (recorded in the backup; you're connected to,
 // or have the studies of, a different one), it says so; otherwise the usual question.
 function restoreQuestion(b) {
@@ -4960,7 +5178,7 @@ async function chosenBackup(e) {
 // The move statistics are merged, not replaced: each part keeps whichever copy is newer, so
 // downloads made since the backup aren't lost.
 function mergeMoveStats(b) {
-  forgetCritical();
+  forgetDanger();
   for (const [epd, saved] of Object.entries(b.moveStats && typeof b.moveStats === 'object' ? b.moveStats : {})) {
     if (!saved || typeof saved !== 'object') continue;
     const current = moveStats[epd] ||= {};
@@ -4973,7 +5191,7 @@ function mergeMoveStats(b) {
 // The engine's evaluations are merged the same way: for each position the newer evaluation from the
 // current engine (ENGINE.v) is kept.
 function mergeEvals(b) {
-  forgetCritical();
+  forgetDanger();
   for (const [epd, saved] of Object.entries(b.evals && typeof b.evals === 'object' ? b.evals : {})) {
     if (saved?.v !== ENGINE.v || !Array.isArray(saved.lines)) continue;
     if (!evalAt(epd) || (saved.at || 0) > (evals[epd].at || 0)) evals[epd] = saved;
@@ -5004,6 +5222,14 @@ function mergedHistory(a, b) {
 $('merge-file').addEventListener('change', async e => {
   const b = await chosenBackup(e);
   if (!b) return;
+  const owner = backupsAccount(b);
+  if (owner) {
+    if (!confirm(`This backup is from ${owner}'s account. Add its history to ${owner}'s?`)) return;
+    const theirs = storeOf(owner);
+    theirs.set('history', mergedHistory(checkedHistory(theirs.get('history')) ?? emptyHistory(), checkedHistory(b.history)));
+    await mergeSharedData(b);
+    return switchAccount(owner);
+  }
   const here = ownAccount(), when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
   const n = Object.keys(checkedHistory(b.history).positions).length;
   const question = b.account && here && b.account !== here
@@ -5012,10 +5238,7 @@ $('merge-file').addEventListener('change', async e => {
   if (!confirm(question)) return;
   const before = Object.keys(history.positions).length;
   history = mergedHistory(history, checkedHistory(b.history));
-  mergeMoveStats(b);
-  mergeEvals(b);
-  await saveMoveStats();
-  await saveEvals(Object.keys(evals));
+  await mergeSharedData(b);
   saveHistory();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Restore does
   refreshPage();
@@ -5027,6 +5250,18 @@ $('merge-file').addEventListener('change', async e => {
 $('restore-file').addEventListener('change', async e => {
   const b = await chosenBackup(e);
   if (!b) return;
+  const owner = backupsAccount(b);
+  if (owner) {
+    if (!confirm(`This backup is from ${owner}'s account. Restore it there? ${owner}'s stats and settings would be replaced.`)) return;
+    const theirs = storeOf(owner), presetsThere = checkedPresets(b.presets);
+    theirs.set('history', checkedHistory(b.history));
+    theirs.set('settings', checkedSettings(b.settings));
+    theirs.set('presets', presetsThere);
+    theirs.set('chosenPreset', presetsThere.some(p => p.name === b.chosenPreset) ? b.chosenPreset : null);
+    theirs.set('hidden', strings(b.hidden));
+    await mergeSharedData(b);
+    return switchAccount(owner);
+  }
   if (!confirm(restoreQuestion(b))) return;
 
   history = checkedHistory(b.history);
@@ -5035,10 +5270,7 @@ $('restore-file').addEventListener('change', async e => {
   chosenPresetName = presets.some(p => p.name === b.chosenPreset) ? b.chosenPreset : null; // else All
   hidden = new Set(strings(b.hidden));
   useChosenPreset();
-  mergeMoveStats(b);
-  mergeEvals(b);
-  await saveMoveStats();
-  await saveEvals(Object.keys(evals));
+  await mergeSharedData(b);
   saveHistory({ replace: true }); saveSettings(); saveHidden(); savePresets();
   updateSoundButton();
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
@@ -5066,7 +5298,10 @@ $('nav-practice').addEventListener('click', () => {
   showChooser();
 });
 
-$('nav-lichess').addEventListener('click', showLichess); // a line in progress is kept
+$('nav-lichess').addEventListener('click', () => { // a line in progress is kept
+  if (!account && !accounts.length) return showLichess(); // nothing to switch to
+  showAccountMenu(!accountMenuOpen());
+});
 
 $('nav-help').addEventListener('click', () => {
   showScreen('help'); // a line in progress is kept
@@ -5081,10 +5316,11 @@ async function init() {
   try {
     library = await loadLibrary();
     if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
+    // Data from before profiles (25 November 2026), or a first connection that didn't finish: its account's.
+    if (!account && library?.username && !await becomeAccount(library.username)) return;
     moveStats = await loadMoveStats();
     evals = await loadEvals();
     useChosenPreset();
-    store.remove('selection'); // no longer stored: the chosen preset says what's practiced
   }
   catch (e) { console.warn('IndexedDB read failed', e); }
   updateSoundButton(); // the bell shows the saved setting

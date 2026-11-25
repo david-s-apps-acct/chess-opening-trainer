@@ -30,7 +30,7 @@ in this folder); the page loads <code>index.html</code> without starting the app
 const TEST_HOOK = `
 export const app = {
   setLibrary(l) { library = l; forgetParsedChapters(); },
-  setMoveStats(m) { moveStats = m; forgetCritical(); },
+  setMoveStats(m) { moveStats = m; forgetDanger(); },
   setSettings(s) { settings = checkedSettings(s); },
   setHistory(h) { history = h; },
   checkedPresets, renderPresets, storedHistory, lastTriedAt, lastPlayedAt,
@@ -40,8 +40,8 @@ export const app = {
   setHidden(ids) { hidden = new Set(ids); },
   checkedSettings, chapterByKey, chapterLines, allStudyPositions,
   renderChapterTree,
-  positionName, firstTryRight, accuracyAt, checkedHistory, mergedHistory, isMasterMove, isLichessMove, criticalAt, moveRank, errorCounts,
-  saveHistory, mainColor, criticalMoveTexts, lossDelta,
+  positionName, firstTryRight, accuracyAt, checkedHistory, mergedHistory, isMasterMove, isLichessMove, dangerAt, moveRank, errorCounts,
+  saveHistory, mainColor, dangerMoveTexts, lossDelta,
   setSaveMoveStats(f) { saveMoveStats = f; },
   storageFull(on) { store.set = on ? () => false : () => {}; },
   playBothColors(keys) { chapterColors = new Map(keys.map(k => [k, ['white', 'black']])); },
@@ -52,6 +52,7 @@ export const app = {
     store.get = (key, fallback) => key === 'history' ? (window.testStoredHistory ?? fallback) : realGet(key, fallback); // never your real history
     store.set = () => {}; store.remove = () => {};
     saveMoveStats = async () => {}; saveLibrary = async () => {}; saveEvals = async () => true;
+    account = null; accounts = []; becomeAccount = async () => true; switchAccount = () => {}; clearProfile = async () => {}; // no profiles: nothing moved or deleted
     engineAvailable = () => false; // no engine unless a test asks for one
     explorerPace.ms = 0; // no 2 s pace in the tests (except the test of it)
     window.fetch = async () => new Response('', { status: 404 });
@@ -76,9 +77,10 @@ export const app = {
   // The engine: off in the tests (isolate), or a stand-in worker.
   setEngine(available, worker) { engineAvailable = () => available; if (worker) newEngineWorker = worker; },
   setBackupMessageMs(ms) { backupMessageMs = ms; },
-  get evals() { return evals; }, setEvals(e) { evals = e; forgetCritical(); },
-  pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions, isYourCriticalPosition,
+  get evals() { return evals; }, setEvals(e) { evals = e; forgetDanger(); },
+  pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions, isYourDangerPosition,
   evaluation, evalText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
+  isRarelyReached, backupFileName, chapterTries, forgetChapter, storageName, libraryName,
 };`;
 
 async function loadApp() {
@@ -130,19 +132,19 @@ const withResults = moves => {
   const sum = k => list.reduce((s, m) => s + m[k], 0);
   return { white: sum('white'), draws: sum('draws'), black: sum('black'), moves: list };
 };
-// Critical positions, by the engine's expected loss. At the start (200 games): e4 56% (the engine's best,
+// Danger positions, by the engine's expected loss. At the start (200 games): e4 56% (the engine's best,
 // +0.3), d4 25% (+0.2: −0.1), ♘h3 15% (not among the engine's best 3: the position after it, −3.0: −3.3)
-// and a4 4% (not a Lichess move): 0.25 × 0.1 + 0.15 × 3.3 = 0.52, critical at 0.5. After 1. e4 (Black to
-// move, 100 games): e5 70% (best, +0.3 for White), g5 30% (after it +1.5: −1.2 for Black): 0.36, critical
+// and a4 4% (not a Lichess move): 0.25 × 0.1 + 0.15 × 3.3 = 0.52, a danger position at 0.5. After 1. e4 (Black to
+// move, 100 games): e5 70% (best, +0.3 for White), g5 30% (after it +1.5: −1.2 for Black): 0.36, danger
 // only at 0.4 or lower.
 const AFTER_NH3 = 'rnbqkbnr/pppppppp/8/8/8/7N/PPPPPPPP/RNBQKB1R b KQkq -';
 const AFTER_E4_G5 = 'rnbqkbnr/pppppp1p/8/6p1/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -';
-const CRITICAL = {
+const DANGER = {
   [START]: { lichess: withResults([['e4', 60, 32, 20], ['d4', 25, 15, 10], ['Nh3', 10, 5, 15], ['a4', 4, 2, 2]]) },
   [AFTER_E4]: { lichess: withResults([['e5', 30, 20, 20], ['g5', 15, 5, 10]]) },
 };
 const evalOf = (...lines) => ({ depth: 20, lines: lines.map(([cp, pv]) => ({ cp, pv })), engine: 'test', v: 1, at: 1 });
-const CRITICAL_EVALS = {
+const DANGER_EVALS = {
   [START]: evalOf([30, 'e2e4 e7e5'], [20, 'd2d4 d7d5'], [15, 'g1f3']),
   [AFTER_NH3]: evalOf([-300, 'e7e5']),
   [AFTER_E4]: evalOf([30, 'e7e5 g1f3'], [35, 'c7c5'], [40, 'e7e6']),
@@ -201,10 +203,10 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { lines: 'all', positions: 'spaced' }, review: { view: 'study' }, criticalLevel: 0.5, refutationLevel: 1 });
+    practice: { lines: 'all', positions: 'spaced', rare: 'include' }, review: { view: 'study' }, dangerLevel: 0.5, refutationLevel: 1 });
   check('settings: invalid values fall back; old penalties and sliders ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [undefined, { lines: 'all', positions: 'spaced' }]);
+    [undefined, { lines: 'all', positions: 'spaced', rare: 'include' }]);
 
   // Masters moves: the top 3, played 10% of the time or more
   check('masters move: 5% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3', 'c4']);
@@ -244,33 +246,33 @@ function run(app) {
     document.getElementById('banner').classList.add('hidden');
   }
   // The tile's moves: those losing 0.1 pawns or more, with their share and drop.
-  check('critical: the moves losing 0.1 pawns or more, with share and drop', app.criticalMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 1.24 }, { san: 'e4', share: 0.5, drop: 0 }, { san: 'h3', share: 0.08, drop: 0.1 }] }),
+  check('danger: the moves losing 0.1 pawns or more, with share and drop', app.dangerMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 1.24 }, { san: 'e4', share: 0.5, drop: 0 }, { san: 'h3', share: 0.08, drop: 0.1 }] }),
     [['♗f4 14% · ', 1.24], ['h3 8% · ', 0.1]]);
-  // A move's Δ colored by its loss: green at Δ0.0 as shown, amber below the critical level (0.5), red at it or more.
+  // A move's Δ colored by its loss: green at Δ0.0 as shown, amber below the danger level (0.5), red at it or more.
   check('loss colors: green, amber, red', [-0.04, -0.3, -0.46, -0.5, -1.2].map(d => [app.lossDelta(d).textContent, app.lossDelta(d).className]),
     [['Δ0.0', 'loss-none'], ['Δ−0.3', 'loss-some'], ['Δ−0.5', 'loss-big'], ['Δ−0.5', 'loss-big'], ['Δ−1.2', 'loss-big']]);
-  check('critical: evaluations in pawns, mate as 10', [{ cp: 45 }, { cp: -120 }, { mate: 3 }, { mate: -2 }].map(app.pawnsOf), [0.45, -1.2, 10, -10]);
-  // Critical positions: the Lichess moves' expected loss, by the engine, at the critical level (0.5) or more.
+  check('danger: evaluations in pawns, mate as 10', [{ cp: 45 }, { cp: -120 }, { mate: 3 }, { mate: -2 }].map(app.pawnsOf), [0.45, -1.2, 10, -10]);
+  // Danger positions: the Lichess moves' expected loss, by the engine, at the danger level (0.5) or more.
   {
     const kept = app.moveStats, keptEvals = app.evals;
-    app.setMoveStats(structuredClone(CRITICAL));
-    app.setEvals(structuredClone(CRITICAL_EVALS));
-    const start = app.criticalAt(START), afterE4 = app.expectedLossAt(AFTER_E4);
-    check('critical: the expected loss, and each Lichess move\'s drop (from the engine\'s best 3, or the position after it), most played first', [Math.round(start.loss * 1000), start.moves.map(m => [m.san, Math.round(m.share * 100), Math.round(m.drop * 10) / 10])],
+    app.setMoveStats(structuredClone(DANGER));
+    app.setEvals(structuredClone(DANGER_EVALS));
+    const start = app.dangerAt(START), afterE4 = app.expectedLossAt(AFTER_E4);
+    check('danger: the expected loss, and each Lichess move\'s drop (from the engine\'s best 3, or the position after it), most played first', [Math.round(start.loss * 1000), start.moves.map(m => [m.san, Math.round(m.share * 100), Math.round(m.drop * 10) / 10])],
       [520, [['e4', 56, 0], ['d4', 25, 0.1], ['Nh3', 15, 3.3]]]);
-    check('critical: for the side to move (Black after 1. e4); below the level, not critical', [Math.round(afterE4.loss * 100), afterE4.moves.map(m => [m.san, Math.round(m.drop * 10) / 10]), app.criticalAt(AFTER_E4)], [36, [['e5', 0], ['g5', 1.2]], null]);
-    app.settings.criticalLevel = 0.3;
-    check('critical: at a lower level it is', !!app.criticalAt(AFTER_E4), true);
-    app.settings.criticalLevel = 0.5;
-    app.setEvals({ ...structuredClone(CRITICAL_EVALS), [AFTER_NH3]: undefined });
-    check('critical: unknown until the position after a Lichess move outside the engine\'s best 3 is evaluated', app.expectedLossAt(START), null);
-    app.setEvals(structuredClone(CRITICAL_EVALS));
+    check('danger: for the side to move (Black after 1. e4); below the level, not a danger position', [Math.round(afterE4.loss * 100), afterE4.moves.map(m => [m.san, Math.round(m.drop * 10) / 10]), app.dangerAt(AFTER_E4)], [36, [['e5', 0], ['g5', 1.2]], null]);
+    app.settings.dangerLevel = 0.3;
+    check('danger: at a lower level it is', !!app.dangerAt(AFTER_E4), true);
+    app.settings.dangerLevel = 0.5;
+    app.setEvals({ ...structuredClone(DANGER_EVALS), [AFTER_NH3]: undefined });
+    check('danger: unknown until the position after a Lichess move outside the engine\'s best 3 is evaluated', app.expectedLossAt(START), null);
+    app.setEvals(structuredClone(DANGER_EVALS));
     app.setMoveStats({ [START]: { lichess: withResults([['e4', 20, 10, 5], ['Nh3', 2, 2, 10]]) } }); // 49 games
-    check('critical: the position needs 50 games', app.expectedLossAt(START), null);
+    check('danger: the position needs 50 games', app.expectedLossAt(START), null);
     app.setMoveStats(kept); app.setEvals(keptEvals);
-    // Critical items twice as likely.
-    const facts = [{ frequency: 1, weakness: 1, due: 1, critical: true }, { frequency: 1, weakness: 1, due: 1, critical: false }];
-    check('critical: twice the priority', app.priorityOf(facts), [2, 1]);
+    // Danger items twice as likely.
+    const facts = [{ frequency: 1, weakness: 1, due: 1, danger: true }, { frequency: 1, weakness: 1, due: 1, danger: false }];
+    check('danger: twice the priority', app.priorityOf(facts), [2, 1]);
   }
   // Lichess moves: played 5% of the time or more, however many there are
   const statsKept = app.moveStats;
@@ -685,24 +687,24 @@ async function runLichessPage(app) {
     check('review: − All stays until clicked, even with a variation closed by its own −', [stays, toggles()], ['− All', '++++']);
     key('ArrowRight');
   }
-  // Critical positions on the Studies page: the tile at either side's move, the dot in the tree; the level set
+  // Danger positions on the Studies page: the tile at either side's move, the dot in the tree; the level set
   // on the Lichess page.
   {
     const kept = app.moveStats, keptEvals = app.evals;
-    app.setMoveStats(structuredClone(CRITICAL));
-    app.setEvals(structuredClone(CRITICAL_EVALS));
-    const setLevel = x => { $('critical-level').value = String(x); $('critical-level').dispatchEvent(new Event('change')); };
+    app.setMoveStats(structuredClone(DANGER));
+    app.setEvals(structuredClone(DANGER_EVALS));
+    const setLevel = x => { $('danger-level').value = String(x); $('danger-level').dispatchEvent(new Event('change')); };
     setLevel(0.3);
     const critView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
     $('arrows-study').click();
     key('Home');
-    const inStudy = [$('review-tree').querySelectorAll('.critical-dot').length, $('review-critical').children.length];
-    $('arrows-lichess').click(); // critical positions show with Lichess only
+    const inStudy = [$('review-tree').querySelectorAll('.danger-dot').length, $('review-danger').children.length];
+    $('arrows-lichess').click(); // danger positions show with Lichess only
     key('Home');
-    const tileAt = () => [...$('review-critical').children].map(e => e.textContent);
+    const tileAt = () => [...$('review-danger').children].map(e => e.textContent);
     const atStart = tileAt();
     const e4 = [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === 'e4');
-    const dots = [...$('review-tree').querySelectorAll('.critical-dot')].map(d => { let el = d.previousElementSibling; while (el && !el.classList.contains('tree-move')) el = el.previousElementSibling; return el?.textContent; }); // the move before it (after any violet dot)
+    const dots = [...$('review-tree').querySelectorAll('.danger-dot')].map(d => { let el = d.previousElementSibling; while (el && !el.classList.contains('tree-move')) el = el.previousElementSibling; return el?.textContent; }); // the move before it (after any violet dot)
     e4.dispatchEvent(new MouseEvent('mouseenter')); // a preview of clicking it: the position after it
     const hover = $('move-preview').querySelector('.preview-text').innerText;
     e4.dispatchEvent(new MouseEvent('mouseleave'));
@@ -710,12 +712,12 @@ async function runLichessPage(app) {
     const afterE4 = tileAt();
     setLevel(0.5);
     key('ArrowLeft'); key('ArrowRight');
-    const atHalf = [tileAt(), app.settings.criticalLevel];
+    const atHalf = [tileAt(), app.settings.dangerLevel];
     key('ArrowRight');
-    const notCritical = tileAt();
-    check('critical: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notCritical],
-      [['Critical position (Lichess)', 'Lichess expected loss Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Critical position (Lichess)', 'Lichess expected loss Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
-    check('critical: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
+    const notDanger = tileAt();
+    check('danger: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notDanger],
+      [['Danger position (Lichess)', 'Lichess expected loss Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Danger position (Lichess)', 'Lichess expected loss Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
+    check('danger: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
     // Low recall, a position of yours below 75%: a violet dot after the move leading to it (before the first
@@ -744,7 +746,7 @@ async function runLichessPage(app) {
       app.setMoveStats({ [AFTER_E4_E5]: { masters: explorer([['Nc3', 30], ['d4', 20], ['Bc4', 10]]) } });
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['d4', 'Nf3'], at: null, main: false }] }, lines: {} });
       const dotsAfter = () => [...$('review-tree').querySelectorAll('.tree-dot')].map(d => d.className.replace('tree-dot ', ''));
-      const tiles = () => ['review-masters', 'review-critical'].filter(id => $(id).children.length).map(id => id.slice(7));
+      const tiles = () => ['review-masters', 'review-danger'].filter(id => $(id).children.length).map(id => id.slice(7));
       const seen = {};
       for (const view of ['study', 'masters', 'errors', 'lichess']) {
         $('arrows-' + view).click();
@@ -846,7 +848,7 @@ async function runLichessPage(app) {
   app.settings.review = { view: 'masters' };
   const masters = [arrowsAt([]), arrowsAt(['e4'])];
   const evalsBefore = app.evals;
-  app.setEvals(structuredClone(CRITICAL_EVALS)); // at the start: e4 +0.3, d4 +0.2, ♘f3 +0.15 (c4 unknown)
+  app.setEvals(structuredClone(DANGER_EVALS)); // at the start: e4 +0.3, d4 +0.2, ♘f3 +0.15 (c4 unknown)
   const mastersTip = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'c4')];
   app.setMoveStats({ [START]: { masters: explorer([['d4', 60], ['Nf3', 40]]) } }); // 1. e4 isn't a masters move here
   const mastersOffPath = arrowsAt([]);
@@ -863,16 +865,16 @@ async function runLichessPage(app) {
   app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|': [{ tried: ['d4', 'e4'], at: 1, main: true }, { tried: ['d4', 'g3', 'e4'], at: 2, main: true }, { tried: ['hint', 'e4'], at: 3, main: true }, { tried: ['e4'], at: Date.now(), main: true }] }, lines: {} });
   app.settings.review = { view: 'errors' };
   const errorsShown = [arrowsAt([]), arrowsAt(['e4']), app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'g3'), app.squareTipLines(italianRoot, 'e4')];
-  app.setEvals(structuredClone(CRITICAL_EVALS));
+  app.setEvals(structuredClone(DANGER_EVALS));
   const yourLoss = app.yourExpectedLoss(italianRoot), tried = [...app.triedPositions().keys()];
-  // Critical position (you): your expected loss at the critical level (0.5) or more. Here 0.07: no; with 1. ♘h3
+  // Danger position (you): your expected loss at the danger level (0.5) or more. Here 0.07: no; with 1. ♘h3
   // (Δ−3.3) first in 1 of the 3 tries with a move: 1.1, yes; never at a position of the other side.
-  const yourCritical = [app.isYourCriticalPosition(italianRoot, 'white')];
+  const yourDanger = [app.isYourDangerPosition(italianRoot, 'white')];
   const triesKept = app.history.positions['AAAAAAAA/BBBBBBBB|'];
   app.history.positions['AAAAAAAA/BBBBBBBB|'] = [{ tried: ['Nh3', 'e4'], at: 1, main: true }, ...triesKept.slice(1)];
-  yourCritical.push(app.isYourCriticalPosition(italianRoot, 'white'));
+  yourDanger.push(app.isYourDangerPosition(italianRoot, 'white'));
   app.history.positions['AAAAAAAA/BBBBBBBB|'] = triesKept;
-  check('critical position (you): your expected loss at the critical level or more', yourCritical, [false, true]);
+  check('danger position (you): your expected loss at the danger level or more', yourDanger, [false, true]);
   const accuracyTips = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'e4')];
   app.settings.review = { view: 'study' };
   const studyTips = [app.squareTipLines(italianRoot, 'e4'), app.squareTipLines(italianRoot, 'f5')];
@@ -1290,6 +1292,30 @@ async function runPositions(app) {
   check('spaced repetition: a line played today comes up less than one never played through', linePriorities[0] < linePriorities[1], true);
   const positionPriorities = app.priorities(positionItems);
   check('spaced repetition: equally weak positions, the most frequent first', positionPriorities.indexOf(Math.max(...positionPriorities)), 0);
+  // Rarely reached: by the opponent's moves on the way (Bb5 after e5 and Nc6, the only ones: 100%; Ba4
+  // after a6: 80%; d4 after f6: 20%); without statistics, kept.
+  check('rarely reached: by the chance the opponent\'s moves lead there', [0.25, 0.9].map(below => positionItems.map(item => app.isRarelyReached(item, below))),
+    [[false, false, true], [false, true, true]]);
+  check('rarely reached: none below 1 game in 100 here; an unknown choice is Include', [(app.setSettings({ practice: { rare: 'rare' } }), app.practiceItems('positions').length),
+    app.checkedSettings({ practice: { rare: 'often' } }).practice.rare], [3, 'include']);
+  const statsKept = app.moveStats;
+  app.setMoveStats({});
+  check('rarely reached: positions without statistics are kept', app.practiceItems('positions').length, 3);
+  app.setMoveStats(statsKept);
+  app.setSettings({});
+  // Resetting a chapter's stats: its tries and play-throughs go, other chapters' stay.
+  const historyKept = structuredClone(app.history);
+  app.setHistory({ positions: { ...structuredClone(historyKept.positions), 'AAAAAAAA/BBBBBBBB|e4 e5': [{ tried: ['Nf3'], at: 1 }] }, lines: structuredClone(historyKept.lines) });
+  const before = app.chapterTries('AAAAAAAA/DDDDDDDD');
+  app.forgetChapter('AAAAAAAA/DDDDDDDD');
+  check('reset: the chapter\'s tries and play-throughs forgotten, another chapter\'s kept', [before > 0, app.chapterTries('AAAAAAAA/DDDDDDDD'), Object.keys(app.history.lines).length,
+    app.chapterTries('AAAAAAAA/BBBBBBBB')], [true, 0, 0, 1]);
+  app.setHistory(historyKept);
+  check('profiles: each account\'s data under its name; the device\'s, and before the first connection, plain',
+    [app.storageName('history', 'david'), app.storageName('account', 'david'), app.storageName('login', 'david'), app.storageName('history', null), app.libraryName('david'), app.libraryName(null)],
+    ['cot.david.history', 'cot.account', 'cot.login', 'cot.history', 'library:david', 'library']);
+  check('backup file name: the account and local time; none without an account', [app.backupFileName('david', new Date(2026, 10, 5, 9, 7)), app.backupFileName(null, new Date(2026, 0, 1, 23, 59))],
+    ['trainer-david-2026-11-05-0907.json', 'trainer-2026-01-01-2359.json']);
   // Test probabilities.
   const shown = kind => {
     $(`show-${kind}-btn`).click();
@@ -1337,7 +1363,7 @@ async function runPositions(app) {
   const optionLabels = tile => [...document.querySelectorAll(`#${tile}-choice .choice`)].map(o => o.querySelector('span').textContent);
   check('chooser: Studies to practice first, then the two tiles and their options; no Main lines only checkbox', [$('studies-to-practice').nextElementSibling === $('practice-chooser'),
     [...$('practice-chooser').querySelectorAll('h2')].map(h => h.textContent), optionLabels('lines'), optionLabels('positions'), !!$('chooser-main')],
-    [true, ['Lines', 'Positions'], ['All lines', 'Main lines'], ['All', 'Low recall', 'Critical (you)', 'Critical (Lichess)', 'Refutations'], false]);
+    [true, ['Lines', 'Positions'], ['All lines', 'Main lines'], ['All', 'Low recall', 'Danger (you)', 'Danger (Lichess)', 'Refutations'], false]);
   document.querySelector('#lines-choice input[value=main]').click();
   const mainChosen = [app.settings.practice.lines, app.settings.practice.positions];
   document.querySelector('#lines-choice input[value=all]').click();
@@ -1379,7 +1405,7 @@ async function runPositions(app) {
     const everyday = [app.settings.practice.positions, $('practice-drill').textContent];
     app.setHistory(historyKept);
     check('drill: Low recall, its count; empty drills grayed out; a position below 75%, from move 1; the round in the heading; Drill complete, Start again; spaced repetition again', [before, drill, playing, complete, again, everyday],
-      [[['Low recall1', false], ['Critical (you)0', true], ['Critical (Lichess)0', true], ['Refutations0', true]], ['lowRecall', false], [2, 'Nf3', 'Low recall · 1 of 1', 0],
+      [[['Low recall1', false], ['Danger (you)0', true], ['Danger (Lichess)0', true], ['Refutations0', true]], ['lowRecall', false], [2, 'Nf3', 'Low recall · 1 of 1', 0],
        ['Drill complete', 'Start again'], ['Nf3', 'Low recall · 1 of 1'], ['spaced', '']]);
   }
   // Refutations: after an opponent's Lichess move losing 1 pawn or more. Italian (White): 1… g5 (Δ−1.2); the
@@ -1388,7 +1414,7 @@ async function runPositions(app) {
   // right; the try is kept under the move's key, but isn't repertoire recall (not in Low recall).
   {
     const statsKept = app.moveStats, evalsKept = app.evals, historyKept = app.history;
-    app.setMoveStats(structuredClone(CRITICAL)); app.setEvals(structuredClone(CRITICAL_EVALS)); app.setHistory({ positions: {}, lines: {} });
+    app.setMoveStats(structuredClone(DANGER)); app.setEvals(structuredClone(DANGER_EVALS)); app.setHistory({ positions: {}, lines: {} });
     app.setSelection(['AAAAAAAA/BBBBBBBB', 'AAAAAAAA/CCCCCCCC']);
     const found = () => app.drillItems('refutations', false).map(({ line, i }) => [line.moves.slice(0, i).map(m => m.san).join(' '), line.moves[i].san, !!line.silent]);
     const atOne = found();
