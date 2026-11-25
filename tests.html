@@ -52,7 +52,6 @@ export const app = {
     store.get = (key, fallback) => key === 'history' ? (window.testStoredHistory ?? fallback) : realGet(key, fallback); // never your real history
     store.set = () => {}; store.remove = () => {};
     saveMoveStats = async () => {}; saveLibrary = async () => {}; saveEvals = async () => true;
-    account = null; accounts = []; becomeAccount = async () => true; switchAccount = () => {}; clearProfile = async () => {}; // no profiles: nothing moved or deleted
     engineAvailable = () => false; // no engine unless a test asks for one
     explorerPace.ms = 0; // no 2 s pace in the tests (except the test of it)
     window.fetch = async () => new Response('', { status: 404 });
@@ -80,7 +79,9 @@ export const app = {
   get evals() { return evals; }, setEvals(e) { evals = e; forgetDanger(); },
   pawnsOf, expectedLossAt, yourExpectedLoss, triedPositions, isYourDangerPosition,
   evaluation, evalText, parseEngineInfo, startEngine, mergeEvals, ENGINE, engineCount,
-  isRarelyReached, backupFileName, chapterTries, forgetChapter, storageName, libraryName,
+  isRarelyReached, backupFileName, chapterTries, forgetChapter,
+  // Disconnect's backup, clearing and reopening, replaced by the tests.
+  stubDisconnect(save, clear, reopen) { saveBackup = save; clearYourData = clear; reopenApp = reopen; },
 };`;
 
 async function loadApp() {
@@ -370,25 +371,34 @@ async function runLichessPage(app) {
   $('nav-lichess').click();
   check('red dot: not for Lichess asking to slow down; for an expired connection', [dotWhenSlow, !!$('nav-lichess').querySelector('.problem-dot')], [false, true]);
   $('lichess-status').textContent = '';
-  let revoked = null, asked = null;
+  // Disconnect: asks first, saves a backup, and only then cancels a login's connection, clears your data
+  // and opens the app again.
+  let revoked = null, asked = null, steps = [], backupSaves = true;
   const realConfirm = window.confirm;
+  app.stubDisconnect(async () => { steps.push('backup'); return backupSaves ? 'trainer-tester.json' : null; }, async () => { steps.push('clear'); }, () => { steps.push('reopen'); });
+  const disconnect = async () => { steps = []; $('disconnect-btn').click(); await new Promise(r => setTimeout(r, 0)); await new Promise(r => setTimeout(r, 0)); };
   window.confirm = question => { asked = question; return false; };
-  $('disconnect-btn').click();
-  check('Disconnect asks first, and Cancel keeps the connection', [asked, app.token], ['Disconnect from Lichess? Your studies and stats stay.', 'lio_login']);
+  await disconnect();
+  check('Disconnect asks first, and Cancel keeps everything', [asked, steps], ["Disconnect? A backup of your stats is saved first, then they're cleared from this browser.", []]);
   window.confirm = () => true;
+  backupSaves = false;
+  await disconnect();
+  check('Disconnect: a backup not saved (canceled) clears nothing', steps, ['backup']);
+  backupSaves = true;
   window.fetch = async (url, init) => { revoked = [String(url), init.method, init.headers.Authorization]; return new Response(null, { status: 204 }); };
-  $('disconnect-btn').click();
+  await disconnect();
   window.fetch = isolated;
-  check('Disconnect: canceled on Lichess, forgotten here, Connect again', [revoked, app.token, $('lichess-connected').textContent, $('connect-btn').classList.contains('hidden')],
-    [['https://lichess.org/api/token', 'DELETE', 'Bearer lio_login'], null, 'Not connected.', false]);
+  check('Disconnect: the backup, then canceled on Lichess, cleared, opened again', [steps, revoked, sessionStorage.getItem('cot.cleared')],
+    [['backup', 'clear', 'reopen'], ['https://lichess.org/api/token', 'DELETE', 'Bearer lio_login'], 'trainer-tester.json']);
+  sessionStorage.removeItem('cot.cleared');
   app.setToken('lip_pasted');
   revoked = null;
   window.fetch = async () => { revoked = 'called'; return new Response(null, { status: 204 }); };
-  $('nav-lichess').click();
-  $('disconnect-btn').click();
+  await disconnect();
   window.fetch = isolated;
   window.confirm = realConfirm;
-  check('Disconnect: a pasted token is only forgotten here', [revoked, app.token], [null, null]);
+  check('Disconnect: a pasted token isn\'t canceled on Lichess', [revoked, steps], [null, ['backup', 'clear', 'reopen']]);
+  app.setToken(null);
 
   // The first connection, from the welcome screen: the studies are fetched, nothing downloads, and the
   // page offers Restore backup or Download statistics, which opens the Practice page and starts the downloads.
@@ -1311,9 +1321,6 @@ async function runPositions(app) {
   check('reset: the chapter\'s tries and play-throughs forgotten, another chapter\'s kept', [before > 0, app.chapterTries('AAAAAAAA/DDDDDDDD'), Object.keys(app.history.lines).length,
     app.chapterTries('AAAAAAAA/BBBBBBBB')], [true, 0, 0, 1]);
   app.setHistory(historyKept);
-  check('profiles: each account\'s data under its name; the device\'s, and before the first connection, plain',
-    [app.storageName('history', 'david'), app.storageName('account', 'david'), app.storageName('login', 'david'), app.storageName('history', null), app.libraryName('david'), app.libraryName(null)],
-    ['cot.david.history', 'cot.account', 'cot.login', 'cot.history', 'library:david', 'library']);
   check('backup file name: the account and local time; none without an account', [app.backupFileName('david', new Date(2026, 10, 5, 9, 7)), app.backupFileName(null, new Date(2026, 0, 1, 23, 59))],
     ['trainer-david-2026-11-05-0907.json', 'trainer-2026-01-01-2359.json']);
   // Test probabilities.

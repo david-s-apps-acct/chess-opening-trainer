@@ -96,10 +96,6 @@
   header nav { display: flex; gap: 8px; flex-wrap: wrap; }
   header nav button.current, header nav button.current:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
   /* The Lichess button's red dot (not connected): small, centered on the lowercase letters */
-  .account-menu { position: fixed; z-index: 45; display: flex; flex-direction: column; min-width: 160px; padding: 4px;
-    background: var(--surface-2); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
-  .account-menu button { background: none; box-shadow: none; text-align: left; padding: 7px 10px; }
-  .account-menu button:hover { background: var(--accent); color: var(--accent-text); }
   header nav .problem-dot { display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--bad); vertical-align: middle; }
   main { max-width: 1040px; margin: 0 auto; padding: 16px; }
 
@@ -515,11 +511,9 @@
     <button id="nav-practice">Practice</button>
     <button id="nav-groups">Groups</button>
     <button id="nav-studies">Studies</button>
-    <button id="nav-lichess" aria-haspopup="menu" aria-expanded="false">Lichess</button>
+    <button id="nav-lichess">Lichess</button>
     <button id="nav-help">Help</button>
   </nav>
-  <!-- The account menu, opened by the account button (see showAccountMenu) -->
-  <div id="account-menu" class="account-menu hidden" role="menu" aria-label="Accounts"></div>
 </header>
 
 <main>
@@ -545,9 +539,7 @@
         <div class="actions">
           <button id="connect-btn" class="primary">Connect to Lichess</button>
           <button id="disconnect-btn" class="primary">Disconnect</button>
-          <button id="remove-account-btn" class="primary" title="Delete this account's studies, stats and settings on this device">Remove from this device</button>
         </div>
-        <p id="add-account-note" class="muted hidden">Lichess connects whoever is signed in on lichess.org: sign in there as the new account first.</p>
         <div id="token-box" class="hidden">
           <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
           <form id="token-form" class="token-row">
@@ -954,8 +946,7 @@
           <li>The Lichess page's cards: <b>Status</b> (your account and Lichess rating, when you connected, when your studies were last fetched, and any message about fetching your studies), <b>Connection</b> (Connect to Lichess or Disconnect), <b>Move statistics</b>, <b>Backup</b> and, after your first connection, <b>Getting started</b> (Download statistics). Before you connect, only Status and Connection show.</li>
           <li><b>Move statistics</b>: how many positions have their move statistics and masters statistics so far, and the Lichess games the move statistics come from: rating bands (a game's band is its players' average Lichess rating, which runs higher than Chess.com's; e.g. Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, all combined, so the busiest count most. To change them, unlock the padlock, tick, and press <b>Apply</b>: every position's statistics then download again in the background (the old ones are used meanwhile). They're first set from your Lichess rating: its band and the next one up (1200–2000 without a rating), in blitz and rapid; after that they only change when you change them.</li>
           <li><b>Backup</b>: <b>Save backup</b> saves your stats, settings and Lichess statistics in a file; <b>Restore backup</b> loads one, e.g. in another browser; <b>Merge backup</b> adds one's history to yours, e.g. from another device. Backups never include your token.</li>
-          <li><b>Disconnect</b> ends the connection (also on Lichess); your studies and stats stay, but stop updating until you <b>Connect to Lichess</b> again. Lichess also ends a connection after about a year: connect again then. Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
-          <li><b>Sharing a device:</b> each Lichess account has its own studies, stats, groups and settings here (the statistics and evaluations are shared). The header shows whose they are; click it to switch, or <b>Add account</b> (sign in on lichess.org as that account first). <b>Remove from this device</b> deletes an account's data here. Restoring or merging another account's backup offers to put it in that account.</li>
+          <li><b>Disconnect</b> saves a backup, then ends the connection (also on Lichess) and clears your studies, stats and settings from this browser (the Lichess statistics stay). To come back, <b>Connect to Lichess</b> and <b>Restore backup</b>. To let someone else use the app here: Disconnect, they sign in on lichess.org, then Connect. Lichess also ends a connection after about a year: just connect again then (nothing is cleared). Opened from disk, it's <b>Add token</b> (Lichess opens to create one, to paste into the box) and <b>Clear token</b>.</li>
           <li>Your studies are updated from Lichess each time the app opens, so changes you make there appear here; reload the page to update them now. If you're practicing at the time, the update waits until you press End practice. Your stats are kept.</li>
         </ul>
         <details>
@@ -997,44 +988,40 @@ const MAX_LINES_PER_CHAPTER = 5000;
 // preset, the hidden studies and chapters, and your history. IndexedDB (database "chess-opening-trainer"): the studies
 // fetched from Lichess (store "library"), the move statistics for each board position (store
 // "moveStats", keyed by EPD) and Stockfish's evaluation of each (store "evals", keyed by EPD). They can be large.
-//
-// Profiles (the user's decisions, 25 November 2026): several people can share a device, each with their
-// own Lichess account. Each account's data is kept apart: localStorage names "cot.<account>.<name>"
-// (PROFILE_KEYS), and its studies under "library:<account>" in IndexedDB. The move statistics and the
-// evaluations are shared (by position, the same for anyone). Before the first connection there's no
-// account yet (account null): its data has the plain names ("cot.token", "library") and becomes the
-// account's once it's known (see becomeAccount). "cot.account" (the account used last: the app opens on
-// it), "cot.accounts" (every account on this device) and "cot.login" (while logging in) belong to the
-// device, not an account.
-const PROFILE_KEYS = ['token', 'tokenSavedAt', 'settings', 'presets', 'chosenPreset', 'hidden', 'history', 'lastBackup'];
-const DEVICE_KEYS = new Set(['account', 'accounts', 'login']);
-const storageName = (key, who) => 'cot.' + (who && !DEVICE_KEYS.has(key) ? who + '.' : '') + key;
-const libraryName = who => who ? 'library:' + who : 'library';
-// The stored data of an account (who; null before the first connection).
-const storeOf = who => ({
+const store = {
   get(key, fallback) {
     try {
-      const v = localStorage.getItem(storageName(key, who));
+      const v = localStorage.getItem('cot.' + key);
       return v == null ? fallback : JSON.parse(v);
     } catch { return fallback; }
   },
   set(key, value) { // false when it can't be saved (e.g. storage full)
-    try { localStorage.setItem(storageName(key, who), JSON.stringify(value)); return true; } catch (e) { console.warn('localStorage write failed', e); return false; }
+    try { localStorage.setItem('cot.' + key, JSON.stringify(value)); return true; } catch (e) { console.warn('localStorage write failed', e); return false; }
   },
   remove(key) {
-    try { localStorage.removeItem(storageName(key, who)); } catch {}
+    try { localStorage.removeItem('cot.' + key); } catch {}
   },
-});
-// This account's (and the device's).
-const store = {
-  get: (key, fallback) => storeOf(account).get(key, fallback),
-  set: (key, value) => storeOf(account).set(key, value),
-  remove: key => storeOf(account).remove(key),
 };
-const validName = v => typeof v === 'string' && v.length > 0;
-let account = validName(storeOf(null).get('account')) ? storeOf(null).get('account') : null;
-let accounts = (v => Array.isArray(v) ? v.filter(validName) : [])(storeOf(null).get('accounts'));
-const saveAccounts = list => { accounts = list; storeOf(null).set('accounts', list); };
+
+// What's yours, cleared by Disconnect (see clearYourData); the studies too. The Lichess statistics and the
+// evaluations stay: they're about positions, the same for anyone.
+const YOUR_KEYS = ['token', 'tokenSavedAt', 'settings', 'presets', 'chosenPreset', 'hidden', 'history', 'lastBackup'];
+
+// Profiles, one per Lichess account, were built and removed on 25 November 2026 (Disconnect clears your
+// data instead). Data stored for one ("cot.<account>.<name>", and "library:<account>": see init) moves
+// back to the plain names. Once every device has opened this version, this can go.
+const profileAccount = store.get('account', null);
+if (typeof profileAccount === 'string') {
+  try {
+    for (const key of YOUR_KEYS) {
+      const v = localStorage.getItem(`cot.${profileAccount}.${key}`);
+      if (v != null) localStorage.setItem('cot.' + key, v);
+    }
+    for (const k of Object.keys(localStorage)) if (/^cot\.[^.]+\./.test(k)) localStorage.removeItem(k);
+  } catch (e) { console.warn('localStorage write failed', e); }
+  store.remove('account');
+  store.remove('accounts');
+}
 
 let database = null;
 
@@ -1061,13 +1048,27 @@ async function inDatabase(storeName, mode, work) {
   });
 }
 
-async function loadLibrary(who = account) {
-  const req = await inDatabase('library', 'readonly', s => s.get(libraryName(who)));
+async function loadLibrary() {
+  const req = await inDatabase('library', 'readonly', s => s.get('library'));
   return req.result || null;
 }
 
+// A profile's studies ("library:<account>") back under "library", the rest deleted (see profileAccount).
+async function unprofileLibrary() {
+  if (typeof profileAccount !== 'string') return;
+  await inDatabase('library', 'readwrite', s => {
+    const keys = s.getAllKeys(), own = s.get('library:' + profileAccount);
+    keys.onsuccess = () => {
+      own.onsuccess = () => {
+        if (own.result) s.put(own.result, 'library');
+        for (const k of keys.result) if (String(k).startsWith('library:')) s.delete(k);
+      };
+    };
+  });
+}
+
 async function saveLibrary() {
-  try { await inDatabase('library', 'readwrite', s => s.put(library, libraryName(account))); }
+  try { await inDatabase('library', 'readwrite', s => s.put(library, 'library')); }
   catch (e) { console.warn('IndexedDB write failed', e); }
   keepData();
 }
@@ -1166,7 +1167,7 @@ function saveHistory({ replace = false } = {}) {
 }
 // Tries saved by another tab or window, added to this one's copy as they're saved.
 window.addEventListener('storage', e => {
-  if (e.key !== storageName('history', account) || !e.newValue) return;
+  if (e.key !== 'cot.history' || !e.newValue) return;
   let saved = null;
   try { saved = checkedHistory(JSON.parse(e.newValue)); } catch {}
   if (saved) history = mergedHistory(history, saved);
@@ -1492,17 +1493,14 @@ function chooseDefaultGames() {
 }
 
 // Puts studies just fetched in place of the stored ones, and saves them. Your history is kept, even
-// for positions no longer in them (it's ignored there, and comes back if they do). False when they're
-// another account's: the app switches to it (see becomeAccount).
+// for positions no longer in them (it's ignored there, and comes back if they do).
 async function useStudies(fetched) {
-  if (!await becomeAccount(fetched.username)) return false; // another account's: switching to it
   if (library) moveLinesOfTurnedChapters(library, fetched);
   library = fetched;
   chooseDefaultGames();
   await saveLibrary();
   forgetParsedChapters();
   pruneAfterRefresh();
-  return true;
 }
 
 // Fetching your studies when there are none yet (connecting), with "Fetching…"
@@ -1515,7 +1513,7 @@ async function fetchStudies({ welcome = false } = {}) {
   setUpdateStatus('Fetching your studies from Lichess…');
   try {
     const fetched = await downloadStudies();
-    if (!await useStudies(fetched)) return;
+    await useStudies(fetched);
     if (!welcome) startDownloads(); // missing Lichess data, quietly in the background
     setUpdateStatus(''); // the Status card says what was fetched, and when
     if (welcome) showWelcomeReady();
@@ -1543,7 +1541,7 @@ async function syncStudies() {
     } else if (session) {
       waitingStudies = fetched;
       return;
-    } else if (!await useStudies(fetched)) return;
+    } else await useStudies(fetched);
     refreshPage();
   } catch (e) {
     if (e.status === 401) setUpdateStatus(e.message, true);
@@ -1660,86 +1658,6 @@ async function finishLogIn() {
     saveToken((await res.json()).access_token);
   } catch (e) { return fail(errorText(e)); }
   return true;
-}
-
-// ---------- Accounts ----------
-// Switching between the accounts on this device (see Profiles, in Storage), from the header's account
-// menu; Add account opens a new, empty profile to connect; Remove from this device (the Lichess page)
-// deletes one. Switching opens the app again on the account, so everything is read afresh.
-
-function switchAccount(name) {
-  storeOf(null).set('account', name);
-  location.reload();
-}
-
-// Deletes an account's data on this device (not the shared statistics and evaluations).
-async function clearProfile(who) {
-  for (const key of PROFILE_KEYS) storeOf(who).remove(key);
-  try { await inDatabase('library', 'readwrite', s => s.delete(libraryName(who))); } catch (e) { console.warn('IndexedDB write failed', e); }
-}
-
-// The account whose studies were just fetched (name) becomes this profile's, if it has none yet and
-// isn't on this device: what's here (the token, and anything restored) becomes its. Otherwise, if it's
-// another account (already on this device, or signed in on lichess.org instead of this one), the
-// connection goes to that account and the app switches to it. True when the studies belong here, false
-// when the app is switching.
-async function becomeAccount(name) {
-  if (name === account) return true;
-  if (!account && !accounts.includes(name)) {
-    for (const key of PROFILE_KEYS) {
-      const value = storeOf(null).get(key);
-      if (value === undefined) continue;
-      storeOf(name).set(key, value);
-      storeOf(null).remove(key);
-    }
-    const moved = await loadLibrary(null);
-    if (moved) {
-      try { await inDatabase('library', 'readwrite', s => { s.put(moved, libraryName(name)); s.delete(libraryName(null)); }); }
-      catch (e) { console.warn('IndexedDB write failed', e); }
-    }
-    account = name;
-    storeOf(null).set('account', name);
-    saveAccounts([...accounts, name]);
-    return true;
-  }
-  storeOf(name).set('token', token);
-  storeOf(name).set('tokenSavedAt', Date.now());
-  if (account) { store.remove('token'); store.remove('tokenSavedAt'); } // not this account's
-  else await clearProfile(null);
-  if (!accounts.includes(name)) saveAccounts([...accounts, name]);
-  switchAccount(name);
-  return false;
-}
-
-// The header's account button: the account's name (Lichess before there's one), with a dot when not
-// connected; it opens the account menu: the other accounts on this device (a click switches), Add
-// account and Lichess page. With no account on this device yet, it opens the Lichess page.
-function showAccountMenu(open) {
-  const menu = $('account-menu');
-  menu.classList.toggle('hidden', !open);
-  $('nav-lichess').setAttribute('aria-expanded', String(open));
-  if (!open) return;
-  const item = (text, title, onclick) => element('button', { role: 'menuitem', title, onclick }, text);
-  menu.replaceChildren(
-    ...accounts.filter(a => a !== account).map(a => item(a, `Switch to ${a}`, () => switchAccount(a))),
-    item('Add account', 'Connect another Lichess account on this device', () => switchAccount(null)),
-    item('Lichess page', 'Your Lichess account, studies and statistics', () => { showAccountMenu(false); showLichess(); }));
-  placePopup(menu, $('nav-lichess'));
-}
-const accountMenuOpen = () => !$('account-menu').classList.contains('hidden');
-document.addEventListener('click', e => { if (accountMenuOpen() && !e.target.closest('#account-menu, #nav-lichess')) showAccountMenu(false); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && accountMenuOpen()) showAccountMenu(false); });
-
-// Remove from this device (the Lichess page), after "Are you sure?": the account's token, studies and
-// stats here are deleted (a connection made by logging in is canceled on Lichess too, as Disconnect
-// does), and the app switches to another account on this device, or to none.
-async function removeAccount() {
-  if (!account || !confirm(`Remove ${account} from this device? Its studies, stats and settings here are deleted. Save a backup first to keep them.`)) return;
-  if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
-  await clearProfile(account);
-  const rest = accounts.filter(a => a !== account);
-  saveAccounts(rest);
-  switchAccount(rest[0] ?? null);
 }
 
 // ---------- Chapters and lines ----------
@@ -2529,7 +2447,7 @@ function resetButton(c) {
   return btn;
 }
 window.addEventListener('storage', e => {
-  if (e.key !== storageName('resetChapter', account) || !e.newValue) return;
+  if (e.key !== 'cot.resetChapter' || !e.newValue) return;
   let key = null;
   try { key = JSON.parse(e.newValue).key; } catch {}
   if (typeof key !== 'string') return;
@@ -3938,7 +3856,7 @@ function endPractice() {
   if (waitingStudies) { // updated studies that arrived during practice (see syncStudies)
     const fetched = waitingStudies;
     waitingStudies = null;
-    useStudies(fetched).then(ours => { if (ours) { refreshPage(); startDownloads(); } });
+    useStudies(fetched).then(() => { refreshPage(); startDownloads(); });
   }
   hideBoardNotice(true);
   $('next-btn').classList.add('hidden');
@@ -4852,8 +4770,6 @@ function renderLichessPage() {
   // connected.
   $('connect-btn').classList.toggle('hidden', !!token && !connectionExpired());
   $('disconnect-btn').classList.toggle('hidden', !token);
-  $('remove-account-btn').classList.toggle('hidden', !account);
-  $('add-account-note').classList.toggle('hidden', !!account || !accounts.length);
   // Getting started: after the first connection, once your studies are here.
   $('getting-started').classList.toggle('hidden', !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
@@ -4958,7 +4874,7 @@ const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 // on the Lichess page).
 function updateLichessStatus() {
   const expired = !!token && connectionExpired();
-  $('nav-lichess').replaceChildren(account ?? 'Lichess', ...!token || expired ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'not connected' })] : []);
+  $('nav-lichess').replaceChildren('Lichess', ...!token || expired ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'not connected' })] : []);
   $('nav-lichess').title = !token ? 'Not connected to Lichess' : expired ? 'Lichess has ended the connection: connect again' : 'Your Lichess account, studies and statistics';
 }
 
@@ -5000,21 +4916,29 @@ $('connect-btn').addEventListener('click', () => {
   $('token-input').focus();
 });
 
-// Disconnect (online) or Clear token (from disk), after "Are you sure?": the app forgets the
-// connection; your studies and stats stay, but stop updating until you connect again. A connection made
-// by logging in (its token starts "lio_") is also canceled on Lichess; a token you pasted ("lip_…")
-// may be used elsewhere, so it's only forgotten here.
+// Disconnect (online) or Clear token (from disk), after "Are you sure?" (the user's decisions, 25 November
+// 2026, so someone else can use the app here): a backup is saved first, and if it is, your data is
+// cleared from this browser (YOUR_KEYS and the studies; the Lichess statistics and evaluations stay),
+// and the app opens again as for someone new; the backup's message says what happened. If it isn't
+// saved, nothing changes. A connection made by logging in (its token starts "lio_") is also canceled on
+// Lichess; a token you pasted ("lip_…") may be used elsewhere, so it's only forgotten here. (When
+// Lichess ends a connection itself, connecting again clears nothing.)
 if (!canLogIn) $('disconnect-btn').textContent = 'Clear token';
-$('disconnect-btn').title = canLogIn ? 'Disconnect from Lichess; your studies and stats stay' : 'Forget the token; your studies and stats stay';
-$('disconnect-btn').addEventListener('click', () => {
-  if (!confirm(canLogIn ? 'Disconnect from Lichess? Your studies and stats stay.' : 'Clear the token? Your studies and stats stay.')) return;
+$('disconnect-btn').title = 'Saves a backup, then clears your stats from this browser';
+$('disconnect-btn').addEventListener('click', async () => {
+  if (!confirm(`${canLogIn ? 'Disconnect' : 'Clear token'}? A backup of your stats is saved first, then they're cleared from this browser.`)) return;
+  const saved = await saveBackup();
+  if (!saved) return;
   if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
-  saveToken(null);
-  setUpdateStatus('');
-  renderLichessPage(); // the Status card shows it (no banner)
+  await clearYourData();
+  sessionStorage.setItem('cot.cleared', saved); // said once the app opens again
+  reopenApp();
 });
-
-$('remove-account-btn').addEventListener('click', removeAccount);
+function reopenApp() { location.reload(); }
+async function clearYourData() {
+  for (const key of YOUR_KEYS) store.remove(key);
+  try { await inDatabase('library', 'readwrite', s => s.delete('library')); } catch (e) { console.warn('IndexedDB write failed', e); }
+}
 
 // The welcome splash: over the Lichess page each time the app opens until you've started (connected).
 // Get started (or Enter: it has the focus), × or Esc closes it.
@@ -5075,7 +4999,12 @@ function backupFileName(account, at) {
   return `trainer-${account ? account + '-' : ''}${when}.json`;
 }
 
-$('backup-btn').addEventListener('click', async () => {
+// Saves a backup of your stats, settings and the Lichess data, and says so (with extra, e.g. what
+// Disconnect does next). Its file name, or null if it wasn't saved (canceled, or an error, which it says).
+// Where the browser supports it (Chrome, Edge), a Save dialog asks where; if the browser won't open one
+// (it needs a click just before), or elsewhere (Safari, Firefox), it downloads, where depends on the
+// browser's download settings.
+async function saveBackup(extra = '') {
   // Never include the Lichess token (or any API key).
   const backup = {
     app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
@@ -5087,7 +5016,6 @@ $('backup-btn').addEventListener('click', async () => {
   };
   const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' }); // not indented: a third smaller
   const name = backupFileName(ownAccount(), new Date());
-  // Where the browser supports it (Chrome, Edge), ask where to save the file.
   if (window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Opening Trainer backup', accept: { 'application/json': ['.json'] } }] });
@@ -5095,13 +5023,16 @@ $('backup-btn').addEventListener('click', async () => {
       await w.write(blob);
       await w.close();
       backupSaved();
-      showBackupMessage(`Backup saved as ${handle.name}.`);
+      showBackupMessage(`Backup saved as ${handle.name}.${extra}`, { stays: !!extra });
+      return handle.name;
     } catch (e) {
-      if (e.name !== 'AbortError') showBackupMessage("Couldn't save the backup: " + e.message, { isError: true }); // AbortError: the user canceled
+      if (e.name === 'AbortError') return null; // the user canceled
+      if (e.name !== 'SecurityError' && e.name !== 'NotAllowedError') { // not just a dialog the browser wouldn't open: then it downloads
+        showBackupMessage("Couldn't save the backup: " + e.message, { isError: true });
+        return null;
+      }
     }
-    return;
   }
-  // Other browsers (Safari, Firefox) download it; where it goes depends on the browser's download settings.
   const url = URL.createObjectURL(blob);
   const a = element('a', { href: url, download: name });
   document.body.append(a);
@@ -5109,8 +5040,10 @@ $('backup-btn').addEventListener('click', async () => {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   backupSaved(); // the download can't be checked, so it counts as saved
-  showBackupMessage(`Backup saved as ${name} in your download folder.`);
-});
+  showBackupMessage(`Backup saved as ${name} in your download folder.${extra}`, { stays: !!extra });
+  return name;
+}
+$('backup-btn').addEventListener('click', () => saveBackup());
 
 // A backup action's message, on the Backup card's last line: a confirmation goes after 10 seconds; an
 // error (red), or one saying what to do next, stays until the next backup action or leaving the page.
@@ -5130,10 +5063,6 @@ function backupSaved() {
   store.set('lastBackup', Date.now());
   renderLichessPage();
 }
-
-// The account on this device a backup belongs to, when it's not this one: Restore and Merge backup
-// offer to put it there (the user's decision, 25 November 2026), switching to it.
-const backupsAccount = b => validName(b.account) && b.account !== account && accounts.includes(b.account) ? b.account : null;
 
 // The shared parts of a backup (move statistics, evaluations) merged and saved.
 async function mergeSharedData(b) {
@@ -5222,14 +5151,6 @@ function mergedHistory(a, b) {
 $('merge-file').addEventListener('change', async e => {
   const b = await chosenBackup(e);
   if (!b) return;
-  const owner = backupsAccount(b);
-  if (owner) {
-    if (!confirm(`This backup is from ${owner}'s account. Add its history to ${owner}'s?`)) return;
-    const theirs = storeOf(owner);
-    theirs.set('history', mergedHistory(checkedHistory(theirs.get('history')) ?? emptyHistory(), checkedHistory(b.history)));
-    await mergeSharedData(b);
-    return switchAccount(owner);
-  }
   const here = ownAccount(), when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
   const n = Object.keys(checkedHistory(b.history).positions).length;
   const question = b.account && here && b.account !== here
@@ -5250,18 +5171,6 @@ $('merge-file').addEventListener('change', async e => {
 $('restore-file').addEventListener('change', async e => {
   const b = await chosenBackup(e);
   if (!b) return;
-  const owner = backupsAccount(b);
-  if (owner) {
-    if (!confirm(`This backup is from ${owner}'s account. Restore it there? ${owner}'s stats and settings would be replaced.`)) return;
-    const theirs = storeOf(owner), presetsThere = checkedPresets(b.presets);
-    theirs.set('history', checkedHistory(b.history));
-    theirs.set('settings', checkedSettings(b.settings));
-    theirs.set('presets', presetsThere);
-    theirs.set('chosenPreset', presetsThere.some(p => p.name === b.chosenPreset) ? b.chosenPreset : null);
-    theirs.set('hidden', strings(b.hidden));
-    await mergeSharedData(b);
-    return switchAccount(owner);
-  }
   if (!confirm(restoreQuestion(b))) return;
 
   history = checkedHistory(b.history);
@@ -5298,10 +5207,7 @@ $('nav-practice').addEventListener('click', () => {
   showChooser();
 });
 
-$('nav-lichess').addEventListener('click', () => { // a line in progress is kept
-  if (!account && !accounts.length) return showLichess(); // nothing to switch to
-  showAccountMenu(!accountMenuOpen());
-});
+$('nav-lichess').addEventListener('click', showLichess); // a line in progress is kept
 
 $('nav-help').addEventListener('click', () => {
   showScreen('help'); // a line in progress is kept
@@ -5314,10 +5220,9 @@ async function init() {
   // Online, the service worker (sw.js) keeps the app working offline; a page opened from disk can't have one.
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered', e));
   try {
+    await unprofileLibrary();
     library = await loadLibrary();
     if (library?.trial) library = null; // the sample studies (removed on 3 November 2026): back to a new user
-    // Data from before profiles (25 November 2026), or a first connection that didn't finish: its account's.
-    if (!account && library?.username && !await becomeAccount(library.username)) return;
     moveStats = await loadMoveStats();
     evals = await loadEvals();
     useChosenPreset();
@@ -5331,6 +5236,11 @@ async function init() {
   // Open on the Practice page; update your studies from Lichess, then resume any missing downloads.
   if (library) { showChooser(); keepData(); syncStudies().then(startDownloads); } // the Practice page
   else if (token) { showScreen('practice'); fetchStudies(); } // the message shows on the Practice page
+  else if (sessionStorage.getItem('cot.cleared')) { // just disconnected: what happened, instead of the welcome
+    showLichess();
+    setUpdateStatus(`Backup saved as ${sessionStorage.getItem('cot.cleared')}. Your stats are cleared from this browser.`); // in the Status card (no Backup card until connected)
+    sessionStorage.removeItem('cot.cleared');
+  }
   else { showLichess(); showSplash(true); } // not started yet: the welcome
 }
 
