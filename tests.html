@@ -795,40 +795,23 @@ async function runLichessPage(app) {
         masters: ['Reached 46 times (master games)', [['43%', '43%', '13%'], 'White wins 43%, draws 43%, Black wins 13%']],
         lichess: ['Reached 110 times (Lichess games)', [['49%', '', '42%'], 'White wins 49%, draws 9%, Black wins 42%']] }, []]);
     }
-    // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
-    // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
-    const keyOpen = () => !$('color-key').classList.contains('hidden');
-    const plainRows = () => [...$('key-arrows').rows].filter(r => !r.classList.contains('key-other')).map(r => r.cells[1].textContent);
+    // Help's Colors card from the same lists; no color key by the switch (removed 27 November 2026).
     const wasView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
-    $('arrows-masters').click();
-    $('color-key-btn').click();
-    const masters = [keyOpen(), $('color-key-btn').getAttribute('aria-expanded'), plainRows(), $('key-tree').rows.length];
-    $('arrows-errors').click(); // the switch keeps it open
-    const errors = [keyOpen(), plainRows().length];
-    key('Escape');
-    const afterEsc = keyOpen();
-    $('color-key-btn').click();
-    document.body.click();
-    check('color key: the view shown\'s rows plain, following the switch; closed by Esc or a click elsewhere; Help\'s table from the same list', [masters, errors, afterEsc, keyOpen(), $('help-arrow-colors').rows.length, $('help-tree-colors').rows.length], [
-      [true, 'true', ["Your study's main move (also Hint and Show correct move)", 'Another move in your study', "The glyph of the move just played (Studies page, small board)", 'A masters move', "How often it's played (masters on teal, Lichess on gray)", 'Also in your study'], 8],
-      [true, 6], false, false, 11, 8]);
-    // Help: every card closed, its title opening it; the color key's "More in Help" opens Colors.
+    check('colors: Help\'s tables from the lists; no color key by the switch', [$('help-arrow-colors').rows.length, $('help-tree-colors').rows.length, !!$('color-key-btn'), !!$('color-key')], [11, 8, false, false]);
+    // Help: every card closed, its title opening it, kept when coming back; no drop-downs inside.
     $('nav-help').click();
     const cardsOpen = () => [...document.querySelectorAll('#help-screen .help-body')].filter(b => !b.classList.contains('hidden')).map(b => b.parentElement.id);
     const helpClosed = cardsOpen();
     $('help-practice').querySelector('.help-opener').click();
     const practiceOpened = [cardsOpen(), $('help-practice').querySelector('.help-opener').getAttribute('aria-expanded')];
     $('nav-studies').click();
-    $('color-key-btn').click();
-    $('key-help').click();
-    const colorsOpened = [cardsOpen(), $('help-screen').classList.contains('hidden')];
-    $('nav-studies').click();
     $('nav-help').click();
     const cardsKept = cardsOpen();
-    $('help-practice').querySelector('.help-opener').click(); $('help-colors').querySelector('.help-opener').click(); // closed again for later
+    $('help-practice').querySelector('.help-opener').click(); // closed again for later
     $('nav-studies').click();
-    check('help: cards closed, a title opens its card, kept when coming back; "More in Help" opens Colors too', [helpClosed, practiceOpened, colorsOpened, cardsKept, !!document.querySelector('.help-contents')],
-      [[], [['help-practice'], 'true'], [['help-colors', 'help-practice'], false], ['help-colors', 'help-practice'], false]);
+    check('help: cards closed, a title opens its card, kept when coming back; no drop-downs inside', [helpClosed, practiceOpened, cardsKept, !!document.querySelector('.help-contents'), document.querySelectorAll('#help-screen details').length,
+      [...$('help-practice').querySelectorAll('h3')].map(h => h.textContent)],
+      [[], [['help-practice'], 'true'], ['help-practice'], false, 0, ['Error messages', 'The small board', 'Repertoire recall', 'Spaced repetition']]);
     wasView.click();
     app.setMoveStats(kept);
     key('Home'); key('ArrowRight');
