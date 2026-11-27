@@ -204,10 +204,10 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { lines: 'all', positions: 'spaced', rare: 'include' }, review: { view: 'study' }, lowRecallLevel: 0.75, yourDangerLevel: 0.5, lichessDangerLevel: 0.5, refutationLevel: 1 });
+    practice: { lines: 'all', positions: 'spaced', rare: 'include', levelsOpen: false }, review: { view: 'study' }, lowRecallLevel: 0.75, yourDangerLevel: 0.5, lichessDangerLevel: 0.5, refutationLevel: 1 });
   check('settings: invalid values fall back; old penalties and sliders ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
-    [undefined, { lines: 'all', positions: 'spaced', rare: 'include' }]);
+    [undefined, { lines: 'all', positions: 'spaced', rare: 'include', levelsOpen: false }]);
 
   // Masters moves: the top 3, played 10% of the time or more
   check('masters move: 5% or more', ['e4', 'd4', 'Nf3', 'c4', 'g3'].filter(s => app.isMasterMove(START, s)), ['e4', 'd4', 'Nf3', 'c4']);
@@ -353,8 +353,8 @@ async function runLichessPage(app) {
   // A new user: Getting started, with no sample studies (removed), and the red dot (not connected).
   app.setLibrary(null);
   $('nav-lichess').click();
-  check('new user: only Status and Connection (no Move statistics, Backup or Getting started), the red dot', [...['games-card', 'levels-card', 'backup-card', 'getting-started'].map(id => $(id).classList.contains('hidden')),
-    !!$('trial-btn'), !!$('nav-lichess').querySelector('.problem-dot'), $('nav-lichess').title], [true, true, true, true, false, true, 'Not connected']);
+  check('new user: only Status and Connection (no Move statistics, Backup or Getting started), the red dot', [...['games-card', 'backup-card', 'getting-started'].map(id => $(id).classList.contains('hidden')),
+    !!$('trial-btn'), !!$('nav-lichess').querySelector('.problem-dot'), $('nav-lichess').title], [true, true, true, false, true, 'Not connected']);
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-lichess').click();
   check('own studies, not connected: Status, Connect to Lichess and no Disconnect', [$('lichess-heading').textContent,
@@ -1391,6 +1391,22 @@ async function runPositions(app) {
   app.settings.practice.positions = positionsKept;
   check('likely next: positions follow the chosen drill', [forDrills, allRows[0]],
     [[['Low recall', Math.min(app.drillItems('lowRecall').length, 26)], ['Danger (Lichess)', Math.min(app.drillItems('dangerLichess').length, 26)]], '']);
+  // The Positions tile's Levels: closed at first; the opener shows them; "(excluding rare)" while Exclude is on;
+  // a level's change redraws the options (their hovers and counts).
+  {
+    const shown = () => [!$('levels-body').classList.contains('hidden'), $('levels-toggle').getAttribute('aria-expanded'), $('levels-note').textContent];
+    const practiceKept = structuredClone(app.settings.practice), recallKept = app.settings.lowRecallLevel;
+    const closed = shown();
+    $('levels-toggle').click();
+    const opened = shown();
+    $('rare-select').value = 'rare'; $('rare-select').dispatchEvent(new Event('change'));
+    const excluding = shown();
+    $('low-recall-level').value = '0.5'; $('low-recall-level').dispatchEvent(new Event('change'));
+    const lowRecallTip = [...document.querySelectorAll('#positions-choice label')].find(l => l.textContent.startsWith('Low recall')).title;
+    Object.assign(app.settings.practice, practiceKept); app.settings.lowRecallLevel = recallKept; app.renderChooser();
+    check('levels: closed at first, the opener shows them, "(excluding rare)" while Exclude is on, a level redraws the options', [closed, opened, excluding, app.settings.practice.levelsOpen, lowRecallTip, $('levels-toggle').closest('.panel') === $('positions-choice').closest('.panel')],
+      [[false, 'false', ''], [true, 'true', ''], [true, 'true', '(excluding rare)'], false, 'Below 50% recall', true]);
+  }
   // A row opens it on the Studies page: a line at its last position (a move with nothing after it in the tree).
   $('show-lines-btn').click();
   const lineRow = document.querySelector('#probabilities-rows tr.opens');

@@ -120,9 +120,6 @@
      first; time controls, fastest first) */
   .lock-heading { display: flex; align-items: center; gap: 6px; }
   .tick-columns { display: flex; gap: 48px; font-size: 14px; }
-  .level-setting { margin: 10px 0 0; font-size: 14px; } /* the danger and refutation levels (the Levels card) */
-  .card h2 + .level-setting { margin-top: 0; }
-  .level-setting select { margin: 0 4px; }
   .tick-title { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .tick-column { display: flex; flex-direction: column; gap: 4px; }
   .tick-column label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -448,8 +445,13 @@
   .review-view button:first-child { border-radius: 4px 0 0 4px; }
   .review-view button:last-child { border-radius: 0 4px 4px 0; }
   .review-view button[aria-pressed=true], .review-view button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  .rare-row { align-self: flex-start; margin-top: 8px; } /* Exclude: none / under 1 in 100 / under 1 in 1,000 (see RARE_CHOICES) */
-  .rare-row select { margin-left: 4px; }
+  /* The Positions tile's Levels: a ▸ / ▾ opener (with "(excluding rare)" while Exclude is on), then the levels and Exclude */
+  .levels-opener { align-self: flex-start; display: flex; align-items: center; gap: 4px; margin-top: 8px; padding: 0; border: none; box-shadow: none; background: none; color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
+  .levels-opener:hover:not(:disabled) { background: none; }
+  .levels-opener .toggle-mark { width: 14px; color: var(--muted); }
+  .levels-body { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 0 18px; font-size: 14px; }
+  .level-row { align-self: flex-start; }
+  .level-row select { margin-left: 4px; }
   .chooser-start { align-self: flex-start; padding: 9px 22px; font-size: 15px; }
   .tip { cursor: help; } /* explained in the app's pop-up on hover (see quickTip); a clickable name keeps its pointer */
   .practice-chooser p { margin: 0; font-size: 13px; }
@@ -570,20 +572,7 @@
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="lichess-masters" class="muted"></p>
         <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
-      </div>
-
-      <!-- Levels: the low recall, danger and refutation levels, and the engine's progress -->
-      <div id="levels-card" class="card hidden">
-        <h2>Levels</h2>
-        <p class="level-setting"><label for="low-recall-level"><span data-tip="Violet dots and the Low recall drill">Low recall: recall below</span>
-          <select id="low-recall-level"></select></label></p>
-        <p class="level-setting"><label for="your-danger-level"><span data-tip="Of your first moves">Danger positions (you): your expected loss ≥</span>
-          <select id="your-danger-level"></select></label></p>
-        <p class="level-setting"><label for="lichess-danger-level"><span data-tip="Of the Lichess moves">Danger positions (Lichess): Lichess expected loss ≥</span>
-          <select id="lichess-danger-level"></select></label></p>
-        <p class="level-setting"><label for="refutation-level"><span data-tip="Eval loss that makes a Lichess move worth refuting (Refutations drill).">Refutable moves: eval loss ≥</span>
-          <select id="refutation-level"></select></label></p>
-        <p id="engine-evals" class="muted after-actions"></p>
+        <p id="engine-evals" class="muted"></p>
         <div id="engine-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
@@ -653,7 +642,14 @@
         <div class="panel">
           <h2>Positions</h2>
           <div id="positions-choice" class="choices" role="radiogroup" aria-label="Positions"></div>
-          <label class="rare-row" title="Positions expected to be reached in less than 1 in [x] of your games">Exclude <select id="rare-select"></select></label>
+          <button id="levels-toggle" class="levels-opener" aria-expanded="false" aria-controls="levels-body"><span class="toggle-mark" aria-hidden="true">▸</span>Levels <span id="levels-note" class="muted"></span></button>
+          <div id="levels-body" class="levels-body hidden">
+            <label class="level-row" title="Repertoire recall below this">Low recall: below <select id="low-recall-level"></select></label>
+            <label class="level-row" title="Your expected loss (your first moves)">Danger (you): ≥ <select id="your-danger-level"></select></label>
+            <label class="level-row" title="Lichess expected loss (the Lichess moves)">Danger (Lichess): ≥ <select id="lichess-danger-level"></select></label>
+            <label class="level-row" title="A Lichess move's eval loss">Refutations: ≥ <select id="refutation-level"></select></label>
+            <label class="level-row" title="Positions expected to be reached in less than 1 in [x] of your games">Exclude: <select id="rare-select"></select></label>
+          </div>
           <button id="show-positions-btn" class="next-link">Likely next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
@@ -833,13 +829,13 @@
           <tr><td><b>Position reached</b></td><td>How often a position occurs in those games, e.g. "Reached 23k times (Lichess games)"</td></tr>
           <tr><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
           <tr><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
-          <tr><td><b>Low recall</b></td><td>Recall below the low recall level (default 75%; set in the Lichess page's Levels card)</td></tr>
+          <tr><td><b>Low recall</b></td><td>Recall below the low recall level (default 75%; set under Levels on the Practice page)</td></tr>
           <tr><td><b>Δ</b></td><td>A move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10)</td></tr>
           <tr><td><b>Your expected loss</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
-          <tr><td><b>Danger position (you)</b></td><td>Your expected loss at your danger level or more (default 0.5; set in the Lichess page's Levels card)</td></tr>
+          <tr><td><b>Danger position (you)</b></td><td>Your expected loss at your danger level or more (default 0.5; set under Levels on the Practice page)</td></tr>
           <tr><td><b>Lichess expected loss</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
-          <tr><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the Lichess danger level or more (default 0.5; set in the Lichess page's Levels card)</td></tr>
-          <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level or more (default 1.0; set in the Lichess page's Levels card)</td></tr>
+          <tr><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the Lichess danger level or more (default 0.5; set under Levels on the Practice page)</td></tr>
+          <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level or more (default 1.0; set under Levels on the Practice page)</td></tr>
           <tr><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
           <tr><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.5)</td></tr>
         </table>
@@ -867,7 +863,7 @@
               <li>A drill plays each of its positions once a round, e.g. "Low recall · 3 of 12".</li>
             </ul>
           </li>
-          <li><b>Exclude</b> leaves out rarely reached positions.</li>
+          <li><b>Levels</b> (under the options): the low recall, danger and refutation levels (see Definitions), and <b>Exclude</b>, which leaves out rarely reached positions ("excluding rare" beside Levels while it's on).</li>
           <li><b>Likely next</b>: what's most likely to come up; click a row to open it on the Studies page.</li>
           <li>Any of your study's moves is right, and the line follows it. Try as often as you like. After a first try, <b>Hint</b> circles the piece, then shows the move. <b>Skip</b> moves on; <b>End practice</b> stops; answers so far count.</li>
           <li>The chapter and position names are hidden (★★★); click to show.</li>
@@ -945,7 +941,6 @@
           <li>A red dot on the <b>Lichess</b> button: not connected.</li>
           <li>Studies update each time the app opens; reload to update now.</li>
           <li><b>Move statistics</b> come from Lichess games in your rating bands and time controls (first set from your Lichess rating), and from master games. Lichess ratings run higher: Chess.com 1500 rapid is about Lichess 1750–1800. To change them, unlock, tick and <b>Apply</b>; everything downloads again.</li>
-          <li><b>Levels</b>: the low recall, danger and refutation levels (see Definitions), and Stockfish's progress.</li>
           <li><b>Backup</b>: your data lives only in this browser, so save a backup now and then. <b>Restore</b> replaces your tries, settings and groups; <b>Merge</b> adds a backup's tries to yours (e.g. from another device). Backups never include your token.</li>
           <li><b>Disconnect</b> saves a backup, then clears your data here. To switch users: Disconnect, then they Connect. Lichess ends a connection after about a year: just Connect again.</li>
         </ul>
@@ -1162,6 +1157,7 @@ const DEFAULT_SETTINGS = {
     lines: 'all', // the Lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
     positions: 'spaced', // the Positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
     rare: 'include', // the Positions tile's rarely reached positions: kept, or left out (see RARE_CHOICES)
+    levelsOpen: false, // the Positions tile's Levels, open or closed
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
   review: { view: 'study' },
@@ -1189,6 +1185,7 @@ function checkedSettings(saved) {
       lines: ['all', 'main'].includes(p.lines) ? p.lines : dp.lines,
       positions: POSITION_CHOICES.includes(p.positions) ? p.positions : dp.positions,
       rare: Object.hasOwn(RARE_CHOICES, p.rare) ? p.rare : dp.rare,
+      levelsOpen: typeof p.levelsOpen === 'boolean' ? p.levelsOpen : dp.levelsOpen,
     },
     review: { view: ARROW_VIEWS.includes(v.review?.view) ? v.review.view : d.review.view },
     lowRecallLevel: LOW_RECALL_LEVELS.includes(v.lowRecallLevel) ? v.lowRecallLevel : d.lowRecallLevel,
@@ -3494,6 +3491,7 @@ function renderChooser() {
   const rare = $('rare-select');
   rare.replaceChildren(...Object.entries(RARE_CHOICES).map(([value, c]) => element('option', { value }, c.label)));
   rare.value = settings.practice.rare;
+  showLevels();
   for (const [tile, chosen] of [['lines', linesChoices[lines]], ['positions', positionChoices[positions]]]) {
     $(`${tile}-start`).disabled = !chosen.items.length;
     $(`${tile}-note`).textContent = chosen.note;
@@ -3519,6 +3517,34 @@ function renderChoices(box, name, chosen, options, choices) {
 const changePractice = change => { change(settings.practice); saveSettings(); renderChooser(); };
 
 $('rare-select').addEventListener('change', e => changePractice(p => { p.rare = e.target.value; }));
+
+// The Positions tile's Levels (the user's decisions, 27 November 2026; a card on the Lichess page until
+// then): the low recall level (see isLowRecall: 50%, 75%, 90% or 100%), your danger level and the Lichess
+// danger level (see isYourDangerPosition and dangerAt: 0.2 to 1.5 pawns; they depend on your level too),
+// the refutation level (see refutationItems: 0.5 to 3.0 pawns), and Exclude. A change applies at once,
+// the counts too. Closed at first; open or closed as you left it (settings.practice.levelsOpen).
+const LEVEL_SETTINGS = [['low-recall-level', 'lowRecallLevel', LOW_RECALL_LEVELS, x => `${percent(x)}%`],
+  ['your-danger-level', 'yourDangerLevel', DANGER_LEVELS, x => x.toFixed(1)],
+  ['lichess-danger-level', 'lichessDangerLevel', DANGER_LEVELS, x => x.toFixed(1)],
+  ['refutation-level', 'refutationLevel', REFUTATION_LEVELS, x => x.toFixed(1)]];
+for (const [id, key, levels, text] of LEVEL_SETTINGS) {
+  $(id).replaceChildren(...levels.map(x => element('option', { value: String(x) }, text(x))));
+  $(id).addEventListener('change', e => {
+    settings[key] = Number(e.target.value);
+    saveSettings();
+    renderChooser();
+  });
+}
+
+function showLevels() {
+  const open = settings.practice.levelsOpen;
+  $('levels-body').classList.toggle('hidden', !open);
+  $('levels-toggle').setAttribute('aria-expanded', String(open));
+  $('levels-toggle').querySelector('.toggle-mark').textContent = open ? '▾' : '▸';
+  $('levels-note').textContent = settings.practice.rare === 'include' ? '' : '(excluding rare)';
+  for (const [id, key] of LEVEL_SETTINGS) $(id).value = String(settings[key]);
+}
+$('levels-toggle').addEventListener('click', () => changePractice(p => { p.levelsOpen = !p.levelsOpen; }));
 $('lines-start').addEventListener('click', () => startSession('lines', practicable('lines').items));
 $('positions-start').addEventListener('click', () => {
   const chosen = settings.practice.positions;
@@ -4703,7 +4729,7 @@ function renderEvalBar(node) {
   label.className = 'eval-text ' + ((whiteBetter !== flipped) ? 'at-bottom' : 'at-top') + (whiteBetter ? ' on-white' : ' on-black');
 }
 
-// The Lichess page's line for the evaluations, in the Levels card under the levels: "Engine evaluations: 120 of 850
+// The Lichess page's line for the evaluations, in the Move statistics card under the masters line: "Engine evaluations: 120 of 850
 // positions (evaluating…)"; then a problem, if any.
 function updateEvaluationInfo() {
   const el = $('engine-evals');
@@ -4757,7 +4783,6 @@ function renderLichessPage() {
   $('getting-started').classList.toggle('hidden', !welcomeReady);
   $('getting-started-ready').textContent = welcomeReady ? (library.studies.length === 1 ? 'Your study is ready.' : `Your ${library.studies.length} studies are ready.`) : '';
   renderGamesCard();
-  for (const [id, key] of LEVEL_SETTINGS) $(id).value = String(settings[key]);
   $('refutation-level').value = String(settings.refutationLevel);
   // Backup: once there are studies; nothing to save while Getting started shows.
   $('backup-card').classList.toggle('hidden', !library);
@@ -4768,21 +4793,6 @@ function renderLichessPage() {
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
-// The Levels card (the Lichess page): the low recall level (see isLowRecall: 50%, 75%, 90% or 100%), your
-// danger level and the Lichess danger level (see isYourDangerPosition and dangerAt: 0.2 to 1.5 pawns; they
-// depend on your level too), and the refutation level (see refutationItems: 0.5 to 3.0 pawns). A change
-// applies at once.
-const LEVEL_SETTINGS = [['low-recall-level', 'lowRecallLevel', LOW_RECALL_LEVELS, x => `${percent(x)}%`],
-  ['your-danger-level', 'yourDangerLevel', DANGER_LEVELS, x => x.toFixed(1)],
-  ['lichess-danger-level', 'lichessDangerLevel', DANGER_LEVELS, x => x.toFixed(1)],
-  ['refutation-level', 'refutationLevel', REFUTATION_LEVELS, x => x.toFixed(1)]];
-for (const [id, key, levels, text] of LEVEL_SETTINGS) {
-  $(id).replaceChildren(...levels.map(x => element('option', { value: String(x) }, text(x))));
-  $(id).addEventListener('change', e => {
-    settings[key] = Number(e.target.value);
-    saveSettings();
-  });
-}
 
 // "Lichess rating: blitz 1720, rapid 1500?" (the time controls chosen for the move statistics; "?" for
 // a provisional rating, as on Lichess), or "… no rated games"; nothing until your account has been read.
@@ -4816,7 +4826,7 @@ function renderGamesCard() {
   const canChange = !!token && !!library;
   if (!canChange) gamesDraft = null;
   const shown = gamesDraft ?? chosenGames();
-  for (const id of ['games-card', 'levels-card']) $(id).classList.toggle('hidden', !library); // once there are studies
+  $('games-card').classList.toggle('hidden', !library); // once there are studies
   for (const [row, key] of [['games-ratings', 'ratings'], ['games-speeds', 'speeds']]) {
     for (const box of $(row).querySelectorAll('input')) {
       box.checked = shown[key].includes(key === 'ratings' ? +box.value : box.value);
