@@ -790,7 +790,7 @@
   <!-- Help -->
 
   <section id="help-screen" class="hidden">
-    <!-- Each card is closed until its title is clicked (see Help: the cards); all closed again each time Help opens. -->
+    <!-- Each card is closed until its title is clicked (see Help's cards, showHelp); they stay as left while the app is open. -->
     <div class="cards help">
       <div class="card" id="help-start">
         <h2>Getting started</h2>
@@ -808,11 +808,24 @@
         <table class="help-table">
           <tr><th>Term</th><th>Meaning</th></tr>
           <tr><td><b>Line</b></td><td>A path through a chapter from move 1: one of your study's moves at each of your turns, and each reply it gives</td></tr>
-          <tr><td><b>Main move</b></td><td>Your study's first move in a position; the others are <b>alternative moves</b></td></tr>
-          <tr><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one it marks ?, ?? or ?!</td></tr>
+          <tr><td><b>Main move</b></td><td>Your study's first move in a position</td></tr>
+          <tr><td><b>Alternative move</b></td><td>Any other of your study's moves in a position</td></tr>
+          <tr><td><b>Main line</b></td><td>A line of main moves only, for both sides (what Main lines practices)</td></tr>
+          <tr><td><b>Glyph</b></td><td>A move's mark in a study: !!, !, !?, ?!, ? or ??</td></tr>
           <tr><td><b>Mistake</b></td><td>A move a study marks ? (mistake), ?? (blunder) or ?! (dubious); not the same as an error</td></tr>
-          <tr><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your chosen ratings and time controls)</td></tr>
-          <tr><td><b>Masters move</b></td><td>Played in 5%+ of the master games (2200+ FIDE, over the board), where there are 20 or more</td></tr>
+          <tr><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one it marks ?, ?? or ?!</td></tr>
+          <tr><td><b>Not tested</b></td><td>The moves after one of your alternatives marked ?, ?? or ?! (in italics); never practiced</td></tr>
+          <tr><td><b>Main color</b></td><td>A chapter's Orientation; the <b>other color</b> is the opposite side. A chapter can be practiced from either or both</td></tr>
+          <tr><td><b>Group</b></td><td>A named set of chapters to practice, each from its main color, the other or both; <b>All</b> (every chapter, from its main color) is built in</td></tr>
+          <tr><td><b>Try</b></td><td>Each of your moves in a line, or the move in a single position; with Skip or End practice, only the moves answered (and the one you're on, if you'd tried it)</td></tr>
+          <tr><td><b>Drill</b></td><td>Low recall, Danger (you), Danger (Lichess) or Refutations: positions of one kind, each played once a round</td></tr>
+          <tr><td><b>Last tested</b></td><td>When you last played a position, or a line through from move 1</td></tr>
+          <tr><td><b>Priority</b></td><td>How likely a line or position is to be picked next (see Spaced repetition)</td></tr>
+          <tr><td><b>Chance next</b></td><td>In the Likely next table: its priority's share of them all</td></tr>
+          <tr><td><b>Rating bands, time controls</b></td><td>The Lichess games the statistics come from, chosen on the Lichess page (first set from your Lichess rating)</td></tr>
+          <tr><td><b>Master games</b></td><td>Games between players rated 2200+ FIDE, over the board (Lichess's Masters database)</td></tr>
+          <tr><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your rating bands and time controls)</td></tr>
+          <tr><td><b>Masters move</b></td><td>Played in 5%+ of the master games in a position, where there are 20 or more</td></tr>
           <tr><td><b>Position reached</b></td><td>How often a position occurs in those games, e.g. "Reached 23k times (Lichess games)"</td></tr>
           <tr><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
           <tr><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
@@ -822,7 +835,9 @@
           <tr><td><b>Danger position (you)</b></td><td>Your expected loss at the danger level or more (default 0.5; set in the Lichess page's Levels card)</td></tr>
           <tr><td><b>Lichess expected loss</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
           <tr><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the danger level or more (default 0.5; set in the Lichess page's Levels card)</td></tr>
-          <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level or more (default 1.0; set in the Lichess page's Levels card); the position after it is a <b>refutation position</b></td></tr>
+          <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level or more (default 1.0; set in the Lichess page's Levels card)</td></tr>
+          <tr><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
+          <tr><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.5)</td></tr>
         </table>
       </div>
 
@@ -857,7 +872,7 @@
         </ul>
         <details>
           <summary>Error messages</summary>
-          <p>Up to three lines: what your move is (e.g. "Not your preferred move"), whether masters play it ("#3 masters move (12%)") and whether Lichess players do ("#4 Lichess move (8%)").</p>
+          <p>Up to three lines: what your move is (e.g. "Not your main move"), whether masters play it ("#3 masters move (12%)") and whether Lichess players do ("#4 Lichess move (8%)").</p>
         </details>
         <details>
           <summary>The small board</summary>
@@ -867,7 +882,6 @@
           <summary>Repertoire recall</summary>
           <ul>
             <li>Main lines keeps its own recall, where only the main move is right.</li>
-            <li>A try is each of your moves in a line, or one position; Skip and End practice count the moves answered.</li>
             <li>Recall belongs to a position in its chapter.</li>
             <li>Your history stays when studies change.</li>
           </ul>
@@ -1313,9 +1327,9 @@ function setToggle(id, on, title) {
   btn.setAttribute('aria-pressed', String(on));
 }
 
-// Help's cards (the user's decision, 27 November 2026): each closed, its title a button with a ▸ / ▾
-// that opens and closes it; all closed again each time Help opens (showHelp; open: a card to open and
-// scroll to, e.g. the color key's "More in Help" opens Colors).
+// Help's cards (the user's decisions, 27 November 2026): each closed when the app opens, its title a
+// button with a ▸ / ▾ that opens and closes it; going to another page and back keeps them as they were
+// (showHelp; open: a card to open too and scroll to, e.g. the color key's "More in Help" opens Colors).
 const helpCards = () => [...document.querySelectorAll('#help-screen .card')];
 function setHelpCard(card, open) {
   card.querySelector('.help-body').classList.toggle('hidden', !open);
@@ -1333,8 +1347,7 @@ for (const card of helpCards()) {
 }
 function showHelp(open = null) {
   showScreen('help');
-  for (const card of helpCards()) setHelpCard(card, card.id === open);
-  if (open) $(open).scrollIntoView({ block: 'start' }); else window.scrollTo(0, 0);
+  if (open) { setHelpCard($(open), true); $(open).scrollIntoView({ block: 'start' }); } else window.scrollTo(0, 0);
 }
 
 // When something happened, in this computer's time zone and the browser's date format, without the
@@ -3727,8 +3740,8 @@ async function rejectMove(status) {
 }
 
 // The status after an error, one fact per line:
-//   what the move is, in violet, like every error's arrow: "Not your preferred move"; for one of your
-//     study's alternatives (with Main lines), "Alternative move, not your preferred move", or, for
+//   what the move is, in violet, like every error's arrow: "Not your main move"; for one of your
+//     study's alternatives (with Main lines), "Alternative move, not your main move", or, for
 //     one the study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from
 //     that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
 //   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; teal),
@@ -3744,7 +3757,7 @@ function errorStatus(expected, played) {
   const line = (text, color) => element('div', { class: 'error-' + color }, text);
   return [
     line(expected.built ? "Not the engine's move" : marked ? `Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`
-      : alt ? 'Alternative move, not your preferred move' : 'Not your preferred move', 'violet'),
+      : alt ? 'Alternative move, not your main move' : 'Not your main move', 'violet'),
     marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'violet'),
     masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', isMasters ? 'teal' : 'violet'),
     lichess && line(lichessRank ? `#${lichessRank} Lichess move (${shareText(lichess, played)})` : 'Not played in Lichess games', lichessRank && isLichessMove(epd, played) ? 'gray' : 'violet'),

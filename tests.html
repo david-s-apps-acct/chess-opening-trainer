@@ -820,8 +820,12 @@ async function runLichessPage(app) {
     $('key-help').click();
     const colorsOpened = [cardsOpen(), $('help-screen').classList.contains('hidden')];
     $('nav-studies').click();
-    check('help: cards closed, a title opens its card; "More in Help" opens just Colors', [helpClosed, practiceOpened, colorsOpened, !!document.querySelector('.help-contents')],
-      [[], [['help-practice'], 'true'], [['help-colors'], false], false]);
+    $('nav-help').click();
+    const cardsKept = cardsOpen();
+    $('help-practice').querySelector('.help-opener').click(); $('help-colors').querySelector('.help-opener').click(); // closed again for later
+    $('nav-studies').click();
+    check('help: cards closed, a title opens its card, kept when coming back; "More in Help" opens Colors too', [helpClosed, practiceOpened, colorsOpened, cardsKept, !!document.querySelector('.help-contents')],
+      [[], [['help-practice'], 'true'], [['help-colors', 'help-practice'], false], ['help-colors', 'help-practice'], false]);
     wasView.click();
     app.setMoveStats(kept);
     key('Home'); key('ArrowRight');
@@ -1151,12 +1155,12 @@ async function runPractice(app) {
   // The status's lines, each [text, its color: 'white', 'teal', 'gray' or 'violet'].
   const statusLines = () => [...document.getElementById('practice-status').children].map(d => [d.textContent, d.className.replace('error-', '')]);
   check('practice: a masters move and a Lichess move (5%+), one fact per line, as on the hover boards', statusLines(),
-    [['Not your preferred move', 'violet'], ['#2 masters move (30%)', 'teal'], ['#2 Lichess move (30%)', 'gray']]);
+    [['Not your main move', 'violet'], ['#2 masters move (30%)', 'teal'], ['#2 Lichess move (30%)', 'gray']]);
   await new Promise(r => setTimeout(r, 3800));
   check('practice: after 3 seconds the message fades to "Your move", with where you are in the line', status(), 'Your move (1 of 6 in line)');
   await play('e2e4');
   await play('b1c3');
-  check('practice: Main lines only: an alternative is an error, violet', statusLines()[0], ['Alternative move, not your preferred move', 'violet']);
+  check('practice: Main lines only: an alternative is an error, violet', statusLines()[0], ['Alternative move, not your main move', 'violet']);
   await play('g1f3');
   await play('f1b5');
   check('practice: marked alternative message, violet, taken back at once', [statusLines()[0], yourTurn()],
@@ -1238,7 +1242,7 @@ async function runPractice(app) {
   const before = app.history.positions['AAAAAAAA/BBBBBBBB|'].length;
   await play('e2e4');
   await play('a2a3'); // an error on the move you're on
-  check('practice: error message, in violet (no masters statistics here, so no masters line)', statusLines(), [['Not your preferred move', 'violet'], ['Not played in Lichess games', 'violet']]);
+  check('practice: error message, in violet (no masters statistics here, so no masters line)', statusLines(), [['Not your main move', 'violet'], ['Not played in Lichess games', 'violet']]);
   await until(yourTurn, 'the error to be taken back');
   document.getElementById('end-practice-btn').click();
   check('practice: End practice records the moves answered', [app.history.positions['AAAAAAAA/BBBBBBBB|'].length - before, tries('e4 e5').at(-1)], [1, ['a3']]);
