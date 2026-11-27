@@ -636,15 +636,15 @@
         <div class="panel">
           <h2>Lines</h2>
           <div id="lines-choice" class="choices" role="radiogroup" aria-label="Lines"></div>
-          <button id="show-lines-btn" class="next-link" title="Most likely next lines">Likely next</button>
+          <button id="show-lines-btn" class="next-link">Likely next</button>
           <p id="lines-note" class="muted"></p>
           <button id="lines-start" class="primary chooser-start">Start practice</button>
         </div>
         <div class="panel">
           <h2>Positions</h2>
           <div id="positions-choice" class="choices" role="radiogroup" aria-label="Positions"></div>
-          <label class="rare-row" title="Positions reached less often (Lichess)">Exclude <select id="rare-select"></select></label>
-          <button id="show-positions-btn" class="next-link" title="Most likely next positions (All)">Likely next</button>
+          <label class="rare-row" title="Positions expected to be reached in less than 1 in [x] of your games">Exclude <select id="rare-select"></select></label>
+          <button id="show-positions-btn" class="next-link">Likely next</button>
           <p id="positions-note" class="muted"></p>
           <button id="positions-start" class="primary chooser-start">Start practice</button>
         </div>
@@ -656,10 +656,10 @@
         <div id="practice-line">
         <div id="practice-moves" class="moves" aria-label="Moves played"></div>
         <div class="move-nav">
-          <button id="view-first" title="Start (Home)" aria-label="Starting position">⏮</button>
-          <button id="view-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
-          <button id="view-next" title="Next move (→)" aria-label="Next move">▶</button>
-          <button id="view-last" title="Current position (End)" aria-label="Current position">⏭</button>
+          <button id="view-first" aria-label="Starting position">⏮</button>
+          <button id="view-prev" aria-label="Previous move">◀</button>
+          <button id="view-next" aria-label="Next move">▶</button>
+          <button id="view-last" aria-label="Current position">⏭</button>
         </div>
         </div>
         <div id="practice-status" class="status"></div>
@@ -714,7 +714,7 @@
           <div id="eval-bar" class="eval-bar hidden" role="img"><div class="eval-fill"></div><span class="eval-text"></span></div></div>
         <div class="review-view-row">
         <div class="review-view" role="group" aria-label="Arrows on the board">
-          <button id="arrows-study" aria-pressed="true" title="Your study's moves, arrows and circles">Study</button><button id="arrows-errors" aria-pressed="false" title="Your recall: study move and first-try errors (last 10)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Recall</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+) and shares"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-masters" aria-pressed="false" title="Masters moves and shares"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
+          <button id="arrows-study" aria-pressed="true" title="Your study's moves">Study</button><button id="arrows-errors" aria-pressed="false" title="Your recall and errors (last 10 tries)"><span class="arrow-swatch" style="background: #8a5cf6"></span>Recall</button><button id="arrows-lichess" aria-pressed="false" title="Lichess moves (5%+)"><span class="arrow-swatch" style="background: #9e9e9e"></span>Lichess</button><button id="arrows-masters" aria-pressed="false" title="Masters moves (5%+)"><span class="arrow-swatch" style="background: #00a3a3"></span>Masters</button>
         </div>
         <button id="color-key-btn" class="icon-btn key-btn" title="Color key" aria-label="Color key" aria-expanded="false" aria-controls="color-key"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.9-2.6 2.3-2.6 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="currentColor"/></svg></button>
         </div>
@@ -724,10 +724,10 @@
           <div id="review-position" class="muted"></div>
           <div id="review-tree" class="tree review-tree"></div>
           <div class="move-nav">
-            <button id="review-first" title="Start (Home)" aria-label="Start">⏮</button>
-            <button id="review-prev" title="Previous move (←)" aria-label="Previous move">◀</button>
-            <button id="review-next" title="Next move (→)" aria-label="Next move">▶</button>
-            <button id="review-last" title="End of the line (End)" aria-label="End of the line">⏭</button>
+            <button id="review-first" aria-label="Start">⏮</button>
+            <button id="review-prev" aria-label="Previous move">◀</button>
+            <button id="review-next" aria-label="Next move">▶</button>
+            <button id="review-last" aria-label="End of the line">⏭</button>
             <button id="review-all" class="review-all"></button>
           </div>
         </div>
@@ -811,7 +811,7 @@
           <li><b>Mistake</b>: a move a study marks ? (mistake), ?? (blunder) or ?! (dubious). Not the same as an error.</li>
           <li><b>Lichess move</b>: played in 5%+ of the rated Lichess games in a position (your chosen ratings and time controls).</li>
           <li><b>Masters move</b>: played in 5%+ of the master games (2200+ FIDE, over the board), where there are 20 or more.</li>
-          <li><b>Position reached</b>: how often a position occurs in those games, e.g. "Reached 23k times (Lichess)".</li>
+          <li><b>Position reached</b>: how often a position occurs in those games, e.g. "Reached 23k times (Lichess games)".</li>
           <li><b>Δ</b>: a move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10).</li>
         </ul>
         <table class="help-table">
@@ -836,12 +836,12 @@
           <li><b>Positions</b>: one of your moves at a time. <b>All</b> (from move 3, by spaced repetition) or a drill: <b>Low recall</b>, <b>Danger (you)</b>, <b>Danger (Lichess)</b> or <b>Refutations</b>. A drill plays each of its positions once a round, from move 1; the heading shows how far, e.g. "Low recall · 3 of 12", and <b>Start again</b> begins a new round with the positions that qualify then.</li>
           <li><b>Refutations</b>: refutation positions. Your study's reply is right; where it has none, the engine's best move or one of its best 3 within 0.5. They never count for recall.</li>
           <li><b>Exclude</b> leaves out rarely reached positions (not lines). After an opponent's move with no games, a position counts as rarely reached; without statistics yet, it's kept.</li>
-          <li><b>Likely next</b> lists what's most likely to come up; click a row to open it on the Studies page.</li>
+          <li><b>Likely next</b> lists what's most likely to come up for the option chosen; click a row to open it on the Studies page.</li>
           <li>Play your moves on the board. Any of your study's moves is right (not one marked ?, ?? or ?!), and the line follows it; with Main lines, only the main move. Try as often as you like.</li>
           <li>The chapter and position name stay hidden (★★★) during a line; click to show.</li>
           <li><b>Hint</b>, after your first try, circles the piece to move and shows any note your study has on the move you tried; <b>Show correct move</b> then draws the move. Neither costs anything more.</li>
           <li><b>Skip</b> moves on; <b>End practice</b> stops. Answers so far count.</li>
-          <li>Study comments are blue bubbles in the move list. Click a move, or use ◀ ▶ or ← →, to look back.</li>
+          <li>Study comments are blue bubbles in the move list. Click a move, or use ◀ ▶ or ← → (Home, End), to look back.</li>
           <li>At the end of a line, e.g. "5 of 6 moves correct", the moves you got wrong are violet. <b>Next line</b> (or <b>Next position</b>), or Enter.</li>
           <li>A chapter played from both colors gives lines for each side. You can leave mid-line: <b>Practice</b> brings you back. The bell turns sounds on and off.</li>
         </ul>
@@ -901,7 +901,7 @@
       <div class="card" id="help-studies">
         <h2>Studies</h2>
         <ul>
-          <li>A chapter on a board (offline too), with your studies beside it: click a study for its chapters, a chapter to open it. ← → step through the moves, ↑ ↓ change chapter. The header's <b>Studies</b> button returns to where you were.</li>
+          <li>A chapter on a board (offline too), with your studies beside it: click a study for its chapters, a chapter to open it. ← → (Home, End) step through the moves, ↑ ↓ change chapter. The header's <b>Studies</b> button returns to where you were.</li>
           <li>The switch under the board chooses the arrows (see Arrow colors): <b>Study</b> (your study's moves, arrows and circles), <b>Recall</b> (the moves you tried first, each with its share of your last 10 tries, and your study's moves with their recall), <b>Lichess</b> or <b>Masters</b> (their moves and shares; Masters also shows your other study moves in white). Hover over an arrow's square for the move and its Δ. The <b>?</b> by the switch is the color key.</li>
           <li>Beside the board: the position's name and the moves; with Lichess or Masters, how often the position is reached and the results; the move's annotation and comment.</li>
           <li>Tiles: with Recall, <b>Your expected loss</b> at a position of yours, with when you last tested it, and each move's Δ (<span class="loss-none">green</span> 0.0, <span class="loss-some">amber</span> below the danger level, <span class="loss-big">red</span> at it or more); with Lichess, <b>Danger position (Lichess)</b> with its expected loss and the moves losing 0.1 or more; with Masters, when your main move isn't a masters move.</li>
@@ -2787,7 +2787,7 @@ const KEY_TREE = [
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
   { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (Lichess): the Lichess moves played there lose the danger level or more on average', views: ['lichess'] },
-  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first tries there lose the danger level or more on average', views: ['errors'] },
+  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first moves there lose the danger level or more on average', views: ['errors'] },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
@@ -2903,11 +2903,11 @@ function showReviewNode(node) {
 }
 
 // Under the moves, with Masters or Lichess (not with Study or Errors): how often that database's games
-// reach the position ("Reached 46 times (Masters)", "Reached 23k times (Lichess)", "Never reached")
+// reach the position ("Reached 46 times (master games)", "Reached 23k times (Lichess games)", "Never reached")
 // and their results as a bar, as on Lichess: White wins, draws, Black wins (Lichess games at
 // your chosen ratings and time controls), each with its share when there's room. Hidden until that
 // database's statistics for the position have downloaded.
-const STATS_VIEWS = { masters: { label: 'Masters', games: 'Master games', at: epd => masterGamesAt(epd) }, lichess: { label: 'Lichess', games: 'Lichess games', at: epd => lichessGamesAt(epd) } };
+const STATS_VIEWS = { masters: { games: 'master games', at: epd => masterGamesAt(epd) }, lichess: { games: 'Lichess games', at: epd => lichessGamesAt(epd) } };
 function renderStatsTile(node) {
   const db = STATS_VIEWS[settings.review.view], stats = db?.at(node.epd);
   if (!stats) return $('review-stats').replaceChildren();
@@ -2918,8 +2918,8 @@ function renderStatsTile(node) {
   };
   const summary = n && `White wins ${pct(stats.white)}%, draws ${pct(stats.draws)}%, Black wins ${pct(stats.black)}%`;
   $('review-stats').replaceChildren(...[
-    element('div', { class: 'muted' }, n ? `Reached ${shortCount(n)} times (${db.label})` : 'Never reached'), // the view says which games
-    n ? element('div', { class: 'win-bar', title: `${db.games}: ${summary}`, role: 'img', 'aria-label': summary },
+    element('div', { class: 'muted' }, n ? `Reached ${shortCount(n)} times (${db.games})` : 'Never reached'), // the view says which games
+    n ? element('div', { class: 'win-bar', title: summary, role: 'img', 'aria-label': summary },
       part('white-wins', stats.white), part('draws', stats.draws), part('black-wins', stats.black)) : null].filter(Boolean));
 }
 
@@ -3031,7 +3031,7 @@ function updateAllVariationsButton() {
   const btn = $('review-all'), open = !!review.allOpen;
   btn.classList.toggle('hidden', !branchKeys(review.parsed).length);
   btn.textContent = open ? '− All' : '+ All';
-  btn.title = open ? 'Hide all variations' : 'Show all variations';
+  btn.setAttribute('aria-label', open ? 'Hide all variations' : 'Show all variations'); // no hover hint: the label says it
 }
 $('review-all').addEventListener('click', () => {
   if (!review) return;
@@ -3148,7 +3148,7 @@ function itemAccuracy({ line, i }, mainOnly) {
 const DRILLS = {
   lowRecall: { label: 'Low recall', title: 'Below 75% recall',
     has: node => { const share = shareAt(node, false); return share != null && share < LOW_RECALL - 1e-9; } },
-  dangerYou: { label: 'Danger (you)', title: 'Your first tries lose ≥ the danger level',
+  dangerYou: { label: 'Danger (you)', title: 'Your first moves lose ≥ the danger level',
     has: (node, own) => isYourDangerPosition(node, own) },
   dangerLichess: { label: 'Danger (Lichess)', title: 'Lichess moves lose ≥ the danger level',
     has: node => !!dangerAt(node.epd) },
@@ -3447,8 +3447,8 @@ function renderChooser() {
   const linesChoices = { all: practicableWith('lines', false), main: practicableWith('lines', true) };
   const positionChoices = { spaced: practicable('positions') };
   for (const key of Object.keys(DRILLS)) { const items = drillItems(key); positionChoices[key] = { items, note: items.length ? '' : 'No positions' }; }
-  renderChoices($('lines-choice'), 'lines', lines, [['all', 'All lines', 'Any study move counts'],
-    ['main', 'Main lines', 'Main moves only']], linesChoices);
+  renderChoices($('lines-choice'), 'lines', lines, [['all', 'All lines', 'Practice every line, alternatives included'],
+    ['main', 'Main lines', 'Practice main lines only']], linesChoices);
   renderChoices($('positions-choice'), 'positions', positions, [['spaced', 'All', 'Spaced repetition, from move 3'],
     ...Object.entries(DRILLS).map(([key, d]) => [key, d.label, d.title])], positionChoices);
   const rare = $('rare-select');
@@ -3499,23 +3499,27 @@ for (const kind of Object.keys(KINDS)) {
 const PROBABILITY_ROWS = 25;
 const chanceText = c => c >= 0.0005 ? `${(c * 100).toFixed(1)}%` : '<0.1%';
 
+// For positions it follows the chosen option: All, or a drill's positions (the user's decision, 27 November
+// 2026; a drill picks with the same weighting, from its own positions, each once a round), named under the title.
 function showProbabilities(kind) {
   const k = KINDS[kind], mainLinesOnly = mainOnlyFor(kind);
-  const facts = itemFacts(practiceItems(kind, { mainOnly: mainLinesOnly }), mainLinesOnly);
+  const drill = kind === 'positions' && DRILLS[settings.practice.positions] ? settings.practice.positions : null;
+  const items = drill ? drillItems(drill) : practiceItems(kind, { mainOnly: mainLinesOnly });
+  const facts = itemFacts(items, mainLinesOnly);
   const chances = priorityOf(facts);
   const total = chances.reduce((sum, c) => sum + c, 0);
   const likely = facts.map((p, n) => ({ ...p, chance: total ? chances[n] / total : 0 }))
     .filter(r => r.chance > 0).sort((a, b) => b.chance - a.chance);
   const rows = likely.slice(0, PROBABILITY_ROWS), others = likely.slice(PROBABILITY_ROWS);
   $('probabilities-title').textContent = `Likely next ${k.noun}s`;
-  $('probabilities-settings').textContent = mainLinesOnly ? 'Main lines' : '';
+  $('probabilities-settings').textContent = mainLinesOnly ? 'Main lines' : drill ? DRILLS[drill].label : ''; // the option chosen, if not All
   $('probabilities-columns').replaceChildren(...k.columns.map((text, n) => element('th', n ? { class: 'num' } : {}, text)));
   // The rest in one last row: what the rows shown leave of 100%, so the column adds up exactly.
   const shownPercent = rows.reduce((sum, r) => sum + Number(chanceText(r.chance).replace(/[<%]/g, '')), 0);
   $('probabilities-rows').replaceChildren(...rows.map(probabilityRow), ...others.length ? [element('tr', { class: 'muted' },
     element('td', {}, `Other ${k.noun}s to be tested (${others.length})`), element('td'), element('td'), element('td'),
     element('td', { class: 'num' }, `${Math.max(0, 100 - shownPercent).toFixed(1)}%`))] : []);
-  $('probabilities-note').textContent = rows.length ? '' : practicable(kind).note;
+  $('probabilities-note').textContent = rows.length ? '' : drill ? 'No positions' : practicable(kind).note;
   $('probabilities').classList.remove('hidden');
   $('probabilities-close').focus();
 }

@@ -684,7 +684,7 @@ async function runLichessPage(app) {
     const toggles = () => [...$('review-tree').querySelectorAll('.tree-toggle')].map(b => b.textContent).join('');
     const all = $('review-all'), before = [all.textContent, all.classList.contains('hidden'), toggles()];
     all.click();
-    const opened = [all.textContent, all.title, toggles()];
+    const opened = [all.textContent, all.getAttribute('aria-label'), toggles()];
     [...$('review-tree').querySelectorAll('.tree-move')].find(el => el.textContent === '♘c3').click(); // in a variation
     all.click();
     const closed = [all.textContent, toggles(), current()];
@@ -789,8 +789,8 @@ async function runLichessPage(app) {
       viewWas.click(); key('Home');
       check('stats tile: with Masters or Lichess only, that database\'s count and results bar; hidden until downloaded', [seen, notYet], [{
         study: [], errors: [],
-        masters: ['Reached 46 times (Masters)', [['43%', '43%', '13%'], 'Master games: White wins 43%, draws 43%, Black wins 13%']],
-        lichess: ['Reached 110 times (Lichess)', [['49%', '', '42%'], 'Lichess games: White wins 49%, draws 9%, Black wins 42%']] }, []]);
+        masters: ['Reached 46 times (master games)', [['43%', '43%', '13%'], 'White wins 43%, draws 43%, Black wins 13%']],
+        lichess: ['Reached 110 times (Lichess games)', [['49%', '', '42%'], 'White wins 49%, draws 9%, Black wins 42%']] }, []]);
     }
     // The color key: opened by the ? at the end of the switch; the view shown's rows plain, the others
     // dimmed, following the switch; closed by Esc or a click elsewhere. Help's Arrow colors from the same list.
@@ -1359,6 +1359,13 @@ async function runPositions(app) {
     [false, 'Likely next positions', '']);
   $('probabilities-close').click();
   check('likely next: × closes it', $('probabilities').classList.contains('hidden'), true);
+  // With a drill chosen, the positions table lists only the drill's positions, named under the title.
+  const positionsKept = app.settings.practice.positions;
+  const drillRows = drill => { app.settings.practice.positions = drill; $('show-positions-btn').click(); const r = [$('probabilities-settings').textContent, document.querySelectorAll('#probabilities-rows tr').length]; $('probabilities-close').click(); return r; };
+  const forDrills = ['lowRecall', 'dangerLichess'].map(drillRows), allRows = drillRows('spaced');
+  app.settings.practice.positions = positionsKept;
+  check('likely next: positions follow the chosen drill', [forDrills, allRows[0]],
+    [[['Low recall', Math.min(app.drillItems('lowRecall').length, 26)], ['Danger (Lichess)', Math.min(app.drillItems('dangerLichess').length, 26)]], '']);
   // A row opens it on the Studies page: a line at its last position (a move with nothing after it in the tree).
   $('show-lines-btn').click();
   const lineRow = document.querySelector('#probabilities-rows tr.opens');
