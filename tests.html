@@ -204,7 +204,7 @@ function run(app) {
 
   // Settings
   check('settings: defaults', app.checkedSettings({}), { sounds: false, games: null,
-    practice: { lines: 'all', positions: 'spaced', rare: 'include' }, review: { view: 'study' }, dangerLevel: 0.5, refutationLevel: 1 });
+    practice: { lines: 'all', positions: 'spaced', rare: 'include' }, review: { view: 'study' }, lowRecallLevel: 0.75, yourDangerLevel: 0.5, lichessDangerLevel: 0.5, refutationLevel: 1 });
   check('settings: invalid values fall back; old penalties and sliders ignored', [app.checkedSettings({ errorPenalties: { error: 40 } }).errorPenalties,
     app.checkedSettings({ practice: { kind: 'x', weights: { frequency: 150, accuracy: 20, untried: 'x' } } }).practice],
     [undefined, { lines: 'all', positions: 'spaced', rare: 'include' }]);
@@ -250,7 +250,7 @@ function run(app) {
   check('danger: the moves losing 0.1 pawns or more, with share and drop', app.dangerMoveTexts({ moves: [{ san: 'Bf4', share: 0.14, drop: 1.24 }, { san: 'e4', share: 0.5, drop: 0 }, { san: 'h3', share: 0.08, drop: 0.1 }] }),
     [['♗f4 14% · ', 1.24], ['h3 8% · ', 0.1]]);
   // A move's Δ colored by its loss: green at Δ0.0 as shown, amber below the danger level (0.5), red at it or more.
-  check('loss colors: green, amber, red', [-0.04, -0.3, -0.46, -0.5, -1.2].map(d => [app.lossDelta(d).textContent, app.lossDelta(d).className]),
+  check('loss colors: green, amber, red', [-0.04, -0.3, -0.46, -0.5, -1.2].map(d => [app.lossDelta(d, 0.5).textContent, app.lossDelta(d, 0.5).className]),
     [['Δ0.0', 'loss-none'], ['Δ−0.3', 'loss-some'], ['Δ−0.5', 'loss-big'], ['Δ−0.5', 'loss-big'], ['Δ−1.2', 'loss-big']]);
   check('danger: evaluations in pawns, mate as 10', [{ cp: 45 }, { cp: -120 }, { mate: 3 }, { mate: -2 }].map(app.pawnsOf), [0.45, -1.2, 10, -10]);
   // Danger positions: the Lichess moves' expected loss, by the engine, at the danger level (0.5) or more.
@@ -262,9 +262,9 @@ function run(app) {
     check('danger: the expected loss, and each Lichess move\'s drop (from the engine\'s best 3, or the position after it), most played first', [Math.round(start.loss * 1000), start.moves.map(m => [m.san, Math.round(m.share * 100), Math.round(m.drop * 10) / 10])],
       [520, [['e4', 56, 0], ['d4', 25, 0.1], ['Nh3', 15, 3.3]]]);
     check('danger: for the side to move (Black after 1. e4); below the level, not a danger position', [Math.round(afterE4.loss * 100), afterE4.moves.map(m => [m.san, Math.round(m.drop * 10) / 10]), app.dangerAt(AFTER_E4)], [36, [['e5', 0], ['g5', 1.2]], null]);
-    app.settings.dangerLevel = 0.3;
+    app.settings.lichessDangerLevel = 0.3;
     check('danger: at a lower level it is', !!app.dangerAt(AFTER_E4), true);
-    app.settings.dangerLevel = 0.5;
+    app.settings.lichessDangerLevel = 0.5;
     app.setEvals({ ...structuredClone(DANGER_EVALS), [AFTER_NH3]: undefined });
     check('danger: unknown until the position after a Lichess move outside the engine\'s best 3 is evaluated', app.expectedLossAt(START), null);
     app.setEvals(structuredClone(DANGER_EVALS));
@@ -703,7 +703,7 @@ async function runLichessPage(app) {
     const kept = app.moveStats, keptEvals = app.evals;
     app.setMoveStats(structuredClone(DANGER));
     app.setEvals(structuredClone(DANGER_EVALS));
-    const setLevel = x => { $('danger-level').value = String(x); $('danger-level').dispatchEvent(new Event('change')); };
+    const setLevel = x => { $('lichess-danger-level').value = String(x); $('lichess-danger-level').dispatchEvent(new Event('change')); };
     setLevel(0.3);
     const critView = [...document.querySelectorAll('.review-view button')].find(b => b.getAttribute('aria-pressed') === 'true');
     $('arrows-study').click();
@@ -722,7 +722,7 @@ async function runLichessPage(app) {
     const afterE4 = tileAt();
     setLevel(0.5);
     key('ArrowLeft'); key('ArrowRight');
-    const atHalf = [tileAt(), app.settings.dangerLevel];
+    const atHalf = [tileAt(), app.settings.lichessDangerLevel];
     key('ArrowRight');
     const notDanger = tileAt();
     check('danger: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notDanger],
@@ -743,8 +743,11 @@ async function runLichessPage(app) {
       const right = { tried: ['Nf3'], at: 2, main: false };
       app.setHistory({ positions: { 'AAAAAAAA/BBBBBBBB|e4 e5': [...wrong, right, right, right] }, lines: {} });
       const atThreeQuarters = app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelectorAll('.weak-dot').length;
-      check('tree: low recall, a violet dot after the move leading to it, before the first move for the start; no background; none at 75%', [after, start, atThreeQuarters],
-        [[0, [['e5', 'Low recall: below 75%']]], 'tree-dot weak-dot', 0]);
+      app.settings.lowRecallLevel = 0.9; // the user's level: 75% is low recall below 90%
+      const atNinety = [...app.renderChapterTree(app.chapterByKey('AAAAAAAA/BBBBBBBB'), { view: 'errors' }).querySelectorAll('.weak-dot')].map(d => d.title);
+      app.settings.lowRecallLevel = 0.75;
+      check('tree: low recall, a violet dot after the move leading to it, before the first move for the start; no background; none at 75%, but one below a 90% level', [after, start, atThreeQuarters, atNinety],
+        [[0, [['e5', 'Low recall: below 75%']]], 'tree-dot weak-dot', 0, ['Low recall: below 90%']]);
       app.setHistory(keptHistory);
     }
     check('no errors tile (the board and its square tips show the errors)', !!$('review-errors'), false);
@@ -905,8 +908,13 @@ async function runLichessPage(app) {
   const triesKept = app.history.positions['AAAAAAAA/BBBBBBBB|'];
   app.history.positions['AAAAAAAA/BBBBBBBB|'] = [{ tried: ['Nh3', 'e4'], at: 1, main: true }, ...triesKept.slice(1)];
   yourDanger.push(app.isYourDangerPosition(italianRoot, 'white'));
+  app.settings.lichessDangerLevel = 1.5; // the Lichess danger level doesn't change it
+  yourDanger.push(app.isYourDangerPosition(italianRoot, 'white'));
+  app.settings.lichessDangerLevel = 0.5; app.settings.yourDangerLevel = 1.5; // your danger level does
+  yourDanger.push(app.isYourDangerPosition(italianRoot, 'white'));
+  app.settings.yourDangerLevel = 0.5;
   app.history.positions['AAAAAAAA/BBBBBBBB|'] = triesKept;
-  check('danger position (you): your expected loss at the danger level or more', yourDanger, [false, true]);
+  check('danger position (you): your expected loss at your danger level or more (not the Lichess one)', yourDanger, [false, true, true, false]);
   const accuracyTips = [app.squareTipLines(italianRoot, 'd4'), app.squareTipLines(italianRoot, 'e4')];
   app.settings.review = { view: 'study' };
   const studyTips = [app.squareTipLines(italianRoot, 'e4'), app.squareTipLines(italianRoot, 'f5')];
