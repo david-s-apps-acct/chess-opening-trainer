@@ -988,6 +988,13 @@ A page, **Positions**, listing the user's most common weak positions (built at t
 
 ## Help page
 
+- **Built 27 November 2026 (the user's decisions): Help rewritten again, simpler and shorter.**
+  - **Every card closed** (About too), with a ▸ / ▾ by its title (clicking the title opens or closes it); all closed again each time Help opens. The contents line at the top goes.
+  - **Getting started** is five steps: "Build your repertoire using Lichess studies.", "Connect this app to Lichess.", "Select rating bands and download Lichess statistics (or restore backup if you've used the app before).", "Set groups of chapters to practice (or use the default, All).", "Select what to practice on the Practice page." The notes on installing as an app and working offline are dropped; "your data lives only in this browser" moves to Lichess → Backup.
+  - **Definitions** is one Term | Meaning table (the terms and the position measures together), ordered lines and moves, statistics, recall, engine; the level rows give the default and where it's set ("default 0.5; set in the Lichess page's Levels card"), as the numbers shown were only the defaults.
+  - **A Colors card** after Definitions: the arrows and the move tree, both drawn from the color key's lists (the move tree wasn't in Help before); the color key's "More in Help" opens it. Practice's Arrow colors section goes.
+  - **Practice, Groups, Studies and Lichess** shortened (Claude's draft, accepted by the user), leaving out what Definitions and Colors cover; Practice explains each positions option in its own line.
+
 - **Built 25 November 2026 (the user's request: as few words as possible, for experienced players, consistent with the app): Help rewritten, about 40% shorter**, with a new **Definitions** section (second in the contents): the terms (line, main and alternative move, error, mistake, Lichess move, masters move, position reached, Δ) and the Position measures as a table (repertoire recall, low recall, your expected loss, Danger position (you), Lichess expected loss, Danger position (Lichess), refutable move, rarely reached). Corrected on the way: the violet background marks only the moves you got wrong in the line just played (and recall below 100% in Likely next), not moves below 100%; "Show lines / Show positions" became Likely next; the separate "Where your data is kept" and "Words used in the app" sections went (into Getting started and Definitions); the old name repertoire accuracy is no longer mentioned.
 
 A Help page, opened from the "Help" button in the header. It opens only when clicked, never automatically. Opening it during a line keeps the line; Practice returns to it.
