@@ -120,7 +120,8 @@
      first; time controls, fastest first) */
   .lock-heading { display: flex; align-items: center; gap: 6px; }
   .tick-columns { display: flex; gap: 48px; font-size: 14px; }
-  .level-setting { margin: 14px 0 0; font-size: 14px; } /* the danger and refutation levels, under the rating bands */
+  .level-setting { margin: 10px 0 0; font-size: 14px; } /* the danger and refutation levels (the Levels card) */
+  .card h2 + .level-setting { margin-top: 0; }
   .level-setting select { margin: 0 4px; }
   .tick-title { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
   .tick-column { display: flex; flex-direction: column; gap: 4px; }
@@ -522,7 +523,7 @@
   <section id="lichess-screen" class="hidden">
     <div class="cards">
       <div class="card">
-        <h2><span id="lichess-heading">Status</span></h2>
+        <h2><span id="lichess-heading" data-tip="Studies update each time the app opens; reload to update now">Status</span></h2>
         <div class="lichess-lines">
           <p id="lichess-account" class="muted"></p>
           <p id="lichess-rating" class="muted"></p>
@@ -548,7 +549,7 @@
       </div>
 
       <div id="games-card" class="card hidden">
-        <h2 class="lock-heading"><span data-tip="Games the statistics come from. Band: the players' average Lichess rating (higher than Chess.com).">Move statistics</span>
+        <h2 class="lock-heading"><span data-tip="Lichess games used for the statistics">Move statistics</span>
           <button id="games-lock" class="icon-btn"></button></h2>
         <div class="tick-columns">
           <div><div class="tick-title">Rating</div><div id="games-ratings" class="tick-column"></div></div>
@@ -559,24 +560,29 @@
           <button id="games-apply" class="primary">Apply</button>
           <button id="games-cancel" class="primary">Cancel</button>
         </div>
-        <p class="level-setting"><label for="danger-level"><span data-tip="Average eval loss of the Lichess moves (Lichess) or your first tries (you). Lower: more danger positions.">Danger positions: expected eval loss ≥</span>
-          <select id="danger-level"></select></label></p>
-        <p class="level-setting"><label for="refutation-level"><span data-tip="Eval loss that makes a Lichess move worth refuting (Refutations drill).">Refutable moves: eval loss ≥</span>
-          <select id="refutation-level"></select></label></p>
         <p id="lichess-moves" class="muted after-actions"></p>
         <div id="lichess-status" class="bg-status hidden" aria-live="polite"></div>
         <p id="lichess-masters" class="muted"></p>
         <div id="masters-status" class="bg-status hidden" aria-live="polite"></div>
-        <p id="engine-evals" class="muted"></p>
+      </div>
+
+      <!-- Levels: the danger and refutation levels (both Stockfish eval losses), and the engine's progress -->
+      <div id="levels-card" class="card hidden">
+        <h2>Levels</h2>
+        <p class="level-setting"><label for="danger-level"><span data-tip="Of the Lichess moves (Lichess) or your first moves (you)">Danger positions: expected eval loss ≥</span>
+          <select id="danger-level"></select></label></p>
+        <p class="level-setting"><label for="refutation-level"><span data-tip="Eval loss that makes a Lichess move worth refuting (Refutations drill).">Refutable moves: eval loss ≥</span>
+          <select id="refutation-level"></select></label></p>
+        <p id="engine-evals" class="muted after-actions"></p>
         <div id="engine-status" class="bg-status hidden" aria-live="polite"></div>
       </div>
 
       <div id="backup-card" class="card hidden">
-        <h2><span data-tip="Your data is kept only in this browser. Backups never include your token.">Backup</span></h2>
+        <h2>Backup</h2>
         <div class="actions stacked">
           <button id="backup-btn" class="primary">Save backup</button>
-          <button id="restore-btn" class="primary" title="Replace your stats, settings and groups with a backup's">Restore backup</button>
-          <button id="merge-btn" class="primary" title="Add a backup's stats to yours (e.g. another device)">Merge backup</button>
+          <button id="restore-btn" class="primary" title="Replaces your data with a backup">Restore backup</button>
+          <button id="merge-btn" class="primary" title="Adds a backup's tries to yours (e.g. from another device)">Merge backup</button>
           <input type="file" id="restore-file" accept=".json,application/json" class="hidden">
           <input type="file" id="merge-file" accept=".json,application/json" class="hidden">
         </div>
@@ -590,7 +596,7 @@
         <p id="getting-started-ready"></p>
         <p>Used the app before? Restore a backup.</p>
         <div class="actions">
-          <button id="welcome-start-btn" class="primary" title="Downloads the statistics; practice meanwhile">Download statistics</button>
+          <button id="welcome-start-btn" class="primary">Download statistics</button>
         </div>
       </div>
     </div>
@@ -679,11 +685,11 @@
         <select id="edit-preset-select" aria-label="Group to edit"></select>
         <span id="edit-summary" class="muted"></span>
         <div class="preset-buttons">
-          <button id="preset-save-btn" class="small primary" title="Save this group">Save</button>
-          <button id="preset-new-btn" class="small" title="Save as a new group">Save as new</button>
+          <button id="preset-save-btn" class="small primary">Save</button>
+          <button id="preset-new-btn" class="small">Save as new</button>
           <button id="preset-rename-btn" class="small">Rename</button>
           <button id="preset-delete-btn" class="small">Delete</button>
-          <button id="preset-cancel-btn" class="small" title="Undo unsaved changes">Cancel</button>
+          <button id="preset-cancel-btn" class="small">Cancel</button>
         </div>
         <form id="preset-name-form" class="preset-name-form hidden">
           <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the group" autocomplete="off">
@@ -819,7 +825,7 @@
           <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level (1.0) or more; the position after it is a <b>refutation position</b></td></tr>
           <tr><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
         </table>
-        <p>Set the danger and refutation levels on the Lichess page.</p>
+        <p>Set the danger and refutation levels in the Lichess page's Levels card.</p>
       </div>
 
       <div class="card" id="help-practice">
@@ -915,7 +921,7 @@
         <details>
           <summary>Hiding and resetting</summary>
           <p>The eye by the <b>Studies</b> heading shows hidden studies and chapters, each with its own eye to hide or unhide it. Hiding only tidies the list; it doesn't change what's practiced.</p>
-          <p>The <b>↺</b> beside it gives each chapter you've tried a ↺ that resets its stats (after asking), from both colors. Restoring or merging an older backup brings them back.</p>
+          <p>The <b>↺</b> beside it gives each chapter you've tried a ↺ that resets its tries (after asking), from both colors. Restoring or merging an older backup brings them back.</p>
         </details>
       </div>
 
@@ -925,8 +931,9 @@
           <li>A red dot on the header's <b>Lichess</b> button: not connected (or Lichess has ended the connection).</li>
           <li>Cards: <b>Status</b>, <b>Connection</b>, <b>Move statistics</b> and <b>Backup</b> (before you connect, only the first two), and after your first connection <b>Getting started</b>.</li>
           <li>Your studies update from Lichess each time the app opens (mid-practice, once you end it); reload to update now.</li>
-          <li><b>Move statistics</b> come from Lichess games in your rating bands (the players' average Lichess rating, which runs higher: Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, combined, and from master games. First set from your Lichess rating (its band and the next, blitz and rapid; 1200–2000 without one). To change them, unlock, tick and <b>Apply</b>: everything downloads again (the old statistics are used meanwhile). They download in the background each time the app opens; when they're done, the Backup card suggests a backup. The danger and refutation levels are set here too.</li>
-          <li><b>Backup</b>: <b>Save backup</b> (Chrome and Edge ask where; Safari and Firefox use your download folder). <b>Restore backup</b> replaces your stats, settings and groups. <b>Merge backup</b> adds a backup's tries to yours; your settings, groups and hidden studies stay. Either way the Lichess statistics merge (the newer copy wins). Backups never include your token; ones from earlier versions can't be used.</li>
+          <li><b>Move statistics</b> come from Lichess games in your rating bands (the players' average Lichess rating, which runs higher: Chess.com 1500 rapid is about Lichess 1750–1800) and time controls, combined, and from master games. First set from your Lichess rating (its band and the next, blitz and rapid; 1200–2000 without one). To change them, unlock, tick and <b>Apply</b>: everything downloads again (the old statistics are used meanwhile). They download in the background each time the app opens; when they're done, the Backup card suggests a backup.</li>
+          <li><b>Levels</b>: the danger and refutation levels (see Definitions), and how far Stockfish has got evaluating your positions.</li>
+          <li><b>Backup</b>: <b>Save backup</b> (Chrome and Edge ask where; Safari and Firefox use your download folder). <b>Restore backup</b> replaces your tries, settings and groups. <b>Merge backup</b> adds a backup's tries to yours; your settings, groups and hidden studies stay. Either way the Lichess statistics merge (the newer copy wins). Backups never include your token; ones from earlier versions can't be used.</li>
           <li>Two devices: Save backup on one, Merge it on the other, and back again.</li>
           <li><b>Disconnect</b> saves a backup, then clears your data from this browser (not the Lichess statistics). To come back: Connect, then Restore. To let someone else use the app: Disconnect; they sign in on lichess.org and Connect. When Lichess ends a connection (after about a year), just Connect. From disk: <b>Add token</b> and <b>Clear token</b>.</li>
         </ul>
@@ -1266,13 +1273,24 @@ function quickTip(el, text, delay = 0) {
     clearTimeout(quickTipTimer);
     if (lastClick) return;
     quickTipTimer = setTimeout(() => {
+      const shown = typeof text === 'function' ? text() : text;
+      if (!shown) return; // nothing to say this time (e.g. a name that isn't cut off)
       const tip = quickTipBox();
-      tip.textContent = typeof text === 'function' ? text() : text;
+      tip.textContent = shown;
       tip.classList.remove('hidden');
       placePopup(tip, el);
     }, delay);
   });
   el.addEventListener('mouseleave', hideQuickTip);
+  return el;
+}
+
+// Whether an element's text is cut off with "…" (text-overflow: ellipsis).
+const isCutOff = el => el.scrollWidth > el.clientWidth;
+
+// A name's hover hint: its full text, only while it's cut off (box: the element that cuts it off).
+function fullNameTip(el, box = el) {
+  el.addEventListener('mouseenter', () => { el.title = isCutOff(box) ? box.textContent : ''; });
   return el;
 }
 
@@ -2108,7 +2126,7 @@ function renderStudies() {
 function renderStudiesList() {
   const container = $('studies'), shown = review?.ch;
   setToggle('show-hidden-btn', showHidden, showHidden ? 'Stop showing hidden' : 'Show hidden');
-  setToggle('reset-mode-btn', resetting, resetting ? 'Stop resetting stats' : 'Reset stats');
+  setToggle('reset-mode-btn', resetting, resetting ? 'Stop resetting tries' : 'Reset tries');
   // Listed: what isn't hidden (all of it with the eye open), and the chapter on the board.
   const listed = (id, isShown) => showHidden || !hidden.has(id) || isShown;
   container.replaceChildren();
@@ -2161,7 +2179,7 @@ function chapterLink(c, k) {
     showHidden ? hideButton(c.key, isHidden, 'chapter') : null, // on the left, so a long name can't hide it
     resetting && chapterTries(c.key) ? resetButton(c) : null, // likewise
     element('span', { class: 'review-chapter-num' }, `${k + 1}.`),
-    element('span', { class: 'review-chapter-name', title: p.error ? `${c.name} (${p.error})` : c.name }, c.name),
+    p.error ? element('span', { class: 'review-chapter-name', title: `${c.name} (${p.error})` }, c.name) : fullNameTip(element('span', { class: 'review-chapter-name' }, c.name)),
     p.error ? null : element('button', { class: 'icon-btn study-practice', title: 'Practice this chapter', 'aria-label': `Practice ${c.name}`,
       onclick: e => { e.stopPropagation(); practiceFromStudies([c]); } }, '▶'));
 }
@@ -2214,7 +2232,7 @@ function opener(name, onOpen) {
 function studyRow(study, open, toggle, eye = null, play = null) {
   return element('div', { class: 'row study-row' },
     triangle(open, ['Show chapters', 'Hide chapters'], toggle), eye,
-    element('span', { class: 'name', title: study.name }, opener(study.name, toggle)), play);
+    fullNameTip(element('span', { class: 'name' }, opener(study.name, toggle))), play);
 }
 
 // A chapter's color button on the Groups page: a dot in its color, with an X through it when not played.
@@ -2235,14 +2253,18 @@ function chapterRow(ch) {
   const button = color => {
     if (parsed.error) return element('button', { id: `${id}-${color}`, class: 'side-btn', disabled: true, 'aria-label': `${ch.name}: ${parsed.error}` }, element('span', { class: 'side-dot off' }));
     const on = !!played?.has(color), which = color === own ? ' (main color)' : ' (other color)';
-    return colorButton(`${id}-${color}`, color, on, on ? `Playing ${color}${which}` : `Not playing ${color}${which}`,
+    return colorButton(`${id}-${color}`, color, on, on ? `Practiced as ${color}${which}` : `Not practiced as ${color}${which}`,
       () => setColor([ch.key], color, !on), ch.name);
   };
   const toggle = () => setPlayed([ch.key], !played);
+  // Its hover hint: its opening (not when that's its name too), with its name first while the name is cut off.
+  const nameBox = element('span', { class: 'name' }), opening = openingName(parsed);
+  const tip = () => { const shown = opening !== ch.name ? opening : null; return isCutOff(nameBox) ? [ch.name, shown].filter(Boolean).join(': ') : shown; };
+  nameBox.append(quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : toggle }, ch.name), tip, 700));
   return element('div', { class: 'row chapter-row' + (played ? '' : ' unplayed') },
     element('span', { class: 'toggle-space' }), // indented under its study
     element('span', { class: 'side-btns' }, [own, opposite(own)].map(button)),
-    element('span', { class: 'name' }, quickTip(element('span', { class: 'chapter-label', onclick: parsed.error ? null : toggle }, ch.name), [ch.name, openingName(parsed)].filter(Boolean).join(': '), 700)),
+    nameBox,
     parsed.error ? element('span', { class: 'side' }, parsed.error) : null);
 }
 
@@ -2351,10 +2373,10 @@ function forgetChapter(chapterKey) {
   for (const part of ['positions', 'lines']) for (const key of Object.keys(history[part])) if (ofChapter(key, chapterKey)) delete history[part][key];
 }
 function resetButton(c) {
-  const btn = element('button', { class: 'icon-btn', title: 'Reset this chapter\'s stats', 'aria-label': `Reset your stats for ${c.name}`,
+  const btn = element('button', { class: 'icon-btn', title: 'Reset this chapter\'s tries', 'aria-label': `Reset your tries for ${c.name}`,
     onclick: e => {
       e.stopPropagation();
-      if (!confirm(`Reset your stats for ${c.name}? ${plural(chapterTries(c.key), 'try', 'tries')}.`)) return;
+      if (!confirm(`Reset your ${plural(chapterTries(c.key), 'try', 'tries')} for ${c.name}?`)) return;
       forgetChapter(c.key);
       saveHistory({ replace: true });
       store.set('resetChapter', { key: c.key, at: Date.now() });
@@ -2526,7 +2548,7 @@ $('nav-groups').addEventListener('click', () => {
 document.querySelector('header nav').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!b || b.id === 'nav-groups' || currentScreen !== 'groups' || !editsUnsaved()) return;
-  if (!confirm('Leave without saving the changes to this group?')) e.stopImmediatePropagation();
+  if (!confirm('Leave without saving?')) e.stopImmediatePropagation();
 }, true);
 
 $('preset-save-btn').addEventListener('click', () => {
@@ -4637,7 +4659,7 @@ function renderEvalBar(node) {
   label.className = 'eval-text ' + ((whiteBetter !== flipped) ? 'at-bottom' : 'at-top') + (whiteBetter ? ' on-white' : ' on-black');
 }
 
-// The Lichess page's line for the evaluations, under the statistics: "Engine evaluations: 120 of 850
+// The Lichess page's line for the evaluations, in the Levels card under the levels: "Engine evaluations: 120 of 850
 // positions (evaluating…)"; then a problem, if any.
 function updateEvaluationInfo() {
   const el = $('engine-evals');
@@ -4696,13 +4718,13 @@ function renderLichessPage() {
   // Backup: once there are studies; nothing to save while Getting started shows.
   $('backup-card').classList.toggle('hidden', !library);
   $('backup-btn').disabled = welcomeReady;
-  $('backup-btn').title = welcomeReady ? 'Nothing to save yet' : '';
+  $('backup-btn').title = welcomeReady ? 'Nothing to save yet' : 'Saves your data to a file (not your token)';
   const lastBackup = store.get('lastBackup', null);
   $('backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
   updateStatisticsInfo(); // the statistics lines, and the header button
 }
 
-// The danger level (see dangerAt), in the Move statistics card beside the rating bands (it depends on
+// The danger level (see dangerAt), in the Lichess page's Levels card (it depends on
 // your level too): 0.2 to 1.5 pawns. Changing it changes which positions are danger positions at once.
 $('danger-level').replaceChildren(...DANGER_LEVELS.map(x => element('option', { value: String(x) }, x.toFixed(1))));
 $('danger-level').addEventListener('change', e => {
@@ -4748,7 +4770,7 @@ function renderGamesCard() {
   const canChange = !!token && !!library;
   if (!canChange) gamesDraft = null;
   const shown = gamesDraft ?? chosenGames();
-  $('games-card').classList.toggle('hidden', !library); // once there are studies
+  for (const id of ['games-card', 'levels-card']) $(id).classList.toggle('hidden', !library); // once there are studies
   for (const [row, key] of [['games-ratings', 'ratings'], ['games-speeds', 'speeds']]) {
     for (const box of $(row).querySelectorAll('input')) {
       box.checked = shown[key].includes(key === 'ratings' ? +box.value : box.value);
@@ -4758,7 +4780,7 @@ function renderGamesCard() {
   const lock = $('games-lock');
   lock.innerHTML = PADLOCK(!!gamesDraft);
   lock.disabled = !canChange;
-  lock.title = !canChange ? 'Connect to Lichess to change' : gamesDraft ? 'Lock' : 'Unlock to change';
+  lock.title = canChange ? '' : 'Connect to Lichess to change'; // only while it can't be clicked
   lock.setAttribute('aria-label', gamesDraft ? 'Lock' : 'Unlock');
   $('games-warning').textContent = gamesDraft ? `Changing these downloads the move statistics again for all ${plural(allStudyPositions().size, 'position')}.` : '';
   const changed = !!gamesDraft && !sameGames(gamesDraft, chosenGames());
@@ -4792,7 +4814,7 @@ const connectionExpired = () => /expired|rejected/.test(lichessMessages());
 function updateLichessStatus() {
   const expired = !!token && connectionExpired();
   $('nav-lichess').replaceChildren('Lichess', ...!token || expired ? [element('span', { class: 'problem-dot', role: 'img', 'aria-label': 'not connected' })] : []);
-  $('nav-lichess').title = !token ? 'Not connected' : expired ? 'Connection ended: connect again' : 'Account, studies and statistics';
+  $('nav-lichess').title = !token ? 'Not connected' : expired ? 'Connection ended: connect again' : ''; // only with the red dot
 }
 
 // Adding a token (opened from disk): Add token opens Lichess's page for creating one, with the scope
@@ -4825,7 +4847,6 @@ $('token-input').addEventListener('paste', () => setTimeout(savePastedToken)); /
 // Connect to Lichess: log in with Lichess online; from disk, Add token: Lichess's token page in a new
 // tab, and the box to paste the token into.
 if (!canLogIn) $('connect-btn').textContent = 'Add token';
-$('connect-btn').title = canLogIn ? 'Lets the app read your studies' : 'Opens Lichess to create a token';
 $('connect-btn').addEventListener('click', () => {
   if (canLogIn) return logInWithLichess();
   window.open(TOKEN_PAGE, '_blank', 'noopener');
@@ -4841,9 +4862,8 @@ $('connect-btn').addEventListener('click', () => {
 // Lichess; a token you pasted ("lip_…") may be used elsewhere, so it's only forgotten here. (When
 // Lichess ends a connection itself, connecting again clears nothing.)
 if (!canLogIn) $('disconnect-btn').textContent = 'Clear token';
-$('disconnect-btn').title = 'Backs up, then clears your data here';
 $('disconnect-btn').addEventListener('click', async () => {
-  if (!confirm(`${canLogIn ? 'Disconnect' : 'Clear token'}? A backup of your stats is saved first, then they're cleared from this browser.`)) return;
+  if (!confirm(`${canLogIn ? 'Disconnect' : 'Clear token'}? A backup of your data is saved first, then it's cleared from this browser.`)) return;
   const saved = await saveBackup();
   if (!saved) return;
   if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
@@ -4877,10 +4897,6 @@ function showSplash(open) {
 for (const id of ['welcome-splash-start', 'welcome-splash-close']) $(id).addEventListener('click', () => showSplash(false));
 $('welcome-splash').addEventListener('click', e => { if (e.target === $('welcome-splash')) showSplash(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('welcome-splash').classList.contains('hidden')) showSplash(false); });
-
-$('lichess-heading').dataset.tip = canLogIn
-  ? 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). Lichess ends the connection after about a year; connect again then.'
-  : 'Your studies are updated from Lichess each time the app opens (reload the page to update them now). The token needs the Read private studies (study:read) scope; a new one replaces the stored one.';
 
 // After the first connection (every chapter ticked): restore a backup (stats, move statistics and your
 // ticks, so they needn't be downloaded), or Download statistics. Either way the Practice page opens and the missing
@@ -4993,7 +5009,7 @@ async function mergeSharedData(b) {
 // or have the studies of, a different one), it says so; otherwise the usual question.
 function restoreQuestion(b) {
   const here = ownAccount();
-  if (b.account && here && b.account !== here) return `This backup is from ${b.account}'s account, but you're connected as ${here}. Restore anyway? Your stats would be replaced.`;
+  if (b.account && here && b.account !== here) return `This backup is from ${b.account}'s account, but you're connected as ${here}. Restore anyway? Your data would be replaced.`;
   const n = Object.keys(checkedHistory(b.history)?.positions ?? {}).length;
   const when = b.exportedAt ? ` saved ${onDateAtTime(b.exportedAt)}` : '';
   return `Replace your history and settings with the backup${when} (${plural(n, 'position')} with results)? This can't be undone.`;
@@ -5154,7 +5170,7 @@ async function init() {
   else if (token) { showScreen('practice'); fetchStudies(); } // the message shows on the Practice page
   else if (sessionStorage.getItem('cot.cleared')) { // just disconnected: what happened, instead of the welcome
     showLichess();
-    setUpdateStatus(`Backup saved as ${sessionStorage.getItem('cot.cleared')}. Your stats are cleared from this browser.`); // in the Status card (no Backup card until connected)
+    setUpdateStatus(`Backup saved as ${sessionStorage.getItem('cot.cleared')}. Your data is cleared from this browser.`); // in the Status card (no Backup card until connected)
     sessionStorage.removeItem('cot.cleared');
   }
   else { showLichess(); showSplash(true); } // not started yet: the welcome

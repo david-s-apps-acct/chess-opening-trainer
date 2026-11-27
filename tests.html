@@ -353,8 +353,8 @@ async function runLichessPage(app) {
   // A new user: Getting started, with no sample studies (removed), and the red dot (not connected).
   app.setLibrary(null);
   $('nav-lichess').click();
-  check('new user: only Status and Connection (no Move statistics, Backup or Getting started), the red dot', [...['games-card', 'backup-card', 'getting-started'].map(id => $(id).classList.contains('hidden')),
-    !!$('trial-btn'), !!$('nav-lichess').querySelector('.problem-dot')], [true, true, true, false, true]);
+  check('new user: only Status and Connection (no Move statistics, Backup or Getting started), the red dot', [...['games-card', 'levels-card', 'backup-card', 'getting-started'].map(id => $(id).classList.contains('hidden')),
+    !!$('trial-btn'), !!$('nav-lichess').querySelector('.problem-dot'), $('nav-lichess').title], [true, true, true, true, false, true, 'Not connected']);
   app.setLibrary(structuredClone(LIBRARY));
   $('nav-lichess').click();
   check('own studies, not connected: Status, Connect to Lichess and no Disconnect', [$('lichess-heading').textContent,
@@ -379,7 +379,7 @@ async function runLichessPage(app) {
   const disconnect = async () => { steps = []; $('disconnect-btn').click(); await new Promise(r => setTimeout(r, 0)); await new Promise(r => setTimeout(r, 0)); };
   window.confirm = question => { asked = question; return false; };
   await disconnect();
-  check('Disconnect asks first, and Cancel keeps everything', [asked, steps], ["Disconnect? A backup of your stats is saved first, then they're cleared from this browser.", []]);
+  check('Disconnect asks first, and Cancel keeps everything', [asked, steps], ["Disconnect? A backup of your data is saved first, then it's cleared from this browser.", []]);
   window.confirm = () => true;
   backupSaves = false;
   await disconnect();
@@ -488,7 +488,7 @@ async function runLichessPage(app) {
   app.setLibrary(structuredClone(LIBRARY)); // tester's studies
   const backupOf = account => ({ account, exportedAt: null, history: { positions: { a: [], b: [] }, lines: {} } });
   check('restore: another account\'s backup, the usual question otherwise', [app.restoreQuestion(backupOf('someone')), app.restoreQuestion(backupOf('tester')), app.restoreQuestion(backupOf(undefined))],
-    ["This backup is from someone's account, but you're connected as tester. Restore anyway? Your stats would be replaced.",
+    ["This backup is from someone's account, but you're connected as tester. Restore anyway? Your data would be replaced.",
      "Replace your history and settings with the backup (2 positions with results)? This can't be undone.",
      "Replace your history and settings with the backup (2 positions with results)? This can't be undone."]);
 
@@ -644,7 +644,7 @@ async function runLichessPage(app) {
   check('Groups page: its own page, with no All row; Save as new and Cancel for All, Cancel only once something changes', [!$('groups-screen').classList.contains('hidden'), $('studies-screen').classList.contains('hidden'), $('nav-groups').classList.contains('current'),
     !$('all-row'), ['preset-save-btn', 'preset-new-btn', 'preset-rename-btn', 'preset-delete-btn', 'preset-cancel-btn'].filter(id => !$(id).classList.contains('hidden')), $('preset-cancel-btn').disabled],
     [true, true, true, true, ['preset-new-btn', 'preset-cancel-btn'], true]);
-  check('Groups page: Save as new', [$('preset-new-btn').textContent, $('preset-new-btn').title], ['Save as new', 'Save as a new group']);
+  check('Groups page: Save as new, no hover hint', [$('preset-new-btn').textContent, $('preset-new-btn').title], ['Save as new', '']);
   if (!document.querySelector('#edit-studies .chapter-row')) document.querySelector('#edit-studies .study-row .opener').click(); // the study's chapters
   const firstDot = () => document.querySelector('#edit-studies .chapter-row .side-dot').className, wasDot = firstDot();
   document.querySelector('#edit-studies .chapter-row .chapter-label').click(); // its name
@@ -658,7 +658,7 @@ async function runLichessPage(app) {
   $('nav-studies').click();
   window.confirm = confirmKept;
   check('groups: leaving with changes not saved asks first; staying keeps them, leaving drops them', [...stayed, !$('studies-screen').classList.contains('hidden')],
-    ['Leave without saving the changes to this group?', true, true, true]);
+    ['Leave without saving?', true, true, true]);
   $('nav-groups').click();
   check('groups: back on the page, the group as saved', [firstDot(), $('preset-cancel-btn').disabled], [wasDot, true]);
   $('nav-practice').click();
@@ -814,7 +814,12 @@ async function runLichessPage(app) {
     key('Home'); key('ArrowRight');
   }
   check('review: no Your accuracy tile (a trial); the comment in its tile', [!!$('review-yours'), $('review-comment').textContent], [false, 'Best by test.']);
-  check('review: just the position\'s name above the moves; a chapter\'s hover, its name only', [!!$('review-opening'), $('review-position').nextElementSibling.id, chapterRows()[0].querySelector('.review-chapter-name').title], [false, 'review-tree', 'Italian']);
+  const chapterName = chapterRows()[0].querySelector('.review-chapter-name'), hoverTitle = () => { chapterName.dispatchEvent(new MouseEvent('mouseenter')); return chapterName.title; };
+  const wholeName = hoverTitle();
+  Object.defineProperties(chapterName, { scrollWidth: { value: 100, configurable: true }, clientWidth: { value: 10, configurable: true } }); // as if cut off
+  const cutName = hoverTitle();
+  delete chapterName.scrollWidth; delete chapterName.clientWidth;
+  check('review: just the position\'s name above the moves; a chapter\'s hover, its name only while it\'s cut off', [!!$('review-opening'), $('review-position').nextElementSibling.id, wholeName, cutName], [false, 'review-tree', '', 'Italian']);
   key('ArrowRight'); key('ArrowRight'); // 2. ♘f3!, an annotation with no comment
   const annotationOnly = $('review-comment').textContent;
   key('ArrowLeft'); key('ArrowLeft');
@@ -1504,8 +1509,8 @@ function runPresets(app) {
   colorBtn(B, 'white').click(); sideStates.push(buttons()); // Black only
   colorBtn(B, 'black').click(); sideStates.push(buttons()); // neither: out of the group
   row(B).querySelector('.chapter-label').click(); sideStates.push(buttons()); // its name: in, from its main color
-  const notWhite = ['Not playing white (main color)', 'side-dot white x'], white = ['Playing white (main color)', 'side-dot white'];
-  const notBlack = ['Not playing black (other color)', 'side-dot black x'], black = ['Playing black (other color)', 'side-dot black'];
+  const notWhite = ['Not practiced as white (main color)', 'side-dot white x'], white = ['Practiced as white (main color)', 'side-dot white'];
+  const notBlack = ['Not practiced as black (other color)', 'side-dot black x'], black = ['Practiced as black (other color)', 'side-dot black'];
   const order = key => [...row(key).querySelectorAll('.side-dot')].map(d => d.classList[1]);
   check('groups: main color first (White for the Italian, Black for the Sicilian); no line count', [order(B), order(C), /line/.test(row(B).textContent)], [['white', 'black'], ['black', 'white'], false]);
   check('groups: a main color and an other color button, each on or off (an X); with neither, out (grayed); the name adds the main color', sideStates, [
