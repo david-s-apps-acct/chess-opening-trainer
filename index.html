@@ -143,10 +143,11 @@
   .help-opener:hover .toggle-mark { color: var(--text); }
   .help .card > h2 { margin: 0; }
   .help-body { margin-top: 8px; }
-  .help-table { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
+  .help-table { border-collapse: collapse; margin: 6px 0; }
   .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
   .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
   .help-table .in-category td:first-child { padding-left: 16px; } /* Definitions: a term under its category (e.g. Moves) */
+  @media (min-width: 600px) { .definitions-table td:first-child { width: 210px; white-space: nowrap; } } /* each term on one line; automatic on phones */
 
   /* Lichess and Help pages: a column of cards */
   .cards { display: flex; flex-direction: column; gap: 16px; }
@@ -634,8 +635,8 @@
           <button id="levels-toggle" class="levels-opener" aria-expanded="false" aria-controls="levels-body"><span class="toggle-mark" aria-hidden="true">▸</span>Thresholds</button>
           <div id="levels-body" class="levels-body hidden">
             <label class="level-row" title="Repertoire recall below this">Low recall: below <select id="low-recall-level"></select></label>
-            <label class="level-row" title="Your expected loss (your first moves)">Danger (you): ≥ <select id="your-danger-level"></select></label>
-            <label class="level-row" title="Lichess expected loss (the Lichess moves)">Danger (Lichess): ≥ <select id="lichess-danger-level"></select></label>
+            <label class="level-row" title="Expected loss (you): your first moves">Danger (you): ≥ <select id="your-danger-level"></select></label>
+            <label class="level-row" title="Expected loss (Lichess): the Lichess moves">Danger (Lichess): ≥ <select id="lichess-danger-level"></select></label>
             <label class="level-row" title="A Lichess move's eval loss">Refutations: ≥ <select id="refutation-level"></select></label>
             <label class="level-row" title="Positions expected to be reached in less than 1 in [x] of your games">Exclude: <select id="rare-select"></select></label>
           </div>
@@ -804,43 +805,43 @@
       <div class="card" id="help-definitions">
         <h2>Definitions</h2>
         <!-- In alphabetical order; a category (e.g. Moves) is sorted by its name, its terms indented under it, also in order. -->
-        <table class="help-table">
+        <table class="help-table definitions-table">
           <tr><th>Term</th><th>Meaning</th></tr>
           <tr><td><b>Chance next</b></td><td>In the Likely next table: its priority's share of them all</td></tr>
           <tr class="help-category"><td colspan="2"><b>Games</b></td></tr>
           <tr class="in-category"><td><b>Lichess games</b></td><td>Rated games played on Lichess, in your rating bands and time controls (Lichess's Opening Explorer)</td></tr>
           <tr class="in-category"><td><b>Master games</b></td><td>Games between players rated 2200+ FIDE, over the board (Lichess's Masters database)</td></tr>
-          <tr class="in-category"><td><b>Rating bands, time controls</b></td><td>The Lichess games the statistics come from, chosen on the Lichess page (first set from your Lichess rating)</td></tr>
           <tr><td><b>Last tested</b></td><td>When you last played a position, or a line through from move 1</td></tr>
           <tr class="help-category"><td colspan="2"><b>Lines</b></td></tr>
           <tr class="in-category"><td><b>Line</b></td><td>A path through a chapter from move 1: one of your study's moves at each of your turns, and each reply it gives</td></tr>
           <tr class="in-category"><td><b>Main line</b></td><td>A line of main moves only, for both sides (what Main lines practices)</td></tr>
-          <tr class="help-category"><td colspan="2"><b>Losses</b></td></tr>
-          <tr class="in-category"><td><b>Lichess expected loss</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
-          <tr class="in-category"><td><b>Your expected loss</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Losses, errors and mistakes</b></td></tr>
+          <tr class="in-category"><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one annotated ?, ?? or ?!</td></tr>
+          <tr class="in-category"><td><b>Expected loss (Lichess)</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
+          <tr class="in-category"><td><b>Expected loss (you)</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
+          <tr class="in-category"><td><b>Mistake</b></td><td>A move annotated ? (mistake), ?? (blunder) or ?! (dubious) in a study</td></tr>
           <tr class="in-category"><td><b>Δ</b></td><td>A move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10)</td></tr>
           <tr><td><b>Main color</b></td><td>A chapter's Orientation; the <b>other color</b> is the opposite side. A chapter can be practiced from either or both</td></tr>
           <tr class="help-category"><td colspan="2"><b>Moves</b></td></tr>
-          <tr class="in-category"><td><b>Alternative move</b></td><td>Any other of your study's moves in a position (not marked as a mistake)</td></tr>
-          <tr class="in-category"><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one it marks ?, ?? or ?!</td></tr>
-          <tr class="in-category"><td><b>Glyph</b></td><td>A move's mark in a study: !!, !, !?, ?!, ? or ??</td></tr>
+          <tr class="in-category"><td><b>Alternative move</b></td><td>Any other of your study's moves in a position (not annotated as a mistake)</td></tr>
+          <tr class="in-category"><td><b>Annotation</b></td><td>A move's symbol in a study: !!, !, !?, ?!, ? or ??</td></tr>
           <tr class="in-category"><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your rating bands and time controls)</td></tr>
           <tr class="in-category"><td><b>Main move</b></td><td>Your study's first move in a position</td></tr>
           <tr class="in-category"><td><b>Masters move</b></td><td>Played in 5%+ of the master games in a position, where there are 20 or more</td></tr>
-          <tr class="in-category"><td><b>Mistake</b></td><td>A move a study marks ? (mistake), ?? (blunder) or ?! (dubious); not the same as an error</td></tr>
-          <tr class="in-category"><td><b>Not tested</b></td><td>The moves after one of your study's moves marked as a mistake (in italics); never practiced</td></tr>
-          <tr class="in-category"><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation threshold or more (default 1.0; set under Thresholds on the Practice page)</td></tr>
-          <tr class="in-category"><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.2)</td></tr>
           <tr class="help-category"><td colspan="2"><b>Positions</b></td></tr>
-          <tr class="in-category"><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the Lichess danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
-          <tr class="in-category"><td><b>Danger position (you)</b></td><td>Your expected loss at your danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Danger position (Lichess)</b></td><td>Expected loss (Lichess) at the Lichess danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Danger position (you)</b></td><td>Expected loss (you) at your danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
           <tr class="in-category"><td><b>Position reached</b></td><td>How often a position occurs in Lichess games or master games, e.g. "Reached 23k times (Lichess games)"</td></tr>
-          <tr class="in-category"><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
-          <tr class="in-category"><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
+          <tr class="in-category"><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied)</td></tr>
+          <tr class="in-category"><td><b>Very rarely reached</b></td><td>The same, under 1 game in 1,000</td></tr>
           <tr><td><b>Priority</b></td><td>How likely a line or position is to be picked next (see Spaced repetition)</td></tr>
           <tr class="help-category"><td colspan="2"><b>Recall</b></td></tr>
           <tr class="in-category"><td><b>Low recall</b></td><td>Recall below the low recall threshold (default 75%; set under Thresholds on the Practice page)</td></tr>
           <tr class="in-category"><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Refutations</b></td></tr>
+          <tr class="in-category"><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation threshold or more (default 1.0; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.2)</td></tr>
+          <tr class="in-category"><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
           <tr><td><b>Repertoire</b></td><td>A named set of chapters from your studies, each practiced from its main color, the other or both; <b>All</b> (every chapter, from its main color) is built in</td></tr>
           <tr><td><b>Spaced repetition</b></td><td>Picks the next line or position at random by priority, so positions you're weak on, are due, or are likely to meet or dangerous come up more often (see Spaced repetition)</td></tr>
           <tr><td><b>Try</b></td><td>Each of your moves in a line, or the move in a single position; with Skip or End practice, only the moves answered (and the one you're on, if you'd tried it)</td></tr>
@@ -920,7 +921,7 @@
         <ul>
           <li>Click a study for its chapters, a chapter to open it. ← → (Home, End) step through the moves, ↑ ↓ change chapter. Works offline.</li>
           <li>The switch chooses the arrows: <b>Study</b>, <b>Recall</b>, <b>Lichess</b> or <b>Masters</b> (see Colors). Hover over an arrow's square for the move and its Δ.</li>
-          <li>Tiles: with Lichess or Masters, how often the position is reached and the results; with Recall, <b>Your expected loss</b>; with Lichess, <b>Danger position (Lichess)</b>; with Masters, when your main move isn't a masters move.</li>
+          <li>Tiles: with Lichess or Masters, how often the position is reached and the results; with Recall, <b>Expected loss (you)</b>; with Lichess, <b>Danger position (Lichess)</b>; with Masters, when your main move isn't a masters move.</li>
           <li>The bar beside the board is Stockfish's evaluation; hover for the depth. Every position is evaluated once, in the background (online only).</li>
           <li><b>▶</b> on a study or chapter practices all its lines; End practice returns here. During practice, the board icon opens the position here.</li>
         </ul>
@@ -2815,7 +2816,7 @@ const KEY_TREE = [
   { sample: '<span class="tree-move current">e4</span>', meaning: 'The move on the board' },
   { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position of low recall (select it to see your errors)' },
   { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)" },
-  { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
+  { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: a move of yours other than the main one, annotated as a mistake, or after one" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
   { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (Lichess): the Lichess moves played there lose the Lichess danger threshold or more on average' },
   { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first moves there lose your danger threshold or more on average' },
@@ -2979,7 +2980,7 @@ function renderLossTile(node) {
   const e = engineAvailable() && settings.review.view === 'errors' && yourMovesAt(node).length ? yourExpectedLoss(node) : null;
   const last = e && lastTriedAt(node.key), days = last && daysAgo(last);
   const danger = e && !e.pending && isYourDangerPosition(node, review.parsed.yourColor);
-  $('review-loss').replaceChildren(...!e ? [] : [element('h3', {}, 'Your expected loss'),
+  $('review-loss').replaceChildren(...!e ? [] : [element('h3', {}, 'Expected loss (you)'),
     ...danger ? [element('p', { class: 'danger-line' }, 'Danger position (you)')] : [],
     ...e.pending ? [element('p', { class: 'muted' }, 'Evaluating…')] : [
       element('p', {}, `${deltaText(-e.loss)} (last ${plural(e.tries, 'try', 'tries')})`),
@@ -3009,7 +3010,7 @@ function renderDangerTile(node) {
   const danger = showsMark('danger') && dangerAt(node.epd);
   $('review-danger').replaceChildren(...danger ? [
     element('h3', {}, 'Danger position (Lichess)'),
-    element('p', {}, `Lichess expected loss ${deltaText(-danger.loss)}`),
+    element('p', {}, `Expected loss (Lichess) ${deltaText(-danger.loss)}`),
     element('div', { class: 'danger-moves' }, dangerMoveTexts(danger).map(([t, drop]) => element('div', {}, t, lossDelta(-drop, settings.lichessDangerLevel))))] : []);
 }
 
@@ -4164,14 +4165,14 @@ function opponentMoveBoard(m) {
 }
 
 // One thing tried instead of the correct move m, for the hover board's "Errors: …" row, labeled by
-// what it is: "a3 (alternative move)" (one of your study's alternatives, an error with Main lines), an
-// alternative the study marks ?, ?? or ?! with the mark, "a3 (alternative move ?!)", "b3 (masters move)" (see
+// what it is: "a3 (alternative move)" (one of your study's alternatives, an error with Main lines), a
+// non-main move the study annotates ?, ?? or ?!, with its annotation, "a3 (mistake ?!)", "b3 (masters move)" (see
 // isMasterMove); anything else unlabeled; and "hint" or "show correct move".
 function errorLabel(m, x) {
   if (x === 'hint') return 'hint';
   if (x === 'show') return 'show correct move';
   const mark = alternativesAt(m)[x]?.nags.find(n => MISTAKE_NAGS.includes(n));
-  const label = { alternative: 'alternative move', masters: 'masters move', marked: `alternative move ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
+  const label = { alternative: 'alternative move', masters: 'masters move', marked: `mistake ${GLYPHS[mark]?.[0]}`, wrong: '' }[errorKind(m, x)];
   return withFigurines(x) + (label ? ` (${label})` : '');
 }
 // What a move tried instead of m is: 'alternative', 'marked' (an alternative the study marks ?, ?? or

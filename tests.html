@@ -726,7 +726,7 @@ async function runLichessPage(app) {
     key('ArrowRight');
     const notDanger = tileAt();
     check('danger: the tile at either side\'s move, the same heading; the level from the Lichess page; none elsewhere', [atStart, afterE4, atHalf, notDanger],
-      [['Danger position (Lichess)', 'Lichess expected loss Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Danger position (Lichess)', 'Lichess expected loss Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
+      [['Danger position (Lichess)', 'Expected loss (Lichess) Δ−0.5', 'd4 25% · Δ−0.1♘h3 15% · Δ−3.3'], ['Danger position (Lichess)', 'Expected loss (Lichess) Δ−0.4', 'g5 30% · Δ−1.2'], [[], 0.5], []]);
     check('danger: a dot after the move leading to one; no row on the hover board (just the move); none in Study', [dots.filter(Boolean), hover, inStudy], [['e4'], '1. e4', [0, 0]]);
     app.setEvals(keptEvals);
     critView.click();
@@ -1099,7 +1099,7 @@ async function runEngineTests(app, key) {
   const lossInStudy = $('review-loss').children.length;
   app.setHistory(historyKept); app.settings.review.view = viewKept;
   check('expected loss tile: with Accuracy, at a position of yours with tries, a Δ, last tested, each move colored; none with Study', [lossTile, lossColor, lossInStudy],
-    [['Your expected loss', 'Δ0.0 (last 1 try)', 'c5 100% · Δ0.0', 'Last tested today'], 'loss-none', 0]);
+    [['Expected loss (you)', 'Δ0.0 (last 1 try)', 'c5 100% · Δ0.0', 'Last tested today'], 'loss-none', 0]);
   // Without the engine (the version opened from disk): no bar.
   app.setEngine(false);
   key('Home');

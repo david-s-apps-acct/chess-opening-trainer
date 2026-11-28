@@ -834,6 +834,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ## Terms: move accuracy, line accuracy, errors and position reached
 
+- **Built 28 November 2026 (the user's decision): "Expected loss (you)" and "Expected loss (Lichess)"** replace "your expected loss" and "Lichess expected loss" everywhere the user reads them, matching Danger position (you) and (Lichess): the Studies page's Recall tile heading "Expected loss (you)", the Danger tile's "Expected loss (Lichess) Δ−0.5", the Thresholds hovers ("Expected loss (you): your first moves", "Expected loss (Lichess): the Lichess moves"), Help, the Position measures table and CLAUDE.md. Code names (`yourExpectedLoss`, `expectedLossAt`) stay.
+
 - **Built 27 November 2026 (the user's decisions): fewer hover hints on the Studies and Practice pages.**
   - **Studies page:** the statistics tile reads "Reached 2.9M times (master games)" / "Reached 23k times (Lichess games)"; the results bar's hover drops its prefix ("White wins 38%, draws 30%, Black wins 32%"); the switch's hovers: Study "Your study's moves", Recall "Your recall and errors (last 10 tries)", Lichess "Lichess moves (5%+)", Masters "Masters moves (5%+)"; + All / − All has no hover; the color key's orange dot (you) says "your first moves" (not "first tries").
   - **Both pages:** ⏮ ◀ ▶ ⏭ have no hovers (standard); Help mentions Home and End beside ← →.
@@ -878,9 +880,9 @@ The reference for what's worked out for a position (the user's name and decision
 |---|---|---|---|
 | **Repertoire recall** | you | your last 10 tries (first move) | right or wrong, with or without Main lines only |
 | **Low recall** ("weak recall" until 20 November 2026) | you | repertoire recall | recall below the low recall threshold (default 75%) |
-| **Your expected loss** | you | your last 10 tries (first move) | each move's Δ against the engine's best |
+| **Expected loss (you)** (your expected loss until 28 November 2026) | you | your last 10 tries (first move) | each move's Δ against the engine's best |
 | **Danger position (you)** (Critical position until 25 November 2026) | you | your expected loss | at your danger threshold (default 0.5) or more |
-| **Lichess expected loss** | the opening | Lichess moves (5% or more) | each move's Δ, weighted by how often it's played |
+| **Expected loss (Lichess)** (Lichess expected loss until 28 November 2026) | the opening | Lichess moves (5% or more) | each move's Δ, weighted by how often it's played |
 | **Danger position (Lichess)** | the opening | Lichess expected loss | at the Lichess danger threshold (default 0.5) or more |
 | **Refutation position (Lichess)** | the opening | a refutable Lichess move (5% or more) before it | its Δ at the refutation threshold (default 1 pawn) or more |
 | **Rarely reached** | the opening | the chance opponents lead you there: the shares of their moves on the way, multiplied | below 1 game in 100 (1%) |
@@ -993,6 +995,13 @@ A page, **Positions**, listing the user's most common weak positions (built at t
   - If nothing matches, the table is empty and a note says "No positions you've tried have accuracy 70% or lower."
 
 ## Help page
+
+- **Built 28 November 2026, later (the user's decisions): Help's tables, and more definitions.**
+  - **Tables:** all of Help's tables (Definitions, Colors and the Spaced repetition example) use Help's 15px text (were 13px); Definitions' term column is 210px wide on wide screens, so each term fits on one line, and automatic on phones (*Claude's detail:* "wide" is 600px or more).
+  - **Categories:** **Losses** becomes **Losses, errors and mistakes** (Error, Expected loss (Lichess), Expected loss (you), Mistake, Δ); a new **Refutations** category (Refutable move, Refutation, Refutation position), between Recall and Repertoire. Moves is Alternative move, Annotation, Lichess move, Main move, Masters move; Positions is Danger position (Lichess), Danger position (you), Position reached, Rarely reached, **Very rarely reached** (now its own line: "The same, under 1 game in 1,000"). **Rating bands, time controls** and **Not tested** are removed (the second was confusing).
+  - **Glyph becomes Annotation** (the user's choice, over "Annotation symbol"): "A move's symbol in a study: !!, !, !?, ?!, ? or ??". **"Annotated" replaces "marked"** in the definitions: Mistake "A move annotated ? (mistake), ?? (blunder) or ?! (dubious) in a study" (no "not the same as an error"), Error "… or is one annotated ?, ?? or ?!", Alternative move "… (not annotated as a mistake)".
+  - **The Colors card's italics:** "Not tested: a move of yours other than the main one, annotated as a mistake, or after one" (it said "after one of your alternatives marked ?, ?? or ?!"; the italic move itself is not tested too, and only your side's moves count, as `practisedAs` does).
+  - **The practice hover board's Errors row** labels a non-main move annotated as a mistake "a3 (mistake ?!)" (was "a3 (alternative move ?!)", which the new Alternative move definition contradicts).
 
 - **Built 28 November 2026 (the user's decisions): Help adjusted.**
   - **Getting started:** step 1 "Build your repertoires using Lichess studies."; step 4 "Select a repertoire (a set of chapters) to practice, or use the default, All."; step 5 "On the Practice page, choose lines or positions and click **Start practice**." (Claude's wording of the user's steps, accepted.)
