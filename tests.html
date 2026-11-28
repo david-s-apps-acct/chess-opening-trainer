@@ -1155,10 +1155,10 @@ async function runPractice(app) {
   await play('g1f3');
   await play('f1b5');
   check('practice: marked alternative message, violet, taken back at once', [statusLines()[0], yourTurn()],
-    [['Alternative move marked as a mistake', 'violet'], true]);
+    [['Mistake (?) in your study', 'violet'], true]);
   const d6Line = app.chapterLines(italianCh).find(l => l.key.endsWith('Nf3 d6 d4'));
   check('practice: a marked alternative with a reply in the study', app.errorStatus(d6Line.moves[4], 'Bc4').slice(0, 2).map(d => d.textContent),
-    ['Alternative move marked as a dubious move', 'Your study answers 3… h6']);
+    ['Dubious move (?!) in your study', 'Your study answers 3… h6']);
   await until(yourTurn, 'the marked alternative to be taken back');
   document.getElementById('hint-btn').click();
   check('practice: hint shows the study comment on the wrong move', status(), 'Hint: move the circled piece.3. ♗b5 (your move)? Mistake: Not in this repertoire.');

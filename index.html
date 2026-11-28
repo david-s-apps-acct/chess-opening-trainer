@@ -2802,7 +2802,7 @@ const badgeSample = (text, color = '#666') => `<span class="key-badge" style="ba
 const KEY_ARROWS = [
   { sample: arrowSample('#fff', '#3291ff'), name: 'White, blue outline', meaning: "Your study's main move (also Hint and Show correct move)" },
   { sample: arrowSample('#fff'), name: 'White', meaning: 'Another move in your study' },
-  { sample: '<span class="glyph good">!</span> <span class="glyph mistake">?</span>', name: "In a square's corner", meaning: 'The glyph of the move just played (Studies page, small board)' },
+  { sample: '<span class="glyph good">!</span> <span class="glyph mistake">?</span>', name: "In a square's corner", meaning: 'The annotation of the move just played (Studies page, small board)' },
   { sample: arrowSample('#00a3a3'), name: 'Teal', meaning: 'A masters move' },
   { sample: arrowSample('#9e9e9e'), name: 'Gray', meaning: 'A Lichess move (Lichess view)' },
   { sample: badgeSample('45%'), name: 'On a teal or gray arrow', meaning: "How often it's played (masters on teal, Lichess on gray)" },
@@ -2817,7 +2817,7 @@ const KEY_TREE = [
   { sample: 'e5<span class="tree-dot weak-dot"></span>', meaning: 'Leads to a position of low recall (select it to see your errors)' },
   { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)" },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: a move of yours other than the main one, annotated as a mistake, or after one" },
-  { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
+  { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: "Annotated in your study, in the annotation's color" },
   { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (Lichess): the Lichess moves played there lose the Lichess danger threshold or more on average' },
   { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first moves there lose your danger threshold or more on average' },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
@@ -3751,7 +3751,7 @@ async function rejectMove(status) {
 // The status after an error, one fact per line:
 //   what the move is, in violet, like every error's arrow: "Not your main move"; for one of your
 //     study's alternatives (with Main lines), "Alternative move, not your main move", or, for
-//     one the study marks ?!, ? or ??, e.g. "Alternative move marked as a mistake", followed by the opponent's reply from
+//     one the study marks ?!, ? or ??, e.g. "Mistake (?) in your study", followed by the opponent's reply from
 //     that variation, if the study gives one, e.g. "Your study answers 4… ♘xe4";
 //   how masters rate it: "#3 masters move (12%)" for a masters move (see isMasterMove; teal),
 //     otherwise "Not a masters move" (violet);
@@ -3765,7 +3765,7 @@ function errorStatus(expected, played) {
   const isMasters = isMasterMove(epd, played), lichessRank = lichess && moveRank(lichess, played);
   const line = (text, color) => element('div', { class: 'error-' + color }, text);
   return [
-    line(expected.built ? "Not the engine's move" : marked ? `Alternative move marked as a ${GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))][1].toLowerCase()}`
+    line(expected.built ? "Not the engine's move" : marked ? (([symbol, name]) => `${name} (${symbol}) in your study`)(GLYPHS[alt.nags.find(n => MISTAKE_NAGS.includes(n))])
       : alt ? 'Alternative move, not your main move' : 'Not your main move', 'violet'),
     marked && alt.children[0] && line(`Your study answers ${moveLabel(alt.children[0])}`, 'violet'),
     masters && line(isMasters ? `#${moveRank(masters, played)} masters move (${shareText(masters, played)})` : 'Not a masters move', isMasters ? 'teal' : 'violet'),
