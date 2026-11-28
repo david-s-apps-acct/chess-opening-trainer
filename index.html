@@ -146,6 +146,7 @@
   .help-table { border-collapse: collapse; margin: 6px 0; }
   .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
   .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
+  .help-table .help-category b { color: var(--muted); font-weight: 600; } /* Definitions: a category's name, like the header */
   .help-table .in-category td:first-child { padding-left: 16px; } /* Definitions: a term under its category (e.g. Moves) */
   @media (min-width: 600px) { .definitions-table td:first-child { width: 210px; white-space: nowrap; } } /* each term on one line; automatic on phones */
 
@@ -789,16 +790,16 @@
       <div class="card" id="help-how">
         <h2>How to practice</h2>
         <p><b>Learn new chapters as lines.</b> Start with <b>Lines → Main lines</b>: whole lines from move 1, main moves only. Once those are solid, switch to <b>All lines</b> to add your alternatives.</p>
-        <p><b>Practice positions little and often.</b> Day to day, use <b>Positions → All</b>. Spaced repetition picks for you, favoring positions you've got wrong, haven't seen lately, or are likely to meet. Ten minutes most days beats an hour once a week.</p>
+        <p><b>Practice positions little and often.</b> Day to day, use <b>Positions → All</b>. Spaced repetition picks for you, favoring positions you've got wrong, haven't seen lately, or are likely to meet.</p>
         <p><b>Then work on weak spots.</b> Each drill goes through its positions once, so you can clear a list:</p>
         <ul>
-          <li><b>Low recall</b>: the positions you keep getting wrong.</li>
-          <li><b>Danger (you)</b>: where your errors cost the most.</li>
-          <li><b>Danger (Lichess)</b>: where players at your rating often go wrong. Know these well, whichever side you play.</li>
-          <li><b>Refutations</b>: your opponents' common errors, and how to refute them.</li>
+          <li><b>Low recall</b>: the positions where you often make an error.</li>
+          <li><b>Danger (you)</b>: the positions where your errors cost the most.</li>
+          <li><b>Danger (Lichess)</b>: the positions where Lichess players at the selected ratings often go wrong. Know these well, whichever side you play.</li>
+          <li><b>Refutations</b>: positions after common mistakes made by Lichess players at the selected ratings.</li>
         </ul>
-        <p><b>Focus when you need to.</b> Make a <b>repertoire</b> for one opening. Open <b>Thresholds</b> to make the drills stricter or looser, or to <b>Exclude</b> positions you'll rarely reach.</p>
-        <p><b>Learn from your errors.</b> On the Studies page, the <b>Recall</b> view shows what you played instead of your study's move. If your move turns out better, change your study on Lichess; the app updates it the next time it opens.</p>
+        <p><b>Focus when you need to.</b> Open <b>Thresholds</b> to make the drills stricter or looser, or to <b>Exclude</b> positions you'll rarely reach.</p>
+        <p><b>Learn from your errors.</b> On the Studies page, the <b>Recall</b> view shows what you played instead of your study's move.</p>
         <p><b>Recognize opening names.</b> During practice the chapter and opening are hidden behind stars. Name the opening, or the one the position comes from, then click the stars to check.</p>
       </div>
 
@@ -807,7 +808,7 @@
         <!-- In alphabetical order; a category (e.g. Moves) is sorted by its name, its terms indented under it, also in order. -->
         <table class="help-table definitions-table">
           <tr><th>Term</th><th>Meaning</th></tr>
-          <tr><td><b>Chance next</b></td><td>In the Likely next table: its priority's share of them all</td></tr>
+          <tr><td><b>Chance next</b></td><td>In the Likely next table: how likely a line or position is to come up next</td></tr>
           <tr class="help-category"><td colspan="2"><b>Games</b></td></tr>
           <tr class="in-category"><td><b>Lichess games</b></td><td>Rated games played on Lichess, in your rating bands and time controls (Lichess's Opening Explorer)</td></tr>
           <tr class="in-category"><td><b>Master games</b></td><td>Games between players rated 2200+ FIDE, over the board (Lichess's Masters database)</td></tr>
@@ -824,27 +825,21 @@
           <tr><td><b>Main color</b></td><td>A chapter's Orientation; the <b>other color</b> is the opposite side. A chapter can be practiced from either or both</td></tr>
           <tr class="help-category"><td colspan="2"><b>Moves</b></td></tr>
           <tr class="in-category"><td><b>Alternative move</b></td><td>Any other of your study's moves in a position (not annotated as a mistake)</td></tr>
-          <tr class="in-category"><td><b>Annotation</b></td><td>A move's symbol in a study: !!, !, !?, ?!, ? or ??</td></tr>
           <tr class="in-category"><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your rating bands and time controls)</td></tr>
           <tr class="in-category"><td><b>Main move</b></td><td>Your study's first move in a position</td></tr>
           <tr class="in-category"><td><b>Masters move</b></td><td>Played in 5%+ of the master games in a position, where there are 20 or more</td></tr>
           <tr class="help-category"><td colspan="2"><b>Positions</b></td></tr>
           <tr class="in-category"><td><b>Danger position (Lichess)</b></td><td>Expected loss (Lichess) at the Lichess danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
           <tr class="in-category"><td><b>Danger position (you)</b></td><td>Expected loss (you) at your danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
-          <tr class="in-category"><td><b>Position reached</b></td><td>How often a position occurs in Lichess games or master games, e.g. "Reached 23k times (Lichess games)"</td></tr>
           <tr class="in-category"><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied)</td></tr>
           <tr class="in-category"><td><b>Very rarely reached</b></td><td>The same, under 1 game in 1,000</td></tr>
-          <tr><td><b>Priority</b></td><td>How likely a line or position is to be picked next (see Spaced repetition)</td></tr>
           <tr class="help-category"><td colspan="2"><b>Recall</b></td></tr>
           <tr class="in-category"><td><b>Low recall</b></td><td>Recall below the low recall threshold (default 75%; set under Thresholds on the Practice page)</td></tr>
-          <tr class="in-category"><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
-          <tr class="help-category"><td colspan="2"><b>Refutations</b></td></tr>
-          <tr class="in-category"><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation threshold or more (default 1.0; set under Thresholds on the Practice page)</td></tr>
-          <tr class="in-category"><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.2)</td></tr>
-          <tr class="in-category"><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
+          <tr class="in-category"><td><b>Repertoire recall</b></td><td>Over your last 10 tries in the position, the proportion that were correct first time</td></tr>
+          <tr><td><b>Refutations</b></td><td>Positions after an opponent's Lichess move that loses the refutation threshold or more (default 1.0; set under Thresholds on the Practice page). The right move is your study's reply or, where it has none, the engine's best (or one of its best 3 within 0.2 evaluation)</td></tr>
           <tr><td><b>Repertoire</b></td><td>A named set of chapters from your studies, each practiced from its main color, the other or both; <b>All</b> (every chapter, from its main color) is built in</td></tr>
-          <tr><td><b>Spaced repetition</b></td><td>Picks the next line or position at random by priority, so positions you're weak on, are due, or are likely to meet or dangerous come up more often (see Spaced repetition)</td></tr>
-          <tr><td><b>Try</b></td><td>Each of your moves in a line, or the move in a single position; with Skip or End practice, only the moves answered (and the one you're on, if you'd tried it)</td></tr>
+          <tr><td><b>Spaced repetition</b></td><td>Picks the next line or position at random by priority, so positions you're weak on, are due, or are likely to meet or dangerous come up more often</td></tr>
+          <tr><td><b>Try</b></td><td>Each of your moves in a line, or the move in a single position</td></tr>
         </table>
       </div>
 
@@ -866,7 +861,7 @@
               <li><b>All</b>: your positions from move 3, by spaced repetition.</li>
               <li><b>Low recall</b>: positions with low recall.</li>
               <li><b>Danger (you)</b> / <b>Danger (Lichess)</b>: danger positions of each kind.</li>
-              <li><b>Refutations</b>: refutation positions; play the refutation. Where your study has none, the engine's best move (or one of its best 3 within 0.2) is right. They don't count for recall.</li>
+              <li><b>Refutations</b>: where your study has no reply, the engine's best move (or one of its best 3 within 0.2 evaluation) is right. They don't count for recall.</li>
               <li>A drill plays each of its positions once a round, e.g. "Low recall · 3 of 12".</li>
             </ul>
           </li>
