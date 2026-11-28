@@ -513,7 +513,7 @@ async function runLichessPage(app) {
   await until(() => $('backup-message').textContent === 'Backup restored: history for 1 position, and settings.', 'the second restore');
   await until(() => !$('backup-message').textContent, 'the message to go');
   app.setToken(null);
-  check('restore: with no token, the message says what to do next and stays', /Now (connect to Lichess|add your token)\.$/.test(stays), true);
+  check('restore: with no token, the message says what to do next and stays', /Now (connect to Lichess|add your Lichess token)\.$/.test(stays), true);
   check('restore: a version 6 backup; the message in the Backup card, gone after a while', restored, [['AAAAAAAA/BBBBBBBB|'], 'Backup restored: history for 1 position, and settings', true]);
   // A file that isn't a backup: the error stays, in violet.
   const notBackup = new DataTransfer();

@@ -146,8 +146,8 @@
   .help-table { border-collapse: collapse; margin: 6px 0; }
   .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
   .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
-  .help-table .help-category b { color: var(--muted); font-weight: 600; } /* Definitions: a category's name, like the header */
-  .help-table .in-category td:first-child { padding-left: 16px; } /* Definitions: a term under its category (e.g. Moves) */
+  .help-table .help-category td { padding-left: 16px; } /* Definitions: a category's name (e.g. Moves), indented, so the terms line up */
+  .help-table .help-category b { color: var(--muted); font-weight: 600; }
   @media (min-width: 600px) { .definitions-table td:first-child { width: 210px; white-space: nowrap; } } /* each term on one line; automatic on phones */
 
   /* Lichess and Help pages: a column of cards */
@@ -541,7 +541,7 @@
         <div id="token-box" class="hidden">
           <p>Sign in to Lichess if asked, then create the token (the access needed is already chosen), copy it, and paste it here.</p>
           <form id="token-form" class="token-row">
-            <input id="token-input" type="password" placeholder="Paste your token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
+            <input id="token-input" type="password" placeholder="Paste your Lichess token here (lip_…)" autocomplete="off" spellcheck="false" aria-label="Lichess token">
           </form>
         </div>
         <div id="token-error" class="form-error"></div>
@@ -791,11 +791,11 @@
         <h2>How to practice</h2>
         <p><b>Learn new chapters as lines.</b> Start with <b>Lines → Main lines</b>: whole lines from move 1, main moves only. Once those are solid, switch to <b>All lines</b> to add your alternatives.</p>
         <p><b>Practice positions little and often.</b> Day to day, use <b>Positions → All</b>. Spaced repetition picks for you, favoring positions you've got wrong, haven't seen lately, or are likely to meet.</p>
-        <p><b>Then work on weak spots.</b> Each drill goes through its positions once, so you can clear a list:</p>
+        <p><b>Work on weak spots.</b> Each drill goes through its positions once, so you can clear a list:</p>
         <ul>
           <li><b>Low recall</b>: the positions where you often make an error.</li>
           <li><b>Danger (you)</b>: the positions where your errors cost the most.</li>
-          <li><b>Danger (Lichess)</b>: the positions where Lichess players at the selected ratings often go wrong. Know these well, whichever side you play.</li>
+          <li><b>Danger (Lichess)</b>: the positions where Lichess players at the selected ratings often go wrong.</li>
           <li><b>Refutations</b>: positions after common mistakes made by Lichess players at the selected ratings.</li>
         </ul>
         <p><b>Focus when you need to.</b> Open <b>Thresholds</b> to make the drills stricter or looser, or to <b>Exclude</b> positions you'll rarely reach.</p>
@@ -805,29 +805,28 @@
 
       <div class="card" id="help-definitions">
         <h2>Definitions</h2>
-        <!-- In alphabetical order; a category (e.g. Moves) is sorted by its name, its terms indented under it, also in order. -->
+        <!-- In alphabetical order; a category (e.g. Moves) is sorted by its name (indented, gray), its terms under it, also in order, except
+             Moves: main and alternative first, error and mistake last (the user's order). The terms line up at the left. -->
         <table class="help-table definitions-table">
-          <tr><th>Term</th><th>Meaning</th></tr>
           <tr><td><b>Chance next</b></td><td>In the Likely next table: how likely a line or position is to come up next</td></tr>
           <tr class="help-category"><td colspan="2"><b>Games</b></td></tr>
-          <tr class="in-category"><td><b>Lichess games</b></td><td>Rated games played on Lichess, in your rating bands and time controls (Lichess's Opening Explorer)</td></tr>
+          <tr class="in-category"><td><b>Lichess games</b></td><td>Rated games played on Lichess, in the selected ratings and time controls (Lichess's Opening Explorer)</td></tr>
           <tr class="in-category"><td><b>Master games</b></td><td>Games between players rated 2200+ FIDE, over the board (Lichess's Masters database)</td></tr>
-          <tr><td><b>Last tested</b></td><td>When you last played a position, or a line through from move 1</td></tr>
           <tr class="help-category"><td colspan="2"><b>Lines</b></td></tr>
           <tr class="in-category"><td><b>Line</b></td><td>A path through a chapter from move 1: one of your study's moves at each of your turns, and each reply it gives</td></tr>
-          <tr class="in-category"><td><b>Main line</b></td><td>A line of main moves only, for both sides (what Main lines practices)</td></tr>
-          <tr class="help-category"><td colspan="2"><b>Losses, errors and mistakes</b></td></tr>
-          <tr class="in-category"><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one annotated ?, ?? or ?!</td></tr>
+          <tr class="in-category"><td><b>Main line</b></td><td>A line of main moves only, for both sides</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Losses</b></td></tr>
           <tr class="in-category"><td><b>Expected loss (Lichess)</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
           <tr class="in-category"><td><b>Expected loss (you)</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
-          <tr class="in-category"><td><b>Mistake</b></td><td>A move annotated ? (mistake), ?? (blunder) or ?! (dubious) in a study</td></tr>
           <tr class="in-category"><td><b>Δ</b></td><td>A move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10)</td></tr>
           <tr><td><b>Main color</b></td><td>A chapter's Orientation; the <b>other color</b> is the opposite side. A chapter can be practiced from either or both</td></tr>
           <tr class="help-category"><td colspan="2"><b>Moves</b></td></tr>
-          <tr class="in-category"><td><b>Alternative move</b></td><td>Any other of your study's moves in a position (not annotated as a mistake)</td></tr>
-          <tr class="in-category"><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your rating bands and time controls)</td></tr>
           <tr class="in-category"><td><b>Main move</b></td><td>Your study's first move in a position</td></tr>
+          <tr class="in-category"><td><b>Alternative move</b></td><td>Any other of your study's moves in a position (not annotated as a mistake)</td></tr>
+          <tr class="in-category"><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (the selected ratings and time controls)</td></tr>
           <tr class="in-category"><td><b>Masters move</b></td><td>Played in 5%+ of the master games in a position, where there are 20 or more</td></tr>
+          <tr class="in-category"><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one annotated ?, ?? or ?!</td></tr>
+          <tr class="in-category"><td><b>Mistake</b></td><td>A move annotated ? (mistake), ?? (blunder) or ?! (dubious) in a study</td></tr>
           <tr class="help-category"><td colspan="2"><b>Positions</b></td></tr>
           <tr class="in-category"><td><b>Danger position (Lichess)</b></td><td>Expected loss (Lichess) at the Lichess danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
           <tr class="in-category"><td><b>Danger position (you)</b></td><td>Expected loss (you) at your danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
@@ -931,8 +930,8 @@
         <ul>
           <li>A red dot on the <b>Lichess</b> button: not connected.</li>
           <li>Studies update each time the app opens; reload to update now.</li>
-          <li><b>Move statistics</b> come from Lichess games in your rating bands and time controls (first set from your Lichess rating), and from master games. Lichess ratings run higher: Chess.com 1500 rapid is about Lichess 1750–1800. To change them, unlock, tick and <b>Apply</b>; everything downloads again.</li>
-          <li><b>Backup</b>: your data lives only in this browser, so save a backup now and then. <b>Restore</b> replaces your tries, settings and repertoires; <b>Merge</b> adds a backup's tries to yours (e.g. from another device). Backups never include your token.</li>
+          <li><b>Move statistics</b> come from Lichess games in the selected ratings and time controls (first set from your Lichess rating), and from master games. To change them, unlock, tick and <b>Apply</b>; everything downloads again.</li>
+          <li><b>Backup</b>: your data lives only in this browser, so save a backup now and then. <b>Restore</b> replaces your tries, settings and repertoires; <b>Merge</b> adds a backup's tries to yours (e.g. from another device). Backups never include your Lichess token.</li>
           <li><b>Disconnect</b> saves a backup, then clears your data here. To switch users: Disconnect, then they Connect. Lichess ends a connection after about a year: just Connect again.</li>
         </ul>
       </div>
@@ -4740,7 +4739,7 @@ function renderLichessPage() {
   $('lichess-account').textContent = library ? `Lichess account: ${library.username}` : '';
   $('lichess-rating').textContent = ratingText();
   const savedAt = store.get('tokenSavedAt', null), when = savedAt ? ' ' + onDateAtTime(savedAt) : '';
-  $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Token stored${when}` : 'No token stored.');
+  $('lichess-connected').textContent = canLogIn ? (token ? `Connected${when}` : 'Not connected.') : (token ? `Lichess token stored${when}` : 'No Lichess token stored.');
   $('lichess-fetched').textContent = library ? `Fetched ${plural(library.studies.length, 'study', 'studies')} ${onDateAtTime(library.fetchedAt)}` : 'No studies fetched.';
   // Connection: Connect when not connected, or when Lichess has ended the connection; Disconnect when
   // connected.
@@ -4754,7 +4753,7 @@ function renderLichessPage() {
   // Backup: once there are studies; nothing to save while Getting started shows.
   $('backup-card').classList.toggle('hidden', !library);
   $('backup-btn').disabled = welcomeReady;
-  $('backup-btn').title = welcomeReady ? 'Nothing to save yet' : 'Saves your data to a file (not your token)';
+  $('backup-btn').title = welcomeReady ? 'Nothing to save yet' : 'Saves your data to a file (not your Lichess token)';
   const lastBackup = store.get('lastBackup', null);
   $('backup-info').textContent = lastBackup ? `Last backup saved ${onDateAtTime(lastBackup)}` : ''; // none saved here: maybe from another browser
   updateStatisticsInfo(); // the statistics lines, and the header button
@@ -4849,9 +4848,9 @@ let checkingToken = false;
 async function savePastedToken() {
   const tok = $('token-input').value.trim(), errorEl = $('token-error');
   if (checkingToken) return;
-  if (!tok) { errorEl.textContent = 'Paste a token first.'; return; }
+  if (!tok) { errorEl.textContent = 'Paste a Lichess token first.'; return; }
   checkingToken = true;
-  errorEl.textContent = 'Checking token…';
+  errorEl.textContent = 'Checking Lichess token…';
   try {
     await lichessRequest('/api/account', tok);
   } catch (e) {
@@ -4869,7 +4868,7 @@ $('token-input').addEventListener('paste', () => setTimeout(savePastedToken)); /
 
 // Connect to Lichess: log in with Lichess online; from disk, Add token: Lichess's token page in a new
 // tab, and the box to paste the token into.
-if (!canLogIn) $('connect-btn').textContent = 'Add token';
+if (!canLogIn) $('connect-btn').textContent = 'Add Lichess token';
 $('connect-btn').addEventListener('click', () => {
   if (canLogIn) return logInWithLichess();
   window.open(TOKEN_PAGE, '_blank', 'noopener');
@@ -4884,9 +4883,9 @@ $('connect-btn').addEventListener('click', () => {
 // saved, nothing changes. A connection made by logging in (its token starts "lio_") is also canceled on
 // Lichess; a token you pasted ("lip_…") may be used elsewhere, so it's only forgotten here. (When
 // Lichess ends a connection itself, connecting again clears nothing.)
-if (!canLogIn) $('disconnect-btn').textContent = 'Clear token';
+if (!canLogIn) $('disconnect-btn').textContent = 'Clear Lichess token';
 $('disconnect-btn').addEventListener('click', async () => {
-  if (!confirm(`${canLogIn ? 'Disconnect' : 'Clear token'}? A backup of your data is saved first, then it's cleared from this browser.`)) return;
+  if (!confirm(`${canLogIn ? 'Disconnect' : 'Clear Lichess token'}? A backup of your data is saved first, then it's cleared from this browser.`)) return;
   const saved = await saveBackup();
   if (!saved) return;
   if (token?.startsWith('lio_')) fetch(`${LICHESS}/api/token`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
@@ -5141,7 +5140,7 @@ $('restore-file').addEventListener('change', async e => {
   if (welcomeReady) return leaveWelcome(); // after the first connection: on to practice, as Download statistics does
   refreshPage();
   startDownloads(); // statistics for the backup's games, if they're other games
-  showBackupMessage(`Backup restored: history for ${plural(Object.keys(history.positions).length, 'position')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your token.'),
+  showBackupMessage(`Backup restored: history for ${plural(Object.keys(history.positions).length, 'position')}, and settings.` + (token ? '' : canLogIn ? ' Now connect to Lichess.' : ' Now add your Lichess token.'),
     { stays: !token }); // saying what to do next, it stays
 });
 
