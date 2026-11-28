@@ -117,6 +117,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### The Studies page and groups (4 November 2026)
 
+- **Built 28 November 2026 (the user's decision): groups are called repertoires** everywhere the user reads it: the header's **Repertoires** button and page (between Practice and Studies), the Practice tile's drop-down ("Edit repertoires on the Repertoires page"), the Repertoires page's labels and messages ("Delete the repertoire …?", "There's already a repertoire called …"), the Merge message and Help. **Repertoire recall keeps its name** (the user's decision): a repertoire is a set of chapters, and repertoire recall is still per position. In the code and stored data they're still presets (`presets`, `chosenPreset`). *Claude's details:* the page's element ids and CSS classes follow (`nav-repertoires`, `repertoires-screen`, `repertoire-card`, `repertoire-list`, `help-repertoires`), and so do the functions `renderRepertoireEditor` and `editedRepertoire`; code comments say repertoire. Below, "group" is the old name.
+
 - **Built 4 November 2026 (the user's decision; replaces the studies list on the Practice page and the Review page's study drop-down, below): one place for your studies.** There used to be two ways of choosing studies, on the Practice page and on the Review page.
   - **The Review page is renamed the Studies page** (header: Practice, Studies, Lichess, Help).
   - **The Practice page** keeps only the group drop-down in the Studies to practice tile (with the chapter count); its ✎ and chapters list go.
@@ -529,6 +531,8 @@ The last selection is remembered between visits (stored in the browser, like the
 
 ### Refutable moves and refutation positions (called Punish moves until 20 November 2026; the Refutations drill built 20 November 2026)
 
+- **Built 28 November 2026 (the user's decision): a refutation where your study is silent is the engine's best move or one of its best 3 within 0.2** (was 0.5; `REFUTATION_MARGIN`). Only where the study is silent (the user's decision): where your study has a reply, its moves are still the only right ones. Help's Definitions and Practice card say "within 0.2".
+
 - **The user's decision, 20 November 2026 (not built): "punish" is renamed, around "refutation"** (the user didn't like "punish"; "mistake" is kept for the study's marks). Proposed by Claude and accepted by the user:
   - A **refutable move** (was "punish move") is a Lichess move (5% or more) that drops the engine's evaluation by the **refutation level** (was the punish level; the user's setting, default 1 pawn) or more against the engine's best move, for the side playing it. The definition below is otherwise unchanged, and still defined without sides.
   - A **refutation position (Lichess)** is the position after a refutable move, where the side to move has a refutation; **the refutation** is your study's reply there (normally the engine's best move or close to it). It's a row in Position measures.
@@ -654,6 +658,8 @@ The last selection is remembered between visits (stored in the browser, like the
 - (Lines used to be chosen from the ticked chapters, weighted by their weakest move's accuracy or by the "Opponent's moves" choice; that went with the Studies page's Start practice. The Lines and Positions pages then had their own buttons, "Practice these lines/positions" and "Practice all lines/positions", beside their tables; the user removed them once the Practice page's chooser and End practice did the same.)
 
 ### Practice page chooser
+
+- **Built 28 November 2026 (the user's decisions): Levels becomes Thresholds, and only ever says "Thresholds".** The Positions tile's opener reads **Thresholds ▸** (Levels said too little), and the terms follow: the **low recall threshold**, **your danger threshold**, the **Lichess danger threshold** and the **refutation threshold** (the hover hints, the Colors card, Help's "set under Thresholds on the Practice page", SPEC.md and CLAUDE.md). **The "(excluding rare)" note goes** (the user accepted that, with Thresholds closed, nothing but the counts shows Exclude is on). In the code the names stay (`lowRecallLevel`, `yourDangerLevel`, `lichessDangerLevel`, `refutationLevel`, `settings.practice.levelsOpen`, `LEVEL_SETTINGS`, the `levels-…` ids), so stored settings carry over. Below, "level" is the old name.
 
 - **Built 25 November 2026 (the user's decision), changing the entry below: simpler wording.** The dropdown reads **Exclude [none / under 1 in 100 / under 1 in 1,000]** (in the user's order; default **none**), replacing Include rarely reached / Exclude very rarely reached / Exclude rarely reached. The user considered "Don't test" and a 1 in 10,000 level, and chose these. An opponent's move with no games at the chosen ratings and time controls makes the chance 0, so the position is left out at either level (only **none** keeps it); a rare move (under 5%) counts with its share. *Claude's details (for the user to accept):* the hover, on the label and dropdown, reads "Positions your opponents lead you to less often than this (Lichess)"; the setting's stored values stay ('include', 'rare', 'veryRare'); Help says the same in a sentence.
 - **Built 25 November 2026 (the user's decisions): a way to leave out rarely reached positions.** One setting, with the choices **Include rarely reached / Exclude very rarely reached / Exclude rarely reached** (the user's wording, echoing "Position reached"; *Claude's detail, accepted by the user, 25 November 2026:* the first reads "Include rarely reached", so the dropdown needs no label), for **positions only, not lines**. It's judged by **how likely your opponents are to lead you there**: the product of the shares of the opponent's moves on the way (your own moves don't count; `logReach`, as spaced repetition's frequency uses), the raw chance, not spaced repetition's 0.2–1 scale, so it doesn't depend on the group. The labels avoid a second "All" in the Positions tile, which already has one. *Claude's details, accepted by the user, 25 November 2026:*
@@ -871,16 +877,16 @@ The reference for what's worked out for a position (the user's name and decision
 | Measure | About | From | Judged by |
 |---|---|---|---|
 | **Repertoire recall** | you | your last 10 tries (first move) | right or wrong, with or without Main lines only |
-| **Low recall** ("weak recall" until 20 November 2026) | you | repertoire recall | recall below 75% |
+| **Low recall** ("weak recall" until 20 November 2026) | you | repertoire recall | recall below the low recall threshold (default 75%) |
 | **Your expected loss** | you | your last 10 tries (first move) | each move's Δ against the engine's best |
-| **Danger position (you)** (Critical position until 25 November 2026) | you | your expected loss | at the danger level (0.5) or more |
+| **Danger position (you)** (Critical position until 25 November 2026) | you | your expected loss | at your danger threshold (default 0.5) or more |
 | **Lichess expected loss** | the opening | Lichess moves (5% or more) | each move's Δ, weighted by how often it's played |
-| **Danger position (Lichess)** | the opening | Lichess expected loss | at the danger level (0.5) or more |
-| **Refutation position (Lichess)** | the opening | a refutable Lichess move (5% or more) before it | its Δ at the refutation level (1 pawn) or more |
+| **Danger position (Lichess)** | the opening | Lichess expected loss | at the Lichess danger threshold (default 0.5) or more |
+| **Refutation position (Lichess)** | the opening | a refutable Lichess move (5% or more) before it | its Δ at the refutation threshold (default 1 pawn) or more |
 | **Rarely reached** | the opening | the chance opponents lead you there: the shares of their moves on the way, multiplied | below 1 game in 100 (1%) |
 | **Very rarely reached** | the opening | the same chance | below 1 game in 1,000 (0.1%) |
 
-The danger level is the Lichess page's setting (default 0.5 pawns), one for both kinds of danger position; low recall's 75% is fixed, and so are the rarely reached levels (see Practice page chooser). All are built.
+The low recall, danger and refutation thresholds are the user's settings, under Thresholds (Levels until 28 November 2026) in the Practice page's Positions tile (until 27 November, one danger level on the Lichess page, and a fixed 75%); the rarely reached levels are fixed (see Practice page chooser). All are built.
 
 ## Naming positions
 
@@ -987,6 +993,15 @@ A page, **Positions**, listing the user's most common weak positions (built at t
   - If nothing matches, the table is empty and a note says "No positions you've tried have accuracy 70% or lower."
 
 ## Help page
+
+- **Built 28 November 2026 (the user's decisions): Help adjusted.**
+  - **Getting started:** step 1 "Build your repertoires using Lichess studies."; step 4 "Select a repertoire (a set of chapters) to practice, or use the default, All."; step 5 "On the Practice page, choose lines or positions and click **Start practice**." (Claude's wording of the user's steps, accepted.)
+  - **How to practice:** "Make a **repertoire** for one opening." (no tournament); "Open **Thresholds** …"; and a last paragraph, **Recognize opening names**: "During practice the chapter and opening are hidden behind stars. Name the opening, or the one the position comes from, then click the stars to check."
+  - **The page cards are titled Practice page, Repertoires page, Studies page and Lichess page.** The Repertoires page card starts "A repertoire is a named set of chapters from your studies."
+  - **Definitions in alphabetical order, with categories** (the user's decisions): one table; a category is a row with its name, sorted by that name among the terms, its terms indented under it, also alphabetical. The categories: **Games** (Lichess games, Master games, Rating bands, time controls), **Lines** (Line, Main line), **Losses** (Lichess expected loss, Your expected loss, Δ, last as it isn't a letter), **Moves** (Alternative move, Error, Glyph, Lichess move, Main move, Masters move, Mistake, Not tested, Refutable move, Refutation), **Positions** (Danger position (Lichess), Danger position (you), Position reached, Rarely reached, Refutation position) and **Recall** (Low recall, Repertoire recall). Chance next, Last tested, Main color, Priority, Repertoire, Spaced repetition and Try stand on their own.
+  - **New definitions:** **Repertoire** "A named set of chapters from your studies, each practiced from its main color, the other or both; **All** (every chapter, from its main color) is built in" (only chapters: a study's row has no buttons); **Spaced repetition** "Picks the next line or position at random by priority, so positions you're weak on, are due, or are likely to meet or dangerous come up more often (see Spaced repetition)"; **Lichess games** "Rated games played on Lichess, in your rating bands and time controls (Lichess's Opening Explorer)".
+  - **Changed:** **Alternative move** "Any other of your study's moves in a position (not marked as a mistake)"; **Not tested** "The moves after one of your study's moves marked as a mistake (in italics); never practiced", so it no longer calls those moves alternatives. **Drill** is removed (Help's sentences using the word stay).
+  - *Claude's details:* **Position reached** reads "How often a position occurs in Lichess games or master games, …" (it said "those games", meaning the rows above it, which the new order moves away); a category's terms are indented 16px; the Practice card's Thresholds line drops "("excluding rare" beside Levels while it's on)".
 
 - **Built 27 November 2026 (the user's decision): a "How to practice" card**, second in Help (after Getting started): a short natural-language routine, as against the Practice card's tour of the controls. Learn new chapters as lines (Main lines, then All lines); practice positions little and often with Positions → All; then the drills for weak spots (Low recall, Danger (you), Danger (Lichess), Refutations); focus with a group, Levels and Exclude; learn from your errors with the Studies page's Recall view, changing the study on Lichess when your move is better. Claude's draft, accepted by the user, including "Ten minutes most days beats an hour once a week." and, for Danger (Lichess), "Know these well, whichever side you play." (*Claude's detail:* "how to punish them" became "how to refute them", by the standing rule against "punish".)
 

@@ -146,6 +146,7 @@
   .help-table { border-collapse: collapse; margin: 6px 0; font-size: 13px; }
   .help-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px 16px 2px 0; }
   .help-table td { padding: 2px 16px 2px 0; border-top: 1px solid var(--border); }
+  .help-table .in-category td:first-child { padding-left: 16px; } /* Definitions: a term under its category (e.g. Moves) */
 
   /* Lichess and Help pages: a column of cards */
   .cards { display: flex; flex-direction: column; gap: 16px; }
@@ -165,7 +166,7 @@
   /* Repertoire recall: every highlight box the same width, wide enough for "100%". */
   .report-table .accuracy span { display: inline-block; width: 3.6em; margin: 0; padding: 0 4px; text-align: right; }
 
-  /* On the Practice page: the Practice tile (the group), then the Lines and Positions tiles. */
+  /* On the Practice page: the Practice tile (the repertoire), then the Lines and Positions tiles. */
   .practice-side { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .practice-side .panel { flex: none; min-width: 0; }
   .studies-to-practice h2 { margin: 0 0 10px; }
@@ -203,7 +204,7 @@
   .toggle { border: none; background: none; padding: 0 4px; width: 24px; color: var(--muted); }
   .toggle:hover:not(:disabled) { background: none; color: var(--text); }
   .chapters { background: #2a2825; }
-  .chapter-row { padding-left: 36px; border-top: 1px solid var(--border); font-size: 14px; } /* a chapter's row on the Groups page, under its study's name */
+  .chapter-row { padding-left: 36px; border-top: 1px solid var(--border); font-size: 14px; } /* a chapter's row on the Repertoires page, under its study's name */
   .tree { background: #242220; font-size: 14px; } /* a chapter's move tree, on the Studies page */
   .tree-line { line-height: 1.9; }
   .tree-vars { margin: 0 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--border); }
@@ -214,7 +215,7 @@
   .side-dot.white { background: #fff; }
   .side-dot.black { background: #222; border-color: #aaa; } /* a light edge, so it isn't taken for an empty ring */
   .side-dot.off { background: none; border-style: dashed; }
-  /* On the Groups page, the main color and other color buttons (each chapter's and each study's), in place of tick boxes. */
+  /* On the Repertoires page, the main color and other color buttons (each chapter's and each study's), in place of tick boxes. */
   .side-btn { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; box-shadow: none; }
   .side-btn .side-dot { width: 13px; height: 13px; margin: 0; }
   .side-btn + .side-btn { margin-left: 4px; }
@@ -363,7 +364,7 @@
   .review-loss .last-tested { margin: 6px 0 0; }
   .review-loss .danger-line { color: var(--danger-text); } /* Danger position (you), in the danger positions' orange */
   .review-loss .loss-moves div { color: var(--muted); }
-  /* A move's Δ by its loss (see lossDelta): none, below the tile's danger level, at it or more */
+  /* A move's Δ by its loss (see lossDelta): none, below the tile's danger threshold, at it or more */
   .loss-none { color: #7fb83a; } .loss-some { color: #e0a43a; } .loss-big { color: #e06060; }
   .panel.review-danger { padding: 12px 14px; border-left: 4px solid var(--danger); }
   .review-danger:empty { display: none; }
@@ -433,7 +434,7 @@
   .review-view button:first-child { border-radius: 4px 0 0 4px; }
   .review-view button:last-child { border-radius: 0 4px 4px 0; }
   .review-view button[aria-pressed=true], .review-view button[aria-pressed=true]:hover:not(:disabled) { background: var(--accent); color: var(--accent-text); }
-  /* The Positions tile's Levels: a ▸ / ▾ opener (with "(excluding rare)" while Exclude is on), then the levels and Exclude */
+  /* The Positions tile's Thresholds: a ▸ / ▾ opener, then the thresholds and Exclude */
   .levels-opener { align-self: flex-start; display: flex; align-items: center; gap: 4px; margin-top: 8px; padding: 0; border: none; box-shadow: none; background: none; color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
   .levels-opener:hover:not(:disabled) { background: none; }
   .levels-opener .toggle-mark { width: 14px; color: var(--muted); }
@@ -446,12 +447,12 @@
   .practice-chooser p:empty { display: none; }
   .table-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .55); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; overflow-y: auto; }
   .table-overlay .table-card { width: 100%; max-width: 960px; }
-  /* The Groups page: the group and its buttons, and the list of studies and chapters. */
-  .group-card { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
-  .group-card h2 { margin-bottom: 0; }
-  .group-card .preset-edit { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; }
-  .group-card .preset-buttons { flex-basis: 100%; }
-  .group-list { border: 1px solid var(--border); border-radius: 6px; }
+  /* The Repertoires page: the repertoire and its buttons, and the list of studies and chapters. */
+  .repertoire-card { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+  .repertoire-card h2 { margin-bottom: 0; }
+  .repertoire-card .preset-edit { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; }
+  .repertoire-card .preset-buttons { flex-basis: 100%; }
+  .repertoire-list { border: 1px solid var(--border); border-radius: 6px; }
   .table-overlay .welcome-card { width: 100%; max-width: 560px; padding: 0; overflow: hidden; }
   /* The welcome splash: a blue band with the title, then a small board (the Ruy Lopez) beside the text (above it on a phone) */
   .splash-band { background: var(--accent); padding: 14px 20px; align-items: center; }
@@ -504,7 +505,7 @@
   <h1>Chess Opening Trainer</h1>
   <nav>
     <button id="nav-practice">Practice</button>
-    <button id="nav-groups">Groups</button>
+    <button id="nav-repertoires">Repertoires</button>
     <button id="nav-studies">Studies</button>
     <button id="nav-lichess">Lichess</button>
     <button id="nav-help">Help</button>
@@ -609,13 +610,13 @@
         </div>
       </div>
       <div class="practice-side">
-      <!-- Practice (called Studies to practice until 20 November 2026), at the top (it decides what everything below chooses from): the chosen group
-           (All, or one of yours; groups are edited on the Groups page, which also says how many chapters each
+      <!-- Practice (called Studies to practice until 20 November 2026), at the top (it decides what everything below chooses from): the chosen repertoire
+           (All, or one of yours; repertoires are edited on the Repertoires page, which also says how many chapters each
            has). Hidden during practice. -->
       <div id="studies-to-practice" class="panel studies-to-practice hidden">
         <h2>Practice</h2>
         <div class="preset-row">
-          <select id="preset-select" aria-label="Group" title="Edit groups on the Groups page"></select>
+          <select id="preset-select" aria-label="Repertoire" title="Edit repertoires on the Repertoires page"></select>
         </div>
       </div>
       <!-- Choosing what to practice: two tiles, each with its own Start practice (see renderChooser). -->
@@ -630,7 +631,7 @@
         <div class="panel">
           <h2>Positions</h2>
           <div id="positions-choice" class="choices" role="radiogroup" aria-label="Positions"></div>
-          <button id="levels-toggle" class="levels-opener" aria-expanded="false" aria-controls="levels-body"><span class="toggle-mark" aria-hidden="true">▸</span>Levels <span id="levels-note" class="muted"></span></button>
+          <button id="levels-toggle" class="levels-opener" aria-expanded="false" aria-controls="levels-body"><span class="toggle-mark" aria-hidden="true">▸</span>Thresholds</button>
           <div id="levels-body" class="levels-body hidden">
             <label class="level-row" title="Repertoire recall below this">Low recall: below <select id="low-recall-level"></select></label>
             <label class="level-row" title="Your expected loss (your first moves)">Danger (you): ≥ <select id="your-danger-level"></select></label>
@@ -670,13 +671,13 @@
     </div>
   </section>
 
-  <!-- Groups: the named sets of chapters to practice (All is built in), edited here: the group, its
+  <!-- Repertoires: the named sets of chapters to practice (All is built in), edited here: the repertoire, its
        buttons, and every study and chapter with main color and other color buttons (see Studies list in the script) -->
-  <section id="groups-screen" class="hidden">
-    <div class="card group-card">
-      <h2>Groups</h2>
+  <section id="repertoires-screen" class="hidden">
+    <div class="card repertoire-card">
+      <h2>Repertoires</h2>
       <div id="preset-edit" class="preset-edit">
-        <select id="edit-preset-select" aria-label="Group to edit"></select>
+        <select id="edit-preset-select" aria-label="Repertoire to edit"></select>
         <span id="edit-summary" class="muted"></span>
         <div class="preset-buttons">
           <button id="preset-save-btn" class="small primary">Save</button>
@@ -686,12 +687,12 @@
           <button id="preset-cancel-btn" class="small">Cancel</button>
         </div>
         <form id="preset-name-form" class="preset-name-form hidden">
-          <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the group" autocomplete="off">
+          <input type="text" id="preset-name" placeholder="Name, e.g. Sicilian lines" aria-label="Name of the repertoire" autocomplete="off">
           <button id="preset-name-ok" class="small primary" type="submit">Save</button><button id="preset-name-cancel" class="small" type="button">Cancel</button>
           <div id="preset-name-error" class="form-error"></div>
         </form>
       </div>
-      <div class="group-list">
+      <div class="repertoire-list">
         <div id="edit-studies"></div>
       </div>
     </div>
@@ -776,11 +777,11 @@
       <div class="card" id="help-start">
         <h2>Getting started</h2>
         <ol>
-          <li>Build your repertoire using Lichess studies.</li>
+          <li>Build your repertoires using Lichess studies.</li>
           <li>Connect this app to Lichess.</li>
           <li>Select rating bands and download Lichess statistics (or restore backup if you've used the app before).</li>
-          <li>Set groups of chapters to practice (or use the default, All).</li>
-          <li>Select what to practice on the Practice page.</li>
+          <li>Select a repertoire (a set of chapters) to practice, or use the default, All.</li>
+          <li>On the Practice page, choose lines or positions and click <b>Start practice</b>.</li>
         </ol>
       </div>
 
@@ -795,45 +796,54 @@
           <li><b>Danger (Lichess)</b>: where players at your rating often go wrong. Know these well, whichever side you play.</li>
           <li><b>Refutations</b>: your opponents' common errors, and how to refute them.</li>
         </ul>
-        <p><b>Focus when you need to.</b> Make a <b>group</b> for one opening before a tournament. Open <b>Levels</b> to make the drills stricter or looser, or to <b>Exclude</b> positions you'll rarely reach.</p>
+        <p><b>Focus when you need to.</b> Make a <b>repertoire</b> for one opening. Open <b>Thresholds</b> to make the drills stricter or looser, or to <b>Exclude</b> positions you'll rarely reach.</p>
         <p><b>Learn from your errors.</b> On the Studies page, the <b>Recall</b> view shows what you played instead of your study's move. If your move turns out better, change your study on Lichess; the app updates it the next time it opens.</p>
+        <p><b>Recognize opening names.</b> During practice the chapter and opening are hidden behind stars. Name the opening, or the one the position comes from, then click the stars to check.</p>
       </div>
 
       <div class="card" id="help-definitions">
         <h2>Definitions</h2>
+        <!-- In alphabetical order; a category (e.g. Moves) is sorted by its name, its terms indented under it, also in order. -->
         <table class="help-table">
           <tr><th>Term</th><th>Meaning</th></tr>
-          <tr><td><b>Line</b></td><td>A path through a chapter from move 1: one of your study's moves at each of your turns, and each reply it gives</td></tr>
-          <tr><td><b>Main move</b></td><td>Your study's first move in a position</td></tr>
-          <tr><td><b>Alternative move</b></td><td>Any other of your study's moves in a position</td></tr>
-          <tr><td><b>Main line</b></td><td>A line of main moves only, for both sides (what Main lines practices)</td></tr>
-          <tr><td><b>Glyph</b></td><td>A move's mark in a study: !!, !, !?, ?!, ? or ??</td></tr>
-          <tr><td><b>Mistake</b></td><td>A move a study marks ? (mistake), ?? (blunder) or ?! (dubious); not the same as an error</td></tr>
-          <tr><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one it marks ?, ?? or ?!</td></tr>
-          <tr><td><b>Not tested</b></td><td>The moves after one of your alternatives marked ?, ?? or ?! (in italics); never practiced</td></tr>
-          <tr><td><b>Main color</b></td><td>A chapter's Orientation; the <b>other color</b> is the opposite side. A chapter can be practiced from either or both</td></tr>
-          <tr><td><b>Group</b></td><td>A named set of chapters to practice, each from its main color, the other or both; <b>All</b> (every chapter, from its main color) is built in</td></tr>
-          <tr><td><b>Try</b></td><td>Each of your moves in a line, or the move in a single position; with Skip or End practice, only the moves answered (and the one you're on, if you'd tried it)</td></tr>
-          <tr><td><b>Drill</b></td><td>Low recall, Danger (you), Danger (Lichess) or Refutations: positions of one kind, each played once a round</td></tr>
-          <tr><td><b>Last tested</b></td><td>When you last played a position, or a line through from move 1</td></tr>
-          <tr><td><b>Priority</b></td><td>How likely a line or position is to be picked next (see Spaced repetition)</td></tr>
           <tr><td><b>Chance next</b></td><td>In the Likely next table: its priority's share of them all</td></tr>
-          <tr><td><b>Rating bands, time controls</b></td><td>The Lichess games the statistics come from, chosen on the Lichess page (first set from your Lichess rating)</td></tr>
-          <tr><td><b>Master games</b></td><td>Games between players rated 2200+ FIDE, over the board (Lichess's Masters database)</td></tr>
-          <tr><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your rating bands and time controls)</td></tr>
-          <tr><td><b>Masters move</b></td><td>Played in 5%+ of the master games in a position, where there are 20 or more</td></tr>
-          <tr><td><b>Position reached</b></td><td>How often a position occurs in those games, e.g. "Reached 23k times (Lichess games)"</td></tr>
-          <tr><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
-          <tr><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
-          <tr><td><b>Low recall</b></td><td>Recall below the low recall level (default 75%; set under Levels on the Practice page)</td></tr>
-          <tr><td><b>Δ</b></td><td>A move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10)</td></tr>
-          <tr><td><b>Your expected loss</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
-          <tr><td><b>Danger position (you)</b></td><td>Your expected loss at your danger level or more (default 0.5; set under Levels on the Practice page)</td></tr>
-          <tr><td><b>Lichess expected loss</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
-          <tr><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the Lichess danger level or more (default 0.5; set under Levels on the Practice page)</td></tr>
-          <tr><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation level or more (default 1.0; set under Levels on the Practice page)</td></tr>
-          <tr><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
-          <tr><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.5)</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Games</b></td></tr>
+          <tr class="in-category"><td><b>Lichess games</b></td><td>Rated games played on Lichess, in your rating bands and time controls (Lichess's Opening Explorer)</td></tr>
+          <tr class="in-category"><td><b>Master games</b></td><td>Games between players rated 2200+ FIDE, over the board (Lichess's Masters database)</td></tr>
+          <tr class="in-category"><td><b>Rating bands, time controls</b></td><td>The Lichess games the statistics come from, chosen on the Lichess page (first set from your Lichess rating)</td></tr>
+          <tr><td><b>Last tested</b></td><td>When you last played a position, or a line through from move 1</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Lines</b></td></tr>
+          <tr class="in-category"><td><b>Line</b></td><td>A path through a chapter from move 1: one of your study's moves at each of your turns, and each reply it gives</td></tr>
+          <tr class="in-category"><td><b>Main line</b></td><td>A line of main moves only, for both sides (what Main lines practices)</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Losses</b></td></tr>
+          <tr class="in-category"><td><b>Lichess expected loss</b></td><td>The average Δ of the Lichess moves, weighted by how often each is played (the position needs 50 games)</td></tr>
+          <tr class="in-category"><td><b>Your expected loss</b></td><td>The average Δ of your last 10 tries' first moves</td></tr>
+          <tr class="in-category"><td><b>Δ</b></td><td>A move's change in evaluation against the engine's best move, for the side playing it, e.g. Δ−0.5 (Δ0.0: as good as the best; mate counts as 10)</td></tr>
+          <tr><td><b>Main color</b></td><td>A chapter's Orientation; the <b>other color</b> is the opposite side. A chapter can be practiced from either or both</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Moves</b></td></tr>
+          <tr class="in-category"><td><b>Alternative move</b></td><td>Any other of your study's moves in a position (not marked as a mistake)</td></tr>
+          <tr class="in-category"><td><b>Error</b></td><td>A move you play that isn't one of your study's moves, or is one it marks ?, ?? or ?!</td></tr>
+          <tr class="in-category"><td><b>Glyph</b></td><td>A move's mark in a study: !!, !, !?, ?!, ? or ??</td></tr>
+          <tr class="in-category"><td><b>Lichess move</b></td><td>Played in 5%+ of the rated Lichess games in a position (your rating bands and time controls)</td></tr>
+          <tr class="in-category"><td><b>Main move</b></td><td>Your study's first move in a position</td></tr>
+          <tr class="in-category"><td><b>Masters move</b></td><td>Played in 5%+ of the master games in a position, where there are 20 or more</td></tr>
+          <tr class="in-category"><td><b>Mistake</b></td><td>A move a study marks ? (mistake), ?? (blunder) or ?! (dubious); not the same as an error</td></tr>
+          <tr class="in-category"><td><b>Not tested</b></td><td>The moves after one of your study's moves marked as a mistake (in italics); never practiced</td></tr>
+          <tr class="in-category"><td><b>Refutable move</b></td><td>An opponent's Lichess move losing the refutation threshold or more (default 1.0; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Refutation</b></td><td>Your study's reply in a refutation position; where it has none, the engine's best move (or one of its best 3 within 0.2)</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Positions</b></td></tr>
+          <tr class="in-category"><td><b>Danger position (Lichess)</b></td><td>Lichess expected loss at the Lichess danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Danger position (you)</b></td><td>Your expected loss at your danger threshold or more (default 0.5; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Position reached</b></td><td>How often a position occurs in Lichess games or master games, e.g. "Reached 23k times (Lichess games)"</td></tr>
+          <tr class="in-category"><td><b>Rarely reached</b></td><td>Opponents lead you there in under 1 game in 100 (the shares of their moves on the way, multiplied); <b>very rarely</b>: under 1 in 1,000</td></tr>
+          <tr class="in-category"><td><b>Refutation position</b></td><td>The position after a refutable move</td></tr>
+          <tr><td><b>Priority</b></td><td>How likely a line or position is to be picked next (see Spaced repetition)</td></tr>
+          <tr class="help-category"><td colspan="2"><b>Recall</b></td></tr>
+          <tr class="in-category"><td><b>Low recall</b></td><td>Recall below the low recall threshold (default 75%; set under Thresholds on the Practice page)</td></tr>
+          <tr class="in-category"><td><b>Repertoire recall</b></td><td>Your last 10 tries in a position: the share right first time</td></tr>
+          <tr><td><b>Repertoire</b></td><td>A named set of chapters from your studies, each practiced from its main color, the other or both; <b>All</b> (every chapter, from its main color) is built in</td></tr>
+          <tr><td><b>Spaced repetition</b></td><td>Picks the next line or position at random by priority, so positions you're weak on, are due, or are likely to meet or dangerous come up more often (see Spaced repetition)</td></tr>
+          <tr><td><b>Try</b></td><td>Each of your moves in a line, or the move in a single position; with Skip or End practice, only the moves answered (and the one you're on, if you'd tried it)</td></tr>
         </table>
       </div>
 
@@ -846,20 +856,20 @@
       </div>
 
       <div class="card" id="help-practice">
-        <h2>Practice</h2>
+        <h2>Practice page</h2>
         <ul>
-          <li>Choose a group, then <b>Start practice</b> in the Lines or Positions tile.</li>
+          <li>Choose a repertoire, then <b>Start practice</b> in the Lines or Positions tile.</li>
           <li><b>Lines</b>: whole lines from move 1. <b>All lines</b>: every line, alternatives included. <b>Main lines</b>: main moves only, and only your main move is right.</li>
           <li><b>Positions</b>: one of your moves at a time.
             <ul>
               <li><b>All</b>: your positions from move 3, by spaced repetition.</li>
               <li><b>Low recall</b>: positions with low recall.</li>
               <li><b>Danger (you)</b> / <b>Danger (Lichess)</b>: danger positions of each kind.</li>
-              <li><b>Refutations</b>: refutation positions; play the refutation. Where your study has none, the engine's best move (or one of its best 3 within 0.5) is right. They don't count for recall.</li>
+              <li><b>Refutations</b>: refutation positions; play the refutation. Where your study has none, the engine's best move (or one of its best 3 within 0.2) is right. They don't count for recall.</li>
               <li>A drill plays each of its positions once a round, e.g. "Low recall · 3 of 12".</li>
             </ul>
           </li>
-          <li><b>Levels</b> (under the options): the low recall, danger and refutation levels (see Definitions), and <b>Exclude</b>, which leaves out rarely reached positions ("excluding rare" beside Levels while it's on).</li>
+          <li><b>Thresholds</b> (under the options): the low recall, danger and refutation thresholds (see Definitions), and <b>Exclude</b>, which leaves out rarely reached positions.</li>
           <li><b>Likely next</b>: what's most likely to come up; click a row to open it on the Studies page.</li>
           <li>Any of your study's moves is right, and the line follows it. Try as often as you like. After a first try, <b>Hint</b> circles the piece, then shows the move. <b>Skip</b> moves on; <b>End practice</b> stops; answers so far count.</li>
           <li>The chapter and position names are hidden (★★★); click to show.</li>
@@ -895,17 +905,18 @@
           </table>
       </div>
 
-      <div class="card" id="help-groups">
-        <h2>Groups</h2>
+      <div class="card" id="help-repertoires">
+        <h2>Repertoires page</h2>
         <ul>
-          <li>You practice the group chosen on the Practice page: <b>All</b> (every chapter, from its main color) or one of yours.</li>
-          <li>On the <b>Groups</b> page each chapter has a button for its main color (its Orientation), then the other; an X: not practiced. Click a chapter's name to add or remove it.</li>
-          <li>Groups are in backups; Merge leaves them alone, so each device can have its own.</li>
+          <li>A repertoire is a named set of chapters from your studies.</li>
+          <li>You practice the repertoire chosen on the Practice page: <b>All</b> (every chapter, from its main color) or one of yours.</li>
+          <li>On the <b>Repertoires</b> page each chapter has a button for its main color (its Orientation), then the other; an X: not practiced. Click a chapter's name to add or remove it.</li>
+          <li>Repertoires are in backups; Merge leaves them alone, so each device can have its own.</li>
         </ul>
       </div>
 
       <div class="card" id="help-studies">
-        <h2>Studies</h2>
+        <h2>Studies page</h2>
         <ul>
           <li>Click a study for its chapters, a chapter to open it. ← → (Home, End) step through the moves, ↑ ↓ change chapter. Works offline.</li>
           <li>The switch chooses the arrows: <b>Study</b>, <b>Recall</b>, <b>Lichess</b> or <b>Masters</b> (see Colors). Hover over an arrow's square for the move and its Δ.</li>
@@ -920,12 +931,12 @@
       </div>
 
       <div class="card" id="help-lichess">
-        <h2>Lichess</h2>
+        <h2>Lichess page</h2>
         <ul>
           <li>A red dot on the <b>Lichess</b> button: not connected.</li>
           <li>Studies update each time the app opens; reload to update now.</li>
           <li><b>Move statistics</b> come from Lichess games in your rating bands and time controls (first set from your Lichess rating), and from master games. Lichess ratings run higher: Chess.com 1500 rapid is about Lichess 1750–1800. To change them, unlock, tick and <b>Apply</b>; everything downloads again.</li>
-          <li><b>Backup</b>: your data lives only in this browser, so save a backup now and then. <b>Restore</b> replaces your tries, settings and groups; <b>Merge</b> adds a backup's tries to yours (e.g. from another device). Backups never include your token.</li>
+          <li><b>Backup</b>: your data lives only in this browser, so save a backup now and then. <b>Restore</b> replaces your tries, settings and repertoires; <b>Merge</b> adds a backup's tries to yours (e.g. from another device). Backups never include your token.</li>
           <li><b>Disconnect</b> saves a backup, then clears your data here. To switch users: Disconnect, then they Connect. Lichess ends a connection after about a year: just Connect again.</li>
         </ul>
       </div>
@@ -1061,12 +1072,12 @@ function checkedColors(p) {
   }
   return colors;
 }
-let selection = new Set(); // the chosen group's (preset's) chapters (keys such as "studyId/chapterId")
+let selection = new Set(); // the chosen repertoire's (preset's) chapters (keys such as "studyId/chapterId")
 let chapterColors = new Map(); // those of them not played only from their main color: key -> the colors played
 let presets = checkedPresets(store.get('presets', []));
 let chosenPresetName = store.get('chosenPreset', null);
 // The studies (by id) and chapters (by key, "studyId/chapterId") hidden from the Studies page's list. Only
-// the list: hiding doesn't affect practice (only groups do).
+// the list: hiding doesn't affect practice (only repertoires do).
 const strings = v => Array.isArray(v) ? v.filter(k => typeof k === 'string') : [];
 let hidden = new Set(strings(store.get('hidden', [])));
 const saveHidden = () => store.set('hidden', [...hidden]);
@@ -1141,7 +1152,7 @@ const DEFAULT_SETTINGS = {
     lines: 'all', // the Lines tile: 'all' or 'main' (Main lines: only main moves, and only your main move right)
     positions: 'spaced', // the Positions tile: spaced repetition, or a drill (see POSITION_CHOICES)
     rare: 'include', // the Positions tile's rarely reached positions: kept, or left out (see RARE_CHOICES)
-    levelsOpen: false, // the Positions tile's Levels, open or closed
+    levelsOpen: false, // the Positions tile's Thresholds, open or closed
   },
   // The Studies page: the arrows on the board: 'study' (the study's), 'masters', 'lichess' or 'errors' (your errors).
   review: { view: 'study' },
@@ -1240,8 +1251,8 @@ function showScreen(name) {
   hideHoverBoard(); hideCommentPopup(); hideQuickTip(); // no pop-up carries over to another page
   document.body.dataset.page = name; // e.g. the Studies page is wider
   // Each page, and its header button (always shown; the current page's is highlighted).
-  if (name !== 'groups' && editing) stopEditing(); // changes not saved are dropped (the header asked first)
-  for (const s of ['practice', 'groups', 'studies', 'lichess', 'help']) {
+  if (name !== 'repertoires' && editing) stopEditing(); // changes not saved are dropped (the header asked first)
+  for (const s of ['practice', 'repertoires', 'studies', 'lichess', 'help']) {
     $(s + '-screen').classList.toggle('hidden', s !== name);
     $('nav-' + s).classList.toggle('current', s === name);
     if (s === name) $('nav-' + s).setAttribute('aria-current', 'page'); else $('nav-' + s).removeAttribute('aria-current');
@@ -1530,7 +1541,7 @@ async function syncStudies() {
 function refreshPage() {
   if (currentScreen === 'lichess') renderLichessPage();
   else if (currentScreen === 'practice' && !practice) renderStudies(); // and the chooser
-  else if (currentScreen === 'groups' && editing) { // changes not saved are kept, except chapters no longer on Lichess
+  else if (currentScreen === 'repertoires' && editing) { // changes not saved are kept, except chapters no longer on Lichess
     for (const k of [...editing.colors.keys()]) if (!chapterByKey(k)) editing.colors.delete(k);
     renderStudies();
   }
@@ -1542,7 +1553,7 @@ function refreshPage() {
 }
 
 // After the studies are replaced: hidden studies and chapters no longer there are forgotten, and the
-// chosen group keeps only chapters still on Lichess. (Until 18 November 2026 the history of positions no
+// chosen repertoire keeps only chapters still on Lichess. (Until 18 November 2026 the history of positions no
 // longer in the studies was deleted too, so an account switched by mistake, or a list Lichess sent
 // incomplete, lost it for good.)
 function pruneAfterRefresh() {
@@ -1715,7 +1726,7 @@ function practisedAs(m, side) {
   return true;
 }
 
-// The sides a chapter is practiced from: its main color, or what its group says (both, or the other only).
+// The sides a chapter is practiced from: its main color, or what its repertoire says (both, or the other only).
 const sidesOf = ch => sidesFor(parseChapter(ch).yourColor, chapterColors.get(ch.key));
 // The sides played, the main color first: own, the chapter's main color; played, the colors played
 // (an array or set; none given: the main color only).
@@ -1922,7 +1933,7 @@ function isLichessMove(epd, s) {
 }
 
 // A danger position (the user's definition, 19 November 2026): one where the Lichess moves played there
-// lose, on average, the Lichess danger level or more (settings.lichessDangerLevel, 0.5 pawns by default): its
+// lose, on average, the Lichess danger threshold or more (settings.lichessDangerLevel, 0.5 pawns by default): its
 // expected loss, the sum over its Lichess moves (5% or more of the games, at the chosen ratings and time
 // controls) of each move's share of the games × how many pawns it drops the engine's evaluation, compared
 // with the engine's best move there, for the side playing it (mate counts as 10 pawns; a drop is never
@@ -2069,14 +2080,14 @@ function evaluateAfterError(pos, move) {
   else startEvaluations();
 }
 
-// The position's expected loss if it's a Danger position (Lichess) (at the Lichess danger level or more), else null.
+// The position's expected loss if it's a Danger position (Lichess) (at the Lichess danger threshold or more), else null.
 function dangerAt(epd) {
   const e = expectedLossAt(epd);
   return e && e.loss >= settings.lichessDangerLevel - 1e-9 ? e : null;
 }
 
 // A Danger position (you) (the user's definition, 20 November 2026): one of your positions whose your
-// expected loss (see yourExpectedLoss) is your danger level or more, as a Danger position (Lichess) is by
+// expected loss (see yourExpectedLoss) is your danger threshold or more, as a Danger position (Lichess) is by
 // its Lichess expected loss (see dangerAt). The Recall view's orange dot and the Your expected loss tile's
 // line; null until known (no tries, or evaluations still to come) or below the level.
 function isYourDangerPosition(node, own) {
@@ -2117,14 +2128,14 @@ const scoreClass = s => s == null ? 'untried' : s >= 1 ? 'score-100' : 'needs-wo
 // Beside the board on the Studies page: your studies, each opening to its chapters. A chapter is
 // clicked to open it on the board. Hidden studies and chapters are left out (except the chapter on the
 // board), or, with the eye by the Studies heading, shown dimmed, each with its own eye.
-// The Groups page (between Practice and Studies) edits the groups (presets in the code: named sets of
-// chapters; All, every chapter, is built in): the chosen group is always being edited there; every study
+// The Repertoires page (between Practice and Studies) edits the repertoires (presets in the code: named sets of
+// chapters; All, every chapter, is built in): the chosen repertoire is always being edited there; every study
 // and chapter is listed, each chapter with a main color and an other color button (see chapterRow),
 // with Save, Save as new, Rename, Delete and Cancel (for All, only Save as new and Cancel; Save and
 // Cancel only once something has changed). Leaving the page with changes not saved asks first, then drops them.
-// Only groups decide what's practiced: the group chosen on the Practice page (the Practice tile
+// Only repertoires decide what's practiced: the repertoire chosen on the Practice page (the Practice tile
 // tile); the tile is hidden during practice, since a session's lines are chosen when it starts.
-let editing = null; // on the Groups page, the group being edited: { preset, colors (a Map: chapter key -> the Set of colors played; only the chapters in the group), open (the studies whose chapters are listed) }
+let editing = null; // on the Repertoires page, the repertoire being edited: { preset, colors (a Map: chapter key -> the Set of colors played; only the chapters in the repertoire), open (the studies whose chapters are listed) }
 
 // The Practice page's Practice tile: once there are studies, and not
 // during practice (before there are studies, any message about fetching them instead).
@@ -2141,8 +2152,8 @@ function renderStudies() {
   renderPresets();
   updateSelectionPanel();
   renderStudiesList();
-  renderGroupEditor();
-  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practiced follows the group
+  renderRepertoireEditor();
+  if (currentScreen === 'practice' && !practice) renderChooser(); // what can be practiced follows the repertoire
 }
 
 function renderStudiesList() {
@@ -2176,16 +2187,16 @@ function renderStudiesList() {
   }
 }
 
-// The Groups page while a group is edited: every study (several can be open at once, since there's
+// The Repertoires page while a repertoire is edited: every study (several can be open at once, since there's
 // room), and its chapters' buttons. (An All row, with white and black buttons for every chapter, was above
 // them until 19 November 2026, and each study had main color and other color buttons for all its chapters
 // until 25 November 2026: the user removed them, since mostly only a few chapters are adjusted.)
-function renderGroupEditor() {
+function renderRepertoireEditor() {
   if (!editing) return;
   const list = $('edit-studies'), scroll = window.scrollY;
   list.replaceChildren(...library.studies.map(study => {
     const open = editing.open.has(study.id);
-    return element('div', { class: 'study' }, studyRow(study, open, () => { open ? editing.open.delete(study.id) : editing.open.add(study.id); renderGroupEditor(); }),
+    return element('div', { class: 'study' }, studyRow(study, open, () => { open ? editing.open.delete(study.id) : editing.open.add(study.id); renderRepertoireEditor(); }),
       open ? element('div', { class: 'chapters' }, study.chapters.map(chapterRow)) : null);
   }));
   window.scrollTo(0, scroll); // the page stays where it was
@@ -2211,7 +2222,7 @@ function chapterLink(c, k) {
 // the other side).
 const isShownAsYours = (m, own) => (m.color === own && practisedAs(m, own)) || attemptsAt(m.parent).length > 0;
 // Low recall (the user's decision, 20 November 2026; "weak recall" for a few hours): a position of yours (your move there) whose
-// repertoire recall is below the low recall level (75% by default; the user's setting since 27 November 2026, fixed until
+// repertoire recall is below the low recall threshold (75% by default; the user's setting since 27 November 2026, fixed until
 // then, and below 100% until 20 November): the move tree's violet dot, after the move
 // leading to it (as the danger dot).
 const isLowRecall = (node, own) => { const share = shareAt(node); return share != null && share < settings.lowRecallLevel - 1e-9 && node.children.some(c => isShownAsYours(c, own)); };
@@ -2257,15 +2268,15 @@ function studyRow(study, open, toggle, eye = null, play = null) {
     fullNameTip(element('span', { class: 'name' }, opener(study.name, toggle))), play);
 }
 
-// A chapter's color button on the Groups page: a dot in its color, with an X through it when not played.
+// A chapter's color button on the Repertoires page: a dot in its color, with an X through it when not played.
 function colorButton(bid, color, on, title, onclick, label) {
   return element('button', { id: bid, class: 'side-btn', title, 'aria-label': `${label}: ${title}`, 'aria-pressed': String(on), onclick },
     element('span', { class: `side-dot ${color}` + (on ? '' : ' x') }));
 }
 
-// A chapter's row on the Groups page (indented under its study's name): its main color's button (the
+// A chapter's row on the Repertoires page (indented under its study's name): its main color's button (the
 // study's orientation), then the other color's, each played or not (an X through it); with neither, it's
-// out of the group and its name grayed. Clicking the name puts it in the group from its main color, or
+// out of the repertoire and its name grayed. Clicking the name puts it in the repertoire from its main color, or
 // leaves it out. A chapter that can't be practiced says why (its buttons can't be clicked). (Its number
 // of lines, "· 5 lines", followed the name until 19 November 2026.)
 function chapterRow(ch) {
@@ -2429,15 +2440,15 @@ function hideButton(id, isHidden, what) {
   return btn;
 }
 
-// Puts chapters (by key) in the group being edited, from their main color, or leaves them out; redraws.
+// Puts chapters (by key) in the repertoire being edited, from their main color, or leaves them out; redraws.
 function setPlayed(keys, on) {
   if (!editing) return;
   for (const k of keys) on ? editing.colors.set(k, new Set([mainColor(k)])) : editing.colors.delete(k);
   renderStudies();
 }
 
-// Plays chapters (by key) from a color, or not, in the group being edited; a chapter with no color left
-// is out of the group. Redraws.
+// Plays chapters (by key) from a color, or not, in the repertoire being edited; a chapter with no color left
+// is out of the repertoire. Redraws.
 function setColor(keys, color, on) {
   if (!editing) return;
   for (const k of keys) {
@@ -2458,8 +2469,8 @@ function toggleHidden(id) {
 $('show-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; resetting = false; renderStudies(); });
 $('reset-mode-btn').addEventListener('click', () => { resetting = !resetting; showHidden = false; renderStudies(); });
 
-// How many chapters are chosen while editing a group (Groups page). (The Practice page said how many the
-// chosen group has, under its drop-down, until 19 November 2026.)
+// How many chapters are chosen while editing a repertoire (Repertoires page). (The Practice page said how many the
+// chosen repertoire has, under its drop-down, until 19 November 2026.)
 function updateSelectionPanel() {
   if (!editing) return;
   const keys = new Set(editing.colors.keys()), n = allChapters().filter(c => keys.has(c.key)).length;
@@ -2484,7 +2495,7 @@ function useChosenPreset() {
   chapterColors = new Map(Object.entries(preset.colors ?? {}).filter(([k]) => selection.has(k)));
 }
 
-// The groups' drop-downs: the Practice page's (what's practiced) and the Groups page's (the group being
+// The repertoires' drop-downs: the Practice page's (what's practiced) and the Repertoires page's (the repertoire being
 // edited); and the editing buttons.
 function renderPresets() {
   const preset = chosenPreset();
@@ -2511,11 +2522,11 @@ $('preset-select').addEventListener('change', e => {
   renderStudies(); // and the chooser
 });
 
-// The Groups page: the chosen group's chapters and colors, to change; Cancel puts them back as saved.
-// Another group from the drop-down is chosen (as on the Practice page), and its chapters shown instead
+// The Repertoires page: the chosen repertoire's chapters and colors, to change; Cancel puts them back as saved.
+// Another repertoire from the drop-down is chosen (as on the Practice page), and its chapters shown instead
 // (changes not saved are dropped). Save, Save as new and Delete start again from what's saved.
 function startEditing() {
-  const open = new Set(library.studies.filter(st => st.chapters.some(c => selection.has(c.key))).map(st => st.id)); // the group's studies
+  const open = new Set(library.studies.filter(st => st.chapters.some(c => selection.has(c.key))).map(st => st.id)); // the repertoire's studies
   const preset = chosenPreset(), chapters = chaptersOf(preset);
   editing = { preset, colors: new Map(chapters.map(k => [k, new Set(presetColorsOf(preset, k))])), open: editing?.open ?? open };
   hideNameForm();
@@ -2528,13 +2539,13 @@ $('edit-preset-select').addEventListener('change', e => {
   startEditing();
 });
 
-// Leaving the Groups page (see showScreen): any changes not saved are dropped.
+// Leaving the Repertoires page (see showScreen): any changes not saved are dropped.
 function stopEditing() {
   editing = null;
   hideNameForm();
 }
 
-// Whether the group being edited has changes not saved.
+// Whether the repertoire being edited has changes not saved.
 function editsUnsaved() {
   if (!editing) return false;
   const sig = entries => entries.map(([k, c]) => k + ':' + COLORS.filter(x => c.includes(x)).join()).sort().join('|');
@@ -2545,8 +2556,8 @@ function editsUnsaved() {
 const mainColor = key => { const ch = chapterByKey(key); return (ch && parseChapter(ch).yourColor) ?? 'white'; };
 // The colors a preset plays a chapter from.
 const presetColorsOf = (preset, key) => preset.colors?.[key] ?? [mainColor(key)];
-// The group being edited, to store: its chapters, and the colors of those not played only from their main color.
-function editedGroup() {
+// The repertoire being edited, to store: its chapters, and the colors of those not played only from their main color.
+function editedRepertoire() {
   const colors = {};
   for (const [k, set] of editing.colors) {
     const c = COLORS.filter(x => set.has(x));
@@ -2557,26 +2568,26 @@ function editedGroup() {
 
 $('preset-cancel-btn').addEventListener('click', startEditing);
 
-// The header's Groups button: the chosen group, to edit. Before there are studies, as the Practice button.
-$('nav-groups').addEventListener('click', () => {
+// The header's Repertoires button: the chosen repertoire, to edit. Before there are studies, as the Practice button.
+$('nav-repertoires').addEventListener('click', () => {
   if (!library) return $('nav-practice').click();
-  if (currentScreen === 'groups') return;
-  showScreen('groups');
+  if (currentScreen === 'repertoires') return;
+  showScreen('repertoires');
   startEditing();
   window.scrollTo(0, 0);
 });
 
-// Leaving the Groups page with changes not saved asks first (the header's buttons are the only way off it).
+// Leaving the Repertoires page with changes not saved asks first (the header's buttons are the only way off it).
 document.querySelector('header nav').addEventListener('click', e => {
   const b = e.target.closest('button');
-  if (!b || b.id === 'nav-groups' || currentScreen !== 'groups' || !editsUnsaved()) return;
+  if (!b || b.id === 'nav-repertoires' || currentScreen !== 'repertoires' || !editsUnsaved()) return;
   if (!confirm('Leave without saving?')) e.stopImmediatePropagation();
 }, true);
 
 $('preset-save-btn').addEventListener('click', () => {
   const preset = presets.find(p => p === editing?.preset);
   if (!preset) return;
-  Object.assign(preset, editedGroup());
+  Object.assign(preset, editedRepertoire());
   savePresets();
   useChosenPreset();
   startEditing();
@@ -2584,7 +2595,7 @@ $('preset-save-btn').addEventListener('click', () => {
 
 $('preset-delete-btn').addEventListener('click', () => {
   const preset = chosenPreset();
-  if (preset.builtIn || !confirm(`Delete the group "${preset.name}"? All will be chosen.`)) return;
+  if (preset.builtIn || !confirm(`Delete the repertoire "${preset.name}"? All will be chosen.`)) return;
   presets = presets.filter(p => p !== preset);
   chosenPresetName = null;
   savePresets();
@@ -2622,11 +2633,11 @@ $('preset-name-form').addEventListener('submit', e => {
   const renaming = namingMode === 'rename' ? chosenPreset() : null;
   if (!name) { $('preset-name-error').textContent = 'Type a name.'; return; }
   if (name.toLowerCase() === ALL_PRESET.toLowerCase() || presets.some(p => p !== renaming && p.name.toLowerCase() === name.toLowerCase())) {
-    $('preset-name-error').textContent = `There's already a group called ${name}.`;
+    $('preset-name-error').textContent = `There's already a repertoire called ${name}.`;
     return;
   }
   if (renaming) { renaming.name = name; chosenPresetName = name; savePresets(); hideNameForm(); renderPresets(); return; } // still editing
-  presets.push({ name, ...editedGroup() });
+  presets.push({ name, ...editedRepertoire() });
   chosenPresetName = name;
   savePresets();
   useChosenPreset();
@@ -2686,7 +2697,7 @@ function stepChapter(d) {
 }
 
 // The header's Studies button: the chapter and position last looked at (the studies may have been
-// updated since), or else the chosen group's first chapter (or the first chapter) that can be shown.
+// updated since), or else the chosen repertoire's first chapter (or the first chapter) that can be shown.
 // Before there are studies, as the Practice button.
 $('nav-studies').addEventListener('click', () => {
   if (!library) return $('nav-practice').click();
@@ -2712,7 +2723,7 @@ function reviewFromPractice() {
 
 // Practice from the Studies page: a chapter's or study's lines (the ▶ on its row in the list). A one-off
 // session of all its lines (not Main lines), picked by spaced repetition, each chapter
-// played from the colors the chosen group gives it (else its main color); the chosen group doesn't change,
+// played from the colors the chosen repertoire gives it (else its main color); the chosen repertoire doesn't change,
 // and End practice comes back here (returnTo). (Until 19 November 2026 a Practice button under the move
 // tree practiced the lines through the position on the board.)
 function practiceFromStudies(chapters) {
@@ -2806,8 +2817,8 @@ const KEY_TREE = [
   { sample: 'e5<span class="tree-dot masters-dot"></span>', meaning: "Leads to a position where your study's move isn't a masters move (select it to see theirs)" },
   { sample: '<span class="untested-move">a6</span>', meaning: "Not tested: after one of your alternatives marked ?, ?? or ?!" },
   { sample: '<span class="quality-good">♘f3</span> <span class="quality-mistake">h3</span>', meaning: 'Marked with a glyph by your study, in its color' },
-  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (Lichess): the Lichess moves played there lose the Lichess danger level or more on average' },
-  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first moves there lose your danger level or more on average' },
+  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (Lichess): the Lichess moves played there lose the Lichess danger threshold or more on average' },
+  { sample: '<span class="tree-dot danger-dot"></span>', meaning: 'Leads to a danger position (you): your first moves there lose your danger threshold or more on average' },
   { sample: `<span class="bubble">${COMMENT_ICON_SVG}</span>`, meaning: 'A comment in your study (hover over it)' },
 ];
 const keySample = html => { const el = element('span', { class: 'key-sample-inner' }); el.innerHTML = html; return el; };
@@ -2953,7 +2964,7 @@ function yourExpectedLoss(node) {
 }
 
 // A move's change in evaluation, colored by its loss (in the Your expected loss and Danger position
-// tiles only, never for arrows or errors): green at Δ0.0 as shown, amber below the tile's danger level
+// tiles only, never for arrows or errors): green at Δ0.0 as shown, amber below the tile's danger threshold
 // (yours, or Lichess's), red at it or more, e.g. "Δ−1.2" in red.
 function lossDelta(delta, level) {
   const lost = Math.round(-delta * 10) / 10;
@@ -2961,7 +2972,7 @@ function lossDelta(delta, level) {
 }
 
 // With Recall, under the comment, at one of your positions with tries: "Your expected loss", then (in
-// orange) "Danger position (you)" when it's your danger level or more (see isYourDangerPosition), e.g.
+// orange) "Danger position (you)" when it's your danger threshold or more (see isYourDangerPosition), e.g.
 // "Δ−0.4 (last 4 tries)", each first move with its share and colored Δ, e.g. "d4 50% · Δ−0.1", and last,
 // when it was last tested, e.g. "Last tested 3 days ago"; "Evaluating…" until it's known.
 function renderLossTile(node) {
@@ -3122,7 +3133,7 @@ function practiceItems(kind, { mainOnly = mainOnlyFor(kind), from = FIRST_POSITI
 
 // Positions, without those rarely reached when the Positions tile leaves them out (see RARE_CHOICES):
 // those your opponents lead you to less often than its chance, by the shares of their moves on the way
-// (logReach: the raw chance, not spaced repetition's frequency, so it doesn't depend on the group). An
+// (logReach: the raw chance, not spaced repetition's frequency, so it doesn't depend on the repertoire). An
 // opponent's move never played there counts as rarely reached; a position whose statistics haven't
 // downloaded is kept. Lines are never left out (the user's decision).
 function isRarelyReached(item, below) {
@@ -3146,19 +3157,19 @@ function itemAccuracy({ line, i }, mainOnly) {
 const DRILLS = {
   lowRecall: { label: 'Low recall', get title() { return `Below ${percent(settings.lowRecallLevel)}% recall`; },
     has: node => { const share = shareAt(node, false); return share != null && share < settings.lowRecallLevel - 1e-9; } },
-  dangerYou: { label: 'Danger (you)', title: 'Your first moves lose ≥ your danger level',
+  dangerYou: { label: 'Danger (you)', title: 'Your first moves lose ≥ your danger threshold',
     has: (node, own) => isYourDangerPosition(node, own) },
-  dangerLichess: { label: 'Danger (Lichess)', title: 'Lichess moves lose ≥ the Lichess danger level',
+  dangerLichess: { label: 'Danger (Lichess)', title: 'Lichess moves lose ≥ the Lichess danger threshold',
     has: node => !!dangerAt(node.epd) },
-  refutations: { label: 'Refutations', title: "Refute opponents' Lichess moves losing ≥ the refutation level" },
+  refutations: { label: 'Refutations', title: "Refute opponents' Lichess moves losing ≥ the refutation threshold" },
 };
 const drillItems = drill => drill === 'refutations' ? withoutRare(refutationItems())
   : practiceItems('positions', { from: 1 }).filter(({ line, i }) => DRILLS[drill].has(line.moves[i].parent, line.yourColor));
 
 // The Refutations drill's positions (the user's decisions, 20 November 2026): at each position of the
-// chosen group's chapters where it's the opponent's move (by each side practiced, from move 1), each
+// chosen repertoire's chapters where it's the opponent's move (by each side practiced, from move 1), each
 // refutable move, a Lichess move (5% or more of 50 games or more) that drops the evaluation by the
-// refutation level or more against the engine's best (see expectedLossAt), gives the position after it.
+// refutation threshold or more against the engine's best (see expectedLossAt), gives the position after it.
 // Where your study has that move and answers it, the item is your study's position, as usual; where it's
 // silent, a line built for it (see silentRefutationLine), once the engine has evaluated the position.
 function refutationItems() {
@@ -3183,12 +3194,12 @@ function refutationItems() {
 
 // A line for a refutation position your study is silent on: the moves to the position before it (path,
 // ending at the node before), the refutable move, then the engine's best move there; the moves accepted
-// are those among the engine's best 3 within 0.5 of its best (REFUTATION_MARGIN), as the refutable
+// are those among the engine's best 3 within 0.2 of its best (REFUTATION_MARGIN; 0.5 until 28 November 2026), as the refutable
 // move's children. Its nodes are built for practice only, not added to the chapter's tree; your tries
 // there are recorded under the refutable move's key (study position + move), but repertoire recall is only
 // for positions in a study, so they're used only to order this drill. null until the engine has
 // evaluated the position after the move.
-const REFUTATION_MARGIN = 0.5;
+const REFUTATION_MARGIN = 0.2;
 function silentRefutationLine(path, before, refutableSan, side, like) {
   const move = san.parseSan(before.position, refutableSan);
   if (!move) return null;
@@ -3395,10 +3406,10 @@ function choosePromotion(color) {
 }
 
 // ---------- Practice: choosing what to practice ----------
-// The Practice page when nothing is in progress: the Practice tile (the group), then the Lines tile (All
+// The Practice page when nothing is in progress: the Practice tile (the repertoire), then the Lines tile (All
 // lines or Main lines) and the Positions tile (All or a drill), each with its counts, Likely next and Start
 // practice. The choices are kept in settings.practice.
-// (Reverse sides, playing the opponent's moves unscored, went on 6 November 2026: a group can have a
+// (Reverse sides, playing the opponent's moves unscored, went on 6 November 2026: a repertoire can have a
 // chapter played from both sides instead.)
 
 // Lines and positions, the two kinds of practice: their words.
@@ -3479,10 +3490,10 @@ const changePractice = change => { change(settings.practice); saveSettings(); re
 
 $('rare-select').addEventListener('change', e => changePractice(p => { p.rare = e.target.value; }));
 
-// The Positions tile's Levels (the user's decisions, 27 November 2026; a card on the Lichess page until
-// then): the low recall level (see isLowRecall: 50%, 75%, 90% or 100%), your danger level and the Lichess
-// danger level (see isYourDangerPosition and dangerAt: 0.2 to 1.5 pawns; they depend on your level too),
-// the refutation level (see refutationItems: 0.5 to 3.0 pawns), and Exclude. A change applies at once,
+// The Positions tile's Thresholds (the user's decisions, 27 November 2026; a card on the Lichess page until
+// then; called Levels until 28 November 2026): the low recall threshold (see isLowRecall: 50%, 75%, 90% or 100%), your danger threshold and the Lichess
+// danger threshold (see isYourDangerPosition and dangerAt: 0.2 to 1.5 pawns; they depend on your level too),
+// the refutation threshold (see refutationItems: 0.5 to 3.0 pawns), and Exclude. A change applies at once,
 // the counts too. Closed at first; open or closed as you left it (settings.practice.levelsOpen).
 const LEVEL_SETTINGS = [['low-recall-level', 'lowRecallLevel', LOW_RECALL_LEVELS, x => `${percent(x)}%`],
   ['your-danger-level', 'yourDangerLevel', DANGER_LEVELS, x => x.toFixed(1)],
@@ -3502,7 +3513,6 @@ function showLevels() {
   $('levels-body').classList.toggle('hidden', !open);
   $('levels-toggle').setAttribute('aria-expanded', String(open));
   $('levels-toggle').querySelector('.toggle-mark').textContent = open ? '▾' : '▸';
-  $('levels-note').textContent = settings.practice.rare === 'include' ? '' : '(excluding rare)';
   for (const [id, key] of LEVEL_SETTINGS) $(id).value = String(settings[key]);
 }
 $('levels-toggle').addEventListener('click', () => changePractice(p => { p.levelsOpen = !p.levelsOpen; }));
@@ -5097,7 +5107,7 @@ function mergedHistory(a, b) {
 }
 
 // Merge backup: the backup's history added to yours, and its move statistics merged; your settings,
-// groups and hidden studies stay as they are (the user's decision: each device may have its own groups).
+// repertoires and hidden studies stay as they are (the user's decision: each device may have its own repertoires).
 $('merge-file').addEventListener('change', async e => {
   const b = await chosenBackup(e);
   if (!b) return;
@@ -5105,7 +5115,7 @@ $('merge-file').addEventListener('change', async e => {
   const n = Object.keys(checkedHistory(b.history).positions).length;
   const question = b.account && here && b.account !== here
     ? `This backup is from ${b.account}'s account, but you're connected as ${here}. Merge its history into yours anyway?`
-    : `Add the history from the backup${when} (${plural(n, 'position')} with results) to yours? Your settings and groups stay as they are.`;
+    : `Add the history from the backup${when} (${plural(n, 'position')} with results) to yours? Your settings and repertoires stay as they are.`;
   if (!confirm(question)) return;
   const before = Object.keys(history.positions).length;
   history = mergedHistory(history, checkedHistory(b.history));
